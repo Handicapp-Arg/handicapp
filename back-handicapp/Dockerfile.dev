@@ -1,0 +1,32 @@
+# Dockerfile optimizado para desarrollo
+FROM node:18-alpine
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files first for better caching
+COPY package.json pnpm-lock.yaml ./
+
+# Install dependencies with cache optimization
+RUN pnpm config set store-dir /app/.pnpm-store && \
+    pnpm install --no-frozen-lockfile
+
+# Copy source code
+COPY . .
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+# Change ownership
+RUN chown -R nodejs:nodejs /app
+USER nodejs
+
+# Expose port
+EXPOSE 3000
+
+# Start in development mode
+CMD ["pnpm", "run", "dev"]
