@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { useToaster } from "@/components/ui/Toaster";
 
-// ⚠️ Mantengo tu action y tipos
+// Mantengo tu action y tipos
 import { loginAction } from "@/app/(auth)/actions";
 import type { ActionResult } from "@/lib/types/api";
 
@@ -31,16 +31,21 @@ export default function LoginPage() {
 
   useEffect(() => {
     const success = params.get("success");
-    if (success === "registered")
-      show("Registro exitoso, ahora inicia sesión", "success", "¡Listo!");
+    if (success === "registered") {
+      show("Registro exitoso, ahora inicia sesion", "success", "Listo");
+    }
   }, [params, show]);
 
   useEffect(() => {
-    if (!state) return;
+    if (!state) {
+      return;
+    }
+
     if (!state.ok && state.message) {
       show(state.message, "error", "Error");
       setFieldErrors(state.fieldErrors || {});
     }
+
     if (state.ok) {
       show("Bienvenido", "success", "Login exitoso");
       setTimeout(() => {
@@ -49,14 +54,23 @@ export default function LoginPage() {
     }
   }, [state, show]);
 
+  useEffect(() => {
+    if (error) {
+      setError(null);
+    }
+    if (Object.keys(fieldErrors).length) {
+      setFieldErrors({});
+    }
+  }, [email, password]);
+
   return (
     <div className="min-h-screen w-full grid grid-cols-1 md:grid-cols-2">
-      {/* Columna izquierda: Imagen + capa estética */}
+      {/* Columna izquierda: Imagen + capa estatica */}
       <div className="relative hidden md:block">
         {/* Imagen de fondo */}
         <Image
-          src="/login-side.jpg" // poné tu imagen en /public
-          alt="Gestión ecuestre"
+          src="/login-side.jpg"
+          alt="Gestion ecuestre"
           fill
           priority
           className="object-cover"
@@ -80,8 +94,8 @@ export default function LoginPage() {
               </h1>
             </div>
             <p className="mt-3 text-white/90">
-              Potenciá tu gestión ecuestre con seguimiento integral,
-              comunicación en equipo y reportes en tiempo real.
+              Potencia tu gestion ecuestre con seguimiento integral,
+              comunicacion en equipo y reportes en tiempo real.
             </p>
           </div>
         </div>
@@ -94,10 +108,10 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           <div className="mb-8">
             <h2 className="text-3xl font-semibold tracking-tight">
-              Iniciar sesión
+              Iniciar sesion
             </h2>
             <p className="mt-2 text-sm text-foreground/70">
-              Accedé a tu cuenta para continuar.
+              Accede a tu cuenta para continuar.
             </p>
           </div>
 
@@ -106,7 +120,7 @@ export default function LoginPage() {
             onSubmit={(e) => {
               if (!isValid) {
                 e.preventDefault();
-                setError("Completa correo y contraseña");
+                setError("Completa correo y contrasena");
               }
             }}
             className="space-y-4"
@@ -125,7 +139,7 @@ export default function LoginPage() {
             <Input
               type="password"
               name="password"
-              label="Contraseña"
+              label="Contrasena"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
@@ -149,23 +163,22 @@ export default function LoginPage() {
               className="underline underline-offset-2 hover:opacity-80"
               href="/"
             >
-              ← Volver al inicio
+              Volver al inicio
             </Link>
             <span>
-              ¿No tienes cuenta?{" "}
+              No tienes cuenta?{" "}
               <Link
                 className="underline underline-offset-2 hover:opacity-80"
                 href="/register"
               >
-                Regístrate
+                Registrate
               </Link>
             </span>
           </div>
 
           {/* Pie sutil */}
           <p className="mt-8 text-[11px] text-foreground/50 text-center">
-            © {new Date().getFullYear()} HandicApp — Todos los derechos
-            reservados
+            {new Date().getFullYear()} HandicApp - Todos los derechos reservados
           </p>
         </div>
       </div>

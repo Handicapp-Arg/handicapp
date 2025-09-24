@@ -1,206 +1,82 @@
-# 🚀 Instrucciones de Despliegue - HandicApp
+# Gu�a de ejecucion sin Docker
 
-## 📋 Requisitos Previos
+Este documento describe como levantar HandicApp de forma manual, ejecutando el backend y el frontend directamente en tu maquina.
 
-Tu compañero necesita tener instalado:
-- **Docker** y **Docker Compose**
-- **Git**
-- **Node.js** (opcional, para desarrollo local)
+## 1. Requisitos previos
 
-## 🔧 Configuración Inicial
+- Node.js 18 o superior
+- pnpm (recomendado) o npm/yarn
+- PostgreSQL 13+ en ejecucion
+- Redis 6+ en ejecucion
+- Git y un terminal con soporte para scripts de shell
 
-### 1. Clonar el Repositorio
-```bash
-git clone [URL_DEL_REPOSITORIO]
-cd handicapp
-```
+> Asegurate de que PostgreSQL y Redis esten disponibles en `localhost` o ajusta las variables de entorno para apuntar al host correcto.
 
-### 2. Crear Archivos de Entorno
+## 2. Variables de entorno
 
-#### Archivo Principal: `.env` (en la raíz del proyecto)
-```env
-# Variables para Docker Compose
-DB_PASSWORD=devpassword
-POSTGRES_PASSWORD=devpassword
-JWT_SECRET=3a0f9f7e3c0c4a2b8e8f1c9d6a7b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8
-NEXT_PUBLIC_API_BASE_URL=http://localhost:3003/api/v1
-NEXT_PUBLIC_APP_ENV=development
-NODE_ENV=development
-```
-
-#### Backend: `back-handicapp/.env`
-```env
-# Configuración del Backend
-NODE_ENV=development
-PORT=3000
-HOST=0.0.0.0
-DB_HOST=postgres
-DB_PORT=5432
-DB_NAME=handicapp_db
-DB_USER=postgres
-DB_PASSWORD=devpassword
-DB_DIALECT=postgres
-DB_LOGGING=false
-JWT_SECRET=3a0f9f7e3c0c4a2b8e8f1c9d6a7b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8
-JWT_EXPIRES_IN=24h
-JWT_REFRESH_EXPIRES_IN=7d
-REDIS_HOST=redis
-REDIS_PORT=6379
-REDIS_PASSWORD=
-REDIS_DB=0
-BCRYPT_ROUNDS=12
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=100
-CORS_ORIGIN=http://localhost:3000
-CORS_CREDENTIALS=true
-LOG_LEVEL=info
-LOG_FILE=logs/app.log
-API_VERSION=v1
-API_PREFIX=/api
-MAX_FILE_SIZE=10485760
-UPLOAD_PATH=uploads/
-```
-
-#### Frontend: `front-handicapp/.env`
-```env
-# Configuración del Frontend
-NODE_ENV=development
-NEXT_PUBLIC_API_BASE_URL=http://localhost:3003/api/v1
-NEXT_PUBLIC_APP_ENV=development
-NEXT_PUBLIC_REQUEST_TIMEOUT_MS=10000
-NEXT_PUBLIC_REQUEST_MAX_RETRIES=3
-```
-
-## 🚀 Despliegue
-
-### Opción 1: Scripts Automáticos (Recomendado)
-
-#### En Linux/Mac:
-```bash
-chmod +x start-app.sh
-./start-app.sh
-```
-
-#### En Windows:
-```cmd
-start-app.bat
-```
-
-### Opción 2: Comandos Manuales
+Cada proyecto incluye un archivo `.env` base. Duplica los ejemplos y actualiza los valores necesarios.
 
 ```bash
-# Limpiar contenedores previos
-docker-compose -f docker-compose.yml -f docker-compose.override.yml down -v
+# Backendcd back-handicapp
+cp .env.example .env   # si no lo hiciste aun
 
-# Iniciar servicios
-docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d
-
-# Ver logs
-docker-compose -f docker-compose.yml -f docker-compose.override.yml logs -f
+# Frontend
+cd front-handicapp
+cp .env.example .env   # si corresponde
 ```
 
-## 🌐 URLs de Acceso
+Variables importantes en el backend:
 
-Una vez desplegado, la aplicación estará disponible en:
+- `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
+- `REDIS_HOST`, `REDIS_PORT`
+- `JWT_SECRET`
 
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:3003
-- **PostgreSQL**: localhost:5434
-- **Redis**: localhost:6381
+Ajusta estos valores para que coincidan con tus servicios locales.
 
-## 🛑 Detener la Aplicación
+## 3. Preparar servicios de datos
 
-### Con Scripts:
+1. **PostgreSQL**: crea la base de datos configurada en tu `.env` y verifica que el usuario tenga permisos.
+2. **Redis**: inicia el servicio en el puerto definido (6379 por defecto).
+
+## 4. Backend (API)
+
 ```bash
-# Linux/Mac
-./stop-app.sh
-
-# Windows
-stop-app.bat
+cd back-handicapp
+pnpm install
+pnpm run db:migrate    # ejecuta las migraciones
+pnpm run db:seed       # opcional: carga datos iniciales
+pnpm run dev           # servidor en http://localhost:3003
 ```
 
-### Manual:
+Para produccion:
+
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.override.yml down -v
+pnpm run build
+pnpm start
 ```
 
-## 🔍 Verificación
+## 5. Frontend (Next.js)
 
-1. **Frontend**: Abrir http://localhost:3000
-2. **Backend**: Verificar http://localhost:3003/api/v1/health (si existe endpoint)
-3. **Logs**: `docker-compose logs -f` para ver logs en tiempo real
-
-## 🐛 Solución de Problemas
-
-### Si hay errores de permisos:
 ```bash
-sudo chmod +x start-app.sh
-sudo chmod +x stop-app.sh
+cd front-handicapp
+pnpm install
+pnpm dev               # servidor en http://localhost:3000
 ```
 
-### Si hay conflictos de puertos:
-```bash
-# Verificar qué está usando los puertos
-netstat -tulpn | grep :3000
-netstat -tulpn | grep :3003
-```
+Configura los servicios externos (API, Auth, etc.) mediante variables de entorno como `NEXT_PUBLIC_API_URL` para apuntar al backend.
 
-### Si hay problemas con Docker:
-```bash
-# Limpiar todo
-docker system prune -a
-docker volume prune
-```
+## 6. Flujo de trabajo recomendado
 
-## 📁 Estructura de Archivos Importantes
+1. Levanta PostgreSQL y Redis.
+2. Ejecuta el backend en modo desarrollo (`pnpm run dev`).
+3. Ejecuta el frontend en modo desarrollo (`pnpm dev`).
+4. Corre pruebas cuando las necesites:
+   - Backend: `pnpm run test`
+   - Frontend: `pnpm run test`
 
-```
-handicapp/
-├── .env                          # Variables principales
-├── docker-compose.yml            # Configuración de producción
-├── docker-compose.override.yml   # Configuración de desarrollo
-├── start-app.sh                  # Script de inicio (Linux/Mac)
-├── start-app.bat                 # Script de inicio (Windows)
-├── stop-app.sh                   # Script de parada (Linux/Mac)
-├── stop-app.bat                  # Script de parada (Windows)
-├── INSTRUCCIONES-DESPLIEGUE.md   # Este archivo
-├── back-handicapp/
-│   ├── .env                      # Variables del backend
-│   ├── src/
-│   │   ├── config/               # Configuración centralizada
-│   │   ├── constants/            # Constantes de la aplicación
-│   │   ├── controllers/          # Controladores de rutas
-│   │   ├── middleware/           # Middleware personalizado
-│   │   ├── models/               # Modelos de base de datos
-│   │   ├── routes/               # Definición de rutas
-│   │   ├── services/             # Lógica de negocio
-│   │   ├── types/                # Tipos TypeScript
-│   │   ├── utils/                # Utilidades
-│   │   └── validators/           # Validadores
-│   └── init-roles.sql            # Script de inicialización
-└── front-handicapp/
-    ├── .env                      # Variables del frontend
-    └── src/
-        ├── app/                  # App Router de Next.js
-        ├── components/           # Componentes reutilizables
-        ├── lib/
-        │   ├── constants/        # Constantes de la aplicación
-        │   ├── schemas/          # Esquemas de validación
-        │   ├── services/         # Servicios de API
-        │   └── types/            # Tipos TypeScript
-        └── types/                # Tipos globales
-```
+## 7. Limpieza y mantenimiento
 
-## ⚠️ Notas Importantes
+- Usa comandos de PostgreSQL para reiniciar la base si lo necesitas (`dropdb`, `createdb`).
+- Limpia caches de pnpm con `pnpm store prune` si notas problemas de dependencias.
 
-1. **Los archivos `.env` NO están en Git** - tu compañero debe crearlos manualmente
-2. **El JWT_SECRET debe ser el mismo** en todos los archivos `.env`
-3. **Los scripts automáticamente inicializan** los roles básicos en la base de datos
-4. **En desarrollo**, los cambios en el código se reflejan automáticamente (hot-reload)
-
-## 🆘 Soporte
-
-Si hay problemas, revisar:
-1. Logs de Docker: `docker-compose logs -f`
-2. Estado de contenedores: `docker-compose ps`
-3. Variables de entorno: `docker-compose config`
+Con estos pasos tu entorno queda listo sin depender de Docker.

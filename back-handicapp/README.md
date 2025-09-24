@@ -1,29 +1,29 @@
-# HandicApp Backend API
+﻿# HandicApp Backend API
 
-Una API robusta y escalable construida con Node.js, TypeScript, Express, PostgreSQL y Sequelize, siguiendo las mejores prácticas de seguridad, rendimiento y escalabilidad.
+Una API robusta y escalable construida con Node.js, TypeScript, Express, PostgreSQL y Sequelize, siguiendo las mejores prÃ¡cticas de seguridad, rendimiento y escalabilidad.
 
-## 🚀 Características
+## ðŸš€ CaracterÃ­sticas
 
-- **TypeScript**: Tipado estático para mayor seguridad y mantenibilidad
-- **Express.js**: Framework web rápido y minimalista
+- **TypeScript**: Tipado estÃ¡tico para mayor seguridad y mantenibilidad
+- **Express.js**: Framework web rÃ¡pido y minimalista
 - **PostgreSQL**: Base de datos relacional robusta
 - **Sequelize**: ORM con soporte para migraciones y validaciones
-- **JWT**: Autenticación basada en tokens
-- **Rate Limiting**: Protección contra ataques de fuerza bruta
+- **JWT**: AutenticaciÃ³n basada en tokens
+- **Rate Limiting**: ProtecciÃ³n contra ataques de fuerza bruta
 - **Helmet**: Headers de seguridad
-- **CORS**: Configuración de políticas de origen cruzado
+- **CORS**: ConfiguraciÃ³n de polÃ­ticas de origen cruzado
 - **Logging**: Sistema de logging estructurado con Pino
-- **Validación**: Validación de datos con Zod
+- **ValidaciÃ³n**: ValidaciÃ³n de datos con Zod
 - **Testing**: Suite de tests con Jest
-- **ESLint & Prettier**: Linting y formateo de código
+- **ESLint & Prettier**: Linting y formateo de cÃ³digo
 
-## 📋 Requisitos
+## ðŸ“‹ Requisitos
 
 - Node.js >= 18.0.0
 - PostgreSQL >= 13.0
 - npm >= 8.0.0
 
-## 🛠️ Instalación
+## ðŸ› ï¸ InstalaciÃ³n
 
 1. **Clonar el repositorio**
    ```bash
@@ -65,14 +65,14 @@ Una API robusta y escalable construida con Node.js, TypeScript, Express, Postgre
    npm run db:seed
    ```
 
-## 🚀 Uso
+## ðŸš€ Uso
 
 ### Desarrollo
 ```bash
 npm run dev
 ```
 
-### Producción
+### ProducciÃ³n
 ```bash
 npm run build
 npm start
@@ -82,24 +82,24 @@ npm start
 ```bash
 npm run dev          # Desarrollo con hot reload
 npm run build        # Compilar TypeScript
-npm start           # Iniciar en producción
+npm start           # Iniciar en producciÃ³n
 npm test            # Ejecutar tests
 npm run test:watch  # Tests en modo watch
 npm run test:coverage # Tests con cobertura
 npm run lint        # Linting
 npm run lint:fix    # Linting con auto-fix
-npm run format      # Formatear código
+npm run format      # Formatear cÃ³digo
 npm run type-check  # Verificar tipos
 ```
 
-## 📚 API Endpoints
+## ðŸ“š API Endpoints
 
-### Autenticación
+### AutenticaciÃ³n
 - `POST /api/v1/auth/register` - Registrar usuario
-- `POST /api/v1/auth/login` - Iniciar sesión
-- `POST /api/v1/auth/logout` - Cerrar sesión
+- `POST /api/v1/auth/login` - Iniciar sesiÃ³n
+- `POST /api/v1/auth/logout` - Cerrar sesiÃ³n
 - `POST /api/v1/auth/refresh-token` - Renovar token
-- `POST /api/v1/auth/change-password` - Cambiar contraseña
+- `POST /api/v1/auth/change-password` - Cambiar contraseÃ±a
 - `GET /api/v1/auth/profile` - Obtener perfil
 
 ### Usuarios
@@ -109,26 +109,26 @@ npm run type-check  # Verificar tipos
 - `DELETE /api/v1/users/:id` - Eliminar usuario (Admin)
 - `PATCH /api/v1/users/:id/toggle-status` - Activar/Desactivar usuario (Admin)
 - `GET /api/v1/users/search` - Buscar usuarios (Admin)
-- `GET /api/v1/users/stats` - Estadísticas de usuarios (Admin)
+- `GET /api/v1/users/stats` - EstadÃ­sticas de usuarios (Admin)
 - `GET /api/v1/users/profile` - Obtener perfil propio
 - `PUT /api/v1/users/profile` - Actualizar perfil propio
 
 ### Sistema
 - `GET /api/v1/health` - Health check
-- `GET /` - Información de la API
+- `GET /` - InformaciÃ³n de la API
 
-## 🔒 Seguridad
+## ðŸ”’ Seguridad
 
-- **Autenticación JWT**: Tokens seguros con expiración
-- **Rate Limiting**: Protección contra ataques de fuerza bruta
+- **AutenticaciÃ³n JWT**: Tokens seguros con expiraciÃ³n
+- **Rate Limiting**: ProtecciÃ³n contra ataques de fuerza bruta
 - **Helmet**: Headers de seguridad
-- **CORS**: Políticas de origen cruzado configuradas
-- **Validación**: Validación estricta de datos de entrada
-- **Hashing**: Contraseñas hasheadas con bcrypt
-- **Soft Delete**: Eliminación lógica de registros
+- **CORS**: PolÃ­ticas de origen cruzado configuradas
+- **ValidaciÃ³n**: ValidaciÃ³n estricta de datos de entrada
+- **Hashing**: ContraseÃ±as hasheadas con bcrypt
+- **Soft Delete**: EliminaciÃ³n lÃ³gica de registros
 - **Logging**: Registro de actividades y errores
 
-## 🧪 Testing
+## ðŸ§ª Testing
 
 ```bash
 # Ejecutar todos los tests
@@ -143,16 +143,16 @@ npm run test:coverage
 # Tests unitarios
 npm run test -- --testPathPattern=unit
 
-# Tests de integración
+# Tests de integraciÃ³n
 npm run test -- --testPathPattern=integration
 ```
 
-## 📊 Base de Datos
+## ðŸ“Š Base de Datos
 
 ### Migraciones
 ```bash
 npm run db:migrate        # Ejecutar migraciones
-npm run db:migrate:undo   # Revertir última migración
+npm run db:migrate:undo   # Revertir Ãºltima migraciÃ³n
 ```
 
 ### Seeders
@@ -161,73 +161,64 @@ npm run db:seed           # Ejecutar seeders
 npm run db:seed:undo      # Revertir seeders
 ```
 
-## 🏗️ Arquitectura
+## ðŸ—ï¸ Arquitectura
 
 ```
 src/
-├── config/          # Configuraciones
-├── controllers/     # Controladores de rutas
-├── middleware/      # Middlewares personalizados
-├── models/          # Modelos de Sequelize
-├── routes/          # Definición de rutas
-├── services/        # Lógica de negocio
-├── types/           # Tipos TypeScript
-├── utils/           # Utilidades
-├── validators/      # Validadores con Zod
-├── app.ts           # Configuración de Express
-└── index.ts         # Punto de entrada
+â”œâ”€â”€ config/          # Configuraciones
+â”œâ”€â”€ controllers/     # Controladores de rutas
+â”œâ”€â”€ middleware/      # Middlewares personalizados
+â”œâ”€â”€ models/          # Modelos de Sequelize
+â”œâ”€â”€ routes/          # DefiniciÃ³n de rutas
+â”œâ”€â”€ services/        # LÃ³gica de negocio
+â”œâ”€â”€ types/           # Tipos TypeScript
+â”œâ”€â”€ utils/           # Utilidades
+â”œâ”€â”€ validators/      # Validadores con Zod
+â”œâ”€â”€ app.ts           # ConfiguraciÃ³n de Express
+â””â”€â”€ index.ts         # Punto de entrada
 ```
 
-## 🔧 Configuración
+## ðŸ”§ ConfiguraciÃ³n
 
 ### Variables de Entorno
 
-| Variable | Descripción | Valor por defecto |
+| Variable | DescripciÃ³n | Valor por defecto |
 |----------|-------------|-------------------|
-| `NODE_ENV` | Entorno de ejecución | `development` |
+| `NODE_ENV` | Entorno de ejecuciÃ³n | `development` |
 | `PORT` | Puerto del servidor | `3000` |
 | `DB_HOST` | Host de la base de datos | `localhost` |
 | `DB_PORT` | Puerto de la base de datos | `5432` |
 | `DB_NAME` | Nombre de la base de datos | - |
 | `DB_USER` | Usuario de la base de datos | - |
-| `DB_PASSWORD` | Contraseña de la base de datos | - |
+| `DB_PASSWORD` | ContraseÃ±a de la base de datos | - |
 | `JWT_SECRET` | Secreto para JWT | - |
-| `JWT_EXPIRES_IN` | Expiración del token | `24h` |
+| `JWT_EXPIRES_IN` | ExpiraciÃ³n del token | `24h` |
 | `REDIS_HOST` | Host de Redis | `localhost` |
 | `REDIS_PORT` | Puerto de Redis | `6379` |
 
-## 📈 Rendimiento
+## ðŸ“ˆ Rendimiento
 
-- **Compresión**: Compresión gzip habilitada
+- **CompresiÃ³n**: CompresiÃ³n gzip habilitada
 - **Rate Limiting**: Control de velocidad de requests
 - **Connection Pooling**: Pool de conexiones a la base de datos
-- **Indexing**: Índices optimizados en la base de datos
+- **Indexing**: Ãndices optimizados en la base de datos
 - **Caching**: Preparado para implementar Redis
 
-## 🚀 Despliegue
-
-### Docker (Recomendado)
-```bash
-# Construir imagen
-docker build -t handicapp-api .
-
-# Ejecutar contenedor
-docker run -p 3000:3000 --env-file .env handicapp-api
-```
+## ðŸš€ Despliegue
 
 ### PM2
 ```bash
 # Instalar PM2
 npm install -g pm2
 
-# Iniciar aplicación
+# Iniciar aplicaciÃ³n
 pm2 start dist/index.js --name handicapp-api
 
 # Monitorear
 pm2 monit
 ```
 
-## 🤝 Contribución
+## ðŸ¤ ContribuciÃ³n
 
 1. Fork el proyecto
 2. Crear una rama para tu feature (`git checkout -b feature/AmazingFeature`)
@@ -235,14 +226,15 @@ pm2 monit
 4. Push a la rama (`git push origin feature/AmazingFeature`)
 5. Abrir un Pull Request
 
-## 📝 Licencia
+## ðŸ“ Licencia
 
-Este proyecto está bajo la Licencia ISC.
+Este proyecto estÃ¡ bajo la Licencia ISC.
 
-## 🆘 Soporte
+## ðŸ†˜ Soporte
 
 Si tienes alguna pregunta o problema, por favor abre un issue en el repositorio.
 
 ---
 
-**Desarrollado con ❤️ para HandicApp**
+**Desarrollado con â¤ï¸ para HandicApp**
+
