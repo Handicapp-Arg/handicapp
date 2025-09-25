@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authRoutes } from './authRoutes';
 import { userRoutes } from './userRoutes';
+import { roleRoutes } from './roleRoutes';
 import { config } from '../config/config';
 
 const router = Router();
@@ -19,5 +20,7 @@ router.get('/health', (_req, res) => {
 // API routes
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
+router.use('/roles', roleRoutes);
 
 export { router as apiRoutes };
+
