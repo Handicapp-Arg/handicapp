@@ -10,9 +10,6 @@ export function Navbar() {
       <nav className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="flex h-14 items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-base font-semibold">
-              Handicapp
-            </Link>
           </div>
           <div className="hidden md:flex items-center gap-6">
             <Link href="/" className="text-sm text-foreground/80 hover:text-foreground">
