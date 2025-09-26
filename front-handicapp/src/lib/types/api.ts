@@ -42,4 +42,5 @@ export interface ActionResult {
   message?: string;
   fieldErrors?: Record<string, string>;
   status?: number;
+  data?: any;
 }

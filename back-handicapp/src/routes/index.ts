@@ -17,6 +17,18 @@ router.get('/health', (_req, res) => {
   });
 });
 
+// TEST LOGIN ENDPOINT - For development testing
+router.post('/test-login', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Test login works!',
+    data: {
+      email: req.body.email,
+      timestamp: new Date().toISOString()
+    }
+  });
+});
+
 // API routes
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);

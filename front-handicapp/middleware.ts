@@ -15,7 +15,7 @@ export function middleware(req: NextRequest) {
     "script-src 'self' 'unsafe-inline'", // quita 'unsafe-inline' si no es necesario
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data:",
-    "connect-src 'self' "+(process.env.NEXT_PUBLIC_API_BASE_URL || ''),
+  "connect-src 'self' http://localhost:3003",
     "font-src 'self' data:",
     "frame-ancestors 'none'",
   ].join("; ");

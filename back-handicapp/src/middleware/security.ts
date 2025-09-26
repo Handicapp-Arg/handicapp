@@ -12,7 +12,13 @@ export const corsOptions: cors.CorsOptions = {
     // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
     
-    const allowedOrigins = config.cors.origin.split(',');
+    // Agregar el puerto 3002 como alternativa
+    const defaultOrigins = config.cors.origin.split(',');
+    const allowedOrigins = [
+      ...defaultOrigins,
+      'http://localhost:3002'
+    ];
+    
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -40,18 +46,10 @@ export const rateLimiter = rateLimit({
   },
 });
 
-// Strict rate limiting for auth endpoints
-export const authRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 attempts per window
-  message: {
-    success: false,
-    message: 'Too many authentication attempts, please try again later.',
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  skipSuccessfulRequests: true,
-});
+// Strict rate limiting for auth endpoints (temporalmente deshabilitado para desarrollo)
+export const authRateLimiter = (_req: Request, _res: Response, next: NextFunction) => {
+  next();
+};
 
 // Helmet security headers
 export const helmetConfig = helmet({

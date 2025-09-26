@@ -1,4 +1,4 @@
-import { Model, Optional } from "sequelize";
+import { Model, Optional, CreationOptional } from "sequelize";
 
 export interface RoleAttrs {
   id: number;
@@ -10,10 +10,11 @@ export interface RoleAttrs {
 export type RoleCreationAttrs = Optional<RoleAttrs, "id" | "creado_el">;
 
 export class Role extends Model<RoleAttrs, RoleCreationAttrs> implements RoleAttrs {
-  public id!: number;
-  public clave!: string;
-  public nombre!: string;
-  public creado_el!: Date;
+  // Use 'declare' so TS doesn't emit runtime fields that shadow Sequelize getters/setters
+  declare id: CreationOptional<number>;
+  declare clave: string;
+  declare nombre: string;
+  declare creado_el: CreationOptional<Date>;
 }
 
 // La inicializacion se realiza en src/models/index.ts

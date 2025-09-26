@@ -30,7 +30,7 @@ export const authenticate = async (req: AuthRequest, _res: Response, next: NextF
     
     // Find user in database
     const user = await User.findByPk(decoded.userId, {
-      attributes: { exclude: ['password'] },
+      attributes: { exclude: ['hash_contrasena'] },
     });
     
     if (!user) {
@@ -61,7 +61,7 @@ export const authorize = (...roles: string[]) => {
       return next(new AuthenticationError('Authentication required'));
     }
     
-    if (!roles.includes(req.user.role)) {
+    if (!roles.includes(req.user.rol?.clave || '')) {
       return next(new AuthorizationError('Insufficient permissions'));
     }
     
@@ -86,7 +86,7 @@ export const optionalAuth = async (req: AuthRequest, _res: Response, next: NextF
     
     const decoded = jwt.verify(token, config.jwt.secret) as JwtPayload;
     const user = await User.findByPk(decoded.userId, {
-      attributes: { exclude: ['password'] },
+      attributes: { exclude: ['hash_contrasena'] },
     });
     
     if (user && user.isActive) {

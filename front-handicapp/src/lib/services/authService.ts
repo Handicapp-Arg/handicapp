@@ -21,10 +21,7 @@ export interface RegisterResponse {
       estado_usuario: string;
       creado_el: string;
     };
-    tokens: {
-      accessToken: string;
-      refreshToken: string;
-    };
+    token: string;
   };
 }
 
@@ -44,10 +41,7 @@ export interface LoginResponse {
       apellido: string;
       rol_id: number;
     };
-    tokens: {
-      accessToken: string;
-      refreshToken: string;
-    };
+    token: string;
   };
 }
 

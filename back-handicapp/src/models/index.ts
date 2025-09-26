@@ -12,7 +12,7 @@ import { EstadoUsuario } from "./enums";
 
 // Función para inicializar modelos
 export function initializeModels(sequelize: Sequelize) {
-  // Inicializar modelos
+  // Inicializamos los modelos
   Role.init({
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     clave: { type: DataTypes.STRING(50), allowNull: false, unique: true },

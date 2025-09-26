@@ -21,8 +21,8 @@ export class CookieService {
   /**
    * Establece las cookies de autenticación
    */
-  static setAuthCookies(tokens: AuthTokens): void {
-    const cookieStore = cookies();
+  static async setAuthCookies(tokens: AuthTokens): Promise<void> {
+    const cookieStore = await cookies();
     
     cookieStore.set(this.COOKIE_NAMES.ACCESS_TOKEN, tokens.accessToken, {
       ...this.COOKIE_OPTIONS,
@@ -38,24 +38,24 @@ export class CookieService {
   /**
    * Obtiene el token de acceso
    */
-  static getAccessToken(): string | null {
-    const cookieStore = cookies();
+  static async getAccessToken(): Promise<string | null> {
+    const cookieStore = await cookies();
     return cookieStore.get(this.COOKIE_NAMES.ACCESS_TOKEN)?.value || null;
   }
 
   /**
    * Obtiene el token de refresh
    */
-  static getRefreshToken(): string | null {
-    const cookieStore = cookies();
+  static async getRefreshToken(): Promise<string | null> {
+    const cookieStore = await cookies();
     return cookieStore.get(this.COOKIE_NAMES.REFRESH_TOKEN)?.value || null;
   }
 
   /**
    * Limpia todas las cookies de autenticación
    */
-  static clearAuthCookies(): void {
-    const cookieStore = cookies();
+  static async clearAuthCookies(): Promise<void> {
+    const cookieStore = await cookies();
     
     cookieStore.delete(this.COOKIE_NAMES.ACCESS_TOKEN);
     cookieStore.delete(this.COOKIE_NAMES.REFRESH_TOKEN);
@@ -64,7 +64,7 @@ export class CookieService {
   /**
    * Verifica si el usuario está autenticado
    */
-  static isAuthenticated(): boolean {
-    return this.getAccessToken() !== null;
+  static async isAuthenticated(): Promise<boolean> {
+    return (await this.getAccessToken()) !== null;
   }
 }

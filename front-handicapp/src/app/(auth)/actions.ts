@@ -39,7 +39,7 @@ export async function registerAction(
 
     if (response.success && response.data) {
       // Establecer cookies de autenticación
-      CookieService.setAuthCookies(response.data.tokens);
+      await CookieService.setAuthCookies({ accessToken: response.data.token, refreshToken: response.data.token });
 
       return {
         ok: true,
@@ -95,12 +95,16 @@ export async function loginAction(
 
     if (response.success && response.data) {
       // Establecer cookies de autenticación
-      CookieService.setAuthCookies(response.data.tokens);
+      await CookieService.setAuthCookies({ accessToken: response.data.token, refreshToken: response.data.token });
 
       return {
         ok: true,
         message: "¡Inicio de sesión exitoso!",
         status: 200,
+        data: {
+          user: response.data.user,
+          redirectTo: `/dashboard/${response.data.user.rol_id}`
+        }
       };
     }
 
@@ -130,7 +134,7 @@ export async function logoutAction(): Promise<ActionResult> {
     await AuthService.logout();
 
     // Limpiar cookies de autenticación
-    CookieService.clearAuthCookies();
+    await CookieService.clearAuthCookies();
 
     return {
       ok: true,
@@ -140,7 +144,7 @@ export async function logoutAction(): Promise<ActionResult> {
 
   } catch (error) {
     // Incluso si hay error en el backend, limpiamos las cookies localmente
-    CookieService.clearAuthCookies();
+    await CookieService.clearAuthCookies();
 
     const errorResult = ErrorService.handleHttpError(error);
     return {

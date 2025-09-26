@@ -7,37 +7,32 @@ import { connectDatabase, syncDatabase, closeDatabase, checkDatabaseHealth, sequ
 // Database initialization with best practices
 const initializeDatabase = async (): Promise<void> => {
   try {
-    // Connect to database
-    await connectDatabase();
-    
-    // Initialize models after database connection
+    // Initialize models first (defines schemas and hooks)
     initializeModels(sequelize);
     logger.info('Models initialized successfully');
-    
-    // Check database integrity
+
+    // Connect and verify DB
+    await connectDatabase();
     const isHealthy = await checkDatabaseHealth();
-    if (!isHealthy) {
-      throw new Error('Database integrity check failed');
-    }
-    
-    // Sync database in development
+    if (!isHealthy) throw new Error('Database integrity check failed');
+
+    // Sync database and seed in development
     if (config.nodeEnv === 'development') {
       await syncDatabase();
       logger.info('Database sync completed - tables created/updated');
-      
-      // Initialize basic roles
+
       try {
-        const fs = require('fs');
-        const path = require('path');
-        const initScript = fs.readFileSync(path.join(__dirname, '../init-roles.sql'), 'utf8');
-        await sequelize.query(initScript);
-        logger.info('Basic roles initialized');
-      } catch (error) {
-        logger.warn('Could not initialize roles:', error);
+        const { seedDatabase } = require('./services/seedService');
+        await seedDatabase();
+        logger.info('Basic roles and users initialized');
+      } catch (err) {
+        logger.warn({ error: err instanceof Error ? err.message : String(err) }, 'Could not initialize roles and users');
       }
     }
-  } catch (error) {
-    logger.error('Database initialization failed:', error);
+  } catch (err) {
+    logger.error({
+      error: err instanceof Error ? { message: err.message, stack: err.stack, name: err.name } : String(err),
+    }, 'Database initialization failed');
     process.exit(1);
   }
 };
@@ -68,7 +63,7 @@ const startServer = async (): Promise<void> => {
           logger.info('✅ Graceful shutdown completed');
           process.exit(0);
         } catch (error) {
-          logger.error('❌ Error during shutdown:', error);
+          logger.error({ error }, '❌ Error during shutdown');
           process.exit(1);
         }
       });
@@ -80,18 +75,18 @@ const startServer = async (): Promise<void> => {
     
     // Handle uncaught exceptions
     process.on('uncaughtException', (error) => {
-      logger.error('💥 Uncaught Exception:', error);
+      logger.error({ error }, '💥 Uncaught Exception');
       process.exit(1);
     });
     
     // Handle unhandled promise rejections
     process.on('unhandledRejection', (reason, promise) => {
-      logger.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+      logger.error({ reason, promise }, '💥 Unhandled Rejection');
       process.exit(1);
     });
     
   } catch (error) {
-    logger.error('❌ Failed to start server:', error);
+    logger.error({ error }, '❌ Failed to start server');
     process.exit(1);
   }
 };
