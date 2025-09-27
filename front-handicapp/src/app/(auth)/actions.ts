@@ -1,6 +1,7 @@
 "use server";
 
 import { AuthService } from "@/lib/services/authService";
+import { ROLE_ID_TO_ROLE_KEY, ROLE_DASHBOARD_ROUTES } from "@/lib/utils/roleUtils";
 import { CookieService } from "@/lib/services/cookieService";
 import { ValidationService } from "@/lib/services/validationService";
 import { ErrorService } from "@/lib/services/errorService";
@@ -95,7 +96,14 @@ export async function loginAction(
 
     if (response.success && response.data) {
       // Establecer cookies de autenticación
-      await CookieService.setAuthCookies({ accessToken: response.data.token, refreshToken: response.data.token });
+      await CookieService.setAuthCookies({ 
+        accessToken: response.data.token, 
+        refreshToken: response.data.token,
+        role: response.data.user.rol_id 
+      });
+
+      const roleKey = ROLE_ID_TO_ROLE_KEY[response.data.user.rol_id];
+      const dashboardRoute = ROLE_DASHBOARD_ROUTES[roleKey];
 
       return {
         ok: true,
@@ -103,7 +111,7 @@ export async function loginAction(
         status: 200,
         data: {
           user: response.data.user,
-          redirectTo: `/dashboard/${response.data.user.rol_id}`
+          redirectTo: dashboardRoute
         }
       };
     }
@@ -130,9 +138,6 @@ export async function loginAction(
  */
 export async function logoutAction(): Promise<ActionResult> {
   try {
-    // Cerrar sesión en el backend
-    await AuthService.logout();
-
     // Limpiar cookies de autenticación
     await CookieService.clearAuthCookies();
 
@@ -143,7 +148,7 @@ export async function logoutAction(): Promise<ActionResult> {
     };
 
   } catch (error) {
-    // Incluso si hay error en el backend, limpiamos las cookies localmente
+    // Incluso si hay error, limpiamos las cookies localmente
     await CookieService.clearAuthCookies();
 
     const errorResult = ErrorService.handleHttpError(error);

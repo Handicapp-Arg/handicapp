@@ -8,19 +8,15 @@ import {
 
 const router = Router();
 
-// Public routes (rate limiting temporalmente deshabilitado para pruebas)
+// Public routes
 router.post('/register', validateCreateUser, AuthController.register);
-router.post('/login', AuthController.login); // REMOVED validateLogin
+router.post('/login', AuthController.login);
 router.post('/refresh-token', AuthController.refreshToken);
-
-// Debug route - temporal (público para debug)
-router.get('/debug-users', AuthController.debugUsers);
+router.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 // Protected routes
-router.use(authenticate); // All routes below require authentication
-
-router.post('/logout', AuthController.logout);
-router.post('/change-password', validateChangePassword, AuthController.changePassword);
-router.get('/profile', AuthController.getProfile);
+router.post('/logout', authenticate, AuthController.logout);
+router.post('/change-password', authenticate, validateChangePassword, AuthController.changePassword);
+router.get('/profile', authenticate, AuthController.getProfile);
 
 export { router as authRoutes };

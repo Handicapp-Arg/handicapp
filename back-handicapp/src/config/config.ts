@@ -21,7 +21,7 @@ const envSchema = z.object({
   
   // JWT
   JWT_SECRET: z.string().min(32),
-  JWT_EXPIRES_IN: z.string().default('24h'),
+  JWT_EXPIRES_IN: z.string().default('1h'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
   
   // Redis
