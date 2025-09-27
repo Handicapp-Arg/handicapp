@@ -1,10 +1,10 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { authRoutes } from './authRoutes';
 import { userRoutes } from './userRoutes';
 import { roleRoutes } from './roleRoutes';
 import { config } from '../config/config';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // Health check endpoint
 router.get('/health', (_req, res) => {

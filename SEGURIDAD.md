@@ -69,7 +69,7 @@ NEXT_PUBLIC_APP_ENV=production
 
 ### Usuarios de Prueba (Solo Desarrollo)
 
-- **Admin**: admin@test.com / password123
-- **Veterinario**: vet@test.com / password123
+- **Admin**: admin@test.com / admin123
+- **Veterinario**: vet@test.com / admin123
 
 **⚠️ IMPORTANTE**: Eliminar usuarios de prueba en producción.

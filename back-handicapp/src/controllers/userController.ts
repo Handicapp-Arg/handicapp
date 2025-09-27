@@ -4,6 +4,15 @@ import { UserService } from '../services/userService';
 import { ResponseHelper } from '../utils/response';
 import { asyncHandler } from '../utils/errors';
 import { UpdateUserData, PaginationQuery } from '../types';
+import { User } from '../models/User';
+import { Role } from '../models/roles';
+import bcrypt from 'bcrypt';
+import { config } from '../config/config';
+
+
+interface AuthRequest extends Request {
+  user?: User;
+}
 
 export class UserController {
   // Get all users
@@ -148,7 +157,7 @@ export class UserController {
       return ResponseHelper.unauthorized(res, 'User not authenticated');
     }
     
-    const result = await UserService.updateUser(userId, updateData);
+    const result = await UserService.updateUser(userId.toString(), updateData);
     
     if (result.success) {
       return ResponseHelper.success(res, result.data, 'Profile updated successfully');
@@ -159,4 +168,106 @@ export class UserController {
 
   // Get current user profile (re-export from auth controller)
   static getProfile = AuthController.getProfile;
+
+  // Create new user (admin only)
+  static createUser = asyncHandler(async (req: AuthRequest, res: Response, _next: NextFunction) => {
+    const { nombre, apellido, email, password, rol_id, telefono } = req.body;
+    
+    // Verificar que el usuario actual es admin
+    const currentUser = req.user!;
+    if (currentUser.rol?.clave !== 'admin') {
+      return ResponseHelper.forbidden(res, 'Solo los administradores pueden crear usuarios');
+    }
+
+    try {
+      // Verificar que el email no exista
+      const existingUser = await User.findOne({ where: { email: email.toLowerCase() } });
+      if (existingUser) {
+        return ResponseHelper.badRequest(res, 'El email ya está registrado');
+      }
+
+      // Hash de la contraseña
+      const salt = await bcrypt.genSalt(config.security.bcryptRounds);
+      const hashedPassword = await bcrypt.hash(password, salt);
+
+      // Crear usuario
+      const newUser = await User.create({
+        nombre,
+        apellido,
+        email: email.toLowerCase(),
+        hash_contrasena: hashedPassword,
+        rol_id,
+        telefono,
+        verificado: true,
+        estado_usuario: 'active'
+      });
+
+      // Obtener usuario con rol
+      const userWithRole = await User.findByPk(newUser.id, {
+        include: [{ model: Role, as: 'rol', attributes: ['id', 'nombre', 'clave'] }],
+        attributes: { exclude: ['hash_contrasena'] }
+      });
+
+      return ResponseHelper.success(res, { user: userWithRole }, 'Usuario creado exitosamente', 201);
+    } catch (error) {
+      console.error('Error creating user:', error);
+      return ResponseHelper.internalError(res, 'Error al crear usuario');
+    }
+  });
+
+  // Get roles (for dropdowns)
+  static getRoles = asyncHandler(async (_req: Request, res: Response, _next: NextFunction) => {
+    try {
+      const roles = await Role.findAll({
+        attributes: ['id', 'nombre', 'clave'],
+        order: [['id', 'ASC']]
+      });
+
+      return ResponseHelper.success(res, { roles }, 'Roles obtenidos exitosamente');
+    } catch (error) {
+      console.error('Error getting roles:', error);
+      return ResponseHelper.internalError(res, 'Error al obtener roles');
+    }
+  });
+
+  // Change user password
+  static changePassword = asyncHandler(async (req: AuthRequest, res: Response, _next: NextFunction) => {
+    const { id } = req.params;
+    const { currentPassword, newPassword } = req.body;
+    const currentUser = req.user!;
+
+    // Verificar permisos
+    const isAdmin = currentUser.rol?.clave === 'admin';
+    const isOwnProfile = currentUser.id === parseInt(id!);
+
+    if (!isAdmin && !isOwnProfile) {
+      return ResponseHelper.forbidden(res, 'No tienes permisos para cambiar esta contraseña');
+    }
+
+    try {
+      const user = await User.findByPk(id);
+      if (!user) {
+        return ResponseHelper.notFound(res, 'Usuario no encontrado');
+      }
+
+      // Si no es admin, verificar contraseña actual
+      if (!isAdmin) {
+        const isValidPassword = await user.validatePassword(currentPassword);
+        if (!isValidPassword) {
+          return ResponseHelper.badRequest(res, 'Contraseña actual incorrecta');
+        }
+      }
+
+      // Hash nueva contraseña
+      const salt = await bcrypt.genSalt(config.security.bcryptRounds);
+      const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+      await user.update({ hash_contrasena: hashedPassword });
+
+      return ResponseHelper.success(res, null, 'Contraseña actualizada exitosamente');
+    } catch (error) {
+      console.error('Error changing password:', error);
+      return ResponseHelper.internalError(res, 'Error al cambiar contraseña');
+    }
+  });
 }

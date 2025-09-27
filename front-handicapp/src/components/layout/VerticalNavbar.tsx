@@ -1,0 +1,286 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { 
+  HomeIcon,
+  UserGroupIcon,
+  CogIcon,
+  ChartBarIcon,
+  DocumentTextIcon,
+  BuildingOfficeIcon,
+  UserIcon,
+  ClipboardDocumentListIcon,
+  BeakerIcon
+} from '@heroicons/react/24/outline';
+
+// Definir los menús para cada rol
+const ROLE_MENUS = {
+  admin: [
+    { name: 'Dashboard', href: '/admin', icon: HomeIcon },
+    { name: 'Gestión de Usuarios', href: '/admin/users', icon: UserGroupIcon },
+    { name: 'Estadísticas', href: '/admin/stats', icon: ChartBarIcon },
+    { name: 'Reportes', href: '/admin/reports', icon: DocumentTextIcon },
+    { name: 'Configuración', href: '/admin/settings', icon: CogIcon },
+  ],
+  establecimiento: [
+    { name: 'Dashboard', href: '/establecimiento', icon: HomeIcon },
+    { name: 'Mi Establecimiento', href: '/establecimiento/profile', icon: BuildingOfficeIcon },
+    { name: 'Caballos', href: '/establecimiento/horses', icon: ClipboardDocumentListIcon },
+    { name: 'Eventos', href: '/establecimiento/events', icon: ChartBarIcon },
+    { name: 'Personal', href: '/establecimiento/staff', icon: UserGroupIcon },
+    { name: 'Configuración', href: '/establecimiento/settings', icon: CogIcon },
+  ],
+  capataz: [
+    { name: 'Dashboard', href: '/capataz', icon: HomeIcon },
+    { name: 'Caballos Asignados', href: '/capataz/horses', icon: ClipboardDocumentListIcon },
+    { name: 'Tareas Diarias', href: '/capataz/tasks', icon: DocumentTextIcon },
+    { name: 'Reportes', href: '/capataz/reports', icon: ChartBarIcon },
+    { name: 'Mi Perfil', href: '/capataz/profile', icon: UserIcon },
+  ],
+  veterinario: [
+    { name: 'Dashboard', href: '/veterinario', icon: HomeIcon },
+    { name: 'Consultas', href: '/veterinario/consultations', icon: BeakerIcon },
+    { name: 'Historial Médico', href: '/veterinario/medical-records', icon: DocumentTextIcon },
+    { name: 'Caballos en Tratamiento', href: '/veterinario/treatments', icon: ClipboardDocumentListIcon },
+    { name: 'Mi Perfil', href: '/veterinario/profile', icon: UserIcon },
+  ],
+  empleado: [
+    { name: 'Dashboard', href: '/empleado', icon: HomeIcon },
+    { name: 'Mis Tareas', href: '/empleado/tasks', icon: ClipboardDocumentListIcon },
+    { name: 'Caballos', href: '/empleado/horses', icon: DocumentTextIcon },
+    { name: 'Mi Perfil', href: '/empleado/profile', icon: UserIcon },
+  ],
+  propietario: [
+    { name: 'Dashboard', href: '/propietario', icon: HomeIcon },
+    { name: 'Mis Caballos', href: '/propietario/horses', icon: ClipboardDocumentListIcon },
+    { name: 'Eventos', href: '/propietario/events', icon: ChartBarIcon },
+    { name: 'Historial', href: '/propietario/history', icon: DocumentTextIcon },
+    { name: 'Mi Perfil', href: '/propietario/profile', icon: UserIcon },
+  ],
+};
+
+interface VerticalNavbarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function VerticalNavbar({ isOpen, onClose }: VerticalNavbarProps) {
+  const pathname = usePathname();
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Obtener rol del usuario desde cookies
+    const getCookie = (name: string): string | null => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+      return null;
+    };
+
+    const roleId = getCookie('role');
+    if (roleId) {
+      const roleMap: Record<string, string> = {
+        '1': 'admin',
+        '2': 'establecimiento',
+        '3': 'capataz',
+        '4': 'veterinario',
+        '5': 'empleado',
+        '6': 'propietario'
+      };
+      setUserRole(roleMap[roleId] || null);
+    }
+    setIsLoading(false);
+  }, []);
+
+  if (isLoading || !userRole) {
+    return (
+      <div className="hidden lg:flex lg:w-64 lg:flex-col">
+        <div className="flex flex-col flex-grow text-white" style={{backgroundColor: '#3C2013'}}>
+          <div className="flex items-center justify-center h-16 px-4 border-b" style={{borderColor: '#D2B48C'}}>
+            <div className="animate-pulse h-8 w-32 rounded" style={{backgroundColor: '#D2B48C'}}></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const menuItems = ROLE_MENUS[userRole as keyof typeof ROLE_MENUS] || [];
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
+        <div className="flex flex-col flex-grow text-white shadow-xl" style={{backgroundColor: '#3C2013'}}>
+          {/* Logo/Header */}
+          <div className="flex items-center justify-center h-20 px-4 pb-2 border-b" style={{borderColor: '#3C2013'}}>
+            <img 
+              src="/logos/logo-icon-white.png" 
+              alt="HandicApp" 
+              className="h-20 w-auto"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                target.nextElementSibling!.classList.remove('hidden');
+              }}
+            />
+            <div className="hidden text-xl font-bold text-white">HandicApp</div>
+          </div>
+
+          {/* Navigation Menu */}
+          <nav className="flex-1 px-3 pt-6 pb-4 space-y-2 overflow-y-auto">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              // Mejorar detección de ruta activa - exacta o sub-ruta válida
+              const isActive = pathname === item.href || 
+                             (item.href !== '/admin' && item.href !== '/establecimiento' && 
+                              item.href !== '/capataz' && item.href !== '/veterinario' && 
+                              item.href !== '/empleado' && item.href !== '/propietario' && 
+                              pathname.startsWith(item.href + '/'));
+              
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`
+                    flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200
+                    ${isActive
+                      ? 'text-white shadow-lg border-l-4'
+                      : 'text-gray-200 hover:text-white'
+                    }
+                  `}
+                  style={isActive ? {
+                    backgroundColor: 'rgba(210, 180, 140, 0.3)',
+                    borderLeftColor: '#D2B48C'
+                  } : {}}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.backgroundColor = 'rgba(210, 180, 140, 0.2)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }
+                  }}
+                >
+                  <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
+                  <span className="truncate">{item.name}</span>
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* Footer */}
+          <div className="flex-shrink-0 p-4 border-t" style={{borderColor: '#D2B48C'}}>
+            <div className="text-xs text-center" style={{color: '#D2B48C'}}>
+              © 2025 HandicApp
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Spacer */}
+      <div className="hidden lg:block lg:w-64 lg:flex-shrink-0">
+        {/* Spacer for fixed sidebar */}
+      </div>
+
+      {/* Mobile Sidebar */}
+      <div className={`
+        fixed inset-y-0 left-0 z-50 w-72 text-white shadow-2xl transform transition-transform duration-300 ease-in-out lg:hidden
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}
+      style={{backgroundColor: '#3C2013'}}>
+        {/* Mobile Header */}
+        <div className="flex items-center justify-between h-18 px-4 pb-2 border-b" style={{borderColor: '#D2B48C'}}>
+          <div className="flex items-center">
+            <img 
+              src="/logos/logo-full-white.png" 
+              alt="HandicApp" 
+              className="h-8 w-auto"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                target.nextElementSibling!.classList.remove('hidden');
+              }}
+            />
+            <div className="hidden text-lg font-bold text-white ml-2">HandicApp</div>
+          </div>
+          
+          <button
+            onClick={onClose}
+            className="p-2 rounded-md transition-colors touch-manipulation"
+            style={{'--hover-bg': 'rgba(210, 180, 140, 0.2)'}}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(210, 180, 140, 0.2)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+            aria-label="Cerrar menú"
+          >
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Mobile Navigation */}
+        <nav className="flex-1 px-3 pt-6 pb-4 space-y-2 overflow-y-auto">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            // Mejorar detección de ruta activa - exacta o sub-ruta válida
+            const isActive = pathname === item.href || 
+                           (item.href !== '/admin' && item.href !== '/establecimiento' && 
+                            item.href !== '/capataz' && item.href !== '/veterinario' && 
+                            item.href !== '/empleado' && item.href !== '/propietario' && 
+                            pathname.startsWith(item.href + '/'));
+            
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={onClose}
+                className={`
+                  flex items-center px-4 py-3.5 text-base font-medium rounded-lg transition-all duration-200 touch-manipulation
+                  ${isActive
+                    ? 'text-white shadow-lg border-l-4'
+                    : 'text-gray-200'
+                  }
+                `}
+                style={isActive ? {
+                  backgroundColor: 'rgba(210, 180, 140, 0.3)',
+                  borderLeftColor: '#D2B48C'
+                } : {}}
+                onTouchStart={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = 'rgba(210, 180, 140, 0.2)';
+                  }
+                }}
+                onTouchEnd={(e) => {
+                  if (!isActive) {
+                    setTimeout(() => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }, 150);
+                  }
+                }}
+              >
+                <Icon className="mr-4 h-6 w-6 flex-shrink-0" />
+                <span className="truncate">{item.name}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Mobile Footer */}
+        <div className="flex-shrink-0 p-4 border-t" style={{borderColor: '#D2B48C'}}>
+          <div className="text-xs text-center" style={{color: '#D2B48C'}}>
+            © 2025 HandicApp
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

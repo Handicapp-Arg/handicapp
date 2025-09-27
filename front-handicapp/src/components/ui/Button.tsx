@@ -12,7 +12,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className = "", variant = "primary", isLoading = false, disabled, children, ...rest }, ref) => {
     const base =
-      "inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed";
+      "inline-flex items-center justify-center rounded-md px-4 py-3 sm:py-2 text-base sm:text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed touch-manipulation min-h-[44px] sm:min-h-[36px]";
     const byVariant: Record<ButtonVariant, string> = {
       primary: "bg-foreground text-background hover:opacity-90 focus-visible:ring-foreground disabled:opacity-60",
       secondary:

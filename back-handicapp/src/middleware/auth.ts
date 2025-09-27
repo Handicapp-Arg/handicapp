@@ -103,8 +103,29 @@ export const optionalAuth = async (req: AuthRequest, _res: Response, next: NextF
 // Admin only middleware
 export const adminOnly = authorize('admin');
 
-// User or admin middleware
-export const userOrAdmin = authorize('user', 'admin');
+// User or admin middleware (permite admin + otros roles)
+export const userOrAdmin = (req: AuthRequest, _res: Response, next: NextFunction) => {
+  if (!req.user) {
+    return next(new AuthenticationError('Authentication required'));
+  }
+  
+  const userRole = req.user.rol?.clave;
+  const isAdmin = userRole === 'admin';
+  
+  // Admin siempre puede, otros usuarios solo pueden acceder a su propia información
+  if (isAdmin) {
+    return next();
+  }
+  
+  // Verificar si es su propio perfil (si hay parámetro id)
+  const requestedUserId = req.params['id'];
+  if (requestedUserId && req.user.id === parseInt(requestedUserId)) {
+    return next();
+  }
+  
+  // Si no es admin ni su propio perfil, denegar acceso
+  return next(new AuthorizationError('Insufficient permissions'));
+};
 
 // Moderator or admin middleware
 export const moderatorOrAdmin = authorize('moderator', 'admin');

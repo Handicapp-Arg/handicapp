@@ -1,83 +1,178 @@
-﻿# HandicApp Backend API
+﻿# ⚙️ HandicApp Backend API# ⚙️ H## 🚀 Tecnologías
 
-Una API robusta y escalable construida con Node.js, TypeScript, Express, PostgreSQL y Sequelize, siguiendo las mejores prÃ¡cticas de seguridad, rendimiento y escalabilidad.
 
-## ðŸš€ CaracterÃ­sticas
 
-- **TypeScript**: Tipado estÃ¡tico para mayor seguridad y mantenibilidad
-- **Express.js**: Framework web rÃ¡pido y minimalista
-- **PostgreSQL**: Base de datos relacional robusta
+**API de HandicApp** - Backend robusto construido con Node.js, TypeScript, Express y PostgreSQL.- **Node.js + TypeScript** - Runtime y tipado
+
+- **Express.js** - Framework web
+
+## 🚀 Tecnologías- **PostgreSQL + Sequelize** - Base de datos y ORM
+
+- **JWT + bcrypt** - Autenticación segura
+
+- **Node.js + TypeScript** - Runtime y tipado- **Helmet + CORS + Rate Limiting** - Seguridadnd API
+
+- **Express.js** - Framework web
+
+- **PostgreSQL + Sequelize** - Base de datos y ORM**API de HandicApp** - Backend robusto construido con Node.js, TypeScript, Express y PostgreSQL.andicApp Backend API
+
+- **JWT + bcrypt** - Autenticación segura
+
+- **Helmet + CORS + Rate Limiting** - SeguridadUna API robusta y escalable construida con Node.js, TypeScript, Express, PostgreSQL y Sequelize, siguiendo las mejores prÃ¡cticas de seguridad, rendimiento y escalabilidad.
+
+
+
+## 🚀 Inicio Rápido## ðŸš€ CaracterÃ­sticas
+
+
+
+```bash- **TypeScript**: Tipado estÃ¡tico para mayor seguridad y mantenibilidad
+
+# Instalar dependencias- **Express.js**: Framework web rÃ¡pido y minimalista
+
+pnpm install- **PostgreSQL**: Base de datos relacional robusta
+
 - **Sequelize**: ORM con soporte para migraciones y validaciones
-- **JWT**: AutenticaciÃ³n basada en tokens
-- **Rate Limiting**: ProtecciÃ³n contra ataques de fuerza bruta
-- **Helmet**: Headers de seguridad
+
+# Iniciar servidor de desarrollo- **JWT**: AutenticaciÃ³n basada en tokens
+
+pnpm run dev- **Rate Limiting**: ProtecciÃ³n contra ataques de fuerza bruta
+
+```- **Helmet**: Headers de seguridad
+
 - **CORS**: ConfiguraciÃ³n de polÃ­ticas de origen cruzado
-- **Logging**: Sistema de logging estructurado con Pino
+
+🔗 **Ver instalación completa** en el [README principal](../README.md).- **Logging**: Sistema de logging estructurado con Pino
+
 - **ValidaciÃ³n**: ValidaciÃ³n de datos con Zod
-- **Testing**: Suite de tests con Jest
+
+## 📚 API Endpoints- **Testing**: Suite de tests con Jest
+
 - **ESLint & Prettier**: Linting y formateo de cÃ³digo
 
-## ðŸ“‹ Requisitos
+### 🔐 Autenticación
 
-- Node.js >= 18.0.0
+- `POST /api/v1/auth/login` - Iniciar sesión## ðŸ“‹ Requisitos
+
+- `GET /api/v1/auth/profile` - Obtener perfil
+
+- `POST /api/v1/auth/logout` - Cerrar sesión- Node.js >= 18.0.0
+
 - PostgreSQL >= 13.0
-- npm >= 8.0.0
 
-## ðŸ› ï¸ InstalaciÃ³n
+### 👥 Usuarios (Admin)- npm >= 8.0.0
 
-1. **Clonar el repositorio**
-   ```bash
-   git clone <repository-url>
+- `GET /api/v1/users` - Listar usuarios
+
+- `POST /api/v1/users` - Crear usuario## ðŸ› ï¸ InstalaciÃ³n
+
+- `PUT /api/v1/users/:id` - Actualizar usuario
+
+- `DELETE /api/v1/users/:id` - Eliminar usuario1. **Clonar el repositorio**
+
+- `GET /api/v1/users/search` - Buscar usuarios   ```bash
+
+- `GET /api/v1/users/stats` - Estadísticas   git clone <repository-url>
+
    cd back-handicapp
+
+### ⚙️ Sistema   ```
+
+- `GET /api/v1/health` - Health check
+
+- `GET /api/v1/roles` - Obtener roles2. **Instalar dependencias**
+
+   ```bash
+
+## 🏃‍♂️ Scripts Disponibles   npm install
+
    ```
 
-2. **Instalar dependencias**
-   ```bash
-   npm install
-   ```
+```bash
 
-3. **Configurar variables de entorno**
-   ```bash
-   cp .env.example .env
-   ```
-   
-   Editar el archivo `.env` con tus configuraciones:
-   ```env
+pnpm run dev          # Desarrollo con hot reload3. **Configurar variables de entorno**
+
+pnpm run build        # Compilar TypeScript   ```bash
+
+pnpm run start        # Producción   cp .env.example .env
+
+pnpm run test         # Ejecutar tests   ```
+
+pnpm run lint         # Linting   
+
+pnpm run type-check   # Verificar tipos   Editar el archivo `.env` con tus configuraciones:
+
+```   ```env
+
    NODE_ENV=development
-   PORT=3000
+
+## 🗂️ Estructura   PORT=3000
+
    DB_HOST=localhost
-   DB_PORT=5432
-   DB_NAME=handicapp_db
-   DB_USER=postgres
-   DB_PASSWORD=tu_password
-   JWT_SECRET=tu_jwt_secret_super_seguro
-   ```
 
-4. **Configurar la base de datos**
-   ```bash
-   # Crear la base de datos
-   npm run db:create
+```   DB_PORT=5432
+
+src/   DB_NAME=handicapp_db
+
+├── config/          # Configuraciones   DB_USER=postgres
+
+├── controllers/     # Controladores de rutas   DB_PASSWORD=tu_password
+
+├── middleware/      # Middlewares personalizados   JWT_SECRET=tu_jwt_secret_super_seguro
+
+├── models/          # Modelos de Sequelize   ```
+
+├── routes/          # Definición de rutas
+
+├── services/        # Lógica de negocio4. **Configurar la base de datos**
+
+├── types/           # Tipos TypeScript   ```bash
+
+├── utils/           # Utilidades   # Crear la base de datos
+
+├── validators/      # Validadores con Zod   npm run db:create
+
+├── app.ts           # Configuración de Express   
+
+└── index.ts         # Punto de entrada   # Ejecutar migraciones
+
+```   npm run db:migrate
+
    
-   # Ejecutar migraciones
-   npm run db:migrate
-   
-   # (Opcional) Ejecutar seeders
+
+## 📧 Variables de Entorno   # (Opcional) Ejecutar seeders
+
    npm run db:seed
-   ```
 
-## ðŸš€ Uso
+```env   ```
 
-### Desarrollo
-```bash
-npm run dev
-```
+NODE_ENV=development
 
-### ProducciÃ³n
-```bash
+PORT=3001## ðŸš€ Uso
+
+DB_HOST=localhost
+
+DB_PORT=5432### Desarrollo
+
+DB_NAME=handicapp_db```bash
+
+DB_USER=handicapp_usernpm run dev
+
+DB_PASSWORD=HandicApp!234```
+
+JWT_SECRET=HnD1c4pP_$3cUr3_K3y_2025_...
+
+JWT_EXPIRES_IN=2h### ProducciÃ³n
+
+``````bash
+
 npm run build
-npm start
+
+---npm start
+
 ```
 
+🔗 **Documentación completa**: [README principal](../README.md)
 ### Scripts disponibles
 ```bash
 npm run dev          # Desarrollo con hot reload

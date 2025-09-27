@@ -46,10 +46,20 @@ export const rateLimiter = rateLimit({
   },
 });
 
-// Strict rate limiting for auth endpoints (temporalmente deshabilitado para desarrollo)
-export const authRateLimiter = (_req: Request, _res: Response, next: NextFunction) => {
-  next();
-};
+// Strict rate limiting for auth endpoints
+export const authRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 attempts per window
+  message: {
+    success: false,
+    message: 'Too many authentication attempts, please try again later.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req: Request, _res: Response) => {
+    throw new RateLimitError('Too many authentication attempts');
+  },
+});
 
 // Helmet security headers
 export const helmetConfig = helmet({
@@ -70,7 +80,7 @@ export const helmetConfig = helmet({
 });
 
 // Compression middleware
-export const compressionConfig = compression({
+export const compressionConfig: ReturnType<typeof compression> = compression({
   level: 6,
   threshold: 1024,
   filter: (req: Request, res: Response) => {

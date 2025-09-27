@@ -1,5 +1,6 @@
 import { Op } from 'sequelize';
 import { User } from '../models/User';
+import { Role } from '../models/roles';
 import { UpdateUserData, PaginationQuery, ServiceResponse } from '../types';
 import { NotFoundError, ConflictError } from '../utils/errors';
 
@@ -19,11 +20,15 @@ export class UserService {
       const offset = (page - 1) * limit;
 
       const { count, rows } = await User.findAndCountAll({
-        attributes: { exclude: ['password'] },
+        attributes: { exclude: ['hash_contrasena'] },
+        include: [{
+          model: Role,
+          as: 'rol',
+          attributes: ['id', 'nombre', 'clave']
+        }],
         limit,
         offset,
-        order: [[sortBy, sortOrder]],
-        paranoid: true, // Exclude soft-deleted users
+        order: [[sortBy === 'createdAt' ? 'fecha_creacion' : sortBy, sortOrder]],
       });
 
       const totalPages = Math.ceil(count / limit);
@@ -45,7 +50,12 @@ export class UserService {
   static async getUserById(userId: string): Promise<ServiceResponse<User>> {
     try {
       const user = await User.findByPk(userId, {
-        attributes: { exclude: ['password'] },
+        attributes: { exclude: ['hash_contrasena'] },
+        include: [{
+          model: Role,
+          as: 'rol',
+          attributes: ['id', 'nombre', 'clave']
+        }]
       });
 
       if (!user) {
@@ -69,7 +79,12 @@ export class UserService {
     try {
       const user = await User.findOne({
         where: { email },
-        attributes: { exclude: ['password'] },
+        attributes: { exclude: ['hash_contrasena'] },
+        include: [{
+          model: Role,
+          as: 'rol',
+          attributes: ['id', 'nombre', 'clave']
+        }]
       });
 
       if (!user) {
@@ -106,7 +121,7 @@ export class UserService {
           paranoid: false,
         });
 
-        if (existingUser && existingUser.id !== userId) {
+        if (existingUser && existingUser.id.toString() !== userId) {
           throw new ConflictError('Email is already taken');
         }
       }
@@ -155,7 +170,8 @@ export class UserService {
         throw new NotFoundError('User not found');
       }
 
-      await user.update({ isActive: !user.isActive });
+      const newStatus = user.estado_usuario === 'active' ? 'inactive' : 'active';
+      await user.update({ estado_usuario: newStatus });
 
       return {
         success: true,
@@ -187,16 +203,20 @@ export class UserService {
       const { count, rows } = await User.findAndCountAll({
         where: {
           [Op.or]: [
-            { firstName: { [Op.iLike]: `%${query}%` } },
-            { lastName: { [Op.iLike]: `%${query}%` } },
+            { nombre: { [Op.iLike]: `%${query}%` } },
+            { apellido: { [Op.iLike]: `%${query}%` } },
             { email: { [Op.iLike]: `%${query}%` } },
           ],
         },
-        attributes: { exclude: ['password'] },
+        attributes: { exclude: ['hash_contrasena'] },
+        include: [{
+          model: Role,
+          as: 'rol',
+          attributes: ['id', 'nombre', 'clave']
+        }],
         limit,
         offset,
-        order: [[sortBy, sortOrder]],
-        paranoid: true,
+        order: [[sortBy === 'createdAt' ? 'fecha_creacion' : sortBy, sortOrder]],
       });
 
       const totalPages = Math.ceil(count / limit);
@@ -219,29 +239,48 @@ export class UserService {
     totalUsers: number;
     activeUsers: number;
     inactiveUsers: number;
-    usersByRole: Record<string, number>;
+    verifiedUsers: number;
+    recentUsers: number;
+    roleDistribution: Record<string, number>;
   }>> {
     try {
-      const totalUsers = await User.count({ paranoid: true });
+      const totalUsers = await User.count();
       const activeUsers = await User.count({
-        where: { isActive: true },
-        paranoid: true,
+        where: { estado_usuario: 'active' }
       });
       const inactiveUsers = totalUsers - activeUsers;
+      const verifiedUsers = await User.count({
+        where: { verificado: true }
+      });
+
+      // Usuarios creados en los últimos 7 días
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const recentUsers = await User.count({
+        where: {
+          fecha_creacion: {
+            [Op.gte]: sevenDaysAgo
+          }
+        }
+      });
 
       // Get users by role
       const usersByRole = await User.findAll({
         attributes: [
-          'role',
-          [User.sequelize!.fn('COUNT', User.sequelize!.col('id')), 'count'],
+          [User.sequelize!.col('rol.clave'), 'role_key'],
+          [User.sequelize!.fn('COUNT', User.sequelize!.col('User.id')), 'count'],
         ],
-        group: ['role'],
-        paranoid: true,
+        include: [{
+          model: Role,
+          as: 'rol',
+          attributes: []
+        }],
+        group: ['rol.clave'],
         raw: true,
       });
 
-      const roleStats = usersByRole.reduce((acc: Record<string, number>, item: any) => {
-        acc[item.role] = parseInt(item.count);
+      const roleDistribution = usersByRole.reduce((acc: Record<string, number>, item: any) => {
+        acc[item.role_key] = parseInt(item.count);
         return acc;
       }, {});
 
@@ -251,7 +290,9 @@ export class UserService {
           totalUsers,
           activeUsers,
           inactiveUsers,
-          usersByRole: roleStats,
+          verifiedUsers,
+          recentUsers,
+          roleDistribution,
         },
       };
     } catch (error) {

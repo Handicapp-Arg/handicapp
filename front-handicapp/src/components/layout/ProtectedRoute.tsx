@@ -44,7 +44,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkAccess = () => {
       // Obtener cookies
-      const token = getCookie('access_token');
+      const token = getCookie('auth-token');
       const roleStr = getCookie('role');
       
       if (!token || !roleStr) {

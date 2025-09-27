@@ -1,21 +1,24 @@
-import express from 'express';
+import express, { type Express } from 'express';
 import { config } from './config/config';
 import { apiRoutes } from './routes';
 import { errorHandler, notFoundHandler } from './utils/errors';
 
-const app = express();
+const app: Express = express();
 
 // Request parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// CORS - Allow all origins for development
-app.use((_req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  next();
-});
+// CORS configuration
+import cors from 'cors';
+
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true,
+  optionsSuccessStatus: 200
+}));
 
 // API routes
 app.use(`${config.api.prefix}/${config.api.version}`, apiRoutes);

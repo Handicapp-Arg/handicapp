@@ -97,7 +97,7 @@ export default function RegisterPage() {
               required
               error={fieldErrors.firstName}
               disabled={isSubmitting}
-              className="transition-all duration-200 focus:ring-2 focus:ring-brown-500"
+              className="transition-all duration-200 focus:ring-2 focus:ring-amber-500"
             />
             <Input
               type="text"
@@ -109,7 +109,7 @@ export default function RegisterPage() {
               required
               error={fieldErrors.lastName}
               disabled={isSubmitting}
-              className="transition-all duration-200 focus:ring-2 focus:ring-brown-500"
+              className="transition-all duration-200 focus:ring-2 focus:ring-amber-500"
             />
           </div>
           
@@ -123,7 +123,7 @@ export default function RegisterPage() {
             required
             error={fieldErrors.email}
             disabled={isSubmitting}
-            className="transition-all duration-200 focus:ring-2 focus:ring-brown-500"
+            className="transition-all duration-200 focus:ring-2 focus:ring-amber-500"
           />
           
           <div className="space-y-4">
@@ -137,7 +137,7 @@ export default function RegisterPage() {
               required
               error={fieldErrors.password}
               disabled={isSubmitting}
-              className="transition-all duration-200 focus:ring-2 focus:ring-brown-500"
+              className="transition-all duration-200 focus:ring-2 focus:ring-amber-500"
             />
             <div className="text-xs text-gray-500">
               La contraseña debe tener al menos 8 caracteres e incluir mayúsculas, minúsculas, números y símbolos
@@ -154,7 +154,7 @@ export default function RegisterPage() {
             required
             error={fieldErrors.confirmPassword}
             disabled={isSubmitting}
-            className="transition-all duration-200 focus:ring-2 focus:ring-brown-500"
+            className="transition-all duration-200 focus:ring-2 focus:ring-amber-500"
           />
           
           {error ? (
@@ -170,7 +170,8 @@ export default function RegisterPage() {
           
           <Button 
             type="submit" 
-            className="w-full bg-gradient-to-r from-brown-600 to-brown-700 hover:from-brown-700 hover:to-brown-800 text-white py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-[1.02]" 
+            variant="brand"
+            className="w-full" 
             disabled={!isValid || isSubmitting}
           >
             {isSubmitting ? (
@@ -188,7 +189,7 @@ export default function RegisterPage() {
         <div className="pt-4 border-t border-gray-200">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-600">
             <Link 
-              className="flex items-center gap-2 hover:text-brown-700 transition-colors duration-200" 
+              className="flex items-center gap-2 hover:text-amber-700 transition-colors duration-200" 
               href="/"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -199,7 +200,7 @@ export default function RegisterPage() {
             <span className="flex items-center gap-2">
               ¿Ya tienes cuenta?{" "}
               <Link 
-                className="text-brown-600 hover:text-brown-800 font-medium transition-colors duration-200" 
+                className="text-amber-600 hover:text-amber-800 font-medium transition-colors duration-200" 
                 href="/login"
               >
                 Inicia sesión

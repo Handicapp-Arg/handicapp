@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { AuthController } from '../controllers/authController';
 import { authenticate } from '../middleware/auth';
 import {
@@ -6,7 +6,7 @@ import {
   validateChangePassword,
 } from '../validators';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // Public routes
 router.post('/register', validateCreateUser, AuthController.register);

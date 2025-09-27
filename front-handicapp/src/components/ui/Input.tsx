@@ -20,7 +20,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           id={inputId}
           ref={ref}
-          className={`rounded-md border border-foreground/20 bg-background px-3 py-2 text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground ${className}`}
+          className={`rounded-md border border-foreground/20 bg-background px-3 py-3 sm:py-2 text-base sm:text-sm text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground touch-manipulation ${className}`}
           {...rest}
         />
         {error ? <span className="text-xs text-red-600">{error}</span> : null}

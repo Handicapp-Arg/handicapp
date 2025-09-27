@@ -1,4 +1,5 @@
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
+import { DashboardLayout as DashboardLayoutComponent } from '@/components/layout/DashboardLayout';
 
 export default function DashboardLayout({
   children,
@@ -7,11 +8,9 @@ export default function DashboardLayout({
 }) {
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          {children}
-        </div>
-      </div>
+      <DashboardLayoutComponent>
+        {children}
+      </DashboardLayoutComponent>
     </ProtectedRoute>
   );
 }

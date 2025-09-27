@@ -5,9 +5,6 @@ import bcrypt from 'bcrypt';
 
 export const seedDatabase = async () => {
   try {
-    // Limpiar las tablas primero
-    await db.User.destroy({ where: {}, force: true });
-    await db.Role.destroy({ where: {}, force: true });
     // Crear roles básicos
   logger.info('Iniciando creación de roles básicos...');
     
@@ -46,7 +43,7 @@ export const seedDatabase = async () => {
   logger.info(`Role admin encontrado con ID: ${adminRoleId}`);
 
     const salt = await bcrypt.genSalt(12);
-    const plainPassword = 'password123';
+    const plainPassword = 'admin123';
     const hashedPassword = await bcrypt.hash(plainPassword, salt);
 
     // Verificamos que el hash funciona
@@ -64,13 +61,13 @@ export const seedDatabase = async () => {
     }
 
     const adminData = {
-      email: 'admin@test.com',
+      email: 'admin@handicapp.com',
       hash_contrasena: hashedPassword,
   rol_id: adminRoleId,
       verificado: true,
       estado_usuario: EstadoUsuario.active,
       nombre: 'Admin',
-      apellido: 'User',
+      apellido: 'HandicApp',
       telefono: null,
       creado_el: new Date(),
       actualizado_el: new Date(),
@@ -80,7 +77,7 @@ export const seedDatabase = async () => {
   logger.info({ adminData: { ...adminData, hash_contrasena: '[HIDDEN]' } }, 'Intentando crear usuario admin con datos');
 
     const [_adminUser, adminCreated] = await db.User.findOrCreate({
-      where: { email: 'admin@test.com' },
+      where: { email: 'admin@handicapp.com' },
       defaults: adminData
     });
 

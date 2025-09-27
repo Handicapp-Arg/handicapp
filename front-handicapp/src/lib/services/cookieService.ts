@@ -8,8 +8,8 @@ export interface AuthTokens {
 
 export class CookieService {
   private static readonly COOKIE_NAMES = {
-    ACCESS_TOKEN: "access_token",
-    REFRESH_TOKEN: "refresh_token",
+    ACCESS_TOKEN: "auth-token",
+    REFRESH_TOKEN: "refresh_token", 
     ROLE: "role",
   } as const;
 

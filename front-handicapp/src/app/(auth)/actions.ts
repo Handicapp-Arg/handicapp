@@ -91,18 +91,26 @@ export async function loginAction(
       };
     }
 
-    // Autenticar usuario en el backend
-    const response = await AuthService.login(validation.data!);
+    // Hacer login directo al backend
+    const response = await fetch('http://localhost:3001/api/v1/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(validation.data),
+    });
 
-    if (response.success && response.data) {
+    const result = await response.json();
+
+    if (response.ok && result.success && result.data) {
       // Establecer cookies de autenticación
       await CookieService.setAuthCookies({ 
-        accessToken: response.data.token, 
-        refreshToken: response.data.token,
-        role: response.data.user.rol_id 
+        accessToken: result.data.token, 
+        refreshToken: result.data.token,
+        role: result.data.user.rol_id 
       });
 
-      const roleKey = ROLE_ID_TO_ROLE_KEY[response.data.user.rol_id];
+      const roleKey = ROLE_ID_TO_ROLE_KEY[result.data.user.rol_id];
       const dashboardRoute = ROLE_DASHBOARD_ROUTES[roleKey];
 
       return {
@@ -110,7 +118,8 @@ export async function loginAction(
         message: "¡Inicio de sesión exitoso!",
         status: 200,
         data: {
-          user: response.data.user,
+          user: result.data.user,
+          token: result.data.token,
           redirectTo: dashboardRoute
         }
       };
@@ -118,7 +127,7 @@ export async function loginAction(
 
     return {
       ok: false,
-      message: response.message || "Error durante el inicio de sesión",
+      message: result.message || "Error durante el inicio de sesión",
       status: 400,
     };
 
