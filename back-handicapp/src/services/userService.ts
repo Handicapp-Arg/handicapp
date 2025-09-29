@@ -10,14 +10,18 @@ export class UserService {
     pagination: PaginationQuery = {}
   ): Promise<ServiceResponse<{ users: User[]; total: number; totalPages: number }>> {
     try {
+      console.log('🔍 UserService.getUsers called with:', pagination);
+      
       const {
         page = 1,
         limit = 10,
-        sortBy = 'createdAt',
+        sortBy = 'fecha_creacion', // Corregido: usar el nombre real del campo
         sortOrder = 'DESC',
       } = pagination;
 
       const offset = (page - 1) * limit;
+      
+      console.log('📊 Query parameters:', { page, limit, sortBy, sortOrder, offset });
 
       const { count, rows } = await User.findAndCountAll({
         attributes: { exclude: ['hash_contrasena'] },
@@ -28,8 +32,10 @@ export class UserService {
         }],
         limit,
         offset,
-        order: [[sortBy === 'createdAt' ? 'fecha_creacion' : sortBy, sortOrder]],
+        order: [[sortBy, sortOrder]],
       });
+
+      console.log('✅ Query result:', { count, usersFound: rows.length });
 
       const totalPages = Math.ceil(count / limit);
 
@@ -42,6 +48,7 @@ export class UserService {
         },
       };
     } catch (error) {
+      console.error('❌ Error in UserService.getUsers:', error);
       throw new Error('Failed to fetch users');
     }
   }
@@ -191,14 +198,18 @@ export class UserService {
     pagination: PaginationQuery = {}
   ): Promise<ServiceResponse<{ users: User[]; total: number; totalPages: number }>> {
     try {
+      console.log('🔍 UserService.searchUsers called with:', { query, pagination });
+      
       const {
         page = 1,
         limit = 10,
-        sortBy = 'createdAt',
+        sortBy = 'fecha_creacion', // Corregido: usar el nombre real del campo
         sortOrder = 'DESC',
       } = pagination;
 
       const offset = (page - 1) * limit;
+
+      console.log('📊 Search parameters:', { query, page, limit, sortBy, sortOrder, offset });
 
       const { count, rows } = await User.findAndCountAll({
         where: {
@@ -216,8 +227,10 @@ export class UserService {
         }],
         limit,
         offset,
-        order: [[sortBy === 'createdAt' ? 'fecha_creacion' : sortBy, sortOrder]],
+        order: [[sortBy, sortOrder]],
       });
+
+      console.log('✅ Search result:', { count, usersFound: rows.length });
 
       const totalPages = Math.ceil(count / limit);
 
@@ -230,6 +243,7 @@ export class UserService {
         },
       };
     } catch (error) {
+      console.error('❌ Error in UserService.searchUsers:', error);
       throw new Error('Failed to search users');
     }
   }

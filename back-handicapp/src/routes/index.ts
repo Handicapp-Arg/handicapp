@@ -17,7 +17,7 @@ router.get('/health', (_req, res) => {
   });
 });
 
-// TEST LOGIN ENDPOINT - For development testing
+// TEST LOGIN ENDPOINT - Only for development testing, remove in production
 router.post('/test-login', (req, res) => {
   res.json({
     success: true,

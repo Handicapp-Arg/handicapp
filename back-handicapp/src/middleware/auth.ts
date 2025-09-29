@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User';
+import { Role } from '../models/roles';
 import { JwtPayload } from '../types';
 import { AuthenticationError, AuthorizationError } from '../utils/errors';
 import { config } from '../config/config';
@@ -29,8 +30,13 @@ export const authenticate = async (req: AuthRequest, _res: Response, next: NextF
     const decoded = jwt.verify(token, config.jwt.secret) as JwtPayload;
     
     // Find user in database
-    const user = await User.findByPk(decoded.userId, {
+    const user = await User.findByPk(decoded.id, {
       attributes: { exclude: ['hash_contrasena'] },
+      include: [{
+        model: Role,
+        as: 'rol',
+        attributes: ['id', 'nombre', 'clave']
+      }]
     });
     
     if (!user) {
@@ -85,8 +91,13 @@ export const optionalAuth = async (req: AuthRequest, _res: Response, next: NextF
     }
     
     const decoded = jwt.verify(token, config.jwt.secret) as JwtPayload;
-    const user = await User.findByPk(decoded.userId, {
+    const user = await User.findByPk(decoded.id, {
       attributes: { exclude: ['hash_contrasena'] },
+      include: [{
+        model: Role,
+        as: 'rol',
+        attributes: ['id', 'nombre', 'clave']
+      }]
     });
     
     if (user && user.isActive) {

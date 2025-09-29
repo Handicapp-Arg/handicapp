@@ -56,6 +56,7 @@ export function UserManagement() {
       setCurrentPage(page);
     } catch (error: any) {
       console.error('Error fetching users:', error);
+      // No redirigir, solo mostrar error en UI
       setUsers([]);
     } finally {
       setLoading(false);

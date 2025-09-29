@@ -137,8 +137,8 @@ export const validateParams = <T>(schema: z.ZodSchema<T>) =>
   });
 
 export const validateQuery = <T>(schema: z.ZodSchema<T>) =>
-  createValidator(schema, (req) => req.query, (req, parsed) => {
-    req.query = parsed as unknown as Request["query"];
+  createValidator(schema, (req) => req.query, (_req, _parsed) => {
+    // Query validation only, no assignment needed since req.query is read-only
   });
 
 // -----------------------------------------------------------------------------

@@ -35,9 +35,9 @@ export interface PaginationQuery {
 
 // JWT Payload
 export interface JwtPayload {
-  userId: string;
+  id: number;
   email: string;
-  role: string;
+  role: number;
   iat?: number;
   exp?: number;
 }
