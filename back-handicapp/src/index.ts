@@ -1,69 +1,39 @@
 import { app } from './app';
-import { initializeModels } from './models';
 import { config } from './config/config';
 import { logger } from './utils/logger';
-import { connectDatabase, syncDatabase, closeDatabase, checkDatabaseHealth, sequelize } from './config/database';
+import { initializeApp } from './scripts/init-models';
+import { closeDatabase } from './config/database';
 
-// Database initialization with best practices
-const initializeDatabase = async (): Promise<void> => {
-  try {
-    // Initialize models first (defines schemas and hooks)
-    initializeModels(sequelize);
-    logger.info('Models initialized successfully');
-
-    // Connect and verify DB
-    await connectDatabase();
-    const isHealthy = await checkDatabaseHealth();
-    if (!isHealthy) throw new Error('Database integrity check failed');
-
-    // Sync database and seed in development
-    if (config.nodeEnv === 'development') {
-      await syncDatabase();
-      logger.info('Database sync completed - tables created/updated');
-
-      try {
-        const { seedDatabase } = require('./services/seedService');
-        await seedDatabase();
-        logger.info('Basic roles and users initialized');
-      } catch (err) {
-        logger.warn({ error: err instanceof Error ? err.message : String(err) }, 'Could not initialize roles and users');
-      }
-    }
-  } catch (err) {
-    logger.error({
-      error: err instanceof Error ? { message: err.message, stack: err.stack, name: err.name } : String(err),
-    }, 'Database initialization failed');
-    process.exit(1);
-  }
-};
-
-// Start server with best practices
+// Start server with complete initialization
 const startServer = async (): Promise<void> => {
   try {
-    // Initialize database
-    await initializeDatabase();
+    logger.info('🚀 Iniciando HandicApp API...');
+    
+    // Initialize complete application (models, relations, seeds)
+    await initializeApp();
     
     // Start HTTP server
     const server = app.listen(config.port, config.host, () => {
-      logger.info(`🚀 Server running on http://${config.host}:${config.port}`);
-      logger.info(`📊 Environment: ${config.nodeEnv}`);
-      logger.info(`🔧 API Version: ${config.api.version}`);
-      logger.info(`🗄️  Database: ${config.database.name}@${config.database.host}:${config.database.port}`);
+      logger.info(`🚀 HandicApp API corriendo en http://${config.host}:${config.port}`);
+      logger.info(`📊 Entorno: ${config.nodeEnv}`);
+      logger.info(`🔧 Versión API: ${config.api.version}`);
+      logger.info(`🗄️  Base de datos: ${config.database.name}@${config.database.host}:${config.database.port}`);
+      logger.info(`🌐 Endpoints disponibles: http://${config.host}:${config.port}${config.api.prefix}/${config.api.version}`);
     });
     
     // Graceful shutdown
     const gracefulShutdown = async (signal: string) => {
-      logger.info(`📡 Received ${signal}. Starting graceful shutdown...`);
+      logger.info(`📡 Señal ${signal} recibida. Iniciando cierre controlado...`);
       
       server.close(async () => {
-        logger.info('🔌 HTTP server closed');
+        logger.info('🔌 Servidor HTTP cerrado');
         
         try {
           await closeDatabase();
-          logger.info('✅ Graceful shutdown completed');
+          logger.info('✅ Cierre controlado completado');
           process.exit(0);
         } catch (error) {
-          logger.error({ error }, '❌ Error during shutdown');
+          logger.error({ error }, '❌ Error durante el cierre');
           process.exit(1);
         }
       });
@@ -75,18 +45,18 @@ const startServer = async (): Promise<void> => {
     
     // Handle uncaught exceptions
     process.on('uncaughtException', (error) => {
-      logger.error({ error }, '💥 Uncaught Exception');
+      logger.error({ error }, '💥 Excepción no capturada');
       process.exit(1);
     });
     
     // Handle unhandled promise rejections
     process.on('unhandledRejection', (reason, promise) => {
-      logger.error({ reason, promise }, '💥 Unhandled Rejection');
+      logger.error({ reason, promise }, '💥 Promise rechazada no manejada');
       process.exit(1);
     });
     
   } catch (error) {
-    logger.error({ error }, '❌ Failed to start server');
+    logger.error({ error }, '❌ Error al iniciar servidor');
     process.exit(1);
   }
 };

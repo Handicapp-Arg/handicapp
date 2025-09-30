@@ -77,7 +77,7 @@ Evento.init(
     },
     validado_por_usuario_id: { type: DataTypes.INTEGER, allowNull: true },
     validado_el: { type: DataTypes.DATE, allowNull: true },
-    costo_monto: { type: DataTypes.DECIMAL(14, 2).toString() as any, allowNull: true },
+    costo_monto: { type: DataTypes.DECIMAL(14, 2), allowNull: true },
     costo_moneda: { type: DataTypes.CHAR(3), allowNull: true },
     creado_el: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
     actualizado_el: { type: DataTypes.DATE, allowNull: true },

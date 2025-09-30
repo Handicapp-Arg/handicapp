@@ -1,4 +1,6 @@
 import { connectDatabase, syncDatabase } from '../src/config/database';
+import { initializeModels } from '../src/models';
+import { sequelize } from '../src/config/database';
 import { seedDatabase } from '../src/services/seedService';
 
 async function initializeApp() {
@@ -9,11 +11,15 @@ async function initializeApp() {
     console.log('📡 Conectando a la base de datos...');
     await connectDatabase();
     
-    // 2. Sincronizar modelos (crear tablas)
+    // 2. Inicializar modelos y relaciones
+    console.log('🏗️ Inicializando modelos y relaciones...');
+    initializeModels(sequelize);
+    
+    // 3. Sincronizar modelos (crear tablas)
     console.log('📊 Sincronizando modelos de base de datos...');
     await syncDatabase();
     
-    // 3. Ejecutar seeds (datos iniciales)
+    // 4. Ejecutar seeds (datos iniciales)
     console.log('🌱 Ejecutando seeds...');
     await seedDatabase();
     

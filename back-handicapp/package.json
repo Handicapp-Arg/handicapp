@@ -8,6 +8,7 @@
     "start": "node -r tsconfig-paths/register dist/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "init": "ts-node scripts/init-app.ts",
+    "init-models": "ts-node src/scripts/init-models.ts",
     "diagnose": "ts-node src/utils/diagnose.ts",
     "seed": "ts-node -r tsconfig-paths/register -e \"import('./src/services/seedService').then(m => m.seedDatabase())\"",
     "sync": "ts-node scripts/sync-safe.ts",

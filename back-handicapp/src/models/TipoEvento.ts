@@ -14,12 +14,12 @@ interface TEAttrs {
 type TECreate = Optional<TEAttrs, "id" | "disciplina" | "activo" | "creado_el">;
 
 export class TipoEvento extends Model<TEAttrs, TECreate> implements TEAttrs {
-  public id!: number;
-  public clave!: string;
-  public nombre!: string;
-  public disciplina!: Disciplina | null;
-  public activo!: boolean;
-  public creado_el!: Date;
+  declare id: number;
+  declare clave: string;
+  declare nombre: string;
+  declare disciplina: Disciplina | null;
+  declare activo: boolean;
+  declare creado_el: Date;
 }
 
 TipoEvento.init(
