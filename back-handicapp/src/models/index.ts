@@ -4,6 +4,7 @@
 // -----------------------------------------------------------------------------
 
 import { DataTypes, Sequelize } from "sequelize";
+import { logger } from '../utils/logger';
 
 // Importar todos los modelos
 import { User } from "./User";
@@ -350,7 +351,8 @@ export function initializeModels(sequelize: Sequelize) {
   Notificacion.belongsTo(Tarea, { foreignKey: "tarea_id", as: "tarea" });
   Tarea.hasMany(Notificacion, { foreignKey: "tarea_id", as: "notificaciones" });
 
-  console.log('✅ Todas las relaciones del modelo han sido configuradas correctamente (25 relaciones definidas)');
+    // Verificar que todas las relaciones están configuradas
+  logger.info('✅ Todas las relaciones del modelo han sido configuradas correctamente (25 relaciones definidas)');
 }
 
 // Registrar modelos en Sequelize

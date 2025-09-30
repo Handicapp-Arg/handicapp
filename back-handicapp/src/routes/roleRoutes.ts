@@ -1,21 +1,16 @@
-import { Router } from "express";
+import { Router, type Router as ExpressRouter } from "express";
 import { RoleController } from "../controllers/roleController";
-import { authenticate, adminOnly } from "../middleware/auth";
-import {
-  validatePagination,
-  validateRoleCreate,
-  validateRoleId,
-  validateRoleUpdate,
-} from "../validators";
+import { requireAuth, adminOnly } from "../middleware/auth";
+import { paramValidations } from "../middleware/validation";
 
-const router = Router();
+const router: ExpressRouter = Router();
 
-router.use(authenticate, adminOnly);
+router.use(requireAuth, adminOnly);
 
-router.get("/", validatePagination, RoleController.list);
-router.post("/", validateRoleCreate, RoleController.create);
-router.get("/:id", validateRoleId, RoleController.getById);
-router.put("/:id", validateRoleId, validateRoleUpdate, RoleController.update);
-router.delete("/:id", validateRoleId, RoleController.remove);
+router.get("/", paramValidations.pagination, RoleController.list);
+router.post("/", RoleController.create);
+router.get("/:id", paramValidations.id, RoleController.getById);
+router.put("/:id", paramValidations.id, RoleController.update);
+router.delete("/:id", paramValidations.id, RoleController.remove);
 
 export { router as roleRoutes };

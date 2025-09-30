@@ -1,29 +1,40 @@
-import { Request, Response, NextFunction } from 'express';
+// src/middleware/auth.ts
+// -----------------------------------------------------------------------------
+// HandicApp API - Middleware de Autenticación
+// -----------------------------------------------------------------------------
+
+import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User';
 import { Role } from '../models/roles';
-import { JwtPayload } from '../types';
-import { AuthenticationError, AuthorizationError } from '../utils/errors';
+import { JwtPayload, AuthenticatedRequest } from '../types';
 import { config } from '../config/config';
+import { logger } from '../utils/logger';
 
-// Extend Request interface for authenticated requests
-interface AuthRequest extends Request {
-  user?: User;
-}
-
-// JWT token verification middleware
-export const authenticate = async (req: AuthRequest, _res: Response, next: NextFunction) => {
+/**
+ * Middleware principal de autenticación
+ * Verifica el token JWT y carga la información del usuario
+ */
+export const requireAuth = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new AuthenticationError('Access token is required');
+      res.status(401).json({
+        success: false,
+        message: 'Token de acceso requerido'
+      });
+      return;
     }
     
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
     
     if (!token) {
-      throw new AuthenticationError('Access token is required');
+      res.status(401).json({
+        success: false,
+        message: 'Token de acceso requerido'
+      });
+      return;
     }
     
     // Verify JWT token
@@ -40,54 +51,114 @@ export const authenticate = async (req: AuthRequest, _res: Response, next: NextF
     });
     
     if (!user) {
-      throw new AuthenticationError('User not found');
+      res.status(401).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+      return;
     }
     
     if (!user.isActive) {
-      throw new AuthenticationError('User account is deactivated');
+      res.status(401).json({
+        success: false,
+        message: 'Cuenta de usuario desactivada'
+      });
+      return;
     }
     
-    req.user = user;
+    // Attach user to request
+    req.user = {
+      id: Number(user.id),
+      email: user.email,
+      nombre: user.nombre,
+      apellido: user.apellido,
+      telefono: user.telefono ? String(user.telefono) : undefined,
+      activo: user.isActive,
+      rol: user.rol ? {
+        id: Number(user.rol.id),
+        clave: user.rol.clave,
+        nombre: user.rol.nombre
+      } : undefined,
+      creado_el: user.creado_el as Date,
+      actualizado_el: (user.actualizado_el || new Date()) as Date
+    };
+    
     next();
   } catch (error) {
+    logger.error('Error en autenticación: ' + String(error));
+    
     if (error instanceof jwt.JsonWebTokenError) {
-      next(new AuthenticationError('Invalid token'));
+      res.status(401).json({
+        success: false,
+        message: 'Token inválido'
+      });
     } else if (error instanceof jwt.TokenExpiredError) {
-      next(new AuthenticationError('Token expired'));
+      res.status(401).json({
+        success: false,
+        message: 'Token expirado'
+      });
     } else {
-      next(error);
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor'
+      });
     }
   }
 };
 
-// Role-based authorization middleware
-export const authorize = (...roles: string[]) => {
-  return (req: AuthRequest, _res: Response, next: NextFunction) => {
+/**
+ * Middleware de autorización por roles específicos
+ */
+export const requireRole = (...allowedRoles: string[]) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
-      return next(new AuthenticationError('Authentication required'));
+      res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado'
+      });
+      return;
     }
     
-    if (!roles.includes(req.user.rol?.clave || '')) {
-      return next(new AuthorizationError('Insufficient permissions'));
+    const userRole = req.user.rol?.clave;
+    
+    if (!userRole) {
+      res.status(403).json({
+        success: false,
+        message: 'Usuario sin rol asignado'
+      });
+      return;
+    }
+    
+    if (!allowedRoles.includes(userRole)) {
+      res.status(403).json({
+        success: false,
+        message: 'No tiene permisos para acceder a este recurso'
+      });
+      return;
     }
     
     next();
   };
 };
 
-// Optional authentication middleware (doesn't fail if no token)
-export const optionalAuth = async (req: AuthRequest, _res: Response, next: NextFunction) => {
+/**
+ * Middleware de autenticación opcional
+ * No falla si no hay token, pero carga el usuario si está disponible
+ */
+export const optionalAuth = async (req: AuthenticatedRequest, _res: Response, next: NextFunction): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return next();
+      next();
+      return;
     }
     
     const token = authHeader.substring(7);
     
     if (!token) {
-      return next();
+      next();
+      return;
     }
     
     const decoded = jwt.verify(token, config.jwt.secret) as JwtPayload;
@@ -101,45 +172,68 @@ export const optionalAuth = async (req: AuthRequest, _res: Response, next: NextF
     });
     
     if (user && user.isActive) {
-      req.user = user;
+      req.user = {
+        id: Number(user.id),
+        email: user.email,
+        nombre: user.nombre,
+        apellido: user.apellido,
+        telefono: user.telefono ? String(user.telefono) : undefined,
+        activo: user.isActive,
+        rol: user.rol ? {
+          id: Number(user.rol.id),
+          clave: user.rol.clave,
+          nombre: user.rol.nombre
+        } : undefined,
+        creado_el: user.creado_el as Date,
+        actualizado_el: (user.actualizado_el || new Date()) as Date
+      };
     }
     
     next();
   } catch (error) {
-    // Ignore JWT errors for optional auth
+    // Ignore errors for optional auth
     next();
   }
 };
 
-// Admin only middleware
-export const adminOnly = authorize('admin');
+/**
+ * Middleware solo para administradores
+ */
+export const adminOnly = requireRole('admin');
 
-// User or admin middleware (permite admin + otros roles)
-export const userOrAdmin = (req: AuthRequest, _res: Response, next: NextFunction) => {
+/**
+ * Middleware para usuarios autorizados o administradores
+ */
+export const userOrAdmin = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
   if (!req.user) {
-    return next(new AuthenticationError('Authentication required'));
+    res.status(401).json({
+      success: false,
+      message: 'Autenticación requerida'
+    });
+    return;
   }
   
   const userRole = req.user.rol?.clave;
   const isAdmin = userRole === 'admin';
   
-  // Admin siempre puede, otros usuarios solo pueden acceder a su propia información
+  // Admin siempre puede
   if (isAdmin) {
-    return next();
+    next();
+    return;
   }
   
-  // Verificar si es su propio perfil (si hay parámetro id)
+  // Verificar si es su propio perfil
   const requestedUserId = req.params['id'];
   if (requestedUserId && req.user.id === parseInt(requestedUserId)) {
-    return next();
+    next();
+    return;
   }
   
-  // Si no es admin ni su propio perfil, denegar acceso
-  return next(new AuthorizationError('Insufficient permissions'));
+  res.status(403).json({
+    success: false,
+    message: 'Permisos insuficientes'
+  });
 };
 
-// Moderator or admin middleware
-export const moderatorOrAdmin = authorize('moderator', 'admin');
-
-// Re-export authRateLimiter from security middleware
+// Re-export from security middleware
 export { authRateLimiter } from './security';
