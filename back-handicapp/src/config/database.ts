@@ -11,7 +11,7 @@ const dbConfig = {
     host: config.database.host,
     port: config.database.port,
     dialect: 'postgres' as const,
-    logging: config.database.logging ? (sql: string) => logger.debug(sql) : false,
+    logging: false, // Disable SQL logging for cleaner output
     pool: {
       max: 10,
       min: 2,
@@ -139,38 +139,23 @@ export const sequelize = new Sequelize(
   dbConfig[config.nodeEnv as keyof typeof dbConfig]
 );
 
-// Event listeners para monitoreo
-sequelize.addHook('beforeConnect', (config) => {
-  logger.info({
-    host: config.host || 'unknown',
-    port: config.port || 5432,
-    database: config.database || 'unknown',
-  }, '🔌 Conectando a la base de datos...');
-});
+// Event listeners para monitoreo (solo en desarrollo)
+if (config.nodeEnv === 'development') {
+  sequelize.addHook('beforeConnect', () => {
+    logger.debug('🔌 Connecting to database...');
+  });
 
-sequelize.addHook('afterConnect', (_connection, config) => {
-  logger.info({
-    host: config.host || 'unknown',
-    port: config.port || 5432,
-    database: config.database || 'unknown',
-  }, '✅ Conexión a la base de datos establecida');
-});
-
-sequelize.addHook('beforeDisconnect', () => {
-  logger.info('🔌 Cerrando conexión a la base de datos...');
-});
-
-sequelize.addHook('afterDisconnect', () => {
-  logger.info('✅ Conexión a la base de datos cerrada');
-});
+  sequelize.addHook('afterConnect', () => {
+    logger.debug('✅ Database connected');
+  });
+}
 
 // Función para conectar a la base de datos
 export const connectDatabase = async (): Promise<void> => {
   try {
     await sequelize.authenticate();
-    logger.info('✅ Conexión a la base de datos establecida correctamente');
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, '❌ Error al conectar con la base de datos');
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, '❌ Database connection failed');
     throw error;
   }
 };
@@ -180,13 +165,11 @@ export const syncDatabase = async (): Promise<void> => {
   try {
     if (config.nodeEnv === 'development') {
       await sequelize.sync({ force: true });
-      logger.info('✅ Base de datos sincronizada (desarrollo)');
     } else {
       await sequelize.sync({ alter: true });
-      logger.info('✅ Base de datos sincronizada (producción)');
     }
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, '❌ Error al sincronizar la base de datos');
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, '❌ Database sync failed');
     throw error;
   }
 };
@@ -195,9 +178,8 @@ export const syncDatabase = async (): Promise<void> => {
 export const closeDatabase = async (): Promise<void> => {
   try {
     await sequelize.close();
-    logger.info('✅ Conexión a la base de datos cerrada correctamente');
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, '❌ Error al cerrar la conexión a la base de datos');
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, '❌ Error closing database');
     throw error;
   }
 };

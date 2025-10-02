@@ -3,16 +3,11 @@ import { AuthController } from './authController';
 import { UserService } from '../services/userService';
 import { ResponseHelper } from '../utils/response';
 import { asyncHandler } from '../utils/errors';
-import { UpdateUserData } from '../types';
+import { UpdateUserData, AuthenticatedRequest } from '../types';
 import { User } from '../models/User';
 import { Role } from '../models/roles';
 import bcrypt from 'bcrypt';
 import { config } from '../config/config';
-
-
-interface AuthRequest extends Request {
-  user?: User;
-}
 
 export class UserController {
   // Get all users
@@ -196,7 +191,7 @@ export class UserController {
   static getProfile = AuthController.getProfile;
 
   // Create new user (admin only)
-  static createUser = asyncHandler(async (req: AuthRequest, res: Response, _next: NextFunction) => {
+  static createUser = asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
     const { nombre, apellido, email, password, rol_id, telefono } = req.body;
     
     // Verificar que el usuario actual es admin
@@ -257,7 +252,7 @@ export class UserController {
   });
 
   // Change user password
-  static changePassword = asyncHandler(async (req: AuthRequest, res: Response, _next: NextFunction) => {
+  static changePassword = asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
     const { id } = req.params;
     const { currentPassword, newPassword } = req.body;
     const currentUser = req.user!;

@@ -272,7 +272,7 @@ export class UserService {
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       const recentUsers = await User.count({
         where: {
-          fecha_creacion: {
+          creado_el: {
             [Op.gte]: sevenDaysAgo
           }
         }

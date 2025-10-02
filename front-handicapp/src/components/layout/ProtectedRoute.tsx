@@ -48,7 +48,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
       const roleStr = getCookie('role');
       
       if (!token || !roleStr) {
-        router.replace('/login');
+        router.replace('/');
         return;
       }
 
@@ -56,7 +56,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
       const userRole = ROLE_MAPPING[roleId];
       
       if (!userRole) {
-        router.replace('/login');
+        router.replace('/');
         return;
       }
 
@@ -76,16 +76,22 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Verificando permisos...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center space-y-4">
+          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <div className="text-lg text-gray-600">Verificando permisos...</div>
+        </div>
       </div>
     );
   }
 
   if (!isAuthorized) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Redirigiendo...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center space-y-4">
+          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <div className="text-lg text-gray-600">Redirigiendo...</div>
+        </div>
       </div>
     );
   }

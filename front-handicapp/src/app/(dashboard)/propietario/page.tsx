@@ -1,77 +1,152 @@
+'use client';
+
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
+import { 
+  ClipboardDocumentListIcon,
+  CalendarDaysIcon,
+  DocumentTextIcon,
+  HeartIcon,
+  InformationCircleIcon,
+  CurrencyDollarIcon
+} from '@heroicons/react/24/outline';
+import Link from 'next/link';
+
 export default function PropietarioDashboard() {
+  const quickActions = [
+    {
+      title: 'Mis Caballos',
+      description: 'Caballos de mi propiedad',
+      href: '/propietario/caballos',
+      icon: ClipboardDocumentListIcon,
+      color: 'bg-green-500'
+    },
+    {
+      title: 'Estado de Salud',
+      description: 'Historial médico y consultas',
+      href: '/propietario/salud',
+      icon: HeartIcon,
+      color: 'bg-red-500'
+    },
+    {
+      title: 'Eventos',
+      description: 'Competencias y entrenamientos',
+      href: '/propietario/eventos',
+      icon: CalendarDaysIcon,
+      color: 'bg-purple-500'
+    },
+    {
+      title: 'Informes',
+      description: 'Reportes de actividades',
+      href: '/propietario/informes',
+      icon: InformationCircleIcon,
+      color: 'bg-blue-500'
+    },
+    {
+      title: 'Facturación',
+      description: 'Gastos y pagos',
+      href: '/propietario/facturacion',
+      icon: CurrencyDollarIcon,
+      color: 'bg-indigo-500'
+    },
+    {
+      title: 'Documentos',
+      description: 'Registros y certificados',
+      href: '/propietario/documentos',
+      icon: DocumentTextIcon,
+      color: 'bg-orange-500'
+    }
+  ];
+
   return (
-    <div className="p-3 sm:p-4 lg:p-6 space-y-6 min-w-0">
-      <div className="border-b pb-3 sm:pb-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-          Panel de Propietario
-        </h1>
-        <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">
-          Bienvenido, aquí podrás ver el estado de tus caballos.
-        </p>
-      </div>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow border">
-          <div className="flex items-center">
-            <div className="p-2 bg-amber-100 rounded-lg flex-shrink-0">
-              <svg className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
-            </div>
-            <div className="ml-3 sm:ml-4 min-w-0">
-              <h2 className="text-base sm:text-lg font-medium text-gray-900">Mis Caballos</h2>
-              <p className="text-xl sm:text-2xl font-bold text-amber-600">3</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow border">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
-              <svg className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="ml-3 sm:ml-4 min-w-0">
-              <h2 className="text-base sm:text-lg font-medium text-gray-900">Estado Saludable</h2>
-              <p className="text-xl sm:text-2xl font-bold text-green-600">2</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow border">
-          <div className="flex items-center">
-            <div className="p-2 bg-yellow-100 rounded-lg flex-shrink-0">
-              <svg className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.664-.833-2.464 0L3.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-            </div>
-            <div className="ml-3 sm:ml-4 min-w-0">
-              <h2 className="text-base sm:text-lg font-medium text-gray-900">En Observación</h2>
-              <p className="text-xl sm:text-2xl font-bold text-yellow-600">1</p>
-            </div>
-          </div>
+    <SimpleRoleGuard roles={['propietario']} fallback={
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="text-4xl mb-4">🚫</div>
+          <h3 className="text-lg font-medium text-gray-900">Sin permisos</h3>
+          <p className="text-gray-600">Solo propietarios pueden acceder</p>
         </div>
       </div>
+    }>
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Panel de Propietario</h1>
+          <p className="text-gray-600">Gestiona tus caballos y su bienestar</p>
+        </div>
 
-      <div className="bg-white p-4 sm:p-6 rounded-lg shadow border">
-        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Estado de Caballos</h3>
-        <div className="space-y-2 sm:space-y-3 max-h-64 overflow-y-auto">
-          {["Thunder", "Lightning", "Storm"].map((name, index) => (
-            <div key={name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900">{name}</p>
-                <p className="text-xs text-gray-500">Última revisión: Hoy</p>
-              </div>
-              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ${
-                index === 2 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
-              }`}>
-                {index === 2 ? 'Observación' : 'Saludable'}
-              </span>
-            </div>
-          ))}
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Mis Caballos</CardTitle>
+              <ClipboardDocumentListIcon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">-</div>
+              <p className="text-xs text-muted-foreground">Total registrados</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Eventos</CardTitle>
+              <CalendarDaysIcon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">-</div>
+              <p className="text-xs text-muted-foreground">Este mes</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Consultas</CardTitle>
+              <HeartIcon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">-</div>
+              <p className="text-xs text-muted-foreground">Veterinarias</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Gastos</CardTitle>
+              <CurrencyDollarIcon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">-</div>
+              <p className="text-xs text-muted-foreground">Este mes</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Gestión de Propietario</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {quickActions.map((action) => (
+              <Link key={action.title} href={action.href}>
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className={`p-3 rounded-lg ${action.color}`}>
+                        <action.icon className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-gray-900">{action.title}</h3>
+                        <p className="text-sm text-gray-600">{action.description}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </SimpleRoleGuard>
   );
 }

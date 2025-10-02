@@ -3,8 +3,8 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { useToaster } from '@/components/ui/Toaster';
+import { Button } from "@/components/ui/button";
+import { useToaster } from '@/components/ui/toaster';
 import ApiClient from '@/lib/services/apiClient';
 
 export default function HomePage() {
@@ -13,7 +13,7 @@ export default function HomePage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { show } = useToaster();
+  const { toast } = useToaster();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +49,7 @@ export default function HomePage() {
         document.cookie = `auth-token=${data.token}; path=/; max-age=7200; SameSite=Strict; Secure=${window.location.protocol === 'https:' ? 'true' : 'false'}`;
         document.cookie = `role=${data.user.rol_id}; path=/; max-age=7200; SameSite=Strict; Secure=${window.location.protocol === 'https:' ? 'true' : 'false'}`;
         
-        show('¡Bienvenido!', 'success', 'Login exitoso');
+        toast('¡Login exitoso!', 'success');
         
         // Redirección basada en rol
         const roleRoutes: Record<number, string> = {

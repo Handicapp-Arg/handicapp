@@ -32,26 +32,27 @@ export const requestLogger = (req: any, res: any, next: any) => {
   
   req.requestId = req.headers['x-request-id'] || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   
-  logger.info({
-    requestId: req.requestId,
-    method: req.method,
-    url: req.url,
-    userAgent: req.get('User-Agent'),
-    ip: req.ip,
-    userId: req.user?.id,
-  }, 'Incoming request');
+  // Only log non-static requests
+  if (!req.url.includes('/favicon') && !req.url.includes('/public')) {
+    logger.info({
+      method: req.method,
+      url: req.url,
+      ip: req.ip,
+    }, '→ Request');
+  }
   
   res.on('finish', () => {
     const duration = Date.now() - start;
     
-    logger.info({
-      requestId: req.requestId,
-      method: req.method,
-      url: req.url,
-      statusCode: res.statusCode,
-      duration: `${duration}ms`,
-      userId: req.user?.id,
-    }, 'Request completed');
+    // Only log significant requests or errors
+    if (res.statusCode >= 400 || duration > 1000 || (!req.url.includes('/favicon') && !req.url.includes('/public'))) {
+      logger.info({
+        method: req.method,
+        url: req.url,
+        status: res.statusCode,
+        duration: `${duration}ms`,
+      }, res.statusCode >= 400 ? '✗ Request failed' : '✓ Request completed');
+    }
   });
   
   next();

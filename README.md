@@ -1,27 +1,119 @@
-# 🐎 HandicApp
+# 🐎 HandicApp - Sistema de Gestión Equina
 
-**Sistema de gestión de handicaps deportivos** - Aplicación web completa para la administración y seguimiento de handicaps en eventos ecuestres.
+**Sistema integral de gestión para establecimientos equinos** - Plataforma completa para la administración de caballos, eventos, usuarios y tareas con control avanzado de roles y permisos.
 
-## 📋 Descripción
+## 🏇 Descripción
 
 HandicApp es una plataforma integral que permite la gestión eficiente de:
-- **Usuarios**: Sistema de roles (Admin, Establecimiento, Capataz, Veterinario, Empleado, Propietario)
-- **Caballos**: Registro y seguimiento de ejemplares
-- **Eventos**: Organización y administración de competencias
-- **Handicaps**: Cálculo y asignación de handicaps deportivos
-- **Establecimientos**: Gestión de centros ecuestres
+- **Usuarios**: Sistema de roles completo (Admin, Establecimiento, Capataz, Veterinario, Empleado, Propietario)
+- **Establecimientos**: Gestión completa de centros ecuestres con búsqueda y filtros
+- **Caballos**: Registro y seguimiento de ejemplares con genealogía
+- **Eventos**: 50+ tipos de eventos médicos, deportivos y administrativos predefinidos
+- **Tareas**: Sistema de asignación y seguimiento de tareas
+- **Auditoría**: Logging completo de todas las acciones del sistema
 
-## 🏗️ Arquitectura del Proyecto
+## 🏗️ Arquitectura del Sistema
+
+### Backend (Express.js + TypeScript)
+- **API RESTful** con 38 endpoints completamente funcionales
+- **Base de datos**: PostgreSQL con Sequelize ORM
+- **Autenticación**: JWT con cookies HTTPOnly
+- **Sistema de roles**: Admin, Establecimiento, Capataz, Veterinario, Empleado, Propietario
+- **Logging**: Winston con rotación de archivos
+- **Validación**: Middleware de validación personalizado
+- **Seguridad**: Rate limiting, CORS, sanitización
+
+### Frontend (Next.js 14 + TypeScript)
+- **Dashboard por roles** con navegación dinámica
+- **Autenticación**: Sistema basado en cookies
+- **UI Components**: Sistema de componentes reutilizables con Tailwind CSS
+- **Gestión de permisos**: Guards de protección por rol
+- **Responsive**: Diseño adaptable para todos los dispositivos
+
+### Estructura del Proyecto
 
 ```
 handicapp/
-├── 📁 back-handicapp/     # API Backend (Node.js + TypeScript + PostgreSQL)
-├── 📁 front-handicapp/    # Frontend (Next.js + React + TypeScript)
-├── 📄 README.md          # Documentación principal (este archivo)
-├── 📄 OPTIMIZACIONES.md  # Registro de mejoras de seguridad
-├── 📄 SEGURIDAD.md       # Guías de seguridad
-└── 📄 INSTRUCCIONES-DESPLIEGUE.md  # Guías de deployment
+├── 📁 back-handicapp/           # Backend API
+│   ├── src/
+│   │   ├── controllers/         # Controladores de API (8 controllers)
+│   │   ├── services/            # Lógica de negocio
+│   │   ├── models/              # Modelos de Sequelize (14 modelos)
+│   │   ├── routes/              # Definición de rutas
+│   │   ├── middleware/          # Middleware personalizado
+│   │   ├── utils/               # Utilidades y helpers
+│   │   └── config/              # Configuración
+│   └── package.json
+│
+├── 📁 front-handicapp/          # Frontend Next.js
+│   ├── src/
+│   │   ├── app/                 # App Router de Next.js
+│   │   │   ├── (auth)/          # Rutas de autenticación
+│   │   │   ├── (dashboard)/     # Dashboard por roles
+│   │   │   └── (site)/          # Página pública
+│   │   ├── components/          # Componentes React
+│   │   │   ├── ui/              # Componentes base
+│   │   │   ├── common/          # Componentes comunes
+│   │   │   ├── dashboard/       # Componentes del dashboard
+│   │   │   └── layout/          # Componentes de layout
+│   │   └── lib/                 # Configuración y utilidades
+│   └── package.json
+│
+├── 📄 README.md                 # Este archivo
+├── 📄 SEGURIDAD.md             # Guías de seguridad
+└── 📄 DOCUMENTACION-ORGANIZADA.md  # Documentación técnica
 ```
+
+## 🚀 Características Principales
+
+### ✅ Fase 2 - Backend Completo
+- [x] **Gestión de Usuarios**: CRUD completo con roles y permisos
+- [x] **Gestión de Establecimientos**: Búsqueda, filtros y asociaciones
+- [x] **Gestión de Caballos**: Registro completo con genealogía
+- [x] **Sistema de Eventos**: 50+ tipos de eventos predefinidos
+- [x] **Tareas y Asignaciones**: Sistema de gestión de tareas
+- [x] **Autenticación y Autorización**: JWT + middleware de roles
+- [x] **Auditoría**: Logging completo de acciones del sistema
+
+### ✅ Fase 3 - Frontend Dashboard
+- [x] **Login/Logout**: Autenticación completa con manejo de errores
+- [x] **Dashboard por Roles**: Vistas específicas según permisos
+- [x] **Gestión de Establecimientos**: Lista, creación y edición funcional
+- [x] **Sistema de Navegación**: Sidebar y navbar responsivos
+- [x] **UI Components**: Card, Badge, Input, Button y más
+- [x] **Guards de Permisos**: Protección de rutas por rol
+
+### 🔄 En Desarrollo Activo
+- Gestión completa de caballos (frontend)
+- Sistema de eventos médicos
+- Reportes y estadísticas
+- Notificaciones en tiempo real
+
+### 📋 Próximas Funcionalidades
+- App móvil React Native
+- Sistema de QR codes
+- Integración con dispositivos IoT
+- Dashboard de analíticas avanzadas
+
+## 🛠️ Tecnologías Utilizadas
+
+### Backend
+- **Node.js 18+** + **TypeScript** - Runtime y tipado estático
+- **Express.js** - Framework web
+- **PostgreSQL** - Base de datos relacional
+- **Sequelize** - ORM para PostgreSQL
+- **JWT** - Autenticación con tokens
+- **Winston** - Sistema de logging
+- **bcrypt** - Hash de contraseñas (12 rounds)
+- **Helmet** + **CORS** - Seguridad HTTP
+
+### Frontend
+- **Next.js 14** - Framework React con App Router
+- **React 18** - Biblioteca de interfaces de usuario
+- **TypeScript** - Tipado estático
+- **Tailwind CSS** - Framework de estilos utilitarios
+- **Heroicons** - Iconografía SVG
+- **class-variance-authority** - Gestión de clases CSS
 
 ## 🔧 Requisitos Técnicos
 
@@ -58,9 +150,9 @@ pnpm install
 
 # Copiar y configurar variables de entorno
 cp .env.example .env
-# Editar .env con tus configuraciones
+# Editar .env con tus configuraciones de base de datos
 
-# Iniciar servidor backend
+# Iniciar servidor backend con auto-recarga
 pnpm run dev
 # ✅ Backend disponible en http://localhost:3001
 ```
@@ -71,6 +163,10 @@ pnpm run dev
 cd front-handicapp
 pnpm install
 
+# Copiar y configurar variables de entorno
+cp .env.local.example .env.local
+# Editar .env.local con la URL del backend
+
 # Iniciar servidor frontend
 pnpm run dev
 # ✅ Frontend disponible en http://localhost:3000
@@ -78,9 +174,15 @@ pnpm run dev
 
 ## 🎯 Inicio Rápido
 
-### Credenciales de Prueba
-El sistema crea automáticamente usuarios de ejemplo:
+## 🎯 Inicio Rápido
 
+### Configuración Automática
+El sistema incluye seeds automáticos que crean:
+- **Roles básicos**: Admin, Establecimiento, Capataz, Veterinario, Empleado, Propietario
+- **Usuario admin**: `admin@handicapp.com` / `admin123`
+- **50+ tipos de eventos** predefinidos (médicos, deportivos, administrativos)
+
+### Credenciales de Prueba
 | Rol | Email | Password | Dashboard |
 |-----|-------|----------|----------|
 | **Admin** | `admin@handicapp.com` | `admin123` | `/admin` |
@@ -91,14 +193,38 @@ El sistema crea automáticamente usuarios de ejemplo:
 2. Usar credenciales de prueba
 3. Navegar según el rol asignado
 
-## 🛡️ Características de Seguridad
+## 📊 Base de Datos
 
-- **Autenticación JWT** con tokens de corta duración (2h)
-- **Rate Limiting** activo (5 intentos/15min)
-- **Protección de rutas** basada en roles
-- **Cookies seguras** con SameSite=Strict
+### Modelos Principales
+- **User**: Gestión de usuarios y autenticación
+- **Establecimiento**: Establecimientos equinos con ubicación y contacto
+- **Caballo**: Registro de caballos con genealogía completa
+- **Evento**: Eventos médicos, deportivos y administrativos
+- **Tarea**: Sistema de tareas y asignaciones por rol
+- **Rol**: Sistema de roles y permisos granular
+
+## 🛡️ Sistema de Seguridad
+
+### Autenticación y Autorización
+- **JWT tokens** con expiración de 2 horas
+- **Cookies HTTPOnly** con SameSite=Strict
+- **Rate limiting** activo (5 intentos/15min)
+- **Middleware de autorización** por roles
 - **Validaciones robustas** en frontend y backend
+
+### Roles y Permisos
+1. **Admin**: Acceso completo al sistema y gestión de usuarios
+2. **Establecimiento**: Gestión de su establecimiento y caballos
+3. **Capataz**: Supervisión de tareas y operaciones diarias
+4. **Veterinario**: Gestión de eventos médicos y sanitarios
+5. **Empleado**: Tareas básicas asignadas por superiores
+6. **Propietario**: Vista de sus caballos y eventos relacionados
+
+### Características de Seguridad
 - **Hashing seguro** de contraseñas con bcrypt (12 rounds)
+- **Sanitización** de inputs para prevenir XSS
+- **CORS configurado** para prevenir ataques cross-origin
+- **Helmet.js** para headers de seguridad HTTP
 
 ## 📚 Endpoints de la API
 

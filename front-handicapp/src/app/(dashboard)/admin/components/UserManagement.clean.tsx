@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { UserTable } from './UserTable';
 import { CreateUserModal } from './CreateUserModal';
 import { EditUserModal } from './EditUserModal';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import ApiClient from '@/lib/services/apiClient';
 
 

@@ -11,8 +11,6 @@ export class TipoEventoSeedService {
   
   static async seedTiposEvento(): Promise<boolean> {
     try {
-      logger.info('🌱 Iniciando seed de tipos de evento...');
-
       const tiposEvento = [
         // TIPOS GENERALES (Todas las disciplinas)
         { clave: 'nacimiento', nombre: 'Nacimiento', disciplina: null },
@@ -89,8 +87,9 @@ export class TipoEventoSeedService {
         { clave: 'otro', nombre: 'Otro Evento', disciplina: null },
       ];
 
+      let createdCount = 0;
       for (const tipoData of tiposEvento) {
-        const [tipoEventoInstance, created] = await TipoEvento.findOrCreate({
+        const [_tipoEventoInstance, created] = await TipoEvento.findOrCreate({
           where: { clave: tipoData.clave },
           defaults: {
             ...tipoData,
@@ -99,15 +98,18 @@ export class TipoEventoSeedService {
         });
 
         if (created) {
-          logger.info(`✅ Tipo de evento creado: ${tipoEventoInstance.nombre} (${tipoEventoInstance.clave})`);
+          createdCount++;
         }
       }
 
-      logger.info('🎉 Seed de tipos de evento completado exitosamente');
+      if (createdCount > 0) {
+        logger.info(`✅ Event types created (${createdCount}/${tiposEvento.length})`);
+      }
+      
       return true;
       
     } catch (error) {
-      logger.error('❌ Error en seed de tipos de evento:', error);
+      logger.error({ error }, '❌ Error seeding event types');
       return false;
     }
   }

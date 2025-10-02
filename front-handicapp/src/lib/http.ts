@@ -106,4 +106,86 @@ export async function httpJson<TResponse = unknown, TBody = unknown>(
     : new Error("Fallo de red desconocido tras reintentos");
 }
 
+// API Client específico para HandicApp
+class ApiClient {
+  private getAuthHeaders(): Record<string, string> {
+    // Leer token de las cookies en lugar de localStorage
+    const token = typeof window !== 'undefined' ? this.getCookie('auth-token') : null;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
+  private getCookie(name: string): string | null {
+    if (typeof document === 'undefined') return null;
+    
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+      if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+  }
+
+  async get<T = unknown>(path: string, options: Omit<HttpRequestOptions, 'method' | 'body'> = {}): Promise<T> {
+    return httpJson<T>(path, {
+      ...options,
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+        ...options.headers,
+      },
+    });
+  }
+
+  async post<T = unknown, B = unknown>(path: string, body?: B, options: Omit<HttpRequestOptions<B>, 'method' | 'body'> = {}): Promise<T> {
+    return httpJson<T, B>(path, {
+      ...options,
+      method: 'POST',
+      body,
+      headers: {
+        ...this.getAuthHeaders(),
+        ...options.headers,
+      },
+    });
+  }
+
+  async put<T = unknown, B = unknown>(path: string, body?: B, options: Omit<HttpRequestOptions<B>, 'method' | 'body'> = {}): Promise<T> {
+    return httpJson<T, B>(path, {
+      ...options,
+      method: 'PUT',
+      body,
+      headers: {
+        ...this.getAuthHeaders(),
+        ...options.headers,
+      },
+    });
+  }
+
+  async patch<T = unknown, B = unknown>(path: string, body?: B, options: Omit<HttpRequestOptions<B>, 'method' | 'body'> = {}): Promise<T> {
+    return httpJson<T, B>(path, {
+      ...options,
+      method: 'PATCH',
+      body,
+      headers: {
+        ...this.getAuthHeaders(),
+        ...options.headers,
+      },
+    });
+  }
+
+  async delete<T = unknown>(path: string, options: Omit<HttpRequestOptions, 'method' | 'body'> = {}): Promise<T> {
+    return httpJson<T>(path, {
+      ...options,
+      method: 'DELETE',
+      headers: {
+        ...this.getAuthHeaders(),
+        ...options.headers,
+      },
+    });
+  }
+}
+
+export const apiClient = new ApiClient();
+
 

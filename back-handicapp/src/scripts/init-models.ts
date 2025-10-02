@@ -11,56 +11,36 @@ import { logger } from '../utils/logger';
 
 async function initializeApp() {
   try {
-    logger.info('🚀 Iniciando inicialización de la aplicación...');
+    logger.info('🚀 Initializing HandicApp...');
 
-    // 1. Verificar conexión a la base de datos
-    logger.info('📊 Verificando conexión a la base de datos...');
+    // 1. Database connection
     await sequelize.authenticate();
-    logger.info('✅ Conexión a la base de datos establecida');
+    logger.info('✅ Database connected');
 
-    // 2. Inicializar todos los modelos y sus relaciones
-    logger.info('🏗️ Inicializando modelos y relaciones...');
+    // 2. Initialize models and relations
     initializeModels(sequelize);
-    logger.info('✅ Modelos y relaciones inicializados');
 
-    // 3. Sincronizar la base de datos
-    logger.info('🔄 Sincronizando base de datos...');
-    if (process.env.NODE_ENV === 'development') {
-      // En desarrollo, recrear las tablas
+    // 3. Sync database
+    if (process.env['NODE_ENV'] === 'development') {
       await sequelize.sync({ force: true });
-      logger.info('✅ Base de datos sincronizada (desarrollo - tablas recreadas)');
+      logger.info('✅ Database synced (development)');
     } else {
-      // En producción, solo actualizar
       await sequelize.sync({ alter: true });
-      logger.info('✅ Base de datos sincronizada (producción - actualizada)');
+      logger.info('✅ Database synced (production)');
     }
 
-    // 4. Ejecutar seeds básicos
-    logger.info('🌱 Ejecutando seeds...');
-    
-    // Seed de roles y usuarios básicos
+    // 4. Run seeds
     const seedResult = await seedDatabase();
-    if (seedResult) {
-      logger.info('✅ Roles y usuarios básicos creados');
-    } else {
-      logger.warn('⚠️ Error en seed de roles y usuarios');
-    }
-
-    // Seed de tipos de evento
     const tipoEventoSeedResult = await TipoEventoSeedService.seedTiposEvento();
-    if (tipoEventoSeedResult) {
-      logger.info('✅ Tipos de evento creados');
-    } else {
-      logger.warn('⚠️ Error en seed de tipos de evento');
+    
+    if (seedResult && tipoEventoSeedResult) {
+      logger.info('✅ Seeds completed');
     }
 
-    logger.info('🎉 Inicialización de la aplicación completada exitosamente');
-    
-    // No cerrar la conexión aquí, se usará en la aplicación
     return true;
 
   } catch (error) {
-    logger.error('❌ Error durante la inicialización:', error);
+    logger.error({ error }, '❌ Error during initialization');
     process.exit(1);
   }
 }

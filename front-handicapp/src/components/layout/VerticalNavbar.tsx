@@ -12,52 +12,64 @@ import {
   BuildingOfficeIcon,
   UserIcon,
   ClipboardDocumentListIcon,
-  BeakerIcon
+  BeakerIcon,
+  CalendarDaysIcon
 } from '@heroicons/react/24/outline';
 
-// Definir los menús para cada rol
+// Definir los menús por rol con estructura clara
 const ROLE_MENUS = {
   admin: [
     { name: 'Dashboard', href: '/admin', icon: HomeIcon },
-    { name: 'Gestión de Usuarios', href: '/admin/users', icon: UserGroupIcon },
+    { name: 'Establecimientos', href: '/admin/establecimientos', icon: BuildingOfficeIcon },
+    { name: 'Caballos', href: '/admin/caballos', icon: ClipboardDocumentListIcon },
+    { name: 'Eventos', href: '/admin/eventos', icon: CalendarDaysIcon },
+    { name: 'Tareas', href: '/admin/tareas', icon: DocumentTextIcon },
+    { name: 'Usuarios', href: '/admin/users', icon: UserGroupIcon },
     { name: 'Estadísticas', href: '/admin/stats', icon: ChartBarIcon },
-    { name: 'Reportes', href: '/admin/reports', icon: DocumentTextIcon },
     { name: 'Configuración', href: '/admin/settings', icon: CogIcon },
   ],
   establecimiento: [
     { name: 'Dashboard', href: '/establecimiento', icon: HomeIcon },
-    { name: 'Mi Establecimiento', href: '/establecimiento/profile', icon: BuildingOfficeIcon },
-    { name: 'Caballos', href: '/establecimiento/horses', icon: ClipboardDocumentListIcon },
-    { name: 'Eventos', href: '/establecimiento/events', icon: ChartBarIcon },
-    { name: 'Personal', href: '/establecimiento/staff', icon: UserGroupIcon },
-    { name: 'Configuración', href: '/establecimiento/settings', icon: CogIcon },
+    { name: 'Mi Establecimiento', href: '/establecimiento/perfil', icon: BuildingOfficeIcon },
+    { name: 'Caballos', href: '/establecimiento/caballos', icon: ClipboardDocumentListIcon },
+    { name: 'Eventos', href: '/establecimiento/eventos', icon: CalendarDaysIcon },
+    { name: 'Tareas', href: '/establecimiento/tareas', icon: DocumentTextIcon },
+    { name: 'Personal', href: '/establecimiento/personal', icon: UserGroupIcon },
+    { name: 'Configuración', href: '/establecimiento/configuracion', icon: CogIcon },
   ],
   capataz: [
     { name: 'Dashboard', href: '/capataz', icon: HomeIcon },
-    { name: 'Caballos Asignados', href: '/capataz/horses', icon: ClipboardDocumentListIcon },
-    { name: 'Tareas Diarias', href: '/capataz/tasks', icon: DocumentTextIcon },
-    { name: 'Reportes', href: '/capataz/reports', icon: ChartBarIcon },
-    { name: 'Mi Perfil', href: '/capataz/profile', icon: UserIcon },
+    { name: 'Establecimiento', href: '/capataz/establecimiento', icon: BuildingOfficeIcon },
+    { name: 'Caballos', href: '/capataz/caballos', icon: ClipboardDocumentListIcon },
+    { name: 'Eventos', href: '/capataz/eventos', icon: CalendarDaysIcon },
+    { name: 'Tareas', href: '/capataz/tareas', icon: DocumentTextIcon },
+    { name: 'Reportes', href: '/capataz/reportes', icon: ChartBarIcon },
+    { name: 'Mi Perfil', href: '/capataz/perfil', icon: UserIcon },
   ],
   veterinario: [
     { name: 'Dashboard', href: '/veterinario', icon: HomeIcon },
-    { name: 'Consultas', href: '/veterinario/consultations', icon: BeakerIcon },
-    { name: 'Historial Médico', href: '/veterinario/medical-records', icon: DocumentTextIcon },
-    { name: 'Caballos en Tratamiento', href: '/veterinario/treatments', icon: ClipboardDocumentListIcon },
-    { name: 'Mi Perfil', href: '/veterinario/profile', icon: UserIcon },
+    { name: 'Establecimientos', href: '/veterinario/establecimientos', icon: BuildingOfficeIcon },
+    { name: 'Caballos', href: '/veterinario/caballos', icon: ClipboardDocumentListIcon },
+    { name: 'Eventos Médicos', href: '/veterinario/eventos', icon: BeakerIcon },
+    { name: 'Historial Médico', href: '/veterinario/historial', icon: CalendarDaysIcon },
+    { name: 'Tareas', href: '/veterinario/tareas', icon: DocumentTextIcon },
+    { name: 'Mi Perfil', href: '/veterinario/perfil', icon: UserIcon },
   ],
   empleado: [
     { name: 'Dashboard', href: '/empleado', icon: HomeIcon },
-    { name: 'Mis Tareas', href: '/empleado/tasks', icon: ClipboardDocumentListIcon },
-    { name: 'Caballos', href: '/empleado/horses', icon: DocumentTextIcon },
-    { name: 'Mi Perfil', href: '/empleado/profile', icon: UserIcon },
+    { name: 'Establecimiento', href: '/empleado/establecimiento', icon: BuildingOfficeIcon },
+    { name: 'Caballos', href: '/empleado/caballos', icon: ClipboardDocumentListIcon },
+    { name: 'Eventos', href: '/empleado/eventos', icon: CalendarDaysIcon },
+    { name: 'Mis Tareas', href: '/empleado/tareas', icon: DocumentTextIcon },
+    { name: 'Mi Perfil', href: '/empleado/perfil', icon: UserIcon },
   ],
   propietario: [
     { name: 'Dashboard', href: '/propietario', icon: HomeIcon },
-    { name: 'Mis Caballos', href: '/propietario/horses', icon: ClipboardDocumentListIcon },
-    { name: 'Eventos', href: '/propietario/events', icon: ChartBarIcon },
-    { name: 'Historial', href: '/propietario/history', icon: DocumentTextIcon },
-    { name: 'Mi Perfil', href: '/propietario/profile', icon: UserIcon },
+    { name: 'Establecimientos', href: '/propietario/establecimientos', icon: BuildingOfficeIcon },
+    { name: 'Mis Caballos', href: '/propietario/caballos', icon: ClipboardDocumentListIcon },
+    { name: 'Eventos', href: '/propietario/eventos', icon: CalendarDaysIcon },
+    { name: 'Tareas', href: '/propietario/tareas', icon: DocumentTextIcon },
+    { name: 'Mi Perfil', href: '/propietario/perfil', icon: UserIcon },
   ],
 };
 
@@ -133,7 +145,7 @@ export function VerticalNavbar({ isOpen, onClose }: VerticalNavbarProps) {
           <nav className="flex-1 px-3 pt-6 pb-4 space-y-2 overflow-y-auto">
             {menuItems.map((item) => {
               const Icon = item.icon;
-              // Mejorar detección de ruta activa - exacta o sub-ruta válida
+              // Detección de ruta activa para estructura por roles
               const isActive = pathname === item.href || 
                              (item.href !== '/admin' && item.href !== '/establecimiento' && 
                               item.href !== '/capataz' && item.href !== '/veterinario' && 
@@ -211,8 +223,7 @@ export function VerticalNavbar({ isOpen, onClose }: VerticalNavbarProps) {
           
           <button
             onClick={onClose}
-            className="p-2 rounded-md transition-colors touch-manipulation"
-            style={{'--hover-bg': 'rgba(210, 180, 140, 0.2)'}}
+            className="p-2 rounded-md transition-colors touch-manipulation hover:bg-gray-700"
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = 'rgba(210, 180, 140, 0.2)';
             }}
@@ -231,7 +242,7 @@ export function VerticalNavbar({ isOpen, onClose }: VerticalNavbarProps) {
         <nav className="flex-1 px-3 pt-6 pb-4 space-y-2 overflow-y-auto">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            // Mejorar detección de ruta activa - exacta o sub-ruta válida
+            // Detección de ruta activa para estructura por roles
             const isActive = pathname === item.href || 
                            (item.href !== '/admin' && item.href !== '/establecimiento' && 
                             item.href !== '/capataz' && item.href !== '/veterinario' && 

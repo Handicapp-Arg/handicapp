@@ -1,58 +1,138 @@
+'use client';
+
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
+import { 
+  ClipboardDocumentListIcon,
+  CalendarDaysIcon,
+  DocumentTextIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  InformationCircleIcon
+} from '@heroicons/react/24/outline';
+import Link from 'next/link';
+
 export default function CapatazDashboard() {
+  const quickActions = [
+    {
+      title: 'Caballos Asignados',
+      description: 'Caballos bajo mi supervisión',
+      href: '/capataz/caballos',
+      icon: ClipboardDocumentListIcon,
+      color: 'bg-green-500'
+    },
+    {
+      title: 'Programar Eventos',
+      description: 'Crear y gestionar eventos',
+      href: '/capataz/eventos',
+      icon: CalendarDaysIcon,
+      color: 'bg-purple-500'
+    },
+    {
+      title: 'Gestionar Tareas',
+      description: 'Asignar y supervisar tareas',
+      href: '/capataz/tareas',
+      icon: DocumentTextIcon,
+      color: 'bg-orange-500'
+    },
+    {
+      title: 'Informes',
+      description: 'Reportes de actividades',
+      href: '/capataz/informes',
+      icon: InformationCircleIcon,
+      color: 'bg-blue-500'
+    }
+  ];
+
   return (
-    <div className="p-3 sm:p-4 lg:p-6 space-y-6 min-w-0">
-      <div className="border-b pb-3 sm:pb-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-          Panel de Capataz
-        </h1>
-        <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">
-          Bienvenido, aquí podrás gestionar las tareas y el personal.
-        </p>
-      </div>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow border">
-          <div className="flex items-center">
-            <div className="p-2 bg-amber-100 rounded-lg flex-shrink-0">
-              <svg className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-              </svg>
-            </div>
-            <div className="ml-3 sm:ml-4 min-w-0">
-              <h2 className="text-base sm:text-lg font-medium text-gray-900">Tareas</h2>
-              <p className="text-sm text-gray-500">Gestionar asignaciones</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow border">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
-              <svg className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-              </svg>
-            </div>
-            <div className="ml-3 sm:ml-4 min-w-0">
-              <h2 className="text-base sm:text-lg font-medium text-gray-900">Personal</h2>
-              <p className="text-sm text-gray-500">Supervisar equipo</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow border">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
-              <svg className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-            </div>
-            <div className="ml-3 sm:ml-4 min-w-0">
-              <h2 className="text-base sm:text-lg font-medium text-gray-900">Reportes</h2>
-              <p className="text-sm text-gray-500">Ver estadísticas</p>
-            </div>
-          </div>
+    <SimpleRoleGuard roles={['capataz']} fallback={
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="text-4xl mb-4">🚫</div>
+          <h3 className="text-lg font-medium text-gray-900">Sin permisos</h3>
+          <p className="text-gray-600">Solo capataces pueden acceder</p>
         </div>
       </div>
-    </div>
+    }>
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Panel de Capataz</h1>
+          <p className="text-gray-600">Supervisa y gestiona las actividades del establecimiento</p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Caballos</CardTitle>
+              <ClipboardDocumentListIcon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">-</div>
+              <p className="text-xs text-muted-foreground">Bajo supervisión</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Tareas Pendientes</CardTitle>
+              <ExclamationTriangleIcon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">-</div>
+              <p className="text-xs text-muted-foreground">Por asignar</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Eventos Hoy</CardTitle>
+              <CalendarDaysIcon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">-</div>
+              <p className="text-xs text-muted-foreground">Programados</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Tareas Completadas</CardTitle>
+              <CheckCircleIcon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">-</div>
+              <p className="text-xs text-muted-foreground">Esta semana</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Gestión de Capataz</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {quickActions.map((action) => (
+              <Link key={action.title} href={action.href}>
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className={`p-3 rounded-lg ${action.color}`}>
+                        <action.icon className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-gray-900">{action.title}</h3>
+                        <p className="text-sm text-gray-600">{action.description}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+    </SimpleRoleGuard>
   );
 }

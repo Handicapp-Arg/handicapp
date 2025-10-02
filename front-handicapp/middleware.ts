@@ -1,14 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
-  // Middleware simplificado - solo para autenticación básica
   const { pathname } = req.nextUrl;
   
+  // Solo aplicar middleware a rutas del dashboard
   const dashboardRoutes = ['/admin', '/veterinario', '/capataz', '/empleado', '/propietario', '/establecimiento'];
   const isDashboardRoute = dashboardRoutes.some(route => pathname.startsWith(route));
 
   if (isDashboardRoute) {
-    const token = req.cookies.get('access_token');
+    const token = req.cookies.get('auth-token');
     if (!token) {
       return NextResponse.redirect(new URL('/login', req.url));
     }
@@ -19,7 +19,12 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/admin/:path*',
+    '/veterinario/:path*',
+    '/capataz/:path*',
+    '/empleado/:path*',
+    '/propietario/:path*',
+    '/establecimiento/:path*'
   ],
 };
 

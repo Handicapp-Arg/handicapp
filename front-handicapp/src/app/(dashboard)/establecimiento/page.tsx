@@ -1,58 +1,152 @@
+'use client';
+
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
+import { 
+  BuildingOfficeIcon,
+  ClipboardDocumentListIcon,
+  CalendarDaysIcon,
+  DocumentTextIcon,
+  UserGroupIcon,
+  CogIcon
+} from '@heroicons/react/24/outline';
+import Link from 'next/link';
+
 export default function EstablecimientoDashboard() {
+  const quickActions = [
+    {
+      title: 'Mi Establecimiento',
+      description: 'Gestionar información del establecimiento',
+      href: '/establecimiento/perfil',
+      icon: BuildingOfficeIcon,
+      color: 'bg-blue-500'
+    },
+    {
+      title: 'Caballos',
+      description: 'Caballos del establecimiento',
+      href: '/establecimiento/caballos',
+      icon: ClipboardDocumentListIcon,
+      color: 'bg-green-500'
+    },
+    {
+      title: 'Eventos',
+      description: 'Eventos programados',
+      href: '/establecimiento/eventos',
+      icon: CalendarDaysIcon,
+      color: 'bg-purple-500'
+    },
+    {
+      title: 'Tareas',
+      description: 'Tareas del establecimiento',
+      href: '/establecimiento/tareas',
+      icon: DocumentTextIcon,
+      color: 'bg-orange-500'
+    },
+    {
+      title: 'Personal',
+      description: 'Gestionar equipo de trabajo',
+      href: '/establecimiento/personal',
+      icon: UserGroupIcon,
+      color: 'bg-indigo-500'
+    },
+    {
+      title: 'Configuración',
+      description: 'Configurar establecimiento',
+      href: '/establecimiento/configuracion',
+      icon: CogIcon,
+      color: 'bg-gray-500'
+    }
+  ];
+
   return (
-    <div className="p-3 sm:p-4 lg:p-6 space-y-6 min-w-0">
-      <div className="border-b pb-3 sm:pb-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-          Panel de Establecimiento
-        </h1>
-        <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">
-          Bienvenido, aquí podrás gestionar tu establecimiento.
-        </p>
-      </div>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow border">
-          <div className="flex items-center">
-            <div className="p-2 bg-amber-100 rounded-lg flex-shrink-0">
-              <svg className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-            </div>
-            <div className="ml-3 sm:ml-4 min-w-0">
-              <h2 className="text-base sm:text-lg font-medium text-gray-900">Mi Establecimiento</h2>
-              <p className="text-sm text-gray-500">Gestionar información</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow border">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
-              <svg className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-              </svg>
-            </div>
-            <div className="ml-3 sm:ml-4 min-w-0">
-              <h2 className="text-base sm:text-lg font-medium text-gray-900">Personal</h2>
-              <p className="text-sm text-gray-500">Gestionar empleados</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow border">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
-              <svg className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="ml-3 sm:ml-4 min-w-0">
-              <h2 className="text-base sm:text-lg font-medium text-gray-900">Actividades</h2>
-              <p className="text-sm text-gray-500">Revisar eventos</p>
-            </div>
-          </div>
+    <SimpleRoleGuard roles={['establecimiento']} fallback={
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="text-4xl mb-4">🚫</div>
+          <h3 className="text-lg font-medium text-gray-900">Sin permisos</h3>
+          <p className="text-gray-600">Solo propietarios de establecimiento pueden acceder</p>
         </div>
       </div>
-    </div>
+    }>
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Panel de Establecimiento</h1>
+          <p className="text-gray-600">Gestiona tu establecimiento ecuestre</p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Caballos</CardTitle>
+              <ClipboardDocumentListIcon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">-</div>
+              <p className="text-xs text-muted-foreground">En el establecimiento</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Personal</CardTitle>
+              <UserGroupIcon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">-</div>
+              <p className="text-xs text-muted-foreground">Empleados activos</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Eventos Hoy</CardTitle>
+              <CalendarDaysIcon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">-</div>
+              <p className="text-xs text-muted-foreground">Programados</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Tareas Pendientes</CardTitle>
+              <DocumentTextIcon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">-</div>
+              <p className="text-xs text-muted-foreground">Por completar</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Gestión del Establecimiento</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {quickActions.map((action) => (
+              <Link key={action.title} href={action.href}>
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className={`p-3 rounded-lg ${action.color}`}>
+                        <action.icon className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-gray-900">{action.title}</h3>
+                        <p className="text-sm text-gray-600">{action.description}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+    </SimpleRoleGuard>
   );
 }
