@@ -75,10 +75,11 @@ const ROLE_MENUS = {
 
 interface VerticalNavbarProps {
   isOpen: boolean;
+  isCollapsed: boolean;
   onClose: () => void;
 }
 
-export function VerticalNavbar({ isOpen, onClose }: VerticalNavbarProps) {
+export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarProps) {
   const pathname = usePathname();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -109,7 +110,9 @@ export function VerticalNavbar({ isOpen, onClose }: VerticalNavbarProps) {
 
   if (isLoading || !userRole) {
     return (
-      <div className="hidden lg:flex lg:w-64 lg:flex-col">
+      <div className={`hidden lg:flex lg:flex-col transition-all duration-300 ${
+        isCollapsed ? 'lg:w-16' : 'lg:w-64'
+      }`}>
         <div className="flex flex-col flex-grow text-white" style={{backgroundColor: '#3C2013'}}>
           <div className="flex items-center justify-center h-16 px-4 border-b" style={{borderColor: '#D2B48C'}}>
             <div className="animate-pulse h-8 w-32 rounded" style={{backgroundColor: '#D2B48C'}}></div>
@@ -124,25 +127,42 @@ export function VerticalNavbar({ isOpen, onClose }: VerticalNavbarProps) {
   return (
     <>
       {/* Desktop Sidebar */}
-      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
+      <div className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 transition-all duration-300 ${
+        isCollapsed ? 'lg:w-16' : 'lg:w-64'
+      }`}>
         <div className="flex flex-col flex-grow text-white shadow-xl" style={{backgroundColor: '#3C2013'}}>
           {/* Logo/Header */}
           <div className="flex items-center justify-center h-20 px-4 pb-2 border-b" style={{borderColor: '#3C2013'}}>
-            <img 
-              src="/logos/logo-icon-white.png" 
-              alt="HandicApp" 
-              className="h-20 w-auto"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-                target.nextElementSibling!.classList.remove('hidden');
-              }}
-            />
+            {isCollapsed ? (
+              <img 
+                src="/logos/logo-icon-white.png" 
+                alt="HandicApp" 
+                className="h-8 w-8"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  target.nextElementSibling!.classList.remove('hidden');
+                }}
+              />
+            ) : (
+              <img 
+                src="/logos/logo-icon-white.png" 
+                alt="HandicApp" 
+                className="h-20 w-auto"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  target.nextElementSibling!.classList.remove('hidden');
+                }}
+              />
+            )}
             <div className="hidden text-xl font-bold text-white">HandicApp</div>
           </div>
 
           {/* Navigation Menu */}
-          <nav className="flex-1 px-3 pt-6 pb-4 space-y-2 overflow-y-auto">
+          <nav className={`flex-1 px-3 pb-4 space-y-2 ${
+            isCollapsed ? 'overflow-hidden' : 'overflow-y-auto'
+          }`}>
             {menuItems.map((item) => {
               const Icon = item.icon;
               // Detección de ruta activa para estructura por roles
@@ -153,49 +173,57 @@ export function VerticalNavbar({ isOpen, onClose }: VerticalNavbarProps) {
                               pathname.startsWith(item.href + '/'));
               
               return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`
-                    flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200
-                    ${isActive
-                      ? 'text-white shadow-lg border-l-4'
-                      : 'text-gray-200 hover:text-white'
-                    }
-                  `}
-                  style={isActive ? {
-                    backgroundColor: 'rgba(210, 180, 140, 0.3)',
-                    borderLeftColor: '#D2B48C'
-                  } : {}}
-                  onMouseEnter={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.backgroundColor = 'rgba(210, 180, 140, 0.2)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }
-                  }}
-                >
-                  <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
-                  <span className="truncate">{item.name}</span>
-                </Link>
+                <div key={item.name} className="relative group">
+                  <Link
+                    href={item.href}
+                    className={`
+                      flex items-center py-2.5 text-sm font-medium rounded-lg transition-all duration-200
+                      ${isCollapsed ? 'px-2 justify-center' : 'px-3'}
+                      ${isActive
+                        ? 'text-white shadow-lg border-l-4'
+                        : 'text-gray-200 hover:text-white'
+                      }
+                    `}
+                    style={isActive ? {
+                      backgroundColor: 'rgba(210, 180, 140, 0.3)',
+                      borderLeftColor: '#D2B48C'
+                    } : {}}
+                    onMouseEnter={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.backgroundColor = 'rgba(210, 180, 140, 0.2)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }
+                    }}
+                    title={isCollapsed ? item.name : undefined}
+                  >
+                    <Icon className={`h-5 w-5 flex-shrink-0 ${isCollapsed ? '' : 'mr-3'}`} />
+                    {!isCollapsed && (
+                      <span className="truncate">{item.name}</span>
+                    )}
+                  </Link>
+                  
+                  {/* Tooltip for collapsed mode */}
+                  {isCollapsed && (
+                    <div className="absolute left-full top-1/2 transform -translate-y-1/2 ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 whitespace-nowrap">
+                      {item.name}
+                      <div className="absolute top-1/2 left-0 transform -translate-y-1/2 -translate-x-full border-4 border-transparent border-r-gray-900"></div>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </nav>
-
-          {/* Footer */}
-          <div className="flex-shrink-0 p-4 border-t" style={{borderColor: '#D2B48C'}}>
-            <div className="text-xs text-center" style={{color: '#D2B48C'}}>
-              © 2025 HandicApp
-            </div>
-          </div>
         </div>
       </div>
 
       {/* Desktop Spacer */}
-      <div className="hidden lg:block lg:w-64 lg:flex-shrink-0">
+      <div className={`hidden lg:block lg:flex-shrink-0 transition-all duration-300 ${
+        isCollapsed ? 'lg:w-16' : 'lg:w-64'
+      }`}>
         {/* Spacer for fixed sidebar */}
       </div>
 

@@ -45,11 +45,34 @@ export interface LoginResponse {
   };
 }
 
+export interface UserProfile {
+  id: number;
+  email: string;
+  nombre: string;
+  apellido: string;
+  rol_id: number;
+  telefono?: string;
+  verificado: boolean;
+  estado_usuario: string;
+  rol?: {
+    id: number;
+    nombre: string;
+    clave: string;
+  };
+}
+
+export interface ProfileResponse {
+  success: boolean;
+  message: string;
+  data?: UserProfile;
+}
+
 export class AuthService {
   private static readonly ENDPOINTS = {
     REGISTER: "/auth/register",
     LOGIN: "/auth/login",
     LOGOUT: "/auth/logout",
+    PROFILE: "/auth/profile",
   } as const;
 
   /**
@@ -106,6 +129,27 @@ export class AuthService {
         this.ENDPOINTS.LOGOUT,
         {
           method: "POST",
+        }
+      );
+
+      return response;
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
+      }
+      throw new HttpError("Error de conexión", 0, null);
+    }
+  }
+
+  /**
+   * Obtiene el perfil del usuario actual
+   */
+  static async getProfile(): Promise<ProfileResponse> {
+    try {
+      const response = await httpJson<ProfileResponse>(
+        this.ENDPOINTS.PROFILE,
+        {
+          method: "GET",
         }
       );
 

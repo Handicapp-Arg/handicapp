@@ -10,6 +10,7 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   // Detectar cambios de tamaño de pantalla
@@ -35,6 +36,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Sidebar - Navbar Vertical */}
         <VerticalNavbar 
           isOpen={sidebarOpen}
+          isCollapsed={sidebarCollapsed}
           onClose={() => setSidebarOpen(false)}
         />
 
@@ -43,6 +45,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Top Navbar - Navbar Horizontal */}
           <HorizontalNavbar 
             onMenuClick={() => setSidebarOpen(!sidebarOpen)}
+            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+            isCollapsed={sidebarCollapsed}
           />
 
           {/* Page Content */}

@@ -1,194 +1,242 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SimpleAdminOnly } from '@/components/common/SimplePermissionGuard';
-import { 
-  BuildingOfficeIcon,
-  ClipboardDocumentListIcon,
-  CalendarDaysIcon,
-  DocumentTextIcon,
-  UserGroupIcon,
-  ChartBarIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon
-} from '@heroicons/react/24/outline';
 import Link from 'next/link';
+import { StatsCards } from './components/StatsCards';
 
 export default function AdminDashboard() {
-  const quickActions = [
+  // Datos del sistema simplificados y priorizados
+  const priorityStats = [
+    {
+      title: 'Usuarios Totales',
+      value: '248',
+      change: '+12 este mes',
+      icon: '👥',
+      color: 'blue',
+      href: '/admin/users'
+    },
     {
       title: 'Establecimientos',
-      description: 'Gestionar todos los establecimientos',
-      href: '/admin/establecimientos',
-      icon: BuildingOfficeIcon,
-      color: 'bg-blue-500'
+      value: '12',
+      change: '2 nuevos',
+      icon: '🏢',
+      color: 'green',
+      href: '/admin/establecimientos'
     },
     {
       title: 'Caballos',
-      description: 'Registro global de caballos',
-      href: '/admin/caballos',
-      icon: ClipboardDocumentListIcon,
-      color: 'bg-green-500'
+      value: '1,047',
+      change: '+23 esta semana',
+      icon: '�',
+      color: 'purple',
+      href: '/admin/caballos'
     },
     {
       title: 'Eventos',
-      description: 'Todos los eventos del sistema',
-      href: '/admin/eventos',
-      icon: CalendarDaysIcon,
-      color: 'bg-purple-500'
-    },
-    {
-      title: 'Tareas',
-      description: 'Supervisión global de tareas',
-      href: '/admin/tareas',
-      icon: DocumentTextIcon,
-      color: 'bg-orange-500'
-    },
-    {
-      title: 'Usuarios',
-      description: 'Gestión de usuarios del sistema',
-      href: '/admin/users',
-      icon: UserGroupIcon,
-      color: 'bg-indigo-500'
-    },
-    {
-      title: 'Estadísticas',
-      description: 'Reportes y análisis globales',
-      href: '/admin/stats',
-      icon: ChartBarIcon,
-      color: 'bg-pink-500'
+      value: '89',
+      change: '15 este mes',
+      icon: '📅',
+      color: 'orange',
+      href: '/admin/eventos'
     }
   ];
 
+  // Acciones principales simplificadas
+  const quickActions = [
+    {
+      title: 'Usuarios',
+      description: 'Gestionar usuarios y permisos',
+      icon: '�',
+      color: 'blue',
+      href: '/admin/users'
+    },
+    {
+      title: 'Establecimientos',
+      description: 'Supervisar establecimientos',
+      icon: '🏢',
+      color: 'green',
+      href: '/admin/establecimientos'
+    },
+    {
+      title: 'Reportes',
+      description: 'Análisis y estadísticas',
+      icon: '📊',
+      color: 'purple',
+      href: '/admin/stats'
+    },
+    {
+      title: 'Configuración',
+      description: 'Ajustes del sistema',
+      icon: '⚙️',
+      color: 'orange',
+      href: '/admin/settings'
+    }
+  ];
+
+  const getColorClasses = (color: string) => {
+    const colors = {
+      blue: 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100',
+      green: 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100',
+      purple: 'bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100',
+      orange: 'bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100'
+    };
+    return colors[color as keyof typeof colors] || colors.blue;
+  };
+
+  const getStatColorClasses = (color: string) => {
+    const colors = {
+      blue: 'bg-blue-100 text-blue-700',
+      green: 'bg-green-100 text-green-700',
+      purple: 'bg-purple-100 text-purple-700',
+      orange: 'bg-orange-100 text-orange-700'
+    };
+    return colors[color as keyof typeof colors] || colors.blue;
+  };
+
   return (
     <SimpleAdminOnly fallback={
-      <div className="flex items-center justify-center h-64">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-4xl mb-4">🚫</div>
-          <h3 className="text-lg font-medium text-gray-900">Sin permisos</h3>
-          <p className="text-gray-600">Solo administradores pueden acceder</p>
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">🚫</span>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Acceso Denegado</h3>
+          <p className="text-gray-600">Solo administradores pueden acceder a esta sección</p>
         </div>
       </div>
     }>
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Panel de Administración</h1>
-          <p className="text-gray-600">Control total del sistema HandicApp</p>
-        </div>
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="mb-2">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Panel de Administración</h1>
+              <p className="text-gray-600 text-sm sm:text-base">Control total del sistema HandicApp</p>
+            </div>
+          </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Establecimientos</CardTitle>
-              <BuildingOfficeIcon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">-</div>
-              <p className="text-xs text-muted-foreground">Total registrados</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Usuarios</CardTitle>
-              <UserGroupIcon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">-</div>
-              <p className="text-xs text-muted-foreground">Usuarios activos</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Caballos</CardTitle>
-              <ClipboardDocumentListIcon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">-</div>
-              <p className="text-xs text-muted-foreground">En el sistema</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Eventos Hoy</CardTitle>
-              <CalendarDaysIcon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">-</div>
-              <p className="text-xs text-muted-foreground">Programados</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Gestión del Sistema</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {quickActions.map((action) => (
-              <Link key={action.title} href={action.href}>
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-4">
-                      <div className={`p-3 rounded-lg ${action.color}`}>
-                        <action.icon className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-gray-900">{action.title}</h3>
-                        <p className="text-sm text-gray-600">{action.description}</p>
-                      </div>
+          {/* Stats Overview */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+            {priorityStats.map((stat, index) => (
+              <Link key={index} href={stat.href}>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-all duration-200 cursor-pointer group">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${getStatColorClasses(stat.color)}`}>
+                      <span className="text-lg">{stat.icon}</span>
                     </div>
-                  </CardContent>
-                </Card>
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-gray-400">→</span>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
+                    <p className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</p>
+                    <p className="text-xs text-gray-500">{stat.change}</p>
+                  </div>
+                </div>
               </Link>
             ))}
           </div>
-        </div>
 
-        {/* System Status */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircleIcon className="h-5 w-5 text-green-500" />
+          {/* Quick Actions */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <span className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
+                ⚡
+              </span>
+              Acciones Rápidas
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {quickActions.map((action, index) => (
+                <Link key={index} href={action.href}>
+                  <div className={`p-4 sm:p-6 rounded-xl border-2 transition-all duration-200 cursor-pointer ${getColorClasses(action.color)}`}>
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-2xl">{action.icon}</span>
+                      <h3 className="font-semibold">{action.title}</h3>
+                    </div>
+                    <p className="text-sm opacity-80">{action.description}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Detailed Stats */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <span className="w-6 h-6 bg-purple-100 rounded-lg flex items-center justify-center">
+                📊
+              </span>
+              Estadísticas Detalladas
+            </h2>
+            <StatsCards />
+          </div>
+
+          {/* System Status & Activity */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* System Status */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center">
+                  ✅
+                </span>
                 Estado del Sistema
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+              </h3>
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Base de Datos</span>
-                  <span className="text-sm text-green-600">✅ Operativa</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">API Backend</span>
-                  <span className="text-sm text-green-600">✅ Operativa</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Servidor</span>
-                  <span className="text-sm text-green-600">✅ Operativo</span>
-                </div>
+                {[
+                  { name: 'Base de Datos', status: 'Operativa', icon: '🗄️' },
+                  { name: 'API Backend', status: 'Operativa', icon: '🔗' },
+                  { name: 'Servidor Web', status: 'Operativo', icon: '🌐' },
+                  { name: 'Conectividad', status: 'Normal', icon: '📡' }
+                ].map((item, index) => (
+                  <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg">{item.icon}</span>
+                      <span className="text-sm font-medium text-gray-900">{item.name}</span>
+                    </div>
+                    <span className="text-sm text-green-600 font-medium flex items-center gap-1">
+                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                      {item.status}
+                    </span>
+                  </div>
+                ))}
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ExclamationTriangleIcon className="h-5 w-5 text-amber-500" />
-                Alertas del Sistema
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-gray-500 text-sm">
-                No hay alertas pendientes
+            {/* Recent Activity */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
+                  📢
+                </span>
+                Actividad Reciente
+              </h3>
+              <div className="space-y-4">
+                {[
+                  { time: 'Hace 2 min', action: 'Nuevo usuario registrado', detail: 'Establecimiento Villa María', icon: '👤' },
+                  { time: 'Hace 15 min', action: 'Evento creado', detail: 'Competencia de salto', icon: '📅' },
+                  { time: 'Hace 1 hora', action: 'Caballo registrado', detail: 'Thunder - Cuarto de Milla', icon: '🐎' }
+                ].map((activity, index) => (
+                  <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
+                    <span className="text-lg flex-shrink-0">{activity.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-sm font-medium text-gray-900 truncate">{activity.action}</p>
+                        <span className="text-xs text-gray-500 flex-shrink-0">{activity.time}</span>
+                      </div>
+                      <p className="text-xs text-gray-600 truncate">{activity.detail}</p>
+                    </div>
+                  </div>
+                ))}
+                <div className="text-center pt-2">
+                  <Link href="/admin/activity" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                    Ver toda la actividad →
+                  </Link>
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     </SimpleAdminOnly>

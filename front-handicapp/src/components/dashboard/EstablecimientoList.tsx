@@ -97,59 +97,72 @@ export const EstablecimientoList: React.FC<EstablecimientoListProps> = ({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
+      <div className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Cargando establecimientos...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-md p-4">
-        <p className="text-red-800">{error}</p>
-        <Button onClick={loadEstablecimientos} className="mt-2">
-          Reintentar
-        </Button>
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <div className="text-4xl mb-4">⚠️</div>
+          <h3 className="text-lg font-semibold text-red-800 mb-2">Error al cargar establecimientos</h3>
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={loadEstablecimientos}
+            className="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors"
+          >
+            Reintentar
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="p-6">
+      {/* Header moderno */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Establecimientos</h2>
           <p className="text-gray-600">Gestiona los establecimientos ecuestres</p>
         </div>
 
         <SimpleAdminOnly>
-          <Button 
+          <button 
             onClick={onCreateEstablecimiento}
-            className="bg-amber-600 hover:bg-amber-700"
+            className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
           >
             <PlusIcon className="h-4 w-4 mr-2" />
             Nuevo Establecimiento
-          </Button>
+          </button>
         </SimpleAdminOnly>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      {/* Filtros modernos */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-8">
         <div className="relative flex-1">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
+          <input
+            type="text"
             placeholder="Buscar establecimientos..."
             value={filters.search || ''}
             onChange={(e) => handleSearch(e.target.value)}
-            className="pl-10"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
         
         <select
           value={filters.tipo_establecimiento || ''}
           onChange={(e) => handleFilterChange('tipo_establecimiento', e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
         >
           <option value="">Todos los tipos</option>
           <option value="haras">Haras</option>
@@ -163,7 +176,7 @@ export const EstablecimientoList: React.FC<EstablecimientoListProps> = ({
         <select
           value={filters.estado || ''}
           onChange={(e) => handleFilterChange('estado', e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
         >
           <option value="">Todos los estados</option>
           <option value="activo">Activo</option>
@@ -172,127 +185,148 @@ export const EstablecimientoList: React.FC<EstablecimientoListProps> = ({
         </select>
       </div>
 
-      {/* Lista de Establecimientos */}
+      {/* Grid de establecimientos moderno */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {establecimientos.map((establecimiento) => (
-          <Card key={establecimiento.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader>
-              <div className="flex items-start justify-between">
+          <div key={establecimiento.id} className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-all duration-200 border border-gray-100 hover:border-gray-200">
+            <div className="p-6">
+              {/* Header de la tarjeta */}
+              <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-3">
-                  <span className="text-2xl">{getTipoIcon(establecimiento.tipo_establecimiento)}</span>
+                  <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <span className="text-2xl">{getTipoIcon(establecimiento.tipo_establecimiento)}</span>
+                  </div>
                   <div>
-                    <CardTitle className="text-lg">{establecimiento.nombre}</CardTitle>
-                    <Badge className={getEstadoBadge(establecimiento.estado)}>
+                    <h3 className="text-lg font-semibold text-gray-900">{establecimiento.nombre}</h3>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getEstadoBadge(establecimiento.estado)}`}>
                       {establecimiento.estado}
-                    </Badge>
+                    </span>
                   </div>
                 </div>
                 
                 <SimpleAdminOnly>
-                  <Button
-                    variant="ghost"
+                  <button
                     onClick={() => onEditEstablecimiento?.(establecimiento)}
+                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                   >
                     <PencilIcon className="h-4 w-4" />
-                  </Button>
+                  </button>
                 </SimpleAdminOnly>
               </div>
-            </CardHeader>
 
-            <CardContent className="space-y-3">
               {/* Información básica */}
-              <div className="space-y-2">
+              <div className="space-y-3 mb-4">
                 <div className="flex items-center text-sm text-gray-600">
-                                    <MapPinIcon className="h-4 w-4 text-gray-400" />
-                  {establecimiento.direccion}
+                  <MapPinIcon className="h-4 w-4 mr-2 text-gray-400" />
+                  <span className="truncate">{establecimiento.direccion}</span>
                 </div>
                 
                 {establecimiento.telefono && (
                   <div className="flex items-center text-sm text-gray-600">
-                                      <PhoneIcon className="h-4 w-4 text-gray-400" />
-                    {establecimiento.telefono}
+                    <PhoneIcon className="h-4 w-4 mr-2 text-gray-400" />
+                    <span>{establecimiento.telefono}</span>
                   </div>
                 )}
                 
                 {establecimiento.email && (
                   <div className="flex items-center text-sm text-gray-600">
-                                      <EnvelopeIcon className="h-4 w-4 text-gray-400" />
-                    {establecimiento.email}
+                    <EnvelopeIcon className="h-4 w-4 mr-2 text-gray-400" />
+                    <span className="truncate">{establecimiento.email}</span>
                   </div>
                 )}
               </div>
 
-              {/* Estadísticas */}
+              {/* Estadísticas en grid */}
               {establecimiento._count && (
-                <div className="grid grid-cols-2 gap-4 pt-3 border-t">
+                <div className="grid grid-cols-2 gap-3 mb-4 p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center text-sm">
-                    <UserGroupIcon className="h-4 w-4 mr-2 text-blue-500" />
-                    <span>{establecimiento._count.usuarios} usuarios</span>
+                    <div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2">
+                      <UserGroupIcon className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-gray-900">{establecimiento._count.usuarios}</div>
+                      <div className="text-xs text-gray-500">usuarios</div>
+                    </div>
                   </div>
+                  
                   <div className="flex items-center text-sm">
-                    <HomeIcon className="h-4 w-4 mr-2 text-green-500" />
-                    <span>{establecimiento._count.caballos} caballos</span>
+                    <div className="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center mr-2">
+                      <HomeIcon className="h-4 w-4 text-green-600" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-gray-900">{establecimiento._count.caballos}</div>
+                      <div className="text-xs text-gray-500">caballos</div>
+                    </div>
                   </div>
+                  
                   <div className="flex items-center text-sm">
-                    <CalendarDaysIcon className="h-4 w-4 mr-2 text-purple-500" />
-                    <span>{establecimiento._count.eventos} eventos</span>
+                    <div className="h-8 w-8 bg-purple-100 rounded-lg flex items-center justify-center mr-2">
+                      <CalendarDaysIcon className="h-4 w-4 text-purple-600" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-gray-900">{establecimiento._count.eventos}</div>
+                      <div className="text-xs text-gray-500">eventos</div>
+                    </div>
                   </div>
+                  
                   <div className="flex items-center text-sm">
-                    <CheckIcon className="h-4 w-4 mr-2 text-orange-500" />
-                    <span>{establecimiento._count.tareas} tareas</span>
+                    <div className="h-8 w-8 bg-orange-100 rounded-lg flex items-center justify-center mr-2">
+                      <CheckIcon className="h-4 w-4 text-orange-600" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-gray-900">{establecimiento._count.tareas}</div>
+                      <div className="text-xs text-gray-500">tareas</div>
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* Información adicional */}
               {(establecimiento.superficie_hectareas || establecimiento.cantidad_boxes) && (
-                <div className="pt-3 border-t">
-                  <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
-                    {establecimiento.superficie_hectareas && (
-                      <div>
-                        <span className="font-medium">Superficie:</span> {establecimiento.superficie_hectareas} ha
-                      </div>
-                    )}
-                    {establecimiento.cantidad_boxes && (
-                      <div>
-                        <span className="font-medium">Boxes:</span> {establecimiento.cantidad_boxes}
-                      </div>
-                    )}
-                  </div>
+                <div className="flex justify-between text-sm text-gray-600 mb-4 p-3 bg-gray-50 rounded-lg">
+                  {establecimiento.superficie_hectareas && (
+                    <div>
+                      <span className="font-medium">Superficie:</span> {establecimiento.superficie_hectareas} ha
+                    </div>
+                  )}
+                  {establecimiento.cantidad_boxes && (
+                    <div>
+                      <span className="font-medium">Boxes:</span> {establecimiento.cantidad_boxes}
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Acción principal */}
-              <Button
-                variant="secondary"
-                className="w-full mt-4"
+              {/* Botón de acción */}
+              <button
                 onClick={() => onSelectEstablecimiento?.(establecimiento)}
+                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium py-2 px-4 rounded-lg transition-colors"
               >
                 Ver Detalles
-              </Button>
-            </CardContent>
-          </Card>
+              </button>
+            </div>
+          </div>
         ))}
       </div>
 
-      {/* Empty State */}
+      {/* Empty State moderno */}
       {establecimientos.length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">🏢</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+        <div className="text-center py-16">
+          <div className="text-6xl mb-6">🏢</div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
             No hay establecimientos
           </h3>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600 mb-6 max-w-md mx-auto">
             Comienza creando tu primer establecimiento ecuestre
           </p>
           <SimpleAdminOnly>
-            <Button 
+            <button 
               onClick={onCreateEstablecimiento}
-              className="bg-amber-600 hover:bg-amber-700"
+              className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
             >
-              <PlusIcon className="h-4 w-4 mr-2" />
+              <PlusIcon className="h-5 w-5 mr-2" />
               Crear Establecimiento
-            </Button>
+            </button>
           </SimpleAdminOnly>
         </div>
       )}

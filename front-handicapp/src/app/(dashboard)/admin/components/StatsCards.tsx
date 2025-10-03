@@ -39,11 +39,12 @@ export function StatsCards() {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="bg-white rounded-lg shadow p-6 animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-            <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+          <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+            <div className="h-8 bg-gray-200 rounded w-1/2 mb-2"></div>
+            <div className="h-3 bg-gray-200 rounded w-2/3"></div>
           </div>
         ))}
       </div>
@@ -52,15 +53,17 @@ export function StatsCards() {
 
   if (!stats) {
     return (
-      <div className="bg-white rounded-lg shadow p-6 text-center">
-        <div className="text-6xl mb-4">📊</div>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8 text-center">
+        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <span className="text-2xl">📊</span>
+        </div>
         <h2 className="text-xl font-semibold text-gray-900 mb-2">Error al cargar estadísticas</h2>
-        <p className="text-gray-600">No se pudieron cargar las estadísticas del sistema.</p>
+        <p className="text-gray-600 mb-4">No se pudieron cargar las estadísticas del sistema.</p>
         <button
           onClick={fetchStats}
-          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
         >
-          Reintentar
+          🔄 Reintentar
         </button>
       </div>
     );
@@ -89,94 +92,93 @@ export function StatsCards() {
 
   return (
     <div className="space-y-6">
-      {/* Main Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total de Usuarios</p>
+      {/* Main Stats Cards - Más compactas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <span className="text-lg">👥</span>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-medium text-gray-600">Total</p>
               <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
             </div>
-            <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <span className="text-2xl">👥</span>
-            </div>
           </div>
+          <p className="text-sm text-gray-600">Usuarios registrados</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Usuarios Activos</p>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+              <span className="text-lg">✅</span>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-medium text-gray-600">Activos</p>
               <p className="text-2xl font-bold text-green-600">{stats.activeUsers}</p>
             </div>
-            <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <span className="text-2xl">✅</span>
-            </div>
           </div>
-          <div className="mt-2">
-            <div className="flex items-center text-sm text-gray-600">
-              <span>{100 - inactivePercentage}% del total</span>
-            </div>
-          </div>
+          <p className="text-sm text-gray-600">{100 - inactivePercentage}% del total</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Usuarios Inactivos</p>
-              <p className="text-2xl font-bold text-red-600">{stats.inactiveUsers}</p>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <span className="text-lg">✓</span>
             </div>
-            <div className="h-12 w-12 bg-red-100 rounded-lg flex items-center justify-center">
-              <span className="text-2xl">🚫</span>
-            </div>
-          </div>
-          <div className="mt-2">
-            <div className="flex items-center text-sm text-gray-600">
-              <span>{inactivePercentage}% del total</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
+            <div className="text-right">
               <p className="text-sm font-medium text-gray-600">Verificados</p>
               <p className="text-2xl font-bold text-blue-600">{stats.verifiedUsers}</p>
             </div>
-            <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <span className="text-2xl">✓</span>
+          </div>
+          <p className="text-sm text-gray-600">{verifiedPercentage}% verificados</p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+              <span className="text-lg">🆕</span>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-medium text-gray-600">Nuevos</p>
+              <p className="text-2xl font-bold text-orange-600">{stats.recentUsers}</p>
             </div>
           </div>
-          <div className="mt-2">
-            <div className="flex items-center text-sm text-gray-600">
-              <span>{verifiedPercentage}% del total</span>
-            </div>
-          </div>
+          <p className="text-sm text-gray-600">Últimos 7 días</p>
         </div>
       </div>
 
-      {/* Role Distribution */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Distribución por Roles</h3>
+      {/* Role Distribution - Más compacta */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <span className="w-6 h-6 bg-purple-100 rounded-lg flex items-center justify-center">
+            🎭
+          </span>
+          Distribución por Roles
+        </h3>
         
         {Object.keys(stats.roleDistribution).length === 0 ? (
-          <p className="text-gray-600">No hay datos de distribución de roles disponibles.</p>
+          <div className="text-center py-8">
+            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <span className="text-xl">📊</span>
+            </div>
+            <p className="text-gray-600">No hay datos de distribución disponibles</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {Object.entries(stats.roleDistribution).map(([roleKey, count]) => {
               const percentage = stats.totalUsers > 0 ? Math.round((count / stats.totalUsers) * 100) : 0;
               
               return (
                 <div
                   key={roleKey}
-                  className={`p-4 rounded-lg border ${roleColors[roleKey] || 'bg-gray-100 text-gray-800 border-gray-200'}`}
+                  className={`p-4 rounded-lg border-2 ${roleColors[roleKey] || 'bg-gray-100 text-gray-800 border-gray-200'}`}
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">{roleNames[roleKey] || roleKey}</p>
-                      <p className="text-2xl font-bold">{count}</p>
+                      <p className="font-semibold text-sm">{roleNames[roleKey] || roleKey}</p>
+                      <p className="text-xl font-bold">{count}</p>
                     </div>
-                    <div className="text-sm opacity-75">
+                    <div className="text-sm font-medium opacity-75">
                       {percentage}%
                     </div>
                   </div>
@@ -187,27 +189,32 @@ export function StatsCards() {
         )}
       </div>
 
-      {/* Recent Activity */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Actividad Reciente</h3>
+      {/* Compact Activity Metrics */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <span className="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center">
+            📈
+          </span>
+          Métricas de Actividad
+        </h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <div className="text-3xl mb-2">🆕</div>
-            <p className="text-2xl font-bold text-gray-900">{stats.recentUsers}</p>
-            <p className="text-sm text-gray-600">Usuarios últimos 7 días</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="text-2xl mb-2">📊</div>
+            <p className="text-2xl font-bold text-blue-700">{Math.round((stats.activeUsers / Math.max(stats.totalUsers, 1)) * 100)}%</p>
+            <p className="text-sm text-blue-600 font-medium">Tasa de Actividad</p>
           </div>
           
-          <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <div className="text-3xl mb-2">📈</div>
-            <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
-            <p className="text-sm text-gray-600">Total acumulado</p>
+          <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+            <div className="text-2xl mb-2">⚡</div>
+            <p className="text-2xl font-bold text-green-700">{stats.recentUsers}</p>
+            <p className="text-sm text-green-600 font-medium">Nuevos (7 días)</p>
           </div>
           
-          <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <div className="text-3xl mb-2">⚡</div>
-            <p className="text-2xl font-bold text-gray-900">{Math.round((stats.activeUsers / Math.max(stats.totalUsers, 1)) * 100)}%</p>
-            <p className="text-sm text-gray-600">Tasa de actividad</p>
+          <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+            <div className="text-2xl mb-2">🎯</div>
+            <p className="text-2xl font-bold text-purple-700">{verifiedPercentage}%</p>
+            <p className="text-sm text-purple-600 font-medium">Verificación</p>
           </div>
         </div>
       </div>
@@ -216,9 +223,10 @@ export function StatsCards() {
       <div className="text-center">
         <button
           onClick={fetchStats}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2 mx-auto"
         >
-          🔄 Actualizar Estadísticas
+          <span>🔄</span>
+          Actualizar Estadísticas
         </button>
       </div>
     </div>

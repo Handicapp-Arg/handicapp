@@ -136,18 +136,23 @@ export function UserManagement() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       {/* Header */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="p-4 sm:p-6 border-b border-gray-200">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Gestión de Usuarios</h2>
-            <p className="text-gray-600 mt-1">Administra usuarios del sistema</p>
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 flex items-center gap-2">
+              <span className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                👥
+              </span>
+              Gestión de Usuarios
+            </h2>
+            <p className="text-gray-600 mt-1 text-sm">Administra usuarios del sistema</p>
           </div>
           
           <Button
             onClick={() => setShowCreateModal(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium"
           >
             <span>➕</span>
             Crear Usuario
@@ -155,32 +160,34 @@ export function UserManagement() {
         </div>
 
         {/* Search */}
-        <form onSubmit={handleSearch} className="mt-4 flex gap-2">
+        <form onSubmit={handleSearch} className="mt-4 flex flex-col sm:flex-row gap-2">
           <input
             type="text"
             placeholder="Buscar por nombre o email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
-          <Button
-            type="submit"
-            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg"
-          >
-            🔍 Buscar
-          </Button>
-          {searchTerm && (
+          <div className="flex gap-2">
             <Button
-              onClick={() => {
-                setSearchTerm('');
-                setCurrentPage(1);
-                fetchUsers(1, '');
-              }}
-              className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg"
+              type="submit"
+              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
             >
-              Limpiar
+              🔍 Buscar
             </Button>
-          )}
+            {searchTerm && (
+              <Button
+                onClick={() => {
+                  setSearchTerm('');
+                  setCurrentPage(1);
+                  fetchUsers(1, '');
+                }}
+                className="bg-gray-400 hover:bg-gray-500 text-white px-3 py-2 rounded-lg text-sm"
+              >
+                ×
+              </Button>
+            )}
+          </div>
         </form>
       </div>
 

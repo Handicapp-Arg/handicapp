@@ -56,6 +56,33 @@ body {
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
     Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial,
     "Apple Color Emoji", "Segoe UI Emoji";
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* Estilos para autocompletado del navegador */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.1) inset !important;
+  -webkit-text-fill-color: white !important;
+  border: 1px solid rgba(210, 180, 140, 0.3) !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Para Firefox */
+input:-moz-autofill {
+  box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.1) inset !important;
+  color: white !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 /* Toaster pop-up overlay + modal */

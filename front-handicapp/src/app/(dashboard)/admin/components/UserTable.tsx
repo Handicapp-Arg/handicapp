@@ -1,6 +1,8 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import { ChevronDownIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 import type { User } from './UserManagement';
 
 interface UserTableProps {
@@ -12,6 +14,70 @@ interface UserTableProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+}
+
+function ActionMenu({ user, onEdit, onDelete, onToggleStatus }: {
+  user: User;
+  onEdit: (user: User) => void;
+  onDelete: (userId: number) => void;
+  onToggleStatus: (userId: number) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <Button
+        onClick={() => setIsOpen(!isOpen)}
+        className="p-1 h-8 w-8 rounded-lg hover:bg-gray-100 flex items-center justify-center"
+        variant="ghost"
+      >
+        <EllipsisVerticalIcon className="h-4 w-4 text-gray-500" />
+      </Button>
+      
+      {isOpen && (
+        <>
+          <div 
+            className="fixed inset-0 z-10" 
+            onClick={() => setIsOpen(false)}
+          />
+          <div className="absolute right-0 top-8 z-20 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[140px]">
+            <button
+              onClick={() => {
+                onEdit(user);
+                setIsOpen(false);
+              }}
+              className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+            >
+              <span className="text-blue-600">✏️</span> Editar
+            </button>
+            <button
+              onClick={() => {
+                onToggleStatus(user.id);
+                setIsOpen(false);
+              }}
+              className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+            >
+              {user.estado_usuario === 'active' ? (
+                <><span className="text-orange-600">⏸️</span> Desactivar</>
+              ) : (
+                <><span className="text-green-600">▶️</span> Activar</>
+              )}
+            </button>
+            <hr className="my-1" />
+            <button
+              onClick={() => {
+                onDelete(user.id);
+                setIsOpen(false);
+              }}
+              className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+            >
+              <span>🗑️</span> Eliminar
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 export function UserTable({
@@ -67,104 +133,96 @@ export function UserTable({
     <div className="overflow-hidden">
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+        <table className="min-w-full">
+          <thead>
+            <tr className="border-b border-gray-200">
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
                 Usuario
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
                 Contacto
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
                 Rol
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="hidden sm:table-cell px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
                 Estado
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
                 Fecha
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Acciones
+              <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide w-16">
+                
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white">
             {users.map((user) => (
-              <tr key={user.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className="h-10 w-10 flex-shrink-0">
-                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                        <span className="text-sm font-medium text-blue-800">
-                          {user.nombre.charAt(0)}{user.apellido.charAt(0)}
-                        </span>
-                      </div>
+              <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-semibold text-blue-700">
+                        {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                      </span>
                     </div>
-                    <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-gray-900 truncate">
                         {user.nombre} {user.apellido}
                       </div>
-                      <div className="text-sm text-gray-500">ID: {user.id}</div>
+                      <div className="text-xs text-gray-500 md:hidden truncate">
+                        {user.email}
+                      </div>
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{user.email}</div>
+                <td className="hidden md:table-cell px-4 py-3">
+                  <div className="text-sm text-gray-900 truncate max-w-[200px]">{user.email}</div>
                   {user.telefono && (
-                    <div className="text-sm text-gray-500">{user.telefono}</div>
+                    <div className="text-xs text-gray-500">{user.telefono}</div>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadgeColor(user.rol?.clave || 'unknown')}`}>
+                <td className="px-4 py-3">
+                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-md ${getRoleBadgeColor(user.rol?.clave || 'unknown')}`}>
                     {user.rol?.nombre || 'Sin rol'}
                   </span>
+                  <div className="sm:hidden mt-1">
+                    <span className={`inline-flex items-center gap-1 text-xs ${
+                      user.estado_usuario === 'active' ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      <span className={`w-2 h-2 rounded-full ${
+                        user.estado_usuario === 'active' ? 'bg-green-500' : 'bg-red-500'
+                      }`}></span>
+                      {user.estado_usuario === 'active' ? 'Activo' : 'Inactivo'}
+                      {user.verificado && <span className="text-blue-600">✓</span>}
+                    </span>
+                  </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex flex-col gap-1">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      user.estado_usuario === 'active'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
+                <td className="hidden sm:table-cell px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${
+                      user.estado_usuario === 'active' ? 'bg-green-500' : 'bg-red-500'
+                    }`}></span>
+                    <span className={`text-xs font-medium ${
+                      user.estado_usuario === 'active' ? 'text-green-700' : 'text-red-700'
                     }`}>
                       {user.estado_usuario === 'active' ? 'Activo' : 'Inactivo'}
                     </span>
                     {user.verificado && (
-                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                        ✓ Verificado
-                      </span>
+                      <span className="text-xs text-blue-600 font-medium">✓</span>
                     )}
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="hidden lg:table-cell px-4 py-3 text-xs text-gray-500">
                   {formatDate(user.fecha_creacion)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      onClick={() => onEdit(user)}
-                      className="text-blue-600 hover:text-blue-900 text-sm px-3 py-1 rounded"
-                    >
-                      ✏️ Editar
-                    </Button>
-                    <Button
-                      onClick={() => onToggleStatus(user.id)}
-                      className={`text-sm px-3 py-1 rounded ${
-                        user.estado_usuario === 'active'
-                          ? 'text-orange-600 hover:text-orange-900'
-                          : 'text-green-600 hover:text-green-900'
-                      }`}
-                    >
-                      {user.estado_usuario === 'active' ? '🚫 Desactivar' : '✅ Activar'}
-                    </Button>
-                    <Button
-                      onClick={() => onDelete(user.id)}
-                      className="text-red-600 hover:text-red-900 text-sm px-3 py-1 rounded"
-                    >
-                      🗑️ Eliminar
-                    </Button>
-                  </div>
+                <td className="px-4 py-3 text-right">
+                  <ActionMenu 
+                    user={user}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    onToggleStatus={onToggleStatus}
+                  />
                 </td>
               </tr>
             ))}
@@ -174,68 +232,69 @@ export function UserTable({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+        <div className="bg-gray-50 border-t border-gray-200 px-4 py-3 sm:px-6">
           <div className="flex items-center justify-between">
             <div className="flex-1 flex justify-between sm:hidden">
               <Button
                 onClick={() => onPageChange(currentPage - 1)}
                 disabled={currentPage <= 1}
-                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative inline-flex items-center px-3 py-1 text-sm font-medium rounded-lg text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Anterior
+                ← Anterior
               </Button>
+              <span className="text-sm text-gray-700 flex items-center">
+                {currentPage} / {totalPages}
+              </span>
               <Button
                 onClick={() => onPageChange(currentPage + 1)}
                 disabled={currentPage >= totalPages}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative inline-flex items-center px-3 py-1 text-sm font-medium rounded-lg text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Siguiente
+                Siguiente →
               </Button>
             </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div className="hidden sm:flex sm:items-center sm:justify-between sm:w-full">
               <div>
-                <p className="text-sm text-gray-700">
-                  Página <span className="font-medium">{currentPage}</span> de{' '}
-                  <span className="font-medium">{totalPages}</span>
+                <p className="text-sm text-gray-600">
+                  Página <span className="font-medium text-gray-900">{currentPage}</span> de{' '}
+                  <span className="font-medium text-gray-900">{totalPages}</span>
                 </p>
               </div>
-              <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                  <Button
-                    onClick={() => onPageChange(currentPage - 1)}
-                    disabled={currentPage <= 1}
-                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    ←
-                  </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  onClick={() => onPageChange(currentPage - 1)}
+                  disabled={currentPage <= 1}
+                  className="inline-flex items-center px-2 py-1 text-sm font-medium rounded-lg text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ←
+                </Button>
+                
+                {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                  const pageNum = Math.max(1, Math.min(totalPages - 2, currentPage - 1)) + i;
+                  if (pageNum > totalPages) return null;
                   
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
-                    if (pageNum > totalPages) return null;
-                    
-                    return (
-                      <Button
-                        key={pageNum}
-                        onClick={() => onPageChange(pageNum)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                          currentPage === pageNum
-                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                        }`}
-                      >
-                        {pageNum}
-                      </Button>
-                    );
-                  })}
-                  
-                  <Button
-                    onClick={() => onPageChange(currentPage + 1)}
-                    disabled={currentPage >= totalPages}
-                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    →
-                  </Button>
-                </nav>
+                  return (
+                    <Button
+                      key={pageNum}
+                      onClick={() => onPageChange(pageNum)}
+                      className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-lg border ${
+                        currentPage === pageNum
+                          ? 'bg-blue-600 border-blue-600 text-white'
+                          : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+                
+                <Button
+                  onClick={() => onPageChange(currentPage + 1)}
+                  disabled={currentPage >= totalPages}
+                  className="inline-flex items-center px-2 py-1 text-sm font-medium rounded-lg text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  →
+                </Button>
               </div>
             </div>
           </div>

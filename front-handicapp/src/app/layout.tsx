@@ -14,8 +14,24 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Handicapp",
-  description: "Aplicación frontend Handicapp",
+  title: "HandicApp",
+  description: "Sistema de Gestión Equina - HandicApp",
+  keywords: ["handicapp", "gestión equina", "caballos", "establecimientos", "veterinaria"],
+  authors: [{ name: "HandicApp Team" }],
+  creator: "HandicApp",
+  publisher: "HandicApp",
+  icons: {
+    icon: "/logos/logo-icon-brown.png",
+    shortcut: "/logos/logo-icon-brown.png",
+    apple: "/logos/logo-icon-brown.png",
+  },
+  manifest: "/manifest.json",
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#3C2013",
 };
 
 export default function RootLayout({
@@ -24,10 +40,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang="en" className="h-full">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}>
         <ToasterProvider>
-          {children}
+          <div className="h-full w-full">
+            {children}
+          </div>
         </ToasterProvider>
       </body>
     </html>
