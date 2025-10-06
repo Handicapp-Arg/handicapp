@@ -388,4 +388,6 @@ function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoFormProps) 
   );
 }
 
+export { CaballoForm };
+
 export default CaballoForm;

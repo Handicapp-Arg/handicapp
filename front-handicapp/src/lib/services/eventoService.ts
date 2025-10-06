@@ -26,17 +26,25 @@ export interface Evento {
 }
 
 export interface CreateEventoData {
-  tipo_evento_id: number;
-  caballo_id: number;
   titulo: string;
   descripcion?: string;
   fecha_evento: string;
-  fecha_vencimiento?: string;
+  tipo_evento_id: number;
+  caballo_id?: number;
+  establecimiento_id?: number;
   ubicacion?: string;
   observaciones?: string;
   prioridad: 'baja' | 'media' | 'alta' | 'critica';
   costo?: number;
-  adjuntos?: string[];
+}
+
+// Interfaz extendida para el formulario frontend
+export interface EventoFormData extends CreateEventoData {
+  hora_inicio?: string;
+  hora_fin?: string;
+  estado?: 'programado' | 'en_progreso' | 'completado' | 'cancelado' | 'reprogramado';
+  es_publico?: boolean;
+  requiere_validacion?: boolean;
 }
 
 export interface EventoFilters {
