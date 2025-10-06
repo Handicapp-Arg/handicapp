@@ -92,7 +92,7 @@ export async function loginAction(
     }
 
     // Hacer login directo al backend
-    const response = await fetch('http://localhost:3001/api/v1/auth/login', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3003/api/v1'}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useToaster } from '@/components/ui/toaster';
+import { useToaster } from '@/components/ui/Toaster';
 import ApiClient from '@/lib/services/apiClient';
 
 export default function LoginPage() {

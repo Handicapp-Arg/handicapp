@@ -1,6 +1,5 @@
 'use client';
-
-const API_BASE_URL = 'http://localhost:3001/api/v1';
+import { appConfig } from '@/lib/config';
 
 export class ApiClient {
   private static async request<T>(
@@ -18,7 +17,7 @@ export class ApiClient {
       ...options,
     };
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+    const response = await fetch(`${appConfig.apiBaseUrl}${endpoint}`, config);
     
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;

@@ -3,8 +3,8 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { useToaster } from '@/components/ui/toaster';
+import { Button } from "@/components/ui/Button";
+import { useToaster } from '@/components/ui/Toaster';
 import ApiClient from '@/lib/services/apiClient';
 
 export default function HomePage() {

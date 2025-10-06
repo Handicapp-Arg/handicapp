@@ -2,6 +2,7 @@ import express, { type Express } from 'express';
 import { config } from './config/config';
 import { apiRoutes } from './routes';
 import { errorHandler, notFoundHandler } from './utils/errors';
+import { requestLogger } from './utils/logger';
 
 const app: Express = express();
 
@@ -19,6 +20,9 @@ app.use(cors({
   credentials: true,
   optionsSuccessStatus: 200
 }));
+
+// Concise request logs (method, url, status, duration)
+app.use(requestLogger);
 
 // API routes
 app.use(`${config.api.prefix}/${config.api.version}`, apiRoutes);

@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { useState } from 'react';
 import { ChevronDownIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 import type { User } from './UserManagement';
