@@ -1,142 +1,211 @@
-import { apiClient } from '@/lib/http';
+import ApiClient from './apiClient';
 
 export interface Caballo {
   id: number;
   nombre: string;
-  fecha_nacimiento: string;
-  sexo: 'macho' | 'hembra';
-  raza: string;
-  color: string;
-  altura?: number;
-  peso?: number;
-  disciplina_principal: 'polo' | 'salto' | 'doma' | 'turf' | 'endurance' | 'western' | 'recreation';
-  nivel_entrenamiento: 'potro' | 'iniciacion' | 'intermedio' | 'avanzado' | 'competicion' | 'retirado';
-  estado_salud: 'excelente' | 'bueno' | 'regular' | 'lesionado' | 'enfermo' | 'recuperacion';
-  estado_reproduccion?: 'apto' | 'no_apto' | 'gestante' | 'lactante' | 'retirado_reproduccion';
-  numero_microchip?: string;
-  numero_pasaporte?: string;
-  padre_id?: number;
-  madre_id?: number;
-  observaciones?: string;
-  foto_url?: string;
+  sexo: 'macho' | 'hembra' | null;
+  fecha_nacimiento: string | null;
+  pelaje: string | null;
+  raza: string | null;
+  disciplina: 'polo' | 'equitacion' | 'turf' | null;
+  microchip: string | null;
+  foto_url: string | null;
+  estado_global: 'activo' | 'inactivo' | 'vendido' | 'fallecido';
+  padre_id: number | null;
+  madre_id: number | null;
   creado_el: string;
-  actualizado_el: string;
+  actualizado_el: string | null;
+  
+  // Asociaciones
   padre?: Caballo;
   madre?: Caballo;
-  propietarios?: any[];
-  establecimientos?: any[];
-  eventos?: any[];
+  propiedades?: PropietarioCaballo[];
+  asociaciones_establecimientos?: CaballoEstablecimiento[];
+  
   _count?: {
     eventos: number;
-    tareas: number;
-    hijos: number;
+    descendencia: number;
+  };
+}
+
+export interface PropietarioCaballo {
+  id: number;
+  caballo_id: number;
+  propietario_usuario_id: number;
+  actual: boolean;
+  porcentaje_tenencia: number | null;
+  fecha_inicio: string | null;
+  fecha_fin: string | null;
+  propietario?: {
+    id: number;
+    nombre: string;
+    apellido: string;
+    email?: string;
+  };
+}
+
+export interface CaballoEstablecimiento {
+  id: number;
+  caballo_id: number;
+  establecimiento_id: number;
+  fecha_inicio: string;
+  fecha_fin: string | null;
+  estado_asociacion: 'pending' | 'accepted' | 'rejected' | 'finished';
+  establecimiento?: {
+    id: number;
+    nombre: string;
+    direccion?: string;
   };
 }
 
 export interface CreateCaballoData {
   nombre: string;
-  fecha_nacimiento: string;
-  sexo: 'macho' | 'hembra';
-  raza: string;
-  color: string;
-  altura?: number;
-  peso?: number;
-  disciplina_principal: 'polo' | 'salto' | 'doma' | 'turf' | 'endurance' | 'western' | 'recreation';
-  nivel_entrenamiento: 'potro' | 'iniciacion' | 'intermedio' | 'avanzado' | 'competicion' | 'retirado';
-  estado_salud: 'excelente' | 'bueno' | 'regular' | 'lesionado' | 'enfermo' | 'recuperacion';
-  estado_reproduccion?: 'apto' | 'no_apto' | 'gestante' | 'lactante' | 'retirado_reproduccion';
-  numero_microchip?: string;
-  numero_pasaporte?: string;
+  sexo?: 'macho' | 'hembra';
+  fecha_nacimiento?: string;
+  pelaje?: string;
+  raza?: string;
+  disciplina?: 'polo' | 'equitacion' | 'turf';
+  microchip?: string;
+  foto_url?: string;
   padre_id?: number;
   madre_id?: number;
-  observaciones?: string;
-  foto_url?: string;
+  establecimiento_id?: number;
+  propietario_usuario_id?: number;
+  porcentaje_tenencia?: number;
+}
+
+export interface UpdateCaballoData extends Partial<CreateCaballoData> {
+  estado_global?: 'activo' | 'inactivo' | 'vendido' | 'fallecido';
 }
 
 export interface CaballoFilters {
-  search?: string;
-  sexo?: string;
-  raza?: string;
-  disciplina_principal?: string;
-  nivel_entrenamiento?: string;
-  estado_salud?: string;
-  establecimiento_id?: number;
-  propietario_id?: number;
   page?: number;
   limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+  search?: string;
+  establecimiento?: number;
+  raza?: string;
+  sexo?: string;
 }
 
-class CaballoService {
-  private baseUrl = '/caballos';
+export const caballoService = {
+  /**
+   * Obtener todos los caballos con filtros
+   */
+  async getAll(filters: CaballoFilters = {}) {
+    return ApiClient.getCaballos(
+      filters.page || 1,
+      filters.limit || 10,
+      filters
+    );
+  },
 
-  async getAll(filters: CaballoFilters = {}): Promise<{ data: Caballo[], total: number, page: number, limit: number }> {
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== '') {
-        params.append(key, value.toString());
-      }
+  /**
+   * Obtener caballo por ID
+   */
+  async getById(id: number) {
+    return ApiClient.getCaballoById(id);
+  },
+
+  /**
+   * Crear nuevo caballo
+   */
+  async create(data: CreateCaballoData) {
+    return ApiClient.createCaballo(data);
+  },
+
+  /**
+   * Actualizar caballo
+   */
+  async update(id: number, data: UpdateCaballoData) {
+    return ApiClient.updateCaballo(id, data);
+  },
+
+  /**
+   * Eliminar caballo
+   */
+  async delete(id: number) {
+    return ApiClient.deleteCaballo(id);
+  },
+
+  /**
+   * Buscar caballos por nombre
+   */
+  async search(query: string, page = 1, limit = 10) {
+    return this.getAll({
+      search: query,
+      page,
+      limit
     });
+  },
 
-    const response = await apiClient.get(`${this.baseUrl}?${params}`) as any;
-    return response.data;
+  /**
+   * Obtener caballos por establecimiento
+   */
+  async getByEstablecimiento(establecimientoId: number, page = 1, limit = 10) {
+    return this.getAll({
+      establecimiento: establecimientoId,
+      page,
+      limit
+    });
+  },
+
+  /**
+   * Obtener propietarios de un caballo
+   */
+  async getPropietarios(caballoId: number) {
+    // TODO: Implementar endpoint específico si es necesario
+    const caballo: any = await this.getById(caballoId);
+    return caballo.data?.propiedades || [];
+  },
+
+  /**
+   * Obtener estadísticas de un caballo
+   */
+  async getStats(caballoId: number) {
+    // TODO: Implementar endpoint de estadísticas
+    return {
+      totalEventos: 0,
+      descendencia: 0,
+      ultimoEvento: null,
+      edad: null
+    };
+  },
+
+  /**
+   * Obtener opciones para formularios
+   */
+  getFormOptions() {
+    return {
+      sexos: [
+        { value: 'macho', label: 'Macho' },
+        { value: 'hembra', label: 'Hembra' }
+      ],
+      disciplinas: [
+        { value: 'polo', label: 'Polo' },
+        { value: 'equitacion', label: 'Equitación' },
+        { value: 'turf', label: 'Turf' }
+      ],
+      estados: [
+        { value: 'activo', label: 'Activo' },
+        { value: 'inactivo', label: 'Inactivo' },
+        { value: 'vendido', label: 'Vendido' },
+        { value: 'fallecido', label: 'Fallecido' }
+      ],
+      razas: [
+        'Sangre Pura de Carrera',
+        'Cuarto de Milla',
+        'Criollo',
+        'Polo Argentino',
+        'Silla Francés',
+        'Paint Horse',
+        'Appaloosa',
+        'Árabe',
+        'Lusitano',
+        'Andaluz',
+        'Otro'
+      ]
+    };
   }
+};
 
-  async getById(id: number): Promise<Caballo> {
-    const response = await apiClient.get(`${this.baseUrl}/${id}`) as any;
-    return response.data;
-  }
-
-  async create(data: CreateCaballoData): Promise<Caballo> {
-    const response = await apiClient.post(this.baseUrl, data) as any;
-    return response.data;
-  }
-
-  async update(id: number, data: Partial<CreateCaballoData>): Promise<Caballo> {
-    const response = await apiClient.put(`${this.baseUrl}/${id}`, data) as any;
-    return response.data;
-  }
-
-  async delete(id: number): Promise<{ success: boolean }> {
-    const response = await apiClient.delete(`${this.baseUrl}/${id}`) as any;
-    return response.data;
-  }
-
-  async getGenealogia(id: number): Promise<any> {
-    const response = await apiClient.get(`${this.baseUrl}/${id}/genealogia`) as any;
-    return response.data;
-  }
-
-  async getHistorialMedico(id: number): Promise<any[]> {
-    const response = await apiClient.get(`${this.baseUrl}/${id}/historial-medico`) as any;
-    return response.data;
-  }
-
-  async addPropietario(caballoId: number, propietarioId: number, porcentaje: number): Promise<any> {
-    const response = await apiClient.post(`${this.baseUrl}/${caballoId}/propietarios`, {
-      propietario_usuario_id: propietarioId,
-      porcentaje_propiedad: porcentaje
-    }) as any;
-    return response.data;
-  }
-
-  async removePropietario(caballoId: number, propietarioId: number): Promise<{ success: boolean }> {
-    const response = await apiClient.delete(`${this.baseUrl}/${caballoId}/propietarios/${propietarioId}`) as any;
-    return response.data;
-  }
-
-  async addEstablecimiento(caballoId: number, establecimientoId: number): Promise<any> {
-    const response = await apiClient.post(`${this.baseUrl}/${caballoId}/establecimientos`, {
-      establecimiento_id: establecimientoId
-    }) as any;
-    return response.data;
-  }
-
-  async removeEstablecimiento(caballoId: number, establecimientoId: number): Promise<{ success: boolean }> {
-    const response = await apiClient.delete(`${this.baseUrl}/${caballoId}/establecimientos/${establecimientoId}`) as any;
-    return response.data;
-  }
-}
-
-export const caballoService = new CaballoService();
+export default caballoService;

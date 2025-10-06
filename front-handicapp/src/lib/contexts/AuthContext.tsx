@@ -1,6 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import TokenService, { type UserData } from '@/lib/services/tokenService';
+import { appConfig } from '@/lib/config';
 
 export interface User {
   id: number;
@@ -13,15 +15,20 @@ export interface User {
   establecimiento_id?: number;
   createdAt: string;
   updatedAt: string;
+  rol?: {
+    id: number;
+    nombre: string;
+    clave: string;
+  };
 }
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isLoading: boolean;
   isAuthenticated: boolean;
+  refreshAuth: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,34 +47,57 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // Verificar si hay un token guardado al cargar la app
-    const savedToken = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
-    
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (error) {
-        console.error('Error parsing saved user:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+  /**
+   * Cargar usuario desde TokenService
+   */
+  const loadUserFromStorage = useCallback(async () => {
+    try {
+      const isAuth = await TokenService.isAuthenticated();
+      
+      if (isAuth) {
+        const userData = TokenService.getUserData();
+        
+        if (userData) {
+          setUser({
+            id: userData.id,
+            email: userData.email,
+            nombre: userData.nombre,
+            apellido: userData.apellido,
+            role: userData.rol.clave,
+            activo: userData.estado_usuario === 'active',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            rol: userData.rol
+          });
+        }
       }
+    } catch (error) {
+      console.error('Error loading user from storage:', error);
+      TokenService.clearTokens();
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   }, []);
 
+  /**
+   * Inicializar autenticación al cargar la app
+   */
+  useEffect(() => {
+    loadUserFromStorage();
+  }, [loadUserFromStorage]);
+
+  /**
+   * Login de usuario
+   */
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+      const response = await fetch(`${appConfig.apiBaseUrl}/auth/login`, {
         method: 'POST',
+        credentials: 'include', // Para recibir refresh token cookie
         headers: {
           'Content-Type': 'application/json',
         },
@@ -82,14 +112,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const data = await response.json();
       
       if (data.success && data.data) {
-        const { token: authToken, user: userData } = data.data;
+        const { user: userData, accessToken, expiresIn } = data.data;
         
-        setToken(authToken);
-        setUser(userData);
+        // Guardar tokens usando TokenService
+        TokenService.setTokens(accessToken, expiresIn, userData);
         
-        // Guardar en localStorage
-        localStorage.setItem('token', authToken);
-        localStorage.setItem('user', JSON.stringify(userData));
+        // Actualizar estado del contexto
+        setUser({
+          id: userData.id,
+          email: userData.email,
+          nombre: userData.nombre,
+          apellido: userData.apellido,
+          role: userData.rol.clave,
+          activo: userData.estado_usuario === 'active',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          rol: userData.rol
+        });
       } else {
         throw new Error('Credenciales inválidas');
       }
@@ -101,20 +140,62 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  /**
+   * Logout de usuario
+   */
+  const logout = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Limpiar tokens y llamar endpoint de logout
+      await TokenService.logout();
+      
+      // Limpiar estado del contexto
+      setUser(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  /**
+   * Refrescar autenticación
+   */
+  const refreshAuth = async () => {
+    await loadUserFromStorage();
+  };
+
+  /**
+   * Configurar interceptor para auto-refresh de tokens
+   */
+  useEffect(() => {
+    // Verificar tokens cada 5 minutos
+    const tokenCheckInterval = setInterval(async () => {
+      if (user && TokenService.isTokenExpiringSoon()) {
+        try {
+          const token = await TokenService.getValidAccessToken();
+          if (!token) {
+            // Si no se pudo refrescar, hacer logout
+            await logout();
+          }
+        } catch (error) {
+          console.error('Error checking token:', error);
+          await logout();
+        }
+      }
+    }, 5 * 60 * 1000); // 5 minutos
+
+    return () => clearInterval(tokenCheckInterval);
+  }, [user]);
 
   const value: AuthContextType = {
     user,
-    token,
     login,
     logout,
     isLoading,
-    isAuthenticated: !!user && !!token,
+    isAuthenticated: !!user,
+    refreshAuth,
   };
 
   return (

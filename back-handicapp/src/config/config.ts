@@ -21,7 +21,8 @@ const envSchema = z.object({
   
   // JWT
   JWT_SECRET: z.string().min(32),
-  JWT_EXPIRES_IN: z.string().default('1h'),
+  JWT_REFRESH_SECRET: z.string().min(32).optional(),
+  JWT_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
   
   // Redis
@@ -72,6 +73,7 @@ export const config = {
   
   jwt: {
     secret: env.JWT_SECRET,
+    refreshSecret: env.JWT_REFRESH_SECRET || env.JWT_SECRET,
     expiresIn: env.JWT_EXPIRES_IN,
     refreshExpiresIn: env.JWT_REFRESH_EXPIRES_IN,
   },

@@ -1,8 +1,3 @@
-// src/middleware/auth.ts
-// -----------------------------------------------------------------------------
-// HandicApp API - Middleware de Autenticación
-// -----------------------------------------------------------------------------
-
 import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User';
@@ -10,6 +5,7 @@ import { Role } from '../models/roles';
 import { JwtPayload, AuthenticatedRequest } from '../types';
 import { config } from '../config/config';
 import { logger } from '../utils/logger';
+import { AuthService } from '../services/authService';
 
 /**
  * Middleware principal de autenticación
@@ -22,7 +18,8 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       res.status(401).json({
         success: false,
-        message: 'Token de acceso requerido'
+        message: 'Token de acceso requerido',
+        code: 'MISSING_TOKEN'
       });
       return;
     }
@@ -32,16 +29,26 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
     if (!token) {
       res.status(401).json({
         success: false,
-        message: 'Token de acceso requerido'
+        message: 'Token de acceso requerido',
+        code: 'MISSING_TOKEN'
       });
       return;
     }
     
-    // Verify JWT token
-    const decoded = jwt.verify(token, config.jwt.secret) as JwtPayload;
+    // Validar token usando AuthService
+    const validation = AuthService.validateAccessToken(token);
+    
+    if (!validation.valid || !validation.user) {
+      res.status(401).json({
+        success: false,
+        message: 'Token inválido',
+        code: 'INVALID_TOKEN'
+      });
+      return;
+    }
     
     // Find user in database
-    const user = await User.findByPk(decoded.id, {
+    const user = await User.findByPk(validation.user.id, {
       attributes: { exclude: ['hash_contrasena'] },
       include: [{
         model: Role,
@@ -53,7 +60,8 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
     if (!user) {
       res.status(401).json({
         success: false,
-        message: 'Usuario no encontrado'
+        message: 'Usuario no encontrado',
+        code: 'USER_NOT_FOUND'
       });
       return;
     }
@@ -61,7 +69,8 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
     if (!user.isActive) {
       res.status(401).json({
         success: false,
-        message: 'Cuenta de usuario desactivada'
+        message: 'Cuenta de usuario desactivada',
+        code: 'USER_INACTIVE'
       });
       return;
     }
@@ -90,17 +99,20 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
     if (error instanceof jwt.JsonWebTokenError) {
       res.status(401).json({
         success: false,
-        message: 'Token inválido'
+        message: 'Token inválido',
+        code: 'INVALID_TOKEN'
       });
     } else if (error instanceof jwt.TokenExpiredError) {
       res.status(401).json({
         success: false,
-        message: 'Token expirado'
+        message: 'Token expirado',
+        code: 'TOKEN_EXPIRED'
       });
     } else {
       res.status(500).json({
         success: false,
-        message: 'Error interno del servidor'
+        message: 'Error interno del servidor',
+        code: 'INTERNAL_ERROR'
       });
     }
   }
