@@ -1,11 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/lib/contexts/AuthContext';
+import { useAuthNew } from '@/lib/hooks/useAuthNew';
 import { tareaService, CreateTareaData } from '@/lib/services/tareaService';
 import { caballoService } from '@/lib/services/caballoService';
 import { establecimientoService } from '@/lib/services/establecimientoService';
 import { userService } from '@/lib/services/userService';
+import { usePermissions } from '@/lib/hooks/usePermissions';
+import { Modal } from '@/components/ui/modal';
+import { logger } from '@/lib/utils/logger';
+import { Button } from '@/components/ui/button';
 
 interface TareaFormProps {
   isOpen: boolean;
@@ -37,7 +41,8 @@ interface Usuario {
 }
 
 export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps) {
-  const { user } = useAuth();
+  const { user } = useAuthNew();
+  const { canAssignTasks, getUserRole } = usePermissions();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [caballos, setCaballos] = useState<Caballo[]>([]);
@@ -158,26 +163,24 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">
-            {tarea ? 'Editar Tarea' : 'Crear Nueva Tarea'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+    <Modal isOpen={isOpen} onClose={onClose} title={tarea ? 'Editar tarea' : 'Crear tarea'} size="lg">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
               {error}
+            </div>
+          )}
+
+          {/* Notificación de permisos */}
+          {!canAssignTasks() && (
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded">
+              <div className="flex items-center gap-2">
+                <span>⚠️</span>
+                <span>
+                  <strong>Rol {getUserRole()}:</strong> No puedes asignar tareas a otros usuarios.
+                  Las tareas serán creadas sin asignar.
+                </span>
+              </div>
             </div>
           )}
 
@@ -209,13 +212,13 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="alimentacion">🌾 Alimentación</option>
-                <option value="limpieza">🧹 Limpieza</option>
-                <option value="entrenamiento">🏋️ Entrenamiento</option>
-                <option value="mantenimiento">🔧 Mantenimiento</option>
-                <option value="veterinaria">🩺 Veterinaria</option>
-                <option value="administrativa">📋 Administrativa</option>
-                <option value="otro">📌 Otro</option>
+                <option value="alimentacion">Alimentación</option>
+                <option value="limpieza">Limpieza</option>
+                <option value="entrenamiento">Entrenamiento</option>
+                <option value="mantenimiento">Mantenimiento</option>
+                <option value="veterinaria">Veterinaria</option>
+                <option value="administrativa">Administrativa</option>
+                <option value="otro">Otro</option>
               </select>
             </div>
           </div>
@@ -248,10 +251,10 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="baja">🟢 Baja</option>
-                <option value="media">🟡 Media</option>
-                <option value="alta">🟠 Alta</option>
-                <option value="critica">🔴 Crítica</option>
+                <option value="baja">Baja</option>
+                <option value="media">Media</option>
+                <option value="alta">Alta</option>
+                <option value="critica">Crítica</option>
               </select>
             </div>
 
@@ -294,10 +297,13 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                 name="asignado_a_usuario_id"
                 value={formData.asignado_a_usuario_id || ''}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={!canAssignTasks()}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  !canAssignTasks() ? 'bg-gray-100 cursor-not-allowed' : ''
+                }`}
               >
-                <option value="">Sin asignar</option>
-                {usuarios
+                <option value="">{canAssignTasks() ? 'Sin asignar' : 'No puedes asignar (creará sin asignar)'}</option>
+                {canAssignTasks() && usuarios
                   .filter(usuario => usuario.rol?.clave !== 'admin') // Filtrar admins
                   .map(usuario => (
                     <option key={usuario.id} value={usuario.id}>
@@ -366,24 +372,15 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
           </div>
 
           {/* Botones */}
-          <div className="flex justify-end space-x-4 pt-6 border-t">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-            >
+          <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-6 border-t">
+            <Button type="button" variant="secondary" size="sm" onClick={onClose} disabled={loading}>
               Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
-            >
-              {loading ? 'Guardando...' : tarea ? 'Actualizar' : 'Crear'} Tarea
-            </button>
+            </Button>
+            <Button type="submit" variant="brand" size="sm" isLoading={loading} disabled={loading}>
+              {tarea ? 'Actualizar' : 'Crear'} tarea
+            </Button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }

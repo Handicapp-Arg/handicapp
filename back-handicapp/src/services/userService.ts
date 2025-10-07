@@ -15,7 +15,7 @@ export class UserService {
       const {
         page = 1,
         limit = 10,
-        sortBy = 'fecha_creacion', // Corregido: usar el nombre real del campo
+  sortBy = 'creado_el', // usar el nombre real del campo en el modelo
         sortOrder = 'DESC',
       } = pagination;
 
@@ -203,7 +203,7 @@ export class UserService {
       const {
         page = 1,
         limit = 10,
-        sortBy = 'fecha_creacion', // Corregido: usar el nombre real del campo
+  sortBy = 'creado_el', // usar el nombre real del campo en el modelo
         sortOrder = 'DESC',
       } = pagination;
 

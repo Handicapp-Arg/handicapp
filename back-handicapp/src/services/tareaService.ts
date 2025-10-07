@@ -26,7 +26,195 @@ interface UpdateTareaData extends Partial<CreateTareaData> {
 }
 
 export class TareaService {
+  // Obtener todas las tareas con filtros y paginación
+  static async getAllTareas(filters: {
+    page?: number;
+    limit?: number;
+    estado?: string;
+    prioridad?: string;
+    categoria?: string; // no model field now, kept for future
+    asignadoAUsuarioId?: number;
+    caballoId?: number;
+    establecimientoId?: number;
+    fechaVencimientoInicio?: string;
+    fechaVencimientoFin?: string;
+    usuarioId?: number;
+    userRole?: string;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+  }): Promise<ServiceResponse<{ tareas: Tarea[]; total: number; totalPages: number }>> {
+    try {
+      const {
+        page = 1,
+        limit = 10,
+        estado,
+        prioridad,
+        asignadoAUsuarioId,
+        caballoId,
+        establecimientoId,
+        fechaVencimientoInicio,
+        fechaVencimientoFin,
+        sortBy = 'fecha_vencimiento',
+        sortOrder = 'ASC',
+        usuarioId,
+        userRole,
+      } = filters || ({} as any);
+
+      const offset = (page - 1) * limit;
+      const where: any = {};
+      if (estado) where.estado = estado;
+      if (prioridad) {
+        // prioridad no está en el modelo; se puede mapear via notas o tipo si existiera
+      }
+      if (asignadoAUsuarioId) where.asignado_a_usuario_id = asignadoAUsuarioId;
+      if (caballoId) where.caballo_id = caballoId;
+      if (establecimientoId) where.establecimiento_id = establecimientoId;
+      if (fechaVencimientoInicio || fechaVencimientoFin) {
+        where.fecha_vencimiento = {};
+        if (fechaVencimientoInicio) where.fecha_vencimiento[Op.gte] = new Date(fechaVencimientoInicio);
+        if (fechaVencimientoFin) where.fecha_vencimiento[Op.lte] = new Date(fechaVencimientoFin);
+      }
+
+      // Control de acceso básico: si no es admin, mostrar tareas creadas o asignadas al usuario
+      if (userRole && userRole !== 'admin' && usuarioId) {
+        where[Op.or] = [
+          { creado_por_usuario_id: usuarioId },
+          { asignado_a_usuario_id: usuarioId },
+        ];
+      }
+
+      const { count, rows } = await Tarea.findAndCountAll({
+        where,
+        include: [
+          { model: User, as: 'asignado_a', attributes: ['id', 'nombre', 'apellido'], required: false },
+          { model: User, as: 'creado_por', attributes: ['id', 'nombre', 'apellido'] },
+          { model: Caballo, as: 'caballo', attributes: ['id', 'nombre', 'microchip'], required: false },
+          { model: Establecimiento, as: 'establecimiento', attributes: ['id', 'nombre'] },
+        ],
+        limit,
+        offset,
+        order: [[sortBy, sortOrder]],
+        distinct: true,
+      });
+
+      const totalPages = Math.ceil(count / limit);
+      return { success: true, data: { tareas: rows, total: count, totalPages } };
+    } catch (error) {
+      return { success: false, error: 'Error al obtener tareas' };
+    }
+  }
   
+  // Asignar tarea a usuario
+  static async asignarTarea(
+    tareaId: number,
+    asignadoAUsuarioId: number,
+    actorUserId: number,
+    actorRole?: string,
+    observaciones?: string
+  ): Promise<ServiceResponse<Tarea>> {
+    try {
+      const tarea = await Tarea.findByPk(tareaId);
+      if (!tarea) {
+        return { success: false, error: 'Tarea no encontrada' };
+      }
+
+      // Permisos: admin, capataz o creador pueden asignar
+      const allowed = actorRole === 'admin' || actorRole === 'capataz' || tarea.creado_por_usuario_id === actorUserId;
+      if (!allowed) {
+        return { success: false, error: 'Sin permisos para asignar' };
+      }
+
+      // Validar usuario de destino
+      const usuario = await User.findByPk(asignadoAUsuarioId);
+      if (!usuario) {
+        return { success: false, error: 'Usuario asignado no encontrado' };
+      }
+
+      const notas = observaciones
+        ? `${tarea.notas ? tarea.notas + '\n' : ''}Asignada a usuario ${asignadoAUsuarioId} por ${actorUserId}: ${observaciones}`
+        : tarea.notas;
+
+      await tarea.update({ asignado_a_usuario_id: asignadoAUsuarioId, notas, actualizado_el: new Date() });
+      return { success: true, data: tarea };
+    } catch (error) {
+      return { success: false, error: 'Error al asignar tarea' };
+    }
+  }
+
+  // Completar tarea
+  static async completarTarea(
+    tareaId: number,
+    observaciones: string | undefined,
+    actorUserId: number
+  ): Promise<ServiceResponse<Tarea>> {
+    try {
+      const tarea = await Tarea.findByPk(tareaId);
+      if (!tarea) {
+        return { success: false, error: 'Tarea no encontrada' };
+      }
+
+      // Permisos: asignado o creador pueden completar
+      if (tarea.creado_por_usuario_id !== actorUserId && tarea.asignado_a_usuario_id !== actorUserId) {
+        return { success: false, error: 'Sin permisos para completar esta tarea' };
+      }
+
+      const notas = observaciones
+        ? `${tarea.notas ? tarea.notas + '\n' : ''}Completada por ${actorUserId}: ${observaciones}`
+        : tarea.notas;
+
+      await tarea.update({ estado: EstadoTarea.done, notas, actualizado_el: new Date() });
+      return { success: true, data: tarea };
+    } catch (error) {
+      return { success: false, error: 'Error al completar tarea' };
+    }
+  }
+
+  // Obtener tareas del usuario (asignadas o creadas) con filtros simples
+  static async getTareasUsuario(
+    userId: number,
+    estado?: string,
+    _prioridad?: string,
+    categoria?: string
+  ): Promise<ServiceResponse<Tarea[]>> {
+    try {
+      const where: any = {
+        [Op.or]: [
+          { creado_por_usuario_id: userId },
+          { asignado_a_usuario_id: userId },
+        ],
+      };
+
+      if (estado) {
+        const allowed = Object.values(EstadoTarea);
+        if (allowed.includes(estado as EstadoTarea)) {
+          where.estado = estado;
+        }
+      }
+
+      if (categoria) {
+        const allowedTipos = Object.values(TipoTarea);
+        if (allowedTipos.includes(categoria as TipoTarea)) {
+          where.tipo = categoria;
+        }
+      }
+
+      const tareas = await Tarea.findAll({
+        where,
+        include: [
+          { model: User, as: 'asignado_a', attributes: ['id', 'nombre', 'apellido'], required: false },
+          { model: User, as: 'creado_por', attributes: ['id', 'nombre', 'apellido'] },
+          { model: Caballo, as: 'caballo', attributes: ['id', 'nombre', 'microchip'], required: false },
+          { model: Establecimiento, as: 'establecimiento', attributes: ['id', 'nombre'] },
+        ],
+        order: [['fecha_vencimiento', 'ASC']],
+        limit: 100,
+      });
+
+      return { success: true, data: tareas };
+    } catch (error) {
+      return { success: false, error: 'Error al obtener tareas del usuario' };
+    }
+  }
   // Obtener tareas por establecimiento
   static async getTareasByEstablecimiento(
     establecimientoId: number,
@@ -43,7 +231,7 @@ export class TareaService {
       const offset = (page - 1) * limit;
 
       const { count, rows } = await Tarea.findAndCountAll({
-        where: { establecimiento_id },
+        where: { establecimiento_id: establecimientoId },
         include: [
           {
             model: User,
@@ -346,6 +534,28 @@ export class TareaService {
         success: false,
         error: 'Error al actualizar tarea',
       };
+    }
+  }
+
+  // Eliminar (soft) tarea
+  static async deleteTarea(
+    tareaId: number,
+    userId: number,
+    userRole?: string
+  ): Promise<ServiceResponse<boolean>> {
+    try {
+      const tarea = await Tarea.findByPk(tareaId);
+      if (!tarea) {
+        return { success: false, error: 'Tarea no encontrada' };
+      }
+      // Permitir admin o creador eliminar
+      if (userRole !== 'admin' && tarea.creado_por_usuario_id !== userId) {
+        return { success: false, error: 'Sin permisos para eliminar' };
+      }
+      await tarea.update({ estado: EstadoTarea.cancelled, actualizado_el: new Date() });
+      return { success: true, data: true };
+    } catch (error) {
+      return { success: false, error: 'Error al eliminar tarea' };
     }
   }
 

@@ -40,7 +40,7 @@ async function initializeApp() {
     return true;
 
   } catch (error) {
-    logger.error({ error }, '❌ Error during initialization');
+    logger.error('❌ Error during initialization', { error });
     process.exit(1);
   }
 }
@@ -51,7 +51,7 @@ if (require.main === module) {
     logger.info('✅ Script de inicialización completado');
     process.exit(0);
   }).catch((error) => {
-    logger.error('❌ Error en script de inicialización:', error);
+    logger.error('❌ Error en script de inicialización:', { error });
     process.exit(1);
   });
 }

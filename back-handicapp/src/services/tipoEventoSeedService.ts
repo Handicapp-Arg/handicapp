@@ -109,7 +109,7 @@ export class TipoEventoSeedService {
       return true;
       
     } catch (error) {
-      logger.error({ error }, '❌ Error seeding event types');
+      logger.error('❌ Error seeding event types', { error });
       return false;
     }
   }

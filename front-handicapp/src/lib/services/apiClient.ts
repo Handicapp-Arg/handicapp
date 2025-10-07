@@ -1,6 +1,7 @@
 'use client';
 import { appConfig } from '@/lib/config';
-import TokenService from './tokenService';
+import AuthManager from '../auth/AuthManager';
+import { logger } from '@/lib/utils/logger';
 
 export class ApiClient {
   private static async request<T>(
@@ -8,8 +9,24 @@ export class ApiClient {
     options: RequestInit = {}
   ): Promise<T> {
     try {
-      // Obtener headers de autenticación
-      const authHeaders = await TokenService.getAuthHeaders();
+      // Obtener token de AuthManager
+      const authManager = AuthManager.getInstance();
+      const state = authManager.getState();
+      
+      // Fallback: si no hay token en estado (p. ej., en el primer render), intentar obtenerlo de la cookie
+      let token = state.token;
+      if (!token && typeof document !== 'undefined') {
+        const cookies = document.cookie.split(';').map(c => c.trim());
+        const authCookie = cookies.find(c => c.startsWith('auth-token='));
+        if (authCookie) {
+          token = authCookie.split('=')[1] || null;
+        }
+      }
+
+      const authHeaders: Record<string, string> = {};
+      if (token) {
+        authHeaders['Authorization'] = `Bearer ${token}`;
+      }
       
       const config: RequestInit = {
         credentials: 'include', // Incluir cookies para refresh token
@@ -29,33 +46,12 @@ export class ApiClient {
         const errorData = await response.json().catch(() => ({}));
         
         if (errorData.code === 'TOKEN_EXPIRED' || errorData.code === 'INVALID_TOKEN') {
-          // Intentar refrescar token automáticamente
-          const newToken = await TokenService.getValidAccessToken();
+          // Token expirado - limpiar y redirigir al login
+          const authManager = AuthManager.getInstance();
+          await authManager.logout();
           
-          if (newToken) {
-            // Reintentar request con nuevo token
-            const retryConfig: RequestInit = {
-              ...config,
-              headers: {
-                ...config.headers,
-                'Authorization': `Bearer ${newToken}`
-              }
-            };
-            
-            const retryResponse = await fetch(`${appConfig.apiBaseUrl}${endpoint}`, retryConfig);
-            
-            if (retryResponse.ok) {
-              return retryResponse.json();
-            }
-          }
-          
-          // Si no se pudo refrescar, limpiar tokens y redirigir a login
-          TokenService.clearTokens();
-          
-          // En el cliente, podemos usar window.location
-          if (typeof window !== 'undefined') {
-            window.location.href = '/auth/login';
-          }
+          // Lanzar error para que el componente maneje la redirección
+          throw new Error('Sesión expirada. Inicia sesión nuevamente.');
         }
         
         throw new Error(errorData.message || 'No autorizado');
@@ -63,23 +59,31 @@ export class ApiClient {
       
       if (!response.ok) {
         let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        let errorDetails: string[] | undefined;
         try {
           const errorData = await response.json();
           if (errorData.message) {
             errorMessage = errorData.message;
           }
+          if (Array.isArray(errorData.errors) && errorData.errors.length) {
+            errorDetails = errorData.errors;
+            // Si hay detalles, agregamos el primero al mensaje para visibilidad inmediata
+            errorMessage = `${errorMessage}${errorDetails ? `: ${errorDetails[0]}` : ''}`;
+          }
         } catch (e) {
           // If can't parse error response, use default message
         }
         
-        throw new Error(errorMessage);
+        const err = new Error(errorMessage) as Error & { details?: string[] };
+        if (errorDetails) err.details = errorDetails;
+        throw err;
       }
 
       return response.json();
     } catch (error) {
       // Si es un error de red o similar, también verificar autenticación
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        console.error('Network error:', error);
+  logger.error('Network error:', error);
         throw new Error('Error de conexión. Verifica tu conexión a internet.');
       }
       
@@ -102,9 +106,9 @@ export class ApiClient {
       });
     } catch (error) {
       // Ignorar errores en logout, siempre limpiar tokens locales
-      console.warn('Error during logout:', error);
+  logger.warn('Error during logout:', error);
     } finally {
-      TokenService.clearTokens();
+      await AuthManager.getInstance().logout();
     }
   }
 
@@ -161,7 +165,7 @@ export class ApiClient {
 
   static async changePassword(userId: number, passwordData: any) {
     return this.request(`/users/${userId}/change-password`, {
-      method: 'POST',
+      method: 'PUT',
       body: JSON.stringify(passwordData),
     });
   }
@@ -251,6 +255,11 @@ export class ApiClient {
     return this.request('/auth/health', {
       method: 'GET',
     });
+  }
+
+  // Método público para que los servicios puedan hacer peticiones HTTP
+  static async makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    return this.request<T>(endpoint, options);
   }
 }
 

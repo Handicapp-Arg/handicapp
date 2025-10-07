@@ -1,4 +1,4 @@
-import { apiClient } from '@/lib/http';
+import ApiClient from './apiClient';
 
 export interface Tarea {
   id: number;
@@ -68,50 +68,67 @@ class TareaService {
       }
     });
 
-    const response = await apiClient.get(`${this.baseUrl}?${params}`) as any;
-    return response.data;
+    const response = await ApiClient.makeRequest(`${this.baseUrl}?${params}`) as any;
+    return response;
   }
 
   async getById(id: number): Promise<Tarea> {
-    const response = await apiClient.get(`${this.baseUrl}/${id}`) as any;
-    return response.data;
+    const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}`) as any;
+    return response;
   }
 
   async create(data: CreateTareaData): Promise<Tarea> {
-    const response = await apiClient.post(this.baseUrl, data) as any;
-    return response.data;
+    const response = await ApiClient.makeRequest(this.baseUrl, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }) as any;
+    return response;
   }
 
   async update(id: number, data: Partial<CreateTareaData>): Promise<Tarea> {
-    const response = await apiClient.put(`${this.baseUrl}/${id}`, data) as any;
-    return response.data;
+    const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    }) as any;
+    return response;
   }
 
   async delete(id: number): Promise<{ success: boolean }> {
-    const response = await apiClient.delete(`${this.baseUrl}/${id}`) as any;
-    return response.data;
+    const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}`, {
+      method: 'DELETE'
+    }) as any;
+    return response;
   }
 
   async assign(id: number, usuarioId: number): Promise<Tarea> {
-    const response = await apiClient.patch(`${this.baseUrl}/${id}/assign`, {
-      asignado_a_usuario_id: usuarioId
+    const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}/assign`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        asignado_a_usuario_id: usuarioId
+      })
     }) as any;
-    return response.data;
+    return response;
   }
 
   async complete(id: number, observaciones?: string, tiempoRealMinutos?: number): Promise<Tarea> {
-    const response = await apiClient.patch(`${this.baseUrl}/${id}/complete`, {
-      observaciones_completado: observaciones,
-      tiempo_real_minutos: tiempoRealMinutos
+    const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}/complete`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        observaciones_completado: observaciones,
+        tiempo_real_minutos: tiempoRealMinutos
+      })
     }) as any;
-    return response.data;
+    return response;
   }
 
   async cancel(id: number, motivo?: string): Promise<Tarea> {
-    const response = await apiClient.patch(`${this.baseUrl}/${id}/cancel`, {
-      motivo
+    const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}/cancel`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        motivo
+      })
     }) as any;
-    return response.data;
+    return response;
   }
 
   async getStats(filters: any = {}): Promise<any> {
@@ -122,13 +139,13 @@ class TareaService {
       }
     });
 
-    const response = await apiClient.get(`${this.baseUrl}/stats?${params}`) as any;
-    return response.data;
+    const response = await ApiClient.makeRequest(`${this.baseUrl}/stats?${params}`) as any;
+    return response;
   }
 
   async getOverdue(): Promise<{ data: Tarea[] }> {
-    const response = await apiClient.get(`${this.baseUrl}/overdue`) as any;
-    return response.data;
+    const response = await ApiClient.makeRequest(`${this.baseUrl}/overdue`) as any;
+    return response;
   }
 
   async getByUser(usuarioId: number, filters: any = {}): Promise<{ data: Tarea[] }> {
@@ -139,8 +156,8 @@ class TareaService {
       }
     });
 
-    const response = await apiClient.get(`${this.baseUrl}/user/${usuarioId}?${params}`) as any;
-    return response.data;
+    const response = await ApiClient.makeRequest(`${this.baseUrl}/user/${usuarioId}?${params}`) as any;
+    return response;
   }
 
   async getProductivity(filters: any = {}): Promise<any> {
@@ -151,8 +168,8 @@ class TareaService {
       }
     });
 
-    const response = await apiClient.get(`${this.baseUrl}/productivity?${params}`) as any;
-    return response.data;
+    const response = await ApiClient.makeRequest(`${this.baseUrl}/productivity?${params}`) as any;
+    return response;
   }
 }
 

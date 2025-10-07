@@ -124,7 +124,7 @@ export function requireRole(...allowedRoles: UserRole[]) {
 
       // Verificar que el usuario tenga un rol válido
       if (!userRole) {
-        logger.warn('Usuario sin rol asignado', { userId: req.user.id });
+  logger.warn('Usuario sin rol asignado', { userId: req.user.id });
         res.status(403).json(ApiResponse.error('Usuario sin rol asignado'));
         return;
       }
@@ -150,7 +150,7 @@ export function requireRole(...allowedRoles: UserRole[]) {
 
       next();
     } catch (error) {
-      logger.error('Error en middleware requireRole:', error);
+  logger.error('Error en middleware requireRole:', error);
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   };
@@ -172,7 +172,7 @@ export function requirePermission(...requiredPermissions: Permission[]) {
 
       // Verificar que el usuario tenga un rol válido
       if (!userRole) {
-        logger.warn('Usuario sin rol asignado', { userId: req.user.id });
+  logger.warn('Usuario sin rol asignado', { userId: req.user.id });
         res.status(403).json(ApiResponse.error('Usuario sin rol asignado'));
         return;
       }
@@ -206,7 +206,7 @@ export function requirePermission(...requiredPermissions: Permission[]) {
 
       next();
     } catch (error) {
-      logger.error('Error en middleware requirePermission:', error);
+  logger.error('Error en middleware requirePermission:', error);
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   };
@@ -216,11 +216,10 @@ export function requirePermission(...requiredPermissions: Permission[]) {
  * Middleware para verificar propiedad de recursos
  * Verifica si el usuario puede acceder a un recurso específico basado en propiedad/membresía
  */
-export function requireResourceAccess(resourceType: 'establecimiento' | 'caballo' | 'evento' | 'tarea') {
+export function requireResourceAccess(_resourceType: 'establecimiento' | 'caballo' | 'evento' | 'tarea') {
   return async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userRole = req.user?.rol?.clave as UserRole;
-      const userId = req.user?.id;
+  const userRole = req.user?.rol?.clave as UserRole;
 
       // Admin siempre tiene acceso
       if (userRole === 'admin') {
@@ -229,7 +228,7 @@ export function requireResourceAccess(resourceType: 'establecimiento' | 'caballo
       }
 
       // Obtener ID del recurso desde los parámetros
-      const resourceId = parseInt(req.params.id);
+  const resourceId = parseInt((req.params['id'] as string) || '');
 
       if (isNaN(resourceId)) {
         res.status(400).json(ApiResponse.error('ID de recurso inválido'));
@@ -242,7 +241,7 @@ export function requireResourceAccess(resourceType: 'establecimiento' | 'caballo
 
       next();
     } catch (error) {
-      logger.error('Error en middleware requireResourceAccess:', error);
+  logger.error('Error en middleware requireResourceAccess:', error);
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   };
@@ -267,7 +266,7 @@ export function requireSameEstablishment() {
       
       next();
     } catch (error) {
-      logger.error('Error en middleware requireSameEstablishment:', error);
+  logger.error('Error en middleware requireSameEstablishment:', error);
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   };
@@ -292,7 +291,7 @@ export function getRolePermissions(role: UserRole): Permission[] {
  * Middleware para logs de auditoría de acceso
  */
 export function auditAccess() {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  return (req: AuthenticatedRequest, _res: Response, next: NextFunction): void => {
     const userId = req.user?.id;
     const userRole = req.user?.rol?.clave;
     const method = req.method;

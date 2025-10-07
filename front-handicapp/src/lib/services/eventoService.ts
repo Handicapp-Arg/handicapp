@@ -1,4 +1,4 @@
-import { apiClient } from '@/lib/http';
+import ApiClient from './apiClient';
 
 export interface Evento {
   id: number;
@@ -73,33 +73,43 @@ class EventoService {
       }
     });
 
-    const response = await apiClient.get(`${this.baseUrl}?${params}`) as any;
-    return response.data;
+    const response = await ApiClient.makeRequest(`${this.baseUrl}?${params}`) as any;
+    return response;
   }
 
   async getById(id: number): Promise<Evento> {
-    const response = await apiClient.get(`${this.baseUrl}/${id}`) as any;
-    return response.data;
+    const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}`) as any;
+    return response;
   }
 
   async create(data: CreateEventoData): Promise<Evento> {
-    const response = await apiClient.post(this.baseUrl, data) as any;
-    return response.data;
+    const response = await ApiClient.makeRequest(this.baseUrl, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }) as any;
+    return response;
   }
 
   async update(id: number, data: Partial<CreateEventoData>): Promise<Evento> {
-    const response = await apiClient.put(`${this.baseUrl}/${id}`, data) as any;
-    return response.data;
+    const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    }) as any;
+    return response;
   }
 
   async delete(id: number): Promise<{ success: boolean }> {
-    const response = await apiClient.delete(`${this.baseUrl}/${id}`) as any;
-    return response.data;
+    const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}`, {
+      method: 'DELETE'
+    }) as any;
+    return response;
   }
 
   async validate(id: number): Promise<Evento> {
-    const response = await apiClient.patch(`${this.baseUrl}/${id}/validate`) as any;
-    return response.data;
+    const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}/validate`, {
+      method: 'PATCH'
+    }) as any;
+    return response;
   }
 
   async getReportes(filters: any = {}): Promise<any> {
@@ -110,8 +120,8 @@ class EventoService {
       }
     });
 
-    const response = await apiClient.get(`${this.baseUrl}/reportes?${params}`) as any;
-    return response.data;
+    const response = await ApiClient.makeRequest(`${this.baseUrl}/reportes?${params}`) as any;
+    return response;
   }
 
   async getUpcoming(filters: any = {}): Promise<{ data: Evento[] }> {
@@ -122,17 +132,17 @@ class EventoService {
       }
     });
 
-    const response = await apiClient.get(`${this.baseUrl}/upcoming?${params}`) as any;
-    return response.data;
+    const response = await ApiClient.makeRequest(`${this.baseUrl}/upcoming?${params}`) as any;
+    return response;
   }
 
   async getOverdue(): Promise<{ data: Evento[] }> {
-    const response = await apiClient.get(`${this.baseUrl}/overdue`) as any;
-    return response.data;
+    const response = await ApiClient.makeRequest(`${this.baseUrl}/overdue`) as any;
+    return response;
   }
 
   async getHistorialMedico(caballoId: number): Promise<{ data: Evento[] }> {
-    const response = await apiClient.get(`${this.baseUrl}/historial-medico/${caballoId}`) as any;
+    const response = await ApiClient.makeRequest(`${this.baseUrl}/historial-medico/${caballoId}`) as any;
     return response.data;
   }
 }

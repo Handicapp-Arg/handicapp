@@ -3,7 +3,7 @@
 // HandicApp API - Controller de Eventos
 // -----------------------------------------------------------------------------
 
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { EventoService } from '../services/eventoService';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '../utils/response';
@@ -23,53 +23,47 @@ export class EventoController {
   static async create(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const {
-        fecha,
-        tipoEventoId,
-        caballoId,
-        establecimientoId,
+        titulo,
         descripcion,
-        observaciones,
-        veterinarioId,
-        temperatura,
-        peso,
-        frecuenciaCardiaca,
-        frecuenciaRespiratoria,
-        resultados,
-        costo,
-        adjuntos
+        fecha_evento,
+        tipo_evento_id,
+        caballo_id,
+        establecimiento_id,
+        costo_monto,
+        costo_moneda
       } = req.body;
       
       const usuarioId = req.user!.id;
 
       // Validaciones básicas
-      if (!fecha || !tipoEventoId || !caballoId) {
+      if (!fecha_evento || !tipo_evento_id || !caballo_id) {
         res.status(400).json(ApiResponse.error('Fecha, tipo de evento y caballo son requeridos'));
         return;
       }
 
-      const evento = await EventoService.createEvento({
-        fecha,
-        tipoEventoId,
-        caballoId,
-        establecimientoId,
+      const createData = {
+        titulo,
         descripcion,
-        observaciones,
-        veterinarioId,
-        temperatura,
-        peso,
-        frecuenciaCardiaca,
-        frecuenciaRespiratoria,
-        resultados,
-        costo,
-        adjuntos,
-        creadoPorUsuarioId: usuarioId
-      });
+        fecha_evento: new Date(fecha_evento),
+        tipo_evento_id,
+        caballo_id,
+        establecimiento_id,
+        costo_monto,
+        costo_moneda
+      } as any;
 
-      logger.info(`Evento creado: ${evento.id}`, { usuarioId, evento: evento.tipoEvento?.nombre });
-      res.status(201).json(ApiResponse.success(evento, 'Evento creado exitosamente'));
+      const eventoResult = await EventoService.createEvento(createData, usuarioId, req.user!.rol?.clave);
 
-    } catch (error) {
-      logger.error('Error creando evento:', error);
+      if (!eventoResult.success || !eventoResult.data) {
+        res.status(400).json(ApiResponse.error(eventoResult.error || 'No se pudo crear el evento'));
+        return;
+      }
+
+      logger.info(`Evento creado: ${eventoResult.data.id}`);
+      res.status(201).json(ApiResponse.success(eventoResult.data, 'Evento creado exitosamente'));
+
+    } catch (error: any) {
+      logger.error('Error creando evento', { error });
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   }
@@ -81,34 +75,41 @@ export class EventoController {
    */
   static async getAll(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
-      const caballoId = req.query.caballo ? parseInt(req.query.caballo as string) : undefined;
-      const tipoEventoId = req.query.tipo ? parseInt(req.query.tipo as string) : undefined;
-      const establecimientoId = req.query.establecimiento ? parseInt(req.query.establecimiento as string) : undefined;
-      const fechaInicio = req.query.fechaInicio as string;
-      const fechaFin = req.query.fechaFin as string;
-      const veterinarioId = req.query.veterinario ? parseInt(req.query.veterinario as string) : undefined;
-      const usuarioId = req.user!.id;
-      const userRole = req.user!.rol?.clave;
+  const page = parseInt((req.query['page'] as string) || '') || 1;
+  const limit = parseInt((req.query['limit'] as string) || '') || 10;
+  const caballoId = req.query['caballo'] ? parseInt(req.query['caballo'] as string) : undefined;
+  const tipoEventoId = req.query['tipo'] ? parseInt(req.query['tipo'] as string) : undefined;
+  const establecimientoId = req.query['establecimiento'] ? parseInt(req.query['establecimiento'] as string) : undefined;
+  const fechaInicio = req.query['fechaInicio'] as string | undefined;
+  const fechaFin = req.query['fechaFin'] as string | undefined;
+  const veterinarioId = req.query['veterinario'] ? parseInt(req.query['veterinario'] as string) : undefined;
+     const usuarioId = req.user!.id;
+     const userRole = req.user!.rol?.clave;
 
-      const result = await EventoService.getAllEventos({
-        page,
-        limit,
-        caballoId,
-        tipoEventoId,
-        establecimientoId,
-        fechaInicio,
-        fechaFin,
-        veterinarioId,
-        usuarioId,
-        userRole
+      const filterPayload: any = { page, limit, usuarioId, userRole };
+      if (caballoId) filterPayload.caballoId = caballoId;
+      if (tipoEventoId) filterPayload.tipoEventoId = tipoEventoId;
+      if (establecimientoId) filterPayload.establecimientoId = establecimientoId;
+      if (fechaInicio) filterPayload.fechaInicio = fechaInicio;
+      if (fechaFin) filterPayload.fechaFin = fechaFin;
+      if (veterinarioId) filterPayload.veterinarioId = veterinarioId;
+
+      const result = await EventoService.getAllEventos(filterPayload);
+
+      if (!result.success || !result.data) {
+        res.status(500).json(ApiResponse.error(result.error || 'Error al obtener eventos'));
+        return;
+      }
+
+      res.json({
+        success: true,
+        message: 'Success',
+        data: result.data.eventos,
+        meta: { page, limit, total: result.data.total, totalPages: result.data.totalPages },
       });
 
-      res.json(ApiResponse.success(result));
-
-    } catch (error) {
-      logger.error('Error obteniendo eventos:', error);
+    } catch (error: any) {
+      logger.error('Error obteniendo eventos', { error });
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   }
@@ -120,20 +121,14 @@ export class EventoController {
    */
   static async getById(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const eventoId = parseInt(req.params.id);
-      const usuarioId = req.user!.id;
-      const userRole = req.user!.rol?.clave;
+  const eventoId = parseInt(req.params['id'] as string);
 
       if (isNaN(eventoId)) {
         res.status(400).json(ApiResponse.error('ID de evento inválido'));
         return;
       }
 
-      const evento = await EventoService.getEventoById(
-        eventoId,
-        usuarioId,
-        userRole
-      );
+      const evento = await EventoService.getEventoById(eventoId);
 
       if (!evento) {
         res.status(404).json(ApiResponse.error('Evento no encontrado'));
@@ -142,8 +137,8 @@ export class EventoController {
 
       res.json(ApiResponse.success(evento));
 
-    } catch (error) {
-      logger.error('Error obteniendo evento:', error);
+    } catch (error: any) {
+      logger.error('Error obteniendo evento', { error });
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   }
@@ -155,9 +150,8 @@ export class EventoController {
    */
   static async update(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const eventoId = parseInt(req.params.id);
-      const usuarioId = req.user!.id;
-      const userRole = req.user!.rol?.clave;
+  const eventoId = parseInt(req.params['id'] as string);
+  const usuarioId = req.user!.id;
       const updateData = req.body;
 
       if (isNaN(eventoId)) {
@@ -168,20 +162,18 @@ export class EventoController {
       const evento = await EventoService.updateEvento(
         eventoId,
         updateData,
-        usuarioId,
-        userRole
+        usuarioId
       );
-
       if (!evento) {
         res.status(404).json(ApiResponse.error('Evento no encontrado o sin permisos'));
         return;
       }
 
-      logger.info(`Evento actualizado: ${eventoId}`, { usuarioId });
+  logger.info(`Evento actualizado: ${eventoId}`);
       res.json(ApiResponse.success(evento, 'Evento actualizado exitosamente'));
 
-    } catch (error) {
-      logger.error('Error actualizando evento:', error);
+    } catch (error: any) {
+      logger.error('Error actualizando evento', { error });
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   }
@@ -193,27 +185,26 @@ export class EventoController {
    */
   static async delete(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const eventoId = parseInt(req.params.id);
-      const usuarioId = req.user!.id;
-      const userRole = req.user!.rol?.clave;
+  const eventoId = parseInt(req.params['id'] as string);
+  const usuarioId = req.user!.id;
 
       if (isNaN(eventoId)) {
         res.status(400).json(ApiResponse.error('ID de evento inválido'));
         return;
       }
 
-      const success = await EventoService.deleteEvento(eventoId, usuarioId, userRole);
+  const success = await EventoService.deleteEvento(eventoId, usuarioId);
 
       if (!success) {
         res.status(404).json(ApiResponse.error('Evento no encontrado o sin permisos'));
         return;
       }
 
-      logger.info(`Evento eliminado: ${eventoId}`, { usuarioId });
+  logger.info(`Evento eliminado: ${eventoId}`);
       res.json(ApiResponse.success(null, 'Evento eliminado exitosamente'));
 
-    } catch (error) {
-      logger.error('Error eliminando evento:', error);
+    } catch (error: any) {
+      logger.error('Error eliminando evento', { error });
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   }
@@ -227,17 +218,14 @@ export class EventoController {
    * GET /api/v1/eventos/tipos
    * Roles: todos los autenticados
    */
-  static async getTipos(req: AuthenticatedRequest, res: Response): Promise<void> {
+  static async getTipos(_req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const categoria = req.query.categoria as string;
-      const activo = req.query.activo !== undefined ? req.query.activo === 'true' : undefined;
-
-      const tipos = await EventoService.getTiposEvento(categoria, activo);
+  const tipos = await EventoService.getTiposEvento();
 
       res.json(ApiResponse.success(tipos));
 
-    } catch (error) {
-      logger.error('Error obteniendo tipos de eventos:', error);
+    } catch (error: any) {
+      logger.error('Error obteniendo tipos de eventos', { error });
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   }
@@ -253,34 +241,24 @@ export class EventoController {
    */
   static async getHistorialMedico(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const caballoId = parseInt(req.params.caballoId);
-      const usuarioId = req.user!.id;
-      const userRole = req.user!.rol?.clave;
-      const fechaInicio = req.query.fechaInicio as string;
-      const fechaFin = req.query.fechaFin as string;
+  const caballoId = parseInt(req.params['caballoId'] as string);
 
       if (isNaN(caballoId)) {
         res.status(400).json(ApiResponse.error('ID de caballo inválido'));
         return;
       }
 
-      const historial = await EventoService.getHistorialMedicoCaballo(
-        caballoId,
-        usuarioId,
-        userRole,
-        fechaInicio,
-        fechaFin
-      );
-
-      if (!historial) {
-        res.status(404).json(ApiResponse.error('Caballo no encontrado o sin permisos'));
+      // Usamos getEventosByCaballo como historial básico por ahora
+      const historialResult = await EventoService.getEventosByCaballo(caballoId, { page: 1, limit: 100 });
+      if (!historialResult.success || !historialResult.data) {
+        res.status(404).json(ApiResponse.error(historialResult.error || 'Historial no disponible'));
         return;
       }
 
-      res.json(ApiResponse.success(historial));
+      res.json(ApiResponse.success(historialResult.data.eventos));
 
-    } catch (error) {
-      logger.error('Error obteniendo historial médico:', error);
+    } catch (error: any) {
+      logger.error('Error obteniendo historial médico', { error });
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   }
@@ -294,24 +272,13 @@ export class EventoController {
    * GET /api/v1/eventos/programados?dias=30&establecimiento=1
    * Roles: todos los autenticados
    */
-  static async getProgramados(req: AuthenticatedRequest, res: Response): Promise<void> {
+  static async getProgramados(_req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const dias = parseInt(req.query.dias as string) || 30;
-      const establecimientoId = req.query.establecimiento ? parseInt(req.query.establecimiento as string) : undefined;
-      const usuarioId = req.user!.id;
-      const userRole = req.user!.rol?.clave;
+      // Método no implementado en el servicio; responder 501 por ahora
+      res.status(501).json(ApiResponse.error('Endpoint no implementado'));
 
-      const eventos = await EventoService.getEventosProgramados(
-        dias,
-        establecimientoId,
-        usuarioId,
-        userRole
-      );
-
-      res.json(ApiResponse.success(eventos));
-
-    } catch (error) {
-      logger.error('Error obteniendo eventos programados:', error);
+    } catch (error: any) {
+      logger.error('Error obteniendo eventos programados', { error });
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   }
@@ -325,35 +292,9 @@ export class EventoController {
    * GET /api/v1/eventos/reporte?fechaInicio=2024-01-01&fechaFin=2024-12-31&establecimiento=1
    * Roles: admin, establecimiento autorizado
    */
-  static async getReporte(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const fechaInicio = req.query.fechaInicio as string;
-      const fechaFin = req.query.fechaFin as string;
-      const establecimientoId = req.query.establecimiento ? parseInt(req.query.establecimiento as string) : undefined;
-      const tipoEventoId = req.query.tipo ? parseInt(req.query.tipo as string) : undefined;
-      const usuarioId = req.user!.id;
-      const userRole = req.user!.rol?.clave;
-
-      if (!fechaInicio || !fechaFin) {
-        res.status(400).json(ApiResponse.error('Fecha de inicio y fin son requeridas'));
-        return;
-      }
-
-      const reporte = await EventoService.getReporteEventos(
-        fechaInicio,
-        fechaFin,
-        establecimientoId,
-        tipoEventoId,
-        usuarioId,
-        userRole
-      );
-
-      res.json(ApiResponse.success(reporte));
-
-    } catch (error) {
-      logger.error('Error generando reporte de eventos:', error);
-      res.status(500).json(ApiResponse.error('Error interno del servidor'));
-    }
+  static async getReporte(_req: AuthenticatedRequest, res: Response): Promise<void> {
+    // No implementado en el servicio
+    res.status(501).json(ApiResponse.error('Endpoint no implementado'));
   }
 
   /**
@@ -361,26 +302,9 @@ export class EventoController {
    * GET /api/v1/eventos/estadisticas?establecimiento=1&periodo=mes
    * Roles: admin, establecimiento autorizado
    */
-  static async getEstadisticas(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const establecimientoId = req.query.establecimiento ? parseInt(req.query.establecimiento as string) : undefined;
-      const periodo = req.query.periodo as string || 'mes'; // mes, año, semana
-      const usuarioId = req.user!.id;
-      const userRole = req.user!.rol?.clave;
-
-      const estadisticas = await EventoService.getEstadisticasEventos(
-        establecimientoId,
-        periodo,
-        usuarioId,
-        userRole
-      );
-
-      res.json(ApiResponse.success(estadisticas));
-
-    } catch (error) {
-      logger.error('Error obteniendo estadísticas de eventos:', error);
-      res.status(500).json(ApiResponse.error('Error interno del servidor'));
-    }
+  static async getEstadisticas(_req: AuthenticatedRequest, res: Response): Promise<void> {
+    // No implementado en el servicio
+    res.status(501).json(ApiResponse.error('Endpoint no implementado'));
   }
 
   // ====================================
@@ -392,43 +316,9 @@ export class EventoController {
    * POST /api/v1/eventos/:id/adjuntos
    * Roles: veterinario que creó el evento, admin
    */
-  static async addAdjunto(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const eventoId = parseInt(req.params.id);
-      const { nombre, descripcion, url, tipo } = req.body;
-      const usuarioId = req.user!.id;
-      const userRole = req.user!.rol?.clave;
-
-      if (isNaN(eventoId) || !nombre || !url) {
-        res.status(400).json(ApiResponse.error('Datos requeridos: nombre, url'));
-        return;
-      }
-
-      const adjunto = await EventoService.addAdjuntoToEvento(
-        eventoId,
-        {
-          nombre,
-          descripcion,
-          url,
-          tipo,
-          creadoPorUsuarioId: usuarioId
-        },
-        usuarioId,
-        userRole
-      );
-
-      if (!adjunto) {
-        res.status(404).json(ApiResponse.error('Evento no encontrado o sin permisos'));
-        return;
-      }
-
-      logger.info(`Adjunto agregado a evento ${eventoId}`, { usuarioId });
-      res.status(201).json(ApiResponse.success(adjunto, 'Adjunto agregado exitosamente'));
-
-    } catch (error) {
-      logger.error('Error agregando adjunto a evento:', error);
-      res.status(500).json(ApiResponse.error('Error interno del servidor'));
-    }
+  static async addAdjunto(_req: AuthenticatedRequest, res: Response): Promise<void> {
+    // No implementado en el servicio
+    res.status(501).json(ApiResponse.error('Endpoint no implementado'));
   }
 
   /**
@@ -436,33 +326,8 @@ export class EventoController {
    * GET /api/v1/eventos/:id/adjuntos
    * Roles: usuarios con acceso al evento
    */
-  static async getAdjuntos(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const eventoId = parseInt(req.params.id);
-      const usuarioId = req.user!.id;
-      const userRole = req.user!.rol?.clave;
-
-      if (isNaN(eventoId)) {
-        res.status(400).json(ApiResponse.error('ID de evento inválido'));
-        return;
-      }
-
-      const adjuntos = await EventoService.getEventoAdjuntos(
-        eventoId,
-        usuarioId,
-        userRole
-      );
-
-      if (!adjuntos) {
-        res.status(404).json(ApiResponse.error('Evento no encontrado o sin permisos'));
-        return;
-      }
-
-      res.json(ApiResponse.success(adjuntos));
-
-    } catch (error) {
-      logger.error('Error obteniendo adjuntos del evento:', error);
-      res.status(500).json(ApiResponse.error('Error interno del servidor'));
-    }
+  static async getAdjuntos(_req: AuthenticatedRequest, res: Response): Promise<void> {
+    // No implementado en el servicio
+    res.status(501).json(ApiResponse.error('Endpoint no implementado'));
   }
 }

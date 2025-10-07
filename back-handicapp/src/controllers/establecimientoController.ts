@@ -49,7 +49,7 @@ export class EstablecimientoController {
       }
 
     } catch (error) {
-      logger.error({ error }, 'Error obteniendo establecimientos');
+      logger.error('Error obteniendo establecimientos', { error });
       ResponseHelper.internalError(res, 'Error interno del servidor');
     }
   }
@@ -77,7 +77,7 @@ export class EstablecimientoController {
       }
 
     } catch (error) {
-      logger.error({ error }, 'Error obteniendo establecimiento');
+      logger.error('Error obteniendo establecimiento', { error });
       ResponseHelper.internalError(res, 'Error interno del servidor');
     }
   }
@@ -111,7 +111,7 @@ export class EstablecimientoController {
       }
 
     } catch (error) {
-      logger.error({ error }, 'Error creando establecimiento');
+      logger.error('Error creando establecimiento', { error });
       ResponseHelper.internalError(res, 'Error interno del servidor');
     }
   }
@@ -140,7 +140,7 @@ export class EstablecimientoController {
       }
 
     } catch (error) {
-      logger.error({ error }, 'Error actualizando establecimiento');
+      logger.error('Error actualizando establecimiento', { error });
       ResponseHelper.internalError(res, 'Error interno del servidor');
     }
   }
@@ -153,7 +153,7 @@ export class EstablecimientoController {
     try {
       ResponseHelper.notFound(res, 'Funcionalidad no implementada');
     } catch (error) {
-      logger.error({ error }, 'Error eliminando establecimiento');
+      logger.error('Error eliminando establecimiento', { error });
       ResponseHelper.internalError(res, 'Error interno del servidor');
     }
   }
@@ -166,7 +166,7 @@ export class EstablecimientoController {
     try {
       ResponseHelper.notFound(res, 'Funcionalidad no implementada');
     } catch (error) {
-      logger.error({ error }, 'Error agregando usuario');
+      logger.error('Error agregando usuario', { error });
       ResponseHelper.internalError(res, 'Error interno del servidor');
     }
   }
@@ -179,7 +179,7 @@ export class EstablecimientoController {
     try {
       ResponseHelper.notFound(res, 'Funcionalidad no implementada');
     } catch (error) {
-      logger.error({ error }, 'Error obteniendo usuarios');
+      logger.error('Error obteniendo usuarios', { error });
       ResponseHelper.internalError(res, 'Error interno del servidor');
     }
   }
@@ -192,7 +192,7 @@ export class EstablecimientoController {
     try {
       ResponseHelper.notFound(res, 'Funcionalidad no implementada');
     } catch (error) {
-      logger.error({ error }, 'Error removiendo usuario');
+      logger.error('Error removiendo usuario', { error });
       ResponseHelper.internalError(res, 'Error interno del servidor');
     }
   }
@@ -205,7 +205,7 @@ export class EstablecimientoController {
     try {
       ResponseHelper.notFound(res, 'Funcionalidad no implementada');
     } catch (error) {
-      logger.error({ error }, 'Error obteniendo caballos');
+      logger.error('Error obteniendo caballos', { error });
       ResponseHelper.internalError(res, 'Error interno del servidor');
     }
   }
@@ -218,7 +218,7 @@ export class EstablecimientoController {
     try {
       ResponseHelper.notFound(res, 'Funcionalidad no implementada');
     } catch (error) {
-      logger.error({ error }, 'Error obteniendo estadísticas');
+      logger.error('Error obteniendo estadísticas', { error });
       ResponseHelper.internalError(res, 'Error interno del servidor');
     }
   }

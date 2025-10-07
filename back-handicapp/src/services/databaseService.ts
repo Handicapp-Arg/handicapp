@@ -1,6 +1,11 @@
 import { sequelize, withTransaction } from '../config/database';
 import { logger } from '../utils/logger';
-import { Transaction } from 'sequelize';
+import { Transaction, QueryTypes } from 'sequelize';
+
+// Helper to bypass brittle Sequelize typings for `sequelize.query` under strict TS settings
+const runQuery = async <R = unknown>(sql: string, options?: any): Promise<R> => {
+  return (sequelize.query as any)(sql, options) as Promise<R>;
+};
 
 export class DatabaseService {
   /**
@@ -31,18 +36,18 @@ export class DatabaseService {
   /**
    * Ejecuta una consulta raw con parámetros seguros
    */
-  static async executeRawQuery<T = unknown>(
+  static async executeRawQuery<T extends object = any>(
     query: string,
     replacements?: unknown[],
     transaction?: Transaction
   ): Promise<T[]> {
     try {
-      const result = await sequelize.query(query, {
-        replacements,
+      const rows = await runQuery<T[]>(query, {
+        replacements: (replacements as any) ?? [],
         transaction,
-        type: sequelize.QueryTypes.SELECT,
+        type: QueryTypes.SELECT,
       });
-      return result as T[];
+      return rows ?? [];
     } catch (error) {
       logger.error('Error ejecutando consulta raw:', error);
       throw error;
@@ -58,12 +63,20 @@ export class DatabaseService {
     transaction?: Transaction
   ): Promise<[number, number]> {
     try {
-      const result = await sequelize.query(query, {
-        replacements,
+      const [results, metadata] = await runQuery<[unknown[], any]>(query, {
+        replacements: (replacements as any) ?? [],
         transaction,
-        type: sequelize.QueryTypes.UPDATE,
       });
-      return result as [number, number];
+      // Try to derive affected rows cross-dialect
+      let affected = 0;
+      if (Array.isArray(results)) {
+        affected = results.length;
+      }
+      const rowCount = (metadata as any)?.rowCount;
+      if (typeof rowCount === 'number') {
+        affected = rowCount;
+      }
+      return [affected, 0];
     } catch (error) {
       logger.error('Error ejecutando actualización:', error);
       throw error;
@@ -79,13 +92,13 @@ export class DatabaseService {
       await sequelize.authenticate();
 
       // Verificar que las tablas principales existen
-      const tables = await sequelize.query(
+      const tables = await runQuery<Array<{ table_name: string }>>(
         "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'",
-        { type: sequelize.QueryTypes.SELECT }
+        { type: QueryTypes.SELECT }
       );
 
       const requiredTables = ['roles', 'usuarios'];
-      const existingTables = (tables as Array<{ table_name: string }>).map(t => t.table_name);
+      const existingTables = tables.map(t => t.table_name);
 
       for (const table of requiredTables) {
         if (!existingTables.includes(table)) {
@@ -95,12 +108,11 @@ export class DatabaseService {
       }
 
       // Verificar que hay roles básicos
-      const roles = await sequelize.query(
-        'SELECT COUNT(*) as count FROM roles',
-        { type: sequelize.QueryTypes.SELECT }
-      );
-
-      if ((roles[0] as { count: number }).count < 3) {
+      const roles = await runQuery<Array<{ count: string }>>('SELECT COUNT(*) as count FROM roles', {
+        type: QueryTypes.SELECT,
+      });
+      const countNum = Number(roles[0]?.count ?? 0);
+      if (countNum < 3) {
         logger.error('Roles básicos no encontrados');
         return false;
       }
@@ -123,7 +135,13 @@ export class DatabaseService {
     correlation: number;
   }>> {
     try {
-      const stats = await sequelize.query(`
+      const stats = await runQuery<Array<{
+        schemaname: string;
+        tablename: string;
+        attname: string;
+        n_distinct: number;
+        correlation: number;
+      }>>(`
         SELECT 
           schemaname,
           tablename,
@@ -133,15 +151,9 @@ export class DatabaseService {
         FROM pg_stats 
         WHERE schemaname = 'public'
         ORDER BY tablename, attname
-      `, { type: sequelize.QueryTypes.SELECT });
+      `, { type: QueryTypes.SELECT });
 
-      return stats as Array<{
-        schemaname: string;
-        tablename: string;
-        attname: string;
-        n_distinct: number;
-        correlation: number;
-      }>;
+      return stats ?? [];
     } catch (error) {
       logger.error('Error obteniendo estadísticas de la base de datos:', error);
       throw error;
@@ -153,9 +165,7 @@ export class DatabaseService {
    */
   static async optimizeDatabase(): Promise<void> {
     try {
-      await sequelize.query('VACUUM ANALYZE', {
-        type: sequelize.QueryTypes.RAW,
-      });
+      await runQuery('VACUUM ANALYZE', { type: QueryTypes.RAW });
       logger.info('Base de datos optimizada exitosamente');
     } catch (error) {
       logger.error('Error optimizando la base de datos:', error);

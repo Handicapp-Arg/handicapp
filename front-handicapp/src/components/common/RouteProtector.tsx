@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/lib/contexts/AuthContext';
+import { useAuthNew } from '@/lib/hooks/useAuthNew';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -9,7 +9,7 @@ interface RouteProtectorProps {
 }
 
 export const RouteProtector: React.FC<RouteProtectorProps> = ({ children }) => {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuthNew();
   const router = useRouter();
 
   useEffect(() => {
@@ -38,8 +38,9 @@ export const RouteProtector: React.FC<RouteProtectorProps> = ({ children }) => {
 
 // Hook para obtener la ruta por defecto según el rol
 export const useDefaultRoute = () => {
-  const { user } = useAuth();
-  
+  const { user } = useAuthNew();
+  const router = useRouter();
+
   const getDefaultRoute = (role: string) => {
     switch (role) {
       case 'admin':
@@ -60,11 +61,10 @@ export const useDefaultRoute = () => {
   };
 
   return {
-    getDefaultRoute: () => user ? getDefaultRoute(user.role) : '/login',
+    getDefaultRoute: () => user ? getDefaultRoute(user.rol.clave) : '/login',
     redirectToDefaultRoute: () => {
-      const router = useRouter();
       if (user) {
-        router.push(getDefaultRoute(user.role));
+        router.push(getDefaultRoute(user.rol.clave));
       }
     }
   };

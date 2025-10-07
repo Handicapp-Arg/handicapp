@@ -4,7 +4,7 @@
 // -----------------------------------------------------------------------------
 
 import { Request, Response, NextFunction } from 'express';
-import { body, param, query, validationResult, ValidationChain } from 'express-validator';
+import { body, param, query, validationResult } from 'express-validator';
 import { ApiResponse } from '../utils/response';
 import { logger } from '../utils/logger';
 
@@ -21,13 +21,13 @@ export function handleValidationErrors(req: Request, res: Response, next: NextFu
       value: error.type === 'field' ? error.value : undefined
     }));
 
-    logger.warn('Errores de validación:', { 
+    logger.warn('Errores de validación', {
       path: req.path,
       method: req.method,
-      errors: formattedErrors 
+      errors: formattedErrors,
     });
 
-    res.status(400).json(ApiResponse.error('Errores de validación', formattedErrors));
+  res.status(400).json(ApiResponse.error('Errores de validación', formattedErrors.map(e => `${e.field}: ${e.message}`)));
     return;
   }
   
@@ -115,7 +115,7 @@ export const userValidations = {
       .matches(/^[\+]?[\d\s\-\(\)]{7,20}$/)
       .withMessage('Teléfono debe ser un número válido'),
     
-    body('rolId')
+    body('rol_id')
       .isInt({ min: 1 })
       .withMessage('Rol es requerido y debe ser válido'),
 
@@ -149,11 +149,6 @@ export const userValidations = {
   ],
 
   changePassword: [
-    body('currentPassword')
-      .isString()
-      .notEmpty()
-      .withMessage('Contraseña actual es requerida'),
-    
     body('newPassword')
       .isLength({ min: 8, max: 128 })
       .withMessage('La nueva contraseña debe tener entre 8 y 128 caracteres')

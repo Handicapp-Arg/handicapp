@@ -29,6 +29,72 @@ interface UpdateEventoData extends Partial<CreateEventoData> {
 }
 
 export class EventoService {
+  // Obtener todos los eventos con filtros y paginación
+  static async getAllEventos(filters: {
+    page?: number;
+    limit?: number;
+    caballoId?: number;
+    tipoEventoId?: number;
+    establecimientoId?: number;
+    fechaInicio?: string;
+    fechaFin?: string;
+    veterinarioId?: number;
+    usuarioId?: number;
+    userRole?: string;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+  }): Promise<ServiceResponse<{ eventos: Evento[]; total: number; totalPages: number }>> {
+    try {
+      const {
+        page = 1,
+        limit = 10,
+        caballoId,
+        tipoEventoId,
+        establecimientoId,
+        fechaInicio,
+        fechaFin,
+        veterinarioId,
+        sortBy = 'fecha_evento',
+        sortOrder = 'DESC',
+      } = filters || {} as any;
+
+      const offset = (page - 1) * limit;
+
+      const where: any = { eliminado_el: null };
+      if (caballoId) where.caballo_id = caballoId;
+      if (tipoEventoId) where.tipo_evento_id = tipoEventoId;
+      if (establecimientoId) where.establecimiento_id = establecimientoId;
+      if (fechaInicio || fechaFin) {
+        where.fecha_evento = {};
+        if (fechaInicio) where.fecha_evento[Op.gte] = new Date(fechaInicio);
+        if (fechaFin) where.fecha_evento[Op.lte] = new Date(fechaFin);
+      }
+      if (veterinarioId) where.validado_por_usuario_id = veterinarioId;
+
+      const { count, rows } = await Evento.findAndCountAll({
+        where,
+        include: [
+          { model: TipoEvento, as: 'tipo_evento', attributes: ['id', 'nombre', 'clave', 'disciplina'] },
+          { model: User, as: 'creado_por', attributes: ['id', 'nombre', 'apellido'] },
+          { model: User, as: 'validado_por', attributes: ['id', 'nombre', 'apellido'], required: false },
+          { model: Establecimiento, as: 'establecimiento', attributes: ['id', 'nombre'], required: false },
+        ],
+        limit,
+        offset,
+        order: [[sortBy, sortOrder]],
+        distinct: true,
+      });
+
+      const totalPages = Math.ceil(count / limit);
+
+      return {
+        success: true,
+        data: { eventos: rows, total: count, totalPages },
+      };
+    } catch (error) {
+      return { success: false, error: 'Error al obtener eventos' };
+    }
+  }
   
   // Obtener eventos por caballo
   static async getEventosByCaballo(
@@ -253,7 +319,7 @@ export class EventoService {
       const evento = await Evento.create({
         ...data,
         creado_por_usuario_id: creadoPorUserId,
-        rol_autor: rolAutor,
+        rol_autor: rolAutor ?? null,
         estado_validacion: EstadoValidacionEvento.approved, // Auto-aprobado por ahora
       });
 
@@ -438,7 +504,7 @@ export class EventoService {
   ): Promise<ServiceResponse<{
     totalEventos: number;
     eventosPorTipo: Record<string, number>;
-    ultimoEvento?: Date;
+    ultimoEvento?: Date | undefined;
   }>> {
     try {
       const eventos = await Evento.findAll({
@@ -457,11 +523,11 @@ export class EventoService {
       const stats = {
         totalEventos: eventos.length,
         eventosPorTipo: {} as Record<string, number>,
-        ultimoEvento: eventos.length > 0 ? eventos[0].fecha_evento : undefined,
+        ultimoEvento: eventos[0]?.fecha_evento,
       };
 
       // Contar eventos por tipo
-      eventos.forEach(evento => {
+      eventos.forEach((evento: any) => {
         const tipo = evento.tipo_evento?.clave || 'sin_tipo';
         stats.eventosPorTipo[tipo] = (stats.eventosPorTipo[tipo] || 0) + 1;
       });

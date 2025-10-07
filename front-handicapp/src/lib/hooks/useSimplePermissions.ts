@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import AuthManager from '../auth/AuthManager';
 
 // Mapeo de roles por ID
 const ROLE_MAPPING: Record<number, string> = {
@@ -12,23 +13,22 @@ const ROLE_MAPPING: Record<number, string> = {
   6: 'propietario'
 };
 
-const getCookie = (name: string): string | null => {
-  if (typeof document === 'undefined') return null;
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
-  return null;
-};
-
 export const useSimplePermissions = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
-    const roleStr = getCookie('role');
-    if (roleStr) {
-      const roleId = parseInt(roleStr);
-      setUserRole(ROLE_MAPPING[roleId] || null);
-    }
+    const authManager = AuthManager.getInstance();
+    
+    const unsubscribe = authManager.subscribe((authState) => {
+      if (authState.user?.rol?.id) {
+        const role = ROLE_MAPPING[authState.user.rol.id] || null;
+        setUserRole(role);
+      } else {
+        setUserRole(null);
+      }
+    });
+
+    return unsubscribe;
   }, []);
 
   return {

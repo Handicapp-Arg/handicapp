@@ -1,4 +1,5 @@
 import ApiClient from './apiClient';
+import { logger } from '@/lib/utils/logger';
 
 export interface Caballo {
   id: number;
@@ -85,6 +86,7 @@ export interface CaballoFilters {
   establecimiento?: number;
   raza?: string;
   sexo?: string;
+  estado?: string;
 }
 
 export const caballoService = {
@@ -92,39 +94,82 @@ export const caballoService = {
    * Obtener todos los caballos con filtros
    */
   async getAll(filters: CaballoFilters = {}) {
-    return ApiClient.getCaballos(
-      filters.page || 1,
-      filters.limit || 10,
-      filters
-    );
+    try {
+      const params = new URLSearchParams({
+        page: (filters.page || 1).toString(),
+        limit: (filters.limit || 10).toString(),
+        ...(filters.search && { search: filters.search }),
+        ...(typeof filters.establecimiento === 'number' && { establecimiento: String(filters.establecimiento) }),
+        ...(filters.raza && { raza: filters.raza }),
+        ...(filters.sexo && { sexo: filters.sexo }),
+        ...(filters.estado && { estado: filters.estado })
+      });
+      
+      return await ApiClient.makeRequest(`/caballos?${params}`, {
+        method: 'GET',
+      });
+    } catch (error) {
+  logger.error('Error fetching caballos:', error);
+      return { data: { caballos: [], total: 0, totalPages: 1 } };
+    }
   },
 
   /**
    * Obtener caballo por ID
    */
   async getById(id: number) {
-    return ApiClient.getCaballoById(id);
+    try {
+      return await ApiClient.makeRequest(`/caballos/${id}`, {
+        method: 'GET',
+      });
+    } catch (error) {
+  logger.error('Error fetching caballo:', error);
+      throw error;
+    }
   },
 
   /**
    * Crear nuevo caballo
    */
   async create(data: CreateCaballoData) {
-    return ApiClient.createCaballo(data);
+    try {
+      return await ApiClient.makeRequest('/caballos', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    } catch (error) {
+  logger.error('Error creating caballo:', error);
+      throw error;
+    }
   },
 
   /**
    * Actualizar caballo
    */
   async update(id: number, data: UpdateCaballoData) {
-    return ApiClient.updateCaballo(id, data);
+    try {
+      return await ApiClient.makeRequest(`/caballos/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+    } catch (error) {
+  logger.error('Error updating caballo:', error);
+      throw error;
+    }
   },
 
   /**
    * Eliminar caballo
    */
   async delete(id: number) {
-    return ApiClient.deleteCaballo(id);
+    try {
+      return await ApiClient.makeRequest(`/caballos/${id}`, {
+        method: 'DELETE',
+      });
+    } catch (error) {
+  logger.error('Error deleting caballo:', error);
+      throw error;
+    }
   },
 
   /**

@@ -12,33 +12,13 @@ import { config } from '../config/config';
 export class UserController {
   // Get all users
   static getUsers = asyncHandler(async (_req: Request, res: Response, _next: NextFunction) => {
-    // Retornando datos simples para que funcione
-    return ResponseHelper.success(res, {
-      users: [
-        { 
-          id: 1, 
-          nombre: 'Admin', 
-          apellido: 'HandicApp', 
-          email: 'admin@handicapp.com',
-          telefono: null,
-          estado_usuario: 'active',
-          verificado: true,
-          rol: { id: 1, nombre: 'Administrador', clave: 'admin' }
-        },
-        { 
-          id: 2, 
-          nombre: 'Veterinario', 
-          apellido: 'Principal', 
-          email: 'veterinario@handicapp.com',
-          telefono: null,
-          estado_usuario: 'active',
-          verificado: true,
-          rol: { id: 4, nombre: 'Veterinario', clave: 'veterinario' }
-        }
-      ],
-      total: 2,
-      totalPages: 1
-    }, 'Users retrieved successfully');
+  const page = Number((_req.query['page'] as string) || 1);
+  const limit = Number((_req.query['limit'] as string) || 10);
+  const sortBy = (_req.query['sortBy'] as string) || 'creado_el';
+  const sortOrder = (_req.query['sortOrder'] as string) === 'ASC' ? 'ASC' : 'DESC';
+
+    const result = await UserService.getUsers({ page, limit, sortBy, sortOrder });
+    return ResponseHelper.success(res, result.data, 'Users retrieved successfully');
   });
 
   // Get user by ID
@@ -114,48 +94,17 @@ export class UserController {
   // Search users
   static searchUsers = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
     const { q } = req.query;
-    
     if (!q || typeof q !== 'string') {
       return ResponseHelper.badRequest(res, 'Search query is required');
     }
 
-    // Simulando búsqueda simple
-    const allUsers = [
-      { 
-        id: 1, 
-        nombre: 'Admin', 
-        apellido: 'HandicApp', 
-        email: 'admin@handicapp.com',
-        telefono: null,
-        estado_usuario: 'active',
-        verificado: true,
-        rol: { id: 1, nombre: 'Administrador', clave: 'admin' }
-      },
-      { 
-        id: 2, 
-        nombre: 'Veterinario', 
-        apellido: 'Principal', 
-        email: 'veterinario@handicapp.com',
-        telefono: null,
-        estado_usuario: 'active',
-        verificado: true,
-        rol: { id: 4, nombre: 'Veterinario', clave: 'veterinario' }
-      }
-    ];
+  const page = Number((req.query['page'] as string) || 1);
+  const limit = Number((req.query['limit'] as string) || 10);
+  const sortBy = (req.query['sortBy'] as string) || 'creado_el';
+  const sortOrder = (req.query['sortOrder'] as string) === 'ASC' ? 'ASC' : 'DESC';
 
-    // Filtrar usuarios basado en la búsqueda
-    const filteredUsers = allUsers.filter(user => 
-      user.nombre.toLowerCase().includes(q.toLowerCase()) ||
-      user.apellido.toLowerCase().includes(q.toLowerCase()) ||
-      user.email.toLowerCase().includes(q.toLowerCase()) ||
-      user.rol.nombre.toLowerCase().includes(q.toLowerCase())
-    );
-    
-    return ResponseHelper.success(res, {
-      users: filteredUsers,
-      total: filteredUsers.length,
-      totalPages: 1
-    }, 'Search completed successfully');
+    const result = await UserService.searchUsers(q, { page, limit, sortBy, sortOrder });
+    return ResponseHelper.success(res, result.data, 'Search completed successfully');
   });
 
   // Get user statistics

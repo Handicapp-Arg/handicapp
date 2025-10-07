@@ -18,23 +18,44 @@ interface UserStats {
 export function StatsCards() {
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchStats();
   }, []);
 
-  const fetchStats = async () => {
+  const fetchStats = async (retryCount = 0) => {
     try {
       setLoading(true);
+      setError(null);
       const data = await ApiClient.getUserStats();
-      setStats((data as any).data);
+      setStats((data as any).data || data);
     } catch (error: any) {
       console.error('Error fetching stats:', error);
-      // No redirigir, solo mostrar error en UI
+      
+      // Si es error de autenticación, no reintentar
+      if (error.message?.includes('autorizado') || error.message?.includes('Sesión expirada')) {
+        setError('No tienes permisos para ver estas estadísticas');
+        setStats(null);
+        return;
+      }
+      
+      // Reintentar hasta 2 veces en caso de error de servidor
+      if (retryCount < 2) {
+        console.log(`Reintentando obtener estadísticas (intento ${retryCount + 1}/2)`);
+        setTimeout(() => fetchStats(retryCount + 1), 1000);
+        return;
+      }
+      
+      setError('Error al cargar las estadísticas. Inténtalo más tarde.');
       setStats(null);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRefresh = () => {
+    fetchStats();
   };
 
   if (loading) {
@@ -58,9 +79,9 @@ export function StatsCards() {
           <span className="text-2xl">📊</span>
         </div>
         <h2 className="text-xl font-semibold text-gray-900 mb-2">Error al cargar estadísticas</h2>
-        <p className="text-gray-600 mb-4">No se pudieron cargar las estadísticas del sistema.</p>
+        <p className="text-gray-600 mb-4">{error || 'No se pudieron cargar las estadísticas del sistema.'}</p>
         <button
-          onClick={fetchStats}
+          onClick={handleRefresh}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
         >
           🔄 Reintentar
@@ -222,7 +243,7 @@ export function StatsCards() {
       {/* Refresh Button */}
       <div className="text-center">
         <button
-          onClick={fetchStats}
+          onClick={handleRefresh}
           className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2 mx-auto"
         >
           <span>🔄</span>

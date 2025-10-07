@@ -44,7 +44,8 @@ export const RoleGuard: React.FC<{
   roles: string[];
   fallback?: React.ReactNode;
 }> = ({ children, roles, fallback = null }) => {
-  const { userRole } = usePermissions();
-  const hasRole = userRole && roles.includes(userRole);
+  const { getUserRole } = usePermissions();
+  const role = getUserRole();
+  const hasRole = role && roles.includes(role);
   return hasRole ? <>{children}</> : <>{fallback}</>;
 };

@@ -1,10 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/lib/contexts/AuthContext';
+import { useAuthNew } from '@/lib/hooks/useAuthNew';
 import { eventoService, EventoFormData } from '@/lib/services/eventoService';
 import { caballoService } from '@/lib/services/caballoService';
 import { establecimientoService } from '@/lib/services/establecimientoService';
+import { usePermissions } from '@/lib/hooks/usePermissions';
+import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 
 interface EventoFormProps {
   isOpen: boolean;
@@ -32,7 +35,8 @@ interface Establecimiento {
 }
 
 export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormProps) {
-  const { user } = useAuth();
+  const { user } = useAuthNew();
+  const { canCreateMedicalEvents, getUserRole } = usePermissions();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tiposEvento, setTiposEvento] = useState<TipoEvento[]>([]);
@@ -110,7 +114,7 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
   const loadTiposEvento = async () => {
     try {
       // Los tipos de evento ya están seeded en el backend
-      const mockTipos: TipoEvento[] = [
+      const allTipos: TipoEvento[] = [
         { id: 1, nombre: 'Vacunación', categoria: 'salud', descripcion: 'Administración de vacunas' },
         { id: 2, nombre: 'Desparasitación', categoria: 'salud', descripcion: 'Tratamiento antiparasitario' },
         { id: 3, nombre: 'Revisión Veterinaria', categoria: 'salud', descripcion: 'Examen médico general' },
@@ -120,7 +124,15 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
         { id: 7, nombre: 'Alimentación Especial', categoria: 'nutricion', descripcion: 'Dieta específica' },
         { id: 8, nombre: 'Herrado', categoria: 'mantenimiento', descripcion: 'Cambio de herraduras' }
       ];
-      setTiposEvento(mockTipos);
+      
+      // Filtrar tipos según permisos:
+      // - Veterinario: puede crear todos los tipos
+      // - Otros roles: no pueden crear eventos de salud
+      const filteredTipos = canCreateMedicalEvents() 
+        ? allTipos 
+        : allTipos.filter(tipo => tipo.categoria !== 'salud');
+        
+      setTiposEvento(filteredTipos);
     } catch (error) {
       console.error('Error cargando tipos de evento:', error);
     }
@@ -189,26 +201,24 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">
-            {evento ? 'Editar Evento' : 'Crear Nuevo Evento'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+    <Modal isOpen={isOpen} onClose={onClose} title={evento ? 'Editar evento' : 'Crear evento'} size="xl">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
               {error}
+            </div>
+          )}
+
+          {/* Notificación de permisos */}
+          {!canCreateMedicalEvents() && (
+            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded">
+              <div className="flex items-center gap-2">
+                <span>ℹ️</span>
+                <span>
+                  <strong>Rol {getUserRole()}:</strong> Los eventos médicos (vacunación, revisiones veterinarias, etc.) 
+                  solo pueden ser creados por veterinarios.
+                </span>
+              </div>
             </div>
           )}
 
@@ -448,24 +458,15 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
           </div>
 
           {/* Botones */}
-          <div className="flex justify-end space-x-4 pt-6 border-t">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-            >
+          <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-6 border-t">
+            <Button type="button" variant="secondary" size="sm" onClick={onClose} disabled={loading}>
               Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
-            >
-              {loading ? 'Guardando...' : evento ? 'Actualizar' : 'Crear'} Evento
-            </button>
+            </Button>
+            <Button type="submit" variant="brand" size="sm" isLoading={loading} disabled={loading}>
+              {evento ? 'Actualizar' : 'Crear'} evento
+            </Button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }

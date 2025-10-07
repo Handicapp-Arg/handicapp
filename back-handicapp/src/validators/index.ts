@@ -113,9 +113,10 @@ export const updateRoleSchema = z
 
 export const roleIdSchema = z.object({
   id: z.coerce
-    .number({ invalid_type_error: "El identificador debe ser numerico" })
-    .int("El identificador debe ser un entero")
-    .positive("El identificador debe ser mayor a cero"),
+    .number()
+    .refine((v) => Number.isFinite(v), { message: 'El identificador debe ser numerico' })
+    .int('El identificador debe ser un entero')
+    .positive('El identificador debe ser mayor a cero'),
 });
 
 // -----------------------------------------------------------------------------

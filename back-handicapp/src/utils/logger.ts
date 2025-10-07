@@ -2,7 +2,7 @@ import pino from 'pino';
 import { config } from '../config/config';
 
 // Create logger instance
-const logger = pino({
+const baseLogger = pino({
   level: config.logging.level,
   ...(config.nodeEnv === 'development' && {
     transport: {
@@ -26,6 +26,37 @@ const logger = pino({
   },
 });
 
+// Logger flexible que acepta (msg), (msg, meta) o (meta, msg)
+type Any = any; // uso intencional para compatibilidad amplia
+
+function log(method: 'info'|'warn'|'error'|'debug', ...args: Any[]) {
+  if (args.length === 2) {
+    const [a, b] = args;
+    if (typeof a === 'string') {
+      // (msg, meta)
+      return (baseLogger as Any)[method](b, a);
+    }
+    if (typeof b === 'string') {
+      // (meta, msg)
+      return (baseLogger as Any)[method](a, b);
+    }
+    return (baseLogger as Any)[method](a);
+  }
+  if (args.length === 1) {
+    const [a] = args;
+    if (typeof a === 'string') return (baseLogger as Any)[method](a);
+    return (baseLogger as Any)[method](a);
+  }
+  return (baseLogger as Any)[method]();
+}
+
+const logger = {
+  info: (...args: Any[]) => log('info', ...args),
+  warn: (...args: Any[]) => log('warn', ...args),
+  error: (...args: Any[]) => log('error', ...args),
+  debug: (...args: Any[]) => log('debug', ...args),
+};
+
 // Request logger middleware
 export const requestLogger = (req: any, res: any, next: any) => {
   const start = Date.now();
@@ -34,11 +65,11 @@ export const requestLogger = (req: any, res: any, next: any) => {
   
   // Only log non-static requests
   if (!req.url.includes('/favicon') && !req.url.includes('/public')) {
-    logger.info({
+    logger.info('→ Request', {
       method: req.method,
       url: req.url,
       ip: req.ip,
-    }, '→ Request');
+    });
   }
   
   res.on('finish', () => {
@@ -46,12 +77,12 @@ export const requestLogger = (req: any, res: any, next: any) => {
     
     // Only log significant requests or errors
     if (res.statusCode >= 400 || duration > 1000 || (!req.url.includes('/favicon') && !req.url.includes('/public'))) {
-      logger.info({
+      logger.info(res.statusCode >= 400 ? '✗ Request failed' : '✓ Request completed', {
         method: req.method,
         url: req.url,
         status: res.statusCode,
         duration: `${duration}ms`,
-      }, res.statusCode >= 400 ? '✗ Request failed' : '✓ Request completed');
+      });
     }
   });
   
@@ -60,7 +91,7 @@ export const requestLogger = (req: any, res: any, next: any) => {
 
 // Error logger
 export const errorLogger = (error: Error, req?: any) => {
-  logger.error({
+  logger.error('Error occurred', {
     requestId: req?.requestId,
     error: {
       name: error.name,
@@ -70,7 +101,7 @@ export const errorLogger = (error: Error, req?: any) => {
     url: req?.url,
     method: req?.method,
     userId: req?.user?.id,
-  }, 'Error occurred');
+  });
 };
 
 export { logger };

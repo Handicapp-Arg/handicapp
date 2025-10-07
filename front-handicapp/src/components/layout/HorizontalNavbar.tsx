@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Bars3Icon,
@@ -10,7 +10,8 @@ import {
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline';
-import { AuthService, UserProfile } from '../../lib/services/authService';
+import { useAuthNew } from '../../lib/hooks/useAuthNew';
+import type { UserData } from '../../lib/auth/AuthManager';
 
 interface HorizontalNavbarProps {
   onMenuClick: () => void;
@@ -20,128 +21,19 @@ interface HorizontalNavbarProps {
 
 export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }: HorizontalNavbarProps) {
   const router = useRouter();
-  const [userInfo, setUserInfo] = useState<UserProfile | null>(null);
+  const { user, logout, isLoading } = useAuthNew();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [notifications] = useState(3); // Simulado - después conectar con API
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // Función helper para obtener cookies
-    const getCookie = (name: string): string | null => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
-      return null;
-    };
-
-    // Función para crear fallback desde cookies
-    const createFallbackUser = (roleId: string) => {
-      const roleMap: Record<string, string> = {
-        '1': 'Administrador',
-        '2': 'Establecimiento',
-        '3': 'Capataz',
-        '4': 'Veterinario',
-        '5': 'Empleado',
-        '6': 'Propietario'
-      };
-
-      const claveMap: Record<string, string> = {
-        '1': 'admin',
-        '2': 'establecimiento',
-        '3': 'capataz',
-        '4': 'veterinario',
-        '5': 'empleado',
-        '6': 'propietario'
-      };
-
-      // Obtener nombre y apellido reales de las cookies
-      const nombre = getCookie('nombre') ? decodeURIComponent(getCookie('nombre')!) : 'Usuario';
-      const apellido = getCookie('apellido') ? decodeURIComponent(getCookie('apellido')!) : '';
-      
-      return {
-        id: 0,
-        email: 'usuario@handicapp.com',
-        nombre: nombre,
-        apellido: apellido,
-        rol_id: parseInt(roleId),
-        verificado: true,
-        estado_usuario: 'active',
-        rol: {
-          id: parseInt(roleId),
-          nombre: roleMap[roleId] || 'Usuario',
-          clave: claveMap[roleId] || 'user'
-        }
-      };
-    };
-
-    // Obtener información del usuario desde la API
-    const loadUserProfile = async () => {
-      try {
-        // Verificar si hay token antes de hacer la petición
-        const token = getCookie('auth-token');
-        if (!token) {
-          const roleId = getCookie('role');
-          if (roleId) {
-            setUserInfo(createFallbackUser(roleId));
-          }
-          return;
-        }
-
-        // Si tenemos todos los datos en cookies, usarlos directamente para evitar errores 401
-        const roleId = getCookie('role');
-        const nombre = getCookie('nombre');
-        const apellido = getCookie('apellido');
-        
-        if (roleId && nombre && apellido) {
-          // Datos completos en cookies - usar directamente sin llamar a API
-          setUserInfo(createFallbackUser(roleId));
-          return;
-        }
-
-        // Solo llamar a API si faltan datos (muy poco probable)
-        const response = await AuthService.getProfile();
-        if (response.success && response.data) {
-          setUserInfo(response.data);
-        } else {
-          const roleId = getCookie('role');
-          if (roleId) {
-            setUserInfo(createFallbackUser(roleId));
-          }
-        }
-      } catch (error) {
-        // Si es error 401, es normal (token expirado), no hacer ruido en consola
-        const is401Error = error instanceof Error && error.message.includes('HTTP 401');
-        
-        if (is401Error) {
-          // Token expirado/inválido - comportamiento normal, usar fallback silenciosamente
-        } else {
-          // Solo logear errores reales (no 401)
-          console.error('Error cargando perfil:', error);
-        }
-        
-        // Usar fallback en caso de error
-        const roleId = getCookie('role');
-        if (roleId) {
-          setUserInfo(createFallbackUser(roleId));
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadUserProfile();
-  }, []);
-
-  const handleLogout = () => {
-    // Limpiar cookies y localStorage
-    document.cookie = 'auth-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    document.cookie = 'role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    document.cookie = 'nombre=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    document.cookie = 'apellido=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    localStorage.removeItem('auth-token');
-    
-    // Redirigir al login
-    router.push('/login');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push('/login');
+    } catch (error) {
+      console.error('Error en logout:', error);
+      // Forzar redirección incluso si hay error
+      router.push('/login');
+    }
   };
 
   const getCurrentTime = () => {
@@ -215,10 +107,10 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
               <UserCircleIcon className="h-7 w-7 sm:h-8 sm:w-8 text-gray-600 flex-shrink-0" />
               <div className="text-left hidden md:block min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate max-w-24 lg:max-w-none">
-                  {isLoading ? 'Cargando...' : userInfo?.rol?.nombre || 'Usuario'}
+                  {isLoading ? 'Cargando...' : user?.rol?.nombre || 'Usuario'}
                 </p>
                 <p className="text-xs text-gray-500 truncate max-w-24 lg:max-w-none">
-                  {isLoading ? '' : (userInfo?.nombre && userInfo?.apellido ? `${userInfo.nombre} ${userInfo.apellido}` : '')}
+                  {isLoading ? '' : (user?.nombre && user?.apellido ? `${user.nombre} ${user.apellido}` : '')}
                 </p>
               </div>
               <ChevronDownIcon className={`h-4 w-4 text-gray-600 transition-transform flex-shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -230,10 +122,10 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                 {/* User Info */}
                 <div className="px-4 py-3 border-b border-gray-100">
                   <p className="text-sm font-medium text-gray-900 truncate">
-                    {userInfo?.nombre && userInfo?.apellido ? `${userInfo.nombre} ${userInfo.apellido}` : 'Usuario'}
+                    {user?.nombre && user?.apellido ? `${user.nombre} ${user.apellido}` : 'Usuario'}
                   </p>
                   <p className="text-xs text-gray-500 truncate">
-                    {userInfo?.rol?.nombre || 'Rol no definido'}
+                    {user?.rol?.nombre || 'Rol no definido'}
                   </p>
                 </div>
 
@@ -281,8 +173,8 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
         <div className="md:hidden px-3 sm:px-4 py-2 bg-gray-50 border-t border-gray-200">
           <p className="text-sm text-gray-600 truncate">
             <span className="font-medium">
-              {userInfo?.nombre && userInfo?.apellido ? `${userInfo.nombre} ${userInfo.apellido}` : 'Usuario'}
-            </span> - {userInfo?.rol?.nombre || 'Rol'}
+              {user?.nombre && user?.apellido ? `${user.nombre} ${user.apellido}` : 'Usuario'}
+            </span> - {user?.rol?.nombre || 'Rol'}
           </p>
         </div>
       )}

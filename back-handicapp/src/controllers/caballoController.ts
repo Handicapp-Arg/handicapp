@@ -3,7 +3,7 @@
 // HandicApp API - Controller de Caballos
 // -----------------------------------------------------------------------------
 
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { CaballoService } from '../services/caballoService';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '../utils/response';
@@ -26,50 +26,49 @@ export class CaballoController {
         nombre,
         raza,
         sexo,
-        fechaNacimiento,
-        color,
-        alzada,
-        peso,
-        chip,
-        pasaporte,
-        establecimientoId,
-        propietarioId,
-        padreId,
-        madreId,
-        observaciones
+        fecha_nacimiento,
+        pelaje,
+        disciplina,
+        microchip,
+        foto_url,
+        establecimiento_id,
+        padre_id,
+        madre_id,
       } = req.body;
       
       const usuarioId = req.user!.id;
 
       // Validaciones básicas
-      if (!nombre || !raza || !sexo || !fechaNacimiento) {
+      if (!nombre || !sexo || !fecha_nacimiento) {
         res.status(400).json(ApiResponse.error('Nombre, raza, sexo y fecha de nacimiento son requeridos'));
         return;
       }
 
-      const caballo = await CaballoService.createCaballo({
+      const createResult = await CaballoService.createCaballo({
         nombre,
         raza,
         sexo,
-        fechaNacimiento,
-        color,
-        alzada,
-        peso,
-        chip,
-        pasaporte,
-        establecimientoId,
-        propietarioId,
-        padreId,
-        madreId,
-        observaciones,
+        fecha_nacimiento: new Date(fecha_nacimiento),
+        pelaje,
+        disciplina,
+        microchip,
+        foto_url,
+        establecimiento_id,
+        padre_id,
+        madre_id,
         creadoPorUsuarioId: usuarioId
       });
 
-      logger.info(`Caballo creado: ${caballo.id}`, { usuarioId, caballo: caballo.nombre });
-      res.status(201).json(ApiResponse.success(caballo, 'Caballo creado exitosamente'));
+      if (!createResult.success || !createResult.data) {
+        res.status(400).json(ApiResponse.error(createResult.error || 'No se pudo crear el caballo'));
+        return;
+      }
 
-    } catch (error) {
-      logger.error('Error creando caballo:', error);
+      logger.info(`Caballo creado: ${createResult.data.id} - ${createResult.data.nombre}`);
+      res.status(201).json(ApiResponse.success(createResult.data, 'Caballo creado exitosamente'));
+
+    } catch (error: any) {
+      logger.error('Error creando caballo', { error });
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   }
@@ -81,30 +80,37 @@ export class CaballoController {
    */
   static async getAll(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
-      const search = req.query.search as string;
-      const establecimientoId = req.query.establecimiento ? parseInt(req.query.establecimiento as string) : undefined;
-      const raza = req.query.raza as string;
-      const sexo = req.query.sexo as string;
+  const page = parseInt((req.query['page'] as string) || '') || 1;
+  const limit = parseInt((req.query['limit'] as string) || '') || 10;
+  const search = req.query['search'] as string | undefined;
+  const establecimientoId = req.query['establecimiento'] ? parseInt(req.query['establecimiento'] as string) : undefined;
+  const raza = req.query['raza'] as string | undefined;
+  const sexo = req.query['sexo'] as string | undefined;
       const usuarioId = req.user!.id;
       const userRole = req.user!.rol?.clave;
 
-      const result = await CaballoService.getAllCaballos({
-        page,
-        limit,
-        search,
-        establecimientoId,
-        raza,
-        sexo,
-        usuarioId,
-        userRole
+      const filterPayload: any = { page, limit, usuarioId, userRole };
+      if (search) filterPayload.search = search;
+      if (establecimientoId) filterPayload.establecimientoId = establecimientoId;
+      if (raza) filterPayload.raza = raza;
+      if (sexo) filterPayload.sexo = sexo;
+
+      const result = await CaballoService.getAllCaballos(filterPayload);
+
+      if (!result.success || !result.data) {
+        res.status(500).json(ApiResponse.error(result.error || 'Error al obtener caballos'));
+        return;
+      }
+
+      res.json({
+        success: true,
+        message: 'Success',
+        data: result.data.caballos,
+        meta: { page, limit, total: result.data.total, totalPages: result.data.totalPages },
       });
 
-      res.json(ApiResponse.success(result));
-
-    } catch (error) {
-      logger.error('Error obteniendo caballos:', error);
+    } catch (error: any) {
+      logger.error('Error obteniendo caballos', { error });
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   }
@@ -116,7 +122,7 @@ export class CaballoController {
    */
   static async getById(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const caballoId = parseInt(req.params.id);
+  const caballoId = parseInt(req.params['id'] as string);
       const usuarioId = req.user!.id;
       const userRole = req.user!.rol?.clave;
 
@@ -125,11 +131,7 @@ export class CaballoController {
         return;
       }
 
-      const caballo = await CaballoService.getCaballoById(
-        caballoId,
-        usuarioId,
-        userRole
-      );
+      const caballo = await CaballoService.getCaballoById(caballoId, usuarioId, userRole);
 
       if (!caballo) {
         res.status(404).json(ApiResponse.error('Caballo no encontrado'));
@@ -138,8 +140,8 @@ export class CaballoController {
 
       res.json(ApiResponse.success(caballo));
 
-    } catch (error) {
-      logger.error('Error obteniendo caballo:', error);
+    } catch (error: any) {
+      logger.error('Error obteniendo caballo', { error });
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   }
@@ -151,7 +153,7 @@ export class CaballoController {
    */
   static async update(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const caballoId = parseInt(req.params.id);
+  const caballoId = parseInt(req.params['id'] as string);
       const usuarioId = req.user!.id;
       const userRole = req.user!.rol?.clave;
       const updateData = req.body;
@@ -173,11 +175,11 @@ export class CaballoController {
         return;
       }
 
-      logger.info(`Caballo actualizado: ${caballoId}`, { usuarioId });
+  logger.info(`Caballo actualizado: ${caballoId}`);
       res.json(ApiResponse.success(caballo, 'Caballo actualizado exitosamente'));
 
-    } catch (error) {
-      logger.error('Error actualizando caballo:', error);
+    } catch (error: any) {
+      logger.error('Error actualizando caballo', { error });
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   }
@@ -189,9 +191,8 @@ export class CaballoController {
    */
   static async delete(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const caballoId = parseInt(req.params.id);
-      const usuarioId = req.user!.id;
-      const userRole = req.user!.rol?.clave;
+  const caballoId = parseInt(req.params['id'] as string);
+  const userRole = req.user!.rol?.clave;
 
       if (isNaN(caballoId)) {
         res.status(400).json(ApiResponse.error('ID de caballo inválido'));
@@ -211,11 +212,11 @@ export class CaballoController {
         return;
       }
 
-      logger.info(`Caballo eliminado: ${caballoId}`, { usuarioId });
+  logger.info(`Caballo eliminado: ${caballoId}`);
       res.json(ApiResponse.success(null, 'Caballo eliminado exitosamente'));
 
-    } catch (error) {
-      logger.error('Error eliminando caballo:', error);
+    } catch (error: any) {
+      logger.error('Error eliminando caballo', { error });
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   }
@@ -231,10 +232,9 @@ export class CaballoController {
    */
   static async addPropietario(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const caballoId = parseInt(req.params.id);
+  const caballoId = parseInt(req.params['id'] as string);
       const { propietarioId, fechaInicio, porcentaje } = req.body;
-      const usuarioId = req.user!.id;
-      const userRole = req.user!.rol?.clave;
+      
 
       if (isNaN(caballoId) || !propietarioId) {
         res.status(400).json(ApiResponse.error('Datos requeridos: propietarioId'));
@@ -245,9 +245,7 @@ export class CaballoController {
         caballoId,
         propietarioId,
         fechaInicio,
-        porcentaje || 100,
-        usuarioId,
-        userRole
+        porcentaje || 100
       );
 
       if (!propietario) {
@@ -255,11 +253,11 @@ export class CaballoController {
         return;
       }
 
-      logger.info(`Propietario ${propietarioId} agregado a caballo ${caballoId}`, { usuarioId });
+  logger.info(`Propietario ${propietarioId} agregado a caballo ${caballoId}`);
       res.status(201).json(ApiResponse.success(propietario, 'Propietario agregado al caballo exitosamente'));
 
-    } catch (error) {
-      logger.error('Error agregando propietario a caballo:', error);
+    } catch (error: any) {
+      logger.error('Error agregando propietario a caballo', { error });
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   }
@@ -271,7 +269,7 @@ export class CaballoController {
    */
   static async getPropietarios(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const caballoId = parseInt(req.params.id);
+  const caballoId = parseInt(req.params['id'] as string);
       const usuarioId = req.user!.id;
       const userRole = req.user!.rol?.clave;
 
@@ -293,8 +291,8 @@ export class CaballoController {
 
       res.json(ApiResponse.success(propietarios));
 
-    } catch (error) {
-      logger.error('Error obteniendo propietarios del caballo:', error);
+    } catch (error: any) {
+      logger.error('Error obteniendo propietarios del caballo', { error });
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   }
@@ -310,8 +308,7 @@ export class CaballoController {
    */
   static async getPedigree(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const caballoId = parseInt(req.params.id);
-      const generations = parseInt(req.query.generations as string) || 3;
+    const caballoId = parseInt(req.params['id'] as string);
       const usuarioId = req.user!.id;
       const userRole = req.user!.rol?.clave;
 
@@ -322,7 +319,6 @@ export class CaballoController {
 
       const pedigree = await CaballoService.getCaballoPedigree(
         caballoId,
-        generations,
         usuarioId,
         userRole
       );
@@ -334,8 +330,8 @@ export class CaballoController {
 
       res.json(ApiResponse.success(pedigree));
 
-    } catch (error) {
-      logger.error('Error obteniendo pedigrí del caballo:', error);
+    } catch (error: any) {
+      logger.error('Error obteniendo pedigrí del caballo', { error });
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   }
@@ -347,7 +343,7 @@ export class CaballoController {
    */
   static async getDescendencia(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const caballoId = parseInt(req.params.id);
+  const caballoId = parseInt(req.params['id'] as string);
       const usuarioId = req.user!.id;
       const userRole = req.user!.rol?.clave;
 
@@ -369,8 +365,8 @@ export class CaballoController {
 
       res.json(ApiResponse.success(descendencia));
 
-    } catch (error) {
-      logger.error('Error obteniendo descendencia del caballo:', error);
+    } catch (error: any) {
+      logger.error('Error obteniendo descendencia del caballo', { error });
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   }
@@ -386,7 +382,7 @@ export class CaballoController {
    */
   static async getHistorialMedico(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const caballoId = parseInt(req.params.id);
+  const caballoId = parseInt(req.params['id'] as string);
       const usuarioId = req.user!.id;
       const userRole = req.user!.rol?.clave;
 
@@ -408,8 +404,8 @@ export class CaballoController {
 
       res.json(ApiResponse.success(historial));
 
-    } catch (error) {
-      logger.error('Error obteniendo historial médico del caballo:', error);
+    } catch (error: any) {
+      logger.error('Error obteniendo historial médico del caballo', { error });
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   }
@@ -425,9 +421,9 @@ export class CaballoController {
    */
   static async moverEstablecimiento(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const caballoId = parseInt(req.params.id);
-      const { nuevoEstablecimientoId, fechaCambio, motivo } = req.body;
-      const usuarioId = req.user!.id;
+  const caballoId = parseInt(req.params['id'] as string);
+  const { nuevoEstablecimientoId } = req.body;
+  const usuarioId = req.user!.id;
       const userRole = req.user!.rol?.clave;
 
       if (isNaN(caballoId) || !nuevoEstablecimientoId) {
@@ -438,8 +434,6 @@ export class CaballoController {
       const resultado = await CaballoService.moverCaballoEstablecimiento(
         caballoId,
         nuevoEstablecimientoId,
-        fechaCambio,
-        motivo,
         usuarioId,
         userRole
       );
@@ -449,11 +443,11 @@ export class CaballoController {
         return;
       }
 
-      logger.info(`Caballo ${caballoId} movido a establecimiento ${nuevoEstablecimientoId}`, { usuarioId });
+      logger.info(`Caballo ${caballoId} movido a establecimiento ${nuevoEstablecimientoId}`);
       res.json(ApiResponse.success(resultado, 'Caballo movido exitosamente'));
 
-    } catch (error) {
-      logger.error('Error moviendo caballo de establecimiento:', error);
+    } catch (error: any) {
+      logger.error('Error moviendo caballo de establecimiento', { error });
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   }
@@ -469,7 +463,7 @@ export class CaballoController {
    */
   static async getStats(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const caballoId = parseInt(req.params.id);
+  const caballoId = parseInt(req.params['id'] as string);
       const usuarioId = req.user!.id;
       const userRole = req.user!.rol?.clave;
 
@@ -491,8 +485,8 @@ export class CaballoController {
 
       res.json(ApiResponse.success(stats));
 
-    } catch (error) {
-      logger.error('Error obteniendo estadísticas del caballo:', error);
+    } catch (error: any) {
+      logger.error('Error obteniendo estadísticas del caballo', { error });
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   }

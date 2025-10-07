@@ -1,6 +1,7 @@
 import { Response } from 'express';
-import { ApiResponse } from '../types';
+import type { ApiResponse as ApiResponseType } from '../types';
 
+// Class-based helper (existing usage in some places)
 export class ResponseHelper {
   static success<T>(
     res: Response,
@@ -9,7 +10,7 @@ export class ResponseHelper {
     statusCode: number = 200,
     meta?: any
   ): Response {
-    const response: ApiResponse<T> = {
+    const response: ApiResponseType<T> = {
       success: true,
       message,
       ...(data !== undefined && { data }),
@@ -25,7 +26,7 @@ export class ResponseHelper {
     statusCode: number = 500,
     errors?: string[]
   ): Response {
-    const response: ApiResponse = {
+    const response: ApiResponseType = {
       success: false,
       message,
       ...(errors !== undefined && { errors }),
@@ -96,3 +97,26 @@ export class ResponseHelper {
     return this.error(res, message, 500);
   }
 }
+
+// Object helper to match imports like: import { ApiResponse } from '../utils/response'
+// Provides simple factory methods used across controllers/middleware.
+export const ApiResponse = {
+  success<T>(data?: T, message: string = 'Success', meta?: any): ApiResponseType<T> {
+    const response: ApiResponseType<T> = {
+      success: true,
+      message,
+      ...(data !== undefined && { data }),
+      ...(meta !== undefined && { meta }),
+    };
+    return response;
+  },
+  error(message: string = 'Error', errors?: string[]): ApiResponseType {
+    const response: ApiResponseType = {
+      success: false,
+      message,
+      ...(errors !== undefined && { errors }),
+    };
+    return response;
+  },
+};
+

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/lib/contexts/AuthContext';
+import { useAuthNew } from '@/lib/hooks/useAuthNew';
 import { caballoService, type Caballo, type CreateCaballoData, type UpdateCaballoData } from '@/lib/services/caballoService';
 import { establecimientoService, type Establecimiento } from '@/lib/services/establecimientoService';
 import { Modal } from '@/components/ui/modal';
@@ -17,7 +17,7 @@ interface CaballoFormProps {
 }
 
 function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoFormProps) {
-  const { user } = useAuth();
+  const { user } = useAuthNew();
   const [loading, setLoading] = useState(false);
   const [establecimientos, setEstablecimientos] = useState<Establecimiento[]>([]);
   const [caballosPadres, setCaballosPadres] = useState<Caballo[]>([]);
@@ -367,20 +367,12 @@ function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoFormProps) 
         </div>
 
         {/* Botones de acción */}
-        <div className="flex justify-end space-x-3 pt-6 border-t">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={handleClose}
-            disabled={loading}
-          >
+        <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-6 border-t">
+          <Button type="button" variant="secondary" size="sm" onClick={handleClose} disabled={loading}>
             Cancelar
           </Button>
-          <Button
-            type="submit"
-            disabled={loading}
-          >
-            {loading ? 'Guardando...' : (caballo ? 'Actualizar' : 'Registrar')}
+          <Button type="submit" variant="brand" size="sm" isLoading={loading} disabled={loading}>
+            {caballo ? 'Actualizar' : 'Registrar'}
           </Button>
         </div>
       </form>

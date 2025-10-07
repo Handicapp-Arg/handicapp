@@ -1,10 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Modal } from '@/components/ui/modal';
 import ApiClient from '@/lib/services/apiClient';
+import { logger } from '@/lib/utils/logger';
 import type { Role } from './UserManagement';
+import { useToaster } from '@/components/ui/toaster';
 
 interface CreateUserModalProps {
   roles: Role[];
@@ -13,6 +16,7 @@ interface CreateUserModalProps {
 }
 
 export function CreateUserModal({ roles, onClose, onUserCreated }: CreateUserModalProps) {
+  const { toast } = useToaster();
   const [formData, setFormData] = useState({
     nombre: '',
     apellido: '',
@@ -24,10 +28,12 @@ export function CreateUserModal({ roles, onClose, onUserCreated }: CreateUserMod
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [errorDetails, setErrorDetails] = useState<string[] | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+  setError('');
+  setErrorDetails(null);
 
     // Validations
     if (!formData.nombre || !formData.apellido || !formData.email || !formData.password || !formData.rol_id) {
@@ -40,8 +46,12 @@ export function CreateUserModal({ roles, onClose, onUserCreated }: CreateUserMod
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+    // Política de contraseña alineada con el backend:
+    //  - Entre 8 y 128 caracteres
+    //  - Al menos una minúscula, una mayúscula y un número
+    const strongPwd = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,128}$/;
+    if (!strongPwd.test(formData.password)) {
+      setError('La contraseña debe tener entre 8 y 128 caracteres e incluir al menos una minúscula, una mayúscula y un número');
       return;
     }
 
@@ -61,11 +71,16 @@ export function CreateUserModal({ roles, onClose, onUserCreated }: CreateUserMod
         telefono: formData.telefono || undefined,
         rol_id: parseInt(formData.rol_id),
       });
-
+      toast('Usuario creado correctamente', { type: 'success' });
       onUserCreated();
+      onClose();
     } catch (error: any) {
-      console.error('Error creating user:', error);
-      setError(error.message || 'Error al crear usuario');
+      logger.error('Error creating user:', error);
+      const message = error?.message || 'Error al crear usuario';
+      const details: string[] | undefined = error?.details;
+      setError(message);
+      if (details?.length) setErrorDetails(details);
+      toast(message, { type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -77,30 +92,18 @@ export function CreateUserModal({ roles, onClose, onUserCreated }: CreateUserMod
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 sm:p-6 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                <span className="text-xl sm:text-2xl">👤</span>
-              </div>
-              <h2 className="text-lg sm:text-xl font-semibold text-white">Crear Nuevo Usuario</h2>
-            </div>
-            <Button
-              onClick={onClose}
-              className="text-white/80 hover:text-white hover:bg-white/10 text-xl p-1 rounded-lg"
-            >
-              ×
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+    <Modal isOpen={true} onClose={onClose} title="Crear usuario" size="lg">
+      <div className="flex-1 overflow-y-auto">
           {error && (
             <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-3 sm:p-4">
               <p className="text-red-800 font-medium text-sm">{error}</p>
+              {errorDetails?.length ? (
+                <ul className="mt-2 list-disc list-inside text-red-700 text-xs space-y-1">
+                  {errorDetails.map((e, idx) => (
+                    <li key={idx}>{e}</li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           )}
 
@@ -111,12 +114,7 @@ export function CreateUserModal({ roles, onClose, onUserCreated }: CreateUserMod
               {/* Columna izquierda - Información personal */}
               <div className="space-y-4 sm:space-y-6">
                 <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center mb-4">
-                    <span className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
-                      <span className="text-sm sm:text-base">👤</span>
-                    </span>
-                    Información Personal
-                  </h3>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Información personal</h3>
                   
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -130,6 +128,7 @@ export function CreateUserModal({ roles, onClose, onUserCreated }: CreateUserMod
                           onChange={(e) => handleInputChange('nombre', e.target.value)}
                           className="w-full focus:ring-blue-500 focus:border-blue-500"
                           placeholder="Ej: Juan"
+                          autoComplete="given-name"
                           required
                         />
                       </div>
@@ -144,6 +143,7 @@ export function CreateUserModal({ roles, onClose, onUserCreated }: CreateUserMod
                           onChange={(e) => handleInputChange('apellido', e.target.value)}
                           className="w-full focus:ring-blue-500 focus:border-blue-500"
                           placeholder="Ej: Pérez"
+                          autoComplete="family-name"
                           required
                         />
                       </div>
@@ -159,6 +159,7 @@ export function CreateUserModal({ roles, onClose, onUserCreated }: CreateUserMod
                         onChange={(e) => handleInputChange('email', e.target.value)}
                         className="w-full focus:ring-blue-500 focus:border-blue-500"
                         placeholder="usuario@ejemplo.com"
+                        autoComplete="email"
                         required
                       />
                     </div>
@@ -173,6 +174,7 @@ export function CreateUserModal({ roles, onClose, onUserCreated }: CreateUserMod
                         onChange={(e) => handleInputChange('telefono', e.target.value)}
                         className="w-full focus:ring-blue-500 focus:border-blue-500"
                         placeholder="+54 9 11 1234-5678"
+                        autoComplete="tel"
                       />
                     </div>
                   </div>
@@ -182,12 +184,7 @@ export function CreateUserModal({ roles, onClose, onUserCreated }: CreateUserMod
               {/* Columna derecha - Rol y contraseña */}
               <div className="space-y-4 sm:space-y-6">
                 <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center mb-4">
-                    <span className="w-6 h-6 sm:w-8 sm:h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
-                      <span className="text-sm sm:text-base">🎭</span>
-                    </span>
-                    Rol y Acceso
-                  </h3>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Rol y acceso</h3>
                   
                   <div className="space-y-4">
                     <div>
@@ -218,7 +215,8 @@ export function CreateUserModal({ roles, onClose, onUserCreated }: CreateUserMod
                         value={formData.password}
                         onChange={(e) => handleInputChange('password', e.target.value)}
                         className="w-full focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Mínimo 6 caracteres"
+                        placeholder="Mínimo 8 caracteres, con mayúscula, minúscula y número"
+                        autoComplete="new-password"
                         required
                       />
                     </div>
@@ -233,6 +231,7 @@ export function CreateUserModal({ roles, onClose, onUserCreated }: CreateUserMod
                         onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                         className="w-full focus:ring-blue-500 focus:border-blue-500"
                         placeholder="Repetir contraseña"
+                        autoComplete="new-password"
                         required
                       />
                     </div>
@@ -241,37 +240,17 @@ export function CreateUserModal({ roles, onClose, onUserCreated }: CreateUserMod
               </div>
             </div>
 
-            {/* Botones de acción - Fijos en la parte inferior */}
-            <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4 pt-4 sm:pt-6 border-t border-gray-200 sticky bottom-0 bg-white">
-              <Button
-                type="button"
-                onClick={onClose}
-                className="w-full sm:w-auto px-4 sm:px-6 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg font-medium transition-colors"
-                disabled={loading}
-              >
+            {/* Footer */}
+            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4 sm:pt-6 border-t border-gray-200">
+              <Button type="button" variant="secondary" size="sm" onClick={onClose} disabled={loading}>
                 Cancelar
               </Button>
-              <Button
-                type="submit"
-                className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Creando...
-                  </>
-                ) : (
-                  <>
-                    <span className="mr-2">➕</span>
-                    Crear Usuario
-                  </>
-                )}
+              <Button type="submit" variant="brand" size="sm" isLoading={loading} disabled={loading}>
+                Crear usuario
               </Button>
             </div>
           </form>
-        </div>
       </div>
-    </div>
+    </Modal>
   );
 }

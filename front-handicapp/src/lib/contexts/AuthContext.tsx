@@ -1,8 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import TokenService, { type UserData } from '@/lib/services/tokenService';
-import { appConfig } from '@/lib/config';
+import AuthService, { type UserData } from '@/lib/services/authService';
 
 export interface User {
   id: number;
@@ -10,12 +9,10 @@ export interface User {
   nombre: string;
   apellido: string;
   role: string;
-  telefono?: string;
   activo: boolean;
-  establecimiento_id?: number;
   createdAt: string;
   updatedAt: string;
-  rol?: {
+  rol: {
     id: number;
     nombre: string;
     clave: string;
@@ -24,114 +21,81 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  isLoading: boolean;
-  isAuthenticated: boolean;
   refreshAuth: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
 interface AuthProviderProps {
   children: ReactNode;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   /**
-   * Cargar usuario desde TokenService
+   * Convertir UserData a User
+   */
+  const mapUserData = (userData: UserData): User => ({
+    id: userData.id,
+    email: userData.email,
+    nombre: userData.nombre,
+    apellido: userData.apellido,
+    role: userData.rol.clave,
+    activo: userData.estado_usuario === 'active',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    rol: userData.rol
+  });
+
+  /**
+   * Cargar usuario desde AuthService al inicializar
    */
   const loadUserFromStorage = useCallback(async () => {
     try {
-      const isAuth = await TokenService.isAuthenticated();
+      setIsLoading(true);
       
-      if (isAuth) {
-        const userData = TokenService.getUserData();
-        
+      // Verificar autenticación usando AuthService
+      const isAuthenticated = await AuthService.isAuthenticated();
+      
+      if (isAuthenticated) {
+        const userData = AuthService.getCurrentUser();
         if (userData) {
-          setUser({
-            id: userData.id,
-            email: userData.email,
-            nombre: userData.nombre,
-            apellido: userData.apellido,
-            role: userData.rol.clave,
-            activo: userData.estado_usuario === 'active',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            rol: userData.rol
-          });
+          setUser(mapUserData(userData));
         }
       }
     } catch (error) {
-      console.error('Error loading user from storage:', error);
-      TokenService.clearTokens();
+      console.warn('Error cargando usuario:', error);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   /**
-   * Inicializar autenticación al cargar la app
+   * Efecto para cargar usuario al montar el componente
    */
   useEffect(() => {
     loadUserFromStorage();
   }, [loadUserFromStorage]);
 
   /**
-   * Login de usuario
+   * Login de usuario usando AuthService
    */
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
       
-      const response = await fetch(`${appConfig.apiBaseUrl}/auth/login`, {
-        method: 'POST',
-        credentials: 'include', // Para recibir refresh token cookie
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error en el login');
-      }
-
-      const data = await response.json();
+      // Usar AuthService para login
+      const userData = await AuthService.login(email, password);
       
-      if (data.success && data.data) {
-        const { user: userData, accessToken, expiresIn } = data.data;
-        
-        // Guardar tokens usando TokenService
-        TokenService.setTokens(accessToken, expiresIn, userData);
-        
-        // Actualizar estado del contexto
-        setUser({
-          id: userData.id,
-          email: userData.email,
-          nombre: userData.nombre,
-          apellido: userData.apellido,
-          role: userData.rol.clave,
-          activo: userData.estado_usuario === 'active',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          rol: userData.rol
-        });
-      } else {
-        throw new Error('Credenciales inválidas');
-      }
+      // Actualizar estado del contexto
+      setUser(mapUserData(userData));
+      
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -141,14 +105,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   /**
-   * Logout de usuario
+   * Logout de usuario usando AuthService
    */
   const logout = async () => {
     try {
       setIsLoading(true);
       
-      // Limpiar tokens y llamar endpoint de logout
-      await TokenService.logout();
+      // Usar AuthService para logout
+      await AuthService.logout();
       
       // Limpiar estado del contexto
       setUser(null);
@@ -166,35 +130,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     await loadUserFromStorage();
   };
 
-  /**
-   * Configurar interceptor para auto-refresh de tokens
-   */
-  useEffect(() => {
-    // Verificar tokens cada 5 minutos
-    const tokenCheckInterval = setInterval(async () => {
-      if (user && TokenService.isTokenExpiringSoon()) {
-        try {
-          const token = await TokenService.getValidAccessToken();
-          if (!token) {
-            // Si no se pudo refrescar, hacer logout
-            await logout();
-          }
-        } catch (error) {
-          console.error('Error checking token:', error);
-          await logout();
-        }
-      }
-    }, 5 * 60 * 1000); // 5 minutos
-
-    return () => clearInterval(tokenCheckInterval);
-  }, [user]);
-
   const value: AuthContextType = {
     user,
+    isLoading,
     login,
     logout,
-    isLoading,
-    isAuthenticated: !!user,
     refreshAuth,
   };
 
@@ -203,4 +143,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-};
+}
+
+/**
+ * Hook para usar el contexto de autenticación
+ */
+export function useAuth(): AuthContextType {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}

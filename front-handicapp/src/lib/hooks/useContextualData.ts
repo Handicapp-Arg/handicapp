@@ -1,8 +1,8 @@
-import { useAuth } from '@/lib/contexts/AuthContext';
+import { useAuthNew } from './useAuthNew';
 import { usePermissions } from './usePermissions';
 
 export const useContextualData = () => {
-  const { user } = useAuth();
+  const { user } = useAuthNew();
   const { isAdmin, isEstablecimiento, isVeterinario, isPropietario } = usePermissions();
 
   // Filtros para establecimientos

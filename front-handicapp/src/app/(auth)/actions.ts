@@ -1,6 +1,6 @@
 "use server";
 
-import { AuthService } from "@/lib/services/authService";
+import AuthService from "@/lib/services/authService";
 import { ROLE_ID_TO_ROLE_KEY, ROLE_DASHBOARD_ROUTES } from "@/lib/utils/roleUtils";
 import { CookieService } from "@/lib/services/cookieService";
 import { ValidationService } from "@/lib/services/validationService";
@@ -35,24 +35,33 @@ export async function registerAction(
       };
     }
 
-    // Registrar usuario en el backend
-    const response = await AuthService.register(validation.data!);
+    // Registrar usuario en el backend (cuando esté disponible)
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3003/api/v1';
+    const resp = await fetch(`${apiBase}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(validation.data),
+    });
 
-    if (response.success && response.data) {
-      // Establecer cookies de autenticación
-      await CookieService.setAuthCookies({ accessToken: response.data.token, refreshToken: response.data.token });
+    const response = await resp.json();
+
+    if (resp.ok && response?.success) {
+      // Establecer cookies de autenticación si el backend retorna tokens
+      if (response.data?.token) {
+        await CookieService.setAuthCookies({ accessToken: response.data.token, refreshToken: response.data.token });
+      }
 
       return {
         ok: true,
-        message: "¡Registro exitoso! Ya puedes iniciar sesión.",
-        status: 201,
+        message: response.message || "¡Registro exitoso! Ya puedes iniciar sesión.",
+        status: resp.status || 201,
       };
     }
 
     return {
       ok: false,
-      message: response.message || "Error durante el registro",
-      status: 400,
+      message: response?.message || "Error durante el registro",
+      status: resp.status || 400,
     };
 
   } catch (error) {

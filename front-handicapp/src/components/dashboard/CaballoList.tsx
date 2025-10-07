@@ -1,31 +1,43 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/lib/contexts/AuthContext';
+import { useAuthNew } from '@/lib/hooks/useAuthNew';
 import { caballoService, type Caballo } from '@/lib/services/caballoService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusIcon, MagnifyingGlassIcon, PencilIcon, EyeIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { usePermissions } from '@/lib/hooks/usePermissions';
+import { PlusIcon, MagnifyingGlassIcon, PencilIcon, EyeIcon, TrashIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { logger } from '@/lib/utils/logger';
 // @ts-ignore
 import CaballoForm from './CaballoForm';
 
 export function CaballoList() {
   const [caballos, setCaballos] = useState<Caballo[]>([]);
+  const [stats, setStats] = useState({
+    total: 0,
+    activos: 0,
+    conEventos: 0,
+    nuevos: 0
+  });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [selectedCaballo, setSelectedCaballo] = useState<Caballo | undefined>();
-  const { user } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuthNew();
+  const { canManageHorses, canDeleteHorses, canViewMedicalHistory, getUserRole } = usePermissions();
 
   useEffect(() => {
-    fetchCaballos();
-  }, [currentPage, searchTerm]);
+    if (!authLoading && isAuthenticated) {
+      fetchCaballos();
+    }
+  }, [currentPage, searchTerm, authLoading, isAuthenticated]);
 
   const fetchCaballos = async () => {
+    if (authLoading || !isAuthenticated) return;
     try {
       setLoading(true);
       const response: any = await caballoService.getAll({
@@ -36,11 +48,31 @@ export function CaballoList() {
       
       if (response && (response.success || response.data)) {
         const caballosData = response.data?.caballos || response.caballos || response.data || response;
-        setCaballos(Array.isArray(caballosData) ? caballosData : []);
-        setTotalPages(response.data?.totalPages || response.totalPages || 1);
+        const list: Caballo[] = Array.isArray(caballosData) ? caballosData : [];
+        const totalData = response.meta?.total || response.data?.total || response.total || list.length;
+        const totalPagesData = response.meta?.totalPages || response.data?.totalPages || response.totalPages || 1;
+
+        setCaballos(list);
+        setTotalPages(totalPagesData);
+
+        // Calcular estadísticas de forma segura
+        const activos = list.filter((c: Caballo) => c.estado_global === 'activo').length;
+        const conEventos = list.filter((c: Caballo) => c._count?.eventos && c._count.eventos > 0).length;
+        const treintaDiasAtras = new Date();
+        treintaDiasAtras.setDate(treintaDiasAtras.getDate() - 30);
+        const nuevos = list.filter((c: Caballo) => new Date(c.creado_el) > treintaDiasAtras).length;
+
+        setStats({
+          total: totalData,
+          activos,
+          conEventos,
+          nuevos
+        });
       }
     } catch (error) {
-      console.error('Error loading caballos:', error);
+      logger.error('Error loading caballos:', error);
+      setCaballos([]);
+      setStats({ total: 0, activos: 0, conEventos: 0, nuevos: 0 });
     } finally {
       setLoading(false);
     }
@@ -71,7 +103,7 @@ export function CaballoList() {
           alert('Error al eliminar el caballo');
         }
       } catch (error) {
-        console.error('Error deleting caballo:', error);
+        logger.error('Error deleting caballo:', error);
         alert('Error al eliminar el caballo');
       }
     }
@@ -116,48 +148,41 @@ export function CaballoList() {
 
   if (loading && caballos.length === 0) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2">Cargando caballos...</span>
+      <div className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Cargando caballos...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header con botón de crear */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Gestión de Caballos</h2>
-          <p className="text-gray-600">Administra el registro de caballos</p>
+    <div className="p-6">
+      {/* Buscador + Acción */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-8">
+        <div className="relative flex-1">
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <input
+            type="text"
+            placeholder="Buscar por nombre, raza o microchip..."
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
         </div>
-        
-        <Button onClick={handleCreateCaballo} className="flex items-center gap-2">
-          <PlusIcon className="h-4 w-4" />
-          Registrar Caballo
-        </Button>
+        {canManageHorses() && (
+          <button 
+            onClick={handleCreateCaballo}
+            className="inline-flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm text-sm font-medium"
+          >
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Registrar Caballo
+          </button>
+        )}
       </div>
-
-      {/* Barra de búsqueda */}
-      <Card>
-        <CardContent className="p-4">
-          <form onSubmit={handleSearch} className="flex gap-2">
-            <div className="relative flex-1">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Buscar por nombre, raza o microchip..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Button type="submit" disabled={loading}>
-              Buscar
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
 
       {/* Lista de caballos */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -174,22 +199,34 @@ export function CaballoList() {
                     <p className="text-sm text-gray-600">{caballo.raza || 'Raza no especificada'}</p>
                   </div>
                   <div className="flex gap-1">
+                    {/* Botón Ver: siempre visible */}
                     <Button
                       size="sm"
                       variant="secondary"
                       onClick={() => handleEditCaballo(caballo)}
+                      title={canManageHorses() ? "Editar caballo" : "Ver detalles"}
                     >
-                      <PencilIcon className="h-3 w-3" />
+                      {canManageHorses() ? <PencilIcon className="h-3 w-3" /> : <EyeIcon className="h-3 w-3" />}
                     </Button>
-                    {user?.rol?.clave === 'admin' && (
+                    
+                    {/* Botón Eliminar: solo admin */}
+                    {canDeleteHorses() && (
                       <Button
                         size="sm"
                         variant="secondary"
                         onClick={() => handleDeleteCaballo(caballo)}
                         className="text-red-600 hover:text-red-700"
+                        title="Eliminar caballo"
                       >
                         <TrashIcon className="h-3 w-3" />
                       </Button>
+                    )}
+                    
+                    {/* Indicador de permisos médicos */}
+                    {canViewMedicalHistory() && (
+                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full" title="Acceso a historial médico">
+                        🚑
+                      </span>
                     )}
                   </div>
                 </div>
@@ -275,21 +312,27 @@ export function CaballoList() {
 
       {/* Mensaje si no hay caballos */}
       {!loading && caballos.length === 0 && (
-        <Card>
-          <CardContent className="text-center py-12">
-            <div className="text-4xl mb-4">🐎</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No hay caballos registrados</h3>
-            <p className="text-gray-600 mb-4">
-              {searchTerm ? 'No se encontraron caballos que coincidan con tu búsqueda.' : 'Comienza registrando tu primer caballo.'}
+        <div className="text-center py-16">
+          <div className="text-6xl mb-6">🐎</div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">No hay caballos registrados</h3>
+          <p className="text-gray-600 mb-6 max-w-md mx-auto">
+            {searchTerm ? 'No se encontraron caballos que coincidan con tu búsqueda.' : 'Comienza registrando tu primer caballo.'}
+          </p>
+          {!searchTerm && canManageHorses() && (
+            <button 
+              onClick={handleCreateCaballo}
+              className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
+            >
+              <PlusIcon className="h-5 w-5 mr-2" />
+              Registrar Primer Caballo
+            </button>
+          )}
+          {!searchTerm && !canManageHorses() && (
+            <p className="text-sm text-gray-500 mt-2">
+              {getUserRole() === 'empleado' ? 'Contacta a tu supervisor para registrar caballos.' : 'No tienes permisos para registrar caballos.'}
             </p>
-            {!searchTerm && (
-              <Button onClick={handleCreateCaballo}>
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Registrar Primer Caballo
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+          )}
+        </div>
       )}
 
       {/* Paginación */}

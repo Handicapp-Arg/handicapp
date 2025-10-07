@@ -2,8 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useToaster } from '@/components/ui/Toaster';
-import { AuthService } from '@/lib/services/authService';
+import { useToaster } from '@/components/ui/toaster';
+import ApiClient from '@/lib/services/apiClient';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -62,23 +62,20 @@ export default function RegisterPage() {
     try {
       setLoading(true);
       
-      const response = await AuthService.register({
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
+      const response = await ApiClient.createUser({
+        nombre: firstName.trim(),
+        apellido: lastName.trim(),
         email: email.trim(),
         password: password.trim()
       });
       
-      if (response.success) {
-        toast('¡Registro exitoso! Ahora puedes iniciar sesión', 'success');
-        
-        setTimeout(() => {
-          router.push('/login');
-        }, 1500);
-        
-      } else {
-        setError(response.message || 'Error al registrar usuario');
-      }
+      // Si llegamos aquí sin error, el registro fue exitoso
+      toast('¡Registro exitoso! Ahora puedes iniciar sesión', 'success');
+      
+      setTimeout(() => {
+        router.push('/login');
+      }, 1500);
+      
     } catch (error: any) {
       console.error('Register error:', error);
       setError(error.message || 'Error al registrar usuario');

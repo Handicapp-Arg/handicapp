@@ -68,7 +68,7 @@ export class RoleService {
       throw new ConflictError("La clave de rol ya se encuentra registrada");
     }
 
-    const role = await Role.create({ clave, nombre }, { transaction });
+  const role = await Role.create({ clave, nombre }, { transaction: transaction ?? null });
 
     return {
       success: true,
@@ -110,7 +110,9 @@ export class RoleService {
       update.nombre = normalizeNombre(payload.nombre);
     }
 
-    await role.update(update, { transaction });
+  // Usamos set + save para evitar problemas con overloads estrictos
+  role.set(update as Partial<RoleAttrs>);
+  await role.save({ transaction: transaction ?? null });
 
     return {
       success: true,
@@ -126,7 +128,7 @@ export class RoleService {
     }
 
     try {
-      await role.destroy({ transaction });
+  await role.destroy({ transaction: transaction ?? null });
     } catch (error: any) {
       if (error?.name === "SequelizeForeignKeyConstraintError") {
         throw new ConflictError("No es posible eliminar el rol porque esta siendo utilizado");

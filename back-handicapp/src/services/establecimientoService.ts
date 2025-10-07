@@ -8,8 +8,8 @@ import { Establecimiento } from '../models/Establecimiento';
 import { User } from '../models/User';
 import { MembresiaUsuarioEstablecimiento } from '../models/MembresiaUsuarioEstablecimiento';
 import { ServiceResponse, PaginationQuery } from '../types';
-import { EstadoMembresia, RolEnEstablecimiento } from '../models/enums';
-import { NotFoundError, ConflictError, ValidationError } from '../utils/errors';
+import { EstadoMembresia, RolEnEstablecimiento, Disciplina } from '../models/enums';
+// import errors helpers (no direct use here)
 
 interface CreateEstablecimientoData {
   nombre: string;
@@ -152,7 +152,10 @@ export class EstablecimientoService {
       }
 
       // Crear el establecimiento
-      const establecimiento = await Establecimiento.create(data);
+      const establecimiento = await Establecimiento.create({
+        ...data,
+        disciplina_principal: (data.disciplina_principal as Disciplina | undefined) ?? null,
+      } as any);
 
       // Crear la membresía del usuario como administrador del establecimiento
       await MembresiaUsuarioEstablecimiento.create({
@@ -243,10 +246,11 @@ export class EstablecimientoService {
         }
       }
 
-      await establecimiento.update({
-        ...data,
-        actualizado_el: new Date(),
-      });
+      const updatePayload: any = { ...data, actualizado_el: new Date() };
+      if (Object.prototype.hasOwnProperty.call(data, 'disciplina_principal')) {
+        updatePayload.disciplina_principal = (data.disciplina_principal as Disciplina | undefined) ?? null;
+      }
+      await establecimiento.update(updatePayload);
 
       return {
         success: true,

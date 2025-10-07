@@ -80,8 +80,8 @@ export class AuthService {
     try {
       const { email, password } = loginData;
 
-      // Buscar usuario con rol
-      const user = await User.findOne({
+      // Buscar usuario con rol y contraseña
+      const user = await User.scope('withSecret').findOne({
         where: { email },
         include: [{
           model: Role,
@@ -107,6 +107,7 @@ export class AuthService {
 
       // Verificar password usando el método del modelo
       const isValidPassword = await user.validatePassword(password);
+      
       if (!isValidPassword) {
         return {
           success: false,

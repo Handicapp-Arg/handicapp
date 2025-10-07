@@ -36,9 +36,9 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
     }
     
     // Validar token usando AuthService
-    const validation = AuthService.validateAccessToken(token);
+    const validation = AuthService.verifyAccessToken(token);
     
-    if (!validation.valid || !validation.user) {
+    if (!validation.valid || !validation.payload) {
       res.status(401).json({
         success: false,
         message: 'Token inválido',
@@ -48,7 +48,7 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
     }
     
     // Find user in database
-    const user = await User.findByPk(validation.user.id, {
+    const user = await User.findByPk(validation.payload.userId, {
       attributes: { exclude: ['hash_contrasena'] },
       include: [{
         model: Role,

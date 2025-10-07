@@ -11,13 +11,13 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ children, className = '', variant = 'primary', size = 'md', disabled, isLoading, ...rest }, ref) => {
-    const base = "inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed touch-manipulation";
+    const base = "inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed touch-manipulation gap-2";
 
     const byVariant: Record<ButtonVariant, string> = {
-      primary: "bg-foreground text-background hover:opacity-90 focus-visible:ring-foreground disabled:opacity-60",
-      secondary: "bg-transparent border border-foreground text-foreground hover:bg-foreground/10 focus-visible:ring-foreground disabled:opacity-60",
-      ghost: "bg-transparent text-foreground hover:bg-foreground/10 focus-visible:ring-foreground disabled:opacity-60",
-      brand: "bg-[#3C2013] text-white hover:bg-[#5A3420] focus-visible:ring-[#3C2013]/80 disabled:bg-[#3C2013]/50 disabled:text-white",
+  primary: "bg-foreground text-background hover:opacity-90 focus-visible:ring-foreground disabled:opacity-60",
+  secondary: "bg-white border border-gray-300 text-gray-800 hover:bg-gray-100 focus-visible:ring-gray-400 disabled:opacity-60",
+  ghost: "bg-transparent text-foreground hover:bg-foreground/10 focus-visible:ring-foreground disabled:opacity-60",
+  brand: "bg-[#3C2013] text-white hover:bg-[#5A3420] focus-visible:ring-[#3C2013]/80 disabled:bg-[#3C2013]/50 disabled:text-white",
     };
 
     const sizeClasses: Record<ButtonSize, string> = {
@@ -33,7 +33,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled || isLoading}
         {...rest}
       >
-        {isLoading ? "Cargando..." : children}
+        {isLoading && (
+          <span className="inline-block h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" aria-hidden="true" />
+        )}
+        <span>{children}</span>
       </button>
     );
   }

@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { SimpleAdminOnly } from '@/components/common/SimplePermissionGuard';
@@ -128,26 +128,8 @@ export const EstablecimientoList: React.FC<EstablecimientoListProps> = ({
 
   return (
     <div className="p-6">
-      {/* Header moderno */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Establecimientos</h2>
-          <p className="text-gray-600">Gestiona los establecimientos ecuestres</p>
-        </div>
-
-        <SimpleAdminOnly>
-          <button 
-            onClick={onCreateEstablecimiento}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
-          >
-            <PlusIcon className="h-4 w-4 mr-2" />
-            Nuevo Establecimiento
-          </button>
-        </SimpleAdminOnly>
-      </div>
-
-      {/* Filtros modernos */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-8">
+      {/* Buscador + Acción */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-8">
         <div className="relative flex-1">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <input
@@ -158,7 +140,19 @@ export const EstablecimientoList: React.FC<EstablecimientoListProps> = ({
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
-        
+        <SimpleAdminOnly>
+          <button 
+            onClick={onCreateEstablecimiento}
+            className="inline-flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm text-sm font-medium"
+          >
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Nuevo Establecimiento
+          </button>
+        </SimpleAdminOnly>
+      </div>
+
+      {/* Filtros modernos */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-8">
         <select
           value={filters.tipo_establecimiento || ''}
           onChange={(e) => handleFilterChange('tipo_establecimiento', e.target.value)}

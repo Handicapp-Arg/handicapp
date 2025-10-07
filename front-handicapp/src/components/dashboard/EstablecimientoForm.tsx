@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { establecimientoService, type Establecimiento, type CreateEstablecimientoData } from '@/lib/services/establecimientoService';
 import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { Modal } from '@/components/ui/modal';
 
 interface EstablecimientoFormProps {
   establecimiento?: Establecimiento;
@@ -67,20 +68,8 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden max-h-[90vh] flex flex-col">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 sm:p-6 flex-shrink-0">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-xl flex items-center justify-center">
-            <span className="text-xl sm:text-2xl">🏛️</span>
-          </div>
-          <h2 className="text-lg sm:text-xl font-semibold text-white">
-            {establecimiento ? 'Editar Establecimiento' : 'Nuevo Establecimiento'}
-          </h2>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+    <Modal isOpen={true} onClose={onCancel || (() => {})} title={establecimiento ? 'Editar establecimiento' : 'Nuevo establecimiento'} size="xl">
+      <div className="flex-1 overflow-y-auto">
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-3 sm:p-4">
@@ -95,12 +84,7 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
             <div className="space-y-4 sm:space-y-6">
               {/* Información básica */}
               <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center mb-4">
-                  <span className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
-                    <span className="text-sm sm:text-base">📝</span>
-                  </span>
-                  Información Básica
-                </h3>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Información básica</h3>
                 
                 <div className="space-y-4">
                   <div>
@@ -149,12 +133,7 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
 
               {/* Contacto */}
               <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center mb-4">
-                  <span className="w-6 h-6 sm:w-8 sm:h-8 bg-green-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
-                    <span className="text-sm sm:text-base">📞</span>
-                  </span>
-                  Contacto
-                </h3>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Contacto</h3>
                 
                 <div className="space-y-4">
                   <div>
@@ -187,12 +166,7 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
             <div className="space-y-4 sm:space-y-6">
               {/* Características físicas */}
               <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center mb-4">
-                  <span className="w-6 h-6 sm:w-8 sm:h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
-                    <span className="text-sm sm:text-base">🏞️</span>
-                  </span>
-                  Características
-                </h3>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Características</h3>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4">
                   <div>
@@ -239,12 +213,7 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
 
               {/* Servicios disponibles */}
               <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center mb-4">
-                  <span className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
-                    <span className="text-sm sm:text-base">🛠️</span>
-                  </span>
-                  Servicios
-                </h3>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Servicios</h3>
                 
                 <div>
                   <Label htmlFor="servicios_disponibles" className="text-sm font-medium text-gray-700">Servicios disponibles</Label>
@@ -265,33 +234,17 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
           </div>
 
           {/* Botones de acción - Fijos en la parte inferior */}
-          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4 pt-4 sm:pt-6 border-t border-gray-200 sticky bottom-0 bg-white">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={onCancel}
-              disabled={loading}
-              className="w-full sm:w-auto px-4 sm:px-6 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg font-medium transition-colors"
-            >
-              <XMarkIcon className="h-4 w-4 mr-2" />
+          <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4 sm:pt-6 border-t border-gray-200">
+            <Button type="button" variant="secondary" size="sm" onClick={onCancel} disabled={loading}>
               Cancelar
             </Button>
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-            >
-              {loading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              ) : (
-                <CheckIcon className="h-4 w-4 mr-2" />
-              )}
+            <Button type="submit" variant="brand" size="sm" isLoading={loading} disabled={loading}>
               {establecimiento ? 'Actualizar' : 'Crear'}
             </Button>
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 };

@@ -61,4 +61,5 @@ class UserService {
   }
 }
 
+// Export the service instance
 export const userService = new UserService();

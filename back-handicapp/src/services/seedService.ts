@@ -100,7 +100,7 @@ export const seedDatabase = async () => {
 
     return true;
   } catch (error) {
-    logger.error({ error }, '❌ Error during seed process');
+    logger.error('❌ Error during seed process', { error });
     throw error;
   }
 };

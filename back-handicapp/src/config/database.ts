@@ -155,7 +155,7 @@ export const connectDatabase = async (): Promise<void> => {
   try {
     await sequelize.authenticate();
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, '❌ Database connection failed');
+    logger.error('❌ Database connection failed', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 };
@@ -169,7 +169,7 @@ export const syncDatabase = async (): Promise<void> => {
       await sequelize.sync({ alter: true });
     }
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, '❌ Database sync failed');
+    logger.error('❌ Database sync failed', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 };
@@ -179,7 +179,7 @@ export const closeDatabase = async (): Promise<void> => {
   try {
     await sequelize.close();
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, '❌ Error closing database');
+    logger.error('❌ Error closing database', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 };
@@ -205,7 +205,7 @@ export const checkDatabaseHealth = async (): Promise<boolean> => {
     await sequelize.authenticate();
     return true;
   } catch (error) {
-    logger.error({ error: error instanceof Error ? error.message : String(error) }, '❌ Base de datos no saludable');
+    logger.error('❌ Base de datos no saludable', { error: error instanceof Error ? error.message : String(error) });
     return false;
   }
 };

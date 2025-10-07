@@ -1,10 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Modal } from '@/components/ui/modal';
 import ApiClient from '@/lib/services/apiClient';
+import { logger } from '@/lib/utils/logger';
 import type { User, Role } from './UserManagement';
+import { useToaster } from '@/components/ui/toaster';
 
 interface EditUserModalProps {
   user: User;
@@ -14,6 +17,7 @@ interface EditUserModalProps {
 }
 
 export function EditUserModal({ user, roles, onClose, onUserUpdated }: EditUserModalProps) {
+  const { toast } = useToaster();
   const [formData, setFormData] = useState({
     nombre: user.nombre,
     apellido: user.apellido,
@@ -56,11 +60,12 @@ export function EditUserModal({ user, roles, onClose, onUserUpdated }: EditUserM
         telefono: formData.telefono || undefined,
         rol_id: parseInt(formData.rol_id),
       });
-
+      toast('Usuario actualizado', { type: 'success' });
       onUserUpdated();
     } catch (error: any) {
-      console.error('Error updating user:', error);
+      logger.error('Error updating user:', error);
       setError(error.message || 'Error al actualizar usuario');
+      toast(error.message || 'Error al actualizar usuario', { type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -91,13 +96,13 @@ export function EditUserModal({ user, roles, onClose, onUserUpdated }: EditUserM
       await ApiClient.changePassword(user.id, {
         newPassword: passwordData.newPassword,
       });
-
+      toast('Contraseña actualizada', { type: 'success' });
       setPasswordData({ newPassword: '', confirmPassword: '' });
       setShowPasswordSection(false);
-      alert('Contraseña actualizada exitosamente');
     } catch (error: any) {
-      console.error('Error changing password:', error);
+      logger.error('Error changing password:', error);
       setPasswordError(error.message || 'Error al cambiar contraseña');
+      toast(error.message || 'Error al cambiar contraseña', { type: 'error' });
     } finally {
       setPasswordLoading(false);
     }
@@ -114,30 +119,8 @@ export function EditUserModal({ user, roles, onClose, onUserUpdated }: EditUserM
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 sm:p-6 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                <span className="text-xl sm:text-2xl">✏️</span>
-              </div>
-              <div>
-                <h2 className="text-lg sm:text-xl font-semibold text-white">Editar Usuario</h2>
-                <p className="text-blue-100 text-sm">{user.nombre} {user.apellido}</p>
-              </div>
-            </div>
-            <Button
-              onClick={onClose}
-              className="text-white/80 hover:text-white hover:bg-white/10 text-xl p-1 rounded-lg"
-            >
-              ×
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+    <Modal isOpen={true} onClose={onClose} title={`Editar usuario: ${user.nombre} ${user.apellido}`} size="lg">
+      <div className="flex-1 overflow-y-auto">
           {/* User Info Form */}
           <div className="bg-gray-50 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
             <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center mb-4">
@@ -226,22 +209,8 @@ export function EditUserModal({ user, roles, onClose, onUserUpdated }: EditUserM
               </div>
 
               <div className="flex justify-end pt-4">
-                <Button
-                  type="submit"
-                  className="px-4 sm:px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Actualizando...
-                    </>
-                  ) : (
-                    <>
-                      <span className="mr-2">💾</span>
-                      Actualizar Usuario
-                    </>
-                  )}
+                <Button type="submit" variant="brand" size="sm" isLoading={loading} disabled={loading}>
+                  Actualizar usuario
                 </Button>
               </div>
             </form>
@@ -256,11 +225,8 @@ export function EditUserModal({ user, roles, onClose, onUserUpdated }: EditUserM
                 </span>
                 Cambiar Contraseña
               </h3>
-              <Button
-                onClick={() => setShowPasswordSection(!showPasswordSection)}
-                className="text-sm text-blue-600 hover:text-blue-800 px-3 py-1 rounded-lg hover:bg-blue-50"
-              >
-                {showPasswordSection ? '🔼 Ocultar' : '🔽 Mostrar'}
+              <Button onClick={() => setShowPasswordSection(!showPasswordSection)} variant="secondary" size="sm">
+                {showPasswordSection ? 'Ocultar' : 'Mostrar'}
               </Button>
             </div>
 
@@ -300,22 +266,8 @@ export function EditUserModal({ user, roles, onClose, onUserUpdated }: EditUserM
                   </div>
 
                   <div className="flex justify-end">
-                    <Button
-                      type="submit"
-                      className="px-4 sm:px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                      disabled={passwordLoading}
-                    >
-                      {passwordLoading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Cambiando...
-                        </>
-                      ) : (
-                        <>
-                          <span className="mr-2">🔑</span>
-                          Cambiar Contraseña
-                        </>
-                      )}
+                    <Button type="submit" variant="brand" size="sm" isLoading={passwordLoading} disabled={passwordLoading}>
+                      Cambiar contraseña
                     </Button>
                   </div>
                 </form>
@@ -325,15 +277,9 @@ export function EditUserModal({ user, roles, onClose, onUserUpdated }: EditUserM
 
           {/* Close Button */}
           <div className="flex justify-end pt-4 sm:pt-6 border-t border-gray-200 mt-4 sm:mt-6">
-            <Button
-              onClick={onClose}
-              className="w-full sm:w-auto px-4 sm:px-6 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg font-medium transition-colors"
-            >
-              Cerrar
-            </Button>
+            <Button onClick={onClose} variant="secondary" size="sm">Cerrar</Button>
           </div>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

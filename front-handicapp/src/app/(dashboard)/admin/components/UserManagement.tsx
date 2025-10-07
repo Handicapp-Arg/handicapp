@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import { UserTable } from './UserTable';
 import { CreateUserModal } from './CreateUserModal';
 import { EditUserModal } from './EditUserModal';
-import { Button } from '@/components/ui/Button';
 import ApiClient from '@/lib/services/apiClient';
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { logger } from '@/lib/utils/logger';
 
 
 export interface User {
@@ -53,9 +54,8 @@ export function UserManagement() {
       const usersArray = (data as any).data?.users || [];
       setUsers(usersArray);
       setTotalPages((data as any).meta?.totalPages || (data as any).data?.totalPages || 1);
-      setCurrentPage(page);
     } catch (error: any) {
-      console.error('Error fetching users:', error);
+      logger.error('Error fetching users:', error);
       setUsers([]);
     } finally {
       setLoading(false);
@@ -67,21 +67,25 @@ export function UserManagement() {
       const data = await ApiClient.getRoles();
       setRoles((data as any).data.roles || []);
     } catch (error: any) {
-      console.error('Error fetching roles:', error);
+      logger.error('Error fetching roles:', error);
       // No redirigir, solo mostrar error en UI
       setRoles([]);
     }
   };
 
   useEffect(() => {
-    fetchUsers();
     fetchRoles();
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Búsqueda reactiva y cambios de página
+  useEffect(() => {
+    fetchUsers(currentPage, searchTerm);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, searchTerm]);
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
     setCurrentPage(1);
-    fetchUsers(1, searchTerm);
   };
 
   const handleEdit = (user: User) => {
@@ -124,71 +128,31 @@ export function UserManagement() {
     fetchUsers(currentPage, searchTerm);
   };
 
-  if (loading) {
-    return (
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p>Cargando usuarios...</p>
-        </div>
-      </div>
-    );
-  }
+  // Nota: mantenemos el loader en la tabla para unificar experiencia, pero mostramos un skeleton simple aquí
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      {/* Header */}
+      {/* Buscador + Acción */}
       <div className="p-4 sm:p-6 border-b border-gray-200">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 flex items-center gap-2">
-              <span className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                👥
-              </span>
-              Gestión de Usuarios
-            </h2>
-            <p className="text-gray-600 mt-1 text-sm">Administra usuarios del sistema</p>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-1">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <input
+              type="text"
+              placeholder="Buscar por nombre o email..."
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            />
           </div>
-          
-          <Button
+          <button
             onClick={() => setShowCreateModal(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium"
+            className="inline-flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm text-sm font-medium"
           >
-            <span>➕</span>
+            <span className="mr-2">➕</span>
             Crear Usuario
-          </Button>
+          </button>
         </div>
-
-        {/* Search */}
-        <form onSubmit={handleSearch} className="mt-4 flex flex-col sm:flex-row gap-2">
-          <input
-            type="text"
-            placeholder="Buscar por nombre o email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-          <div className="flex gap-2">
-            <Button
-              type="submit"
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
-            >
-              🔍 Buscar
-            </Button>
-            {searchTerm && (
-              <Button
-                onClick={() => {
-                  setSearchTerm('');
-                  setCurrentPage(1);
-                  fetchUsers(1, '');
-                }}
-                className="bg-gray-400 hover:bg-gray-500 text-white px-3 py-2 rounded-lg text-sm"
-              >
-                ×
-              </Button>
-            )}
-          </div>
-        </form>
       </div>
 
       {/* Table */}

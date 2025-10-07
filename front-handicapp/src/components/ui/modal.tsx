@@ -60,7 +60,7 @@ export function Modal({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        className="fixed inset-0 bg-white/70 transition-opacity"
         onClick={handleBackdropClick}
       />
       
@@ -91,7 +91,7 @@ export function Modal({
           )}
           
           {/* Content */}
-          <div className="px-6 py-4">
+          <div className="px-6 py-5">
             {children}
           </div>
         </div>

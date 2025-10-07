@@ -1,36 +1,50 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/lib/contexts/AuthContext';
+import { useAuthNew } from '@/lib/hooks/useAuthNew';
 import { tareaService, type Tarea } from '@/lib/services/tareaService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TareaForm } from './TareaForm';
-import { PlusIcon, DocumentTextIcon, PencilIcon, TrashIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { usePermissions } from '@/lib/hooks/usePermissions';
+import { PlusIcon, PencilIcon, TrashIcon, CheckIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { logger } from '@/lib/utils/logger';
 
 export function TareaList() {
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [selectedTarea, setSelectedTarea] = useState<Tarea | null>(null);
-  const { user } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuthNew();
+  const { canCreateTasks, canDeleteTasks, hasPermission, getUserRole } = usePermissions();
 
   useEffect(() => {
-    const fetchTareas = async () => {
-      try {
-        setLoading(true);
-        const response = await tareaService.getAll();
-        setTareas(response.data || response);
-      } catch (error) {
-        console.error('Error loading tareas:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (!authLoading && isAuthenticated) {
+      fetchTareas();
+    }
+  }, [currentPage, searchTerm, authLoading, isAuthenticated]);
 
-    fetchTareas();
-  }, []);
+  const fetchTareas = async () => {
+    if (authLoading || !isAuthenticated) return;
+    try {
+      setLoading(true);
+      const response: any = await tareaService.getAll({ page: currentPage, limit: 10, search: searchTerm });
+      const tareasData = response?.data?.tareas || response?.tareas || response?.data || response || [];
+      const list: Tarea[] = Array.isArray(tareasData) ? tareasData : [];
+      const totalPagesData = response?.meta?.totalPages || response?.data?.totalPages || response?.totalPages || 1;
+      setTareas(list);
+      setTotalPages(totalPagesData);
+    } catch (error) {
+      logger.error('Error loading tareas:', error);
+      setTareas([]);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCreateTarea = () => {
     setSelectedTarea(null);
@@ -48,7 +62,7 @@ export function TareaList() {
         await tareaService.delete(id);
         setTareas(tareas.filter(t => t.id !== id));
       } catch (error) {
-        console.error('Error deleting tarea:', error);
+        logger.error('Error deleting tarea:', error);
         alert('Error al eliminar la tarea');
       }
     }
@@ -66,21 +80,13 @@ export function TareaList() {
       await tareaService.update(tarea.id, updateData);
       setTareas(tareas.map(t => t.id === tarea.id ? { ...t, estado: 'completada' } : t));
     } catch (error) {
-      console.error('Error completing task:', error);
+      logger.error('Error completing task:', error);
       alert('Error al completar la tarea');
     }
   };
 
   const handleFormSuccess = async () => {
-    try {
-      setLoading(true);
-      const response = await tareaService.getAll();
-      setTareas(response.data || response);
-    } catch (error) {
-      console.error('Error loading tareas:', error);
-    } finally {
-      setLoading(false);
-    }
+    await fetchTareas();
   };
 
   const filteredTareas = tareas.filter(tarea =>
@@ -122,36 +128,57 @@ export function TareaList() {
     }
   };
 
-  if (loading) {
-    return <div className="flex justify-center p-8">Cargando tareas...</div>;
+  if (loading && tareas.length === 0) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2">Cargando tareas...</span>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <DocumentTextIcon className="h-6 w-6" />
-          <h2 className="text-2xl font-bold">Tareas</h2>
+    <div className="p-6">
+      {/* Buscador + Acción */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-8">
+        <div className="relative flex-1">
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <input
+            type="text"
+            placeholder="Buscar por título o descripción..."
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
         </div>
-        <Button onClick={handleCreateTarea} className="flex items-center gap-2">
-          <PlusIcon className="h-4 w-4" />
-          Nueva Tarea
-        </Button>
-      </div>
-      
-      <div className="flex gap-4">
-        <Input
-          placeholder="Buscar por título o descripción..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-md"
-        />
+        {canCreateTasks() && (
+          <button 
+            onClick={handleCreateTarea}
+            className="inline-flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm text-sm font-medium"
+          >
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Nueva Tarea
+          </button>
+        )}
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredTareas.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            No se encontraron tareas
+          <div className="text-center py-16 w-full col-span-full">
+            <div className="text-6xl mb-6">📝</div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No hay tareas</h3>
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+              {searchTerm ? 'No se encontraron tareas que coincidan con tu búsqueda.' : 'Crea tu primera tarea para comenzar.'}
+            </p>
+            {!searchTerm && canCreateTasks() && (
+              <button 
+                onClick={handleCreateTarea}
+                className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                Crear Tarea
+              </button>
+            )}
           </div>
         ) : (
           filteredTareas.map((tarea) => (
@@ -207,7 +234,8 @@ export function TareaList() {
                 </div>
                 
                 <div className="flex gap-2 ml-4">
-                  {tarea.estado !== 'completada' && (
+                  {/* Botón Completar: empleados, capataces y veterinarios pueden completar */}
+                  {tarea.estado !== 'completada' && hasPermission('tasks:complete') && (
                     <Button 
                       variant="secondary" 
                       size="sm" 
@@ -218,30 +246,50 @@ export function TareaList() {
                       Completar
                     </Button>
                   )}
-                  <Button 
-                    variant="secondary" 
-                    size="sm" 
-                    onClick={() => handleEditTarea(tarea)}
-                    className="flex items-center gap-1"
-                  >
-                    <PencilIcon className="h-3 w-3" />
-                    Editar
-                  </Button>
-                  <Button 
-                    variant="secondary" 
-                    size="sm" 
-                    onClick={() => handleDeleteTarea(tarea.id)}
-                    className="flex items-center gap-1 text-red-600 hover:text-red-700"
-                  >
-                    <TrashIcon className="h-3 w-3" />
-                    Eliminar
-                  </Button>
+                  {/* Botón Editar: solo roles con permisos de escritura */}
+                  {canCreateTasks() && (
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      onClick={() => handleEditTarea(tarea)}
+                      className="flex items-center gap-1"
+                    >
+                      <PencilIcon className="h-3 w-3" />
+                      Editar
+                    </Button>
+                  )}
+                  {/* Botón Eliminar: solo admin y capataz */}
+                  {canDeleteTasks() && (
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      onClick={() => handleDeleteTarea(tarea.id)}
+                      className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                    >
+                      <TrashIcon className="h-3 w-3" />
+                      Eliminar
+                    </Button>
+                  )}
+                  {/* Indicador de solo lectura */}
+                  {!hasPermission('tasks:complete') && !canCreateTasks() && !canDeleteTasks() && (
+                    <span className="text-xs text-gray-500 px-2 py-1 bg-gray-100 rounded">
+                      Solo lectura
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
           ))
         )}
       </div>
+      {/* Paginación */}
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-2">
+          <Button variant="secondary" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1 || loading}>Anterior</Button>
+          <span className="flex items-center px-4 text-sm text-gray-600">Página {currentPage} de {totalPages}</span>
+          <Button variant="secondary" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || loading}>Siguiente</Button>
+        </div>
+      )}
       
       <TareaForm
         isOpen={showForm}

@@ -3,6 +3,8 @@
  * Implementa auto-refresh de tokens y almacenamiento seguro
  */
 
+import { appConfig } from '@/lib/config';
+
 interface TokenData {
   accessToken: string;
   expiresIn: number; // segundos
@@ -56,7 +58,10 @@ class TokenService {
     try {
       const tokenDataStr = localStorage.getItem(this.ACCESS_TOKEN_KEY);
       
+      console.log('🔍 getValidAccessToken() - Token en localStorage:', tokenDataStr ? 'Existe' : 'No existe');
+      
       if (!tokenDataStr) {
+        console.warn('⚠️ No hay token en localStorage');
         return null;
       }
 
@@ -64,24 +69,35 @@ class TokenService {
       const now = Math.floor(Date.now() / 1000);
       const expiresAt = tokenData.issuedAt + tokenData.expiresIn;
 
+      console.log('🕐 Token info:', {
+        issuedAt: tokenData.issuedAt,
+        expiresIn: tokenData.expiresIn,
+        expiresAt: expiresAt,
+        now: now,
+        timeLeft: expiresAt - now
+      });
+
       // Si el token está por expirar o ya expiró, intentar refrescarlo
       if (now >= (expiresAt - this.TOKEN_EXPIRY_BUFFER)) {
-        console.log('Token expiring soon, attempting refresh...');
+        console.log('🔄 Token expiring soon, attempting refresh...');
         
         const newTokenData = await this.refreshAccessToken();
         
         if (newTokenData) {
+          console.log('✅ Token refreshed successfully');
           return newTokenData.accessToken;
         } else {
+          console.log('🔐 No refresh token available, user needs to login');
           // Si no se pudo refrescar, limpiar datos
           this.clearTokens();
           return null;
         }
       }
 
+      console.log('✅ Token válido encontrado');
       return tokenData.accessToken;
     } catch (error) {
-      console.error('Error obteniendo access token:', error);
+      console.error('❌ Error obteniendo access token:', error);
       this.clearTokens();
       return null;
     }
@@ -111,7 +127,9 @@ class TokenService {
    */
   private static async performTokenRefresh(): Promise<TokenData | null> {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`, {
+      console.log('🔄 Attempting token refresh...');
+      
+      const response = await fetch(`${appConfig.apiBaseUrl}/auth/refresh`, {
         method: 'POST',
         credentials: 'include', // Incluir cookies (refresh token)
         headers: {
@@ -120,7 +138,11 @@ class TokenService {
       });
 
       if (!response.ok) {
-        console.warn('Token refresh failed:', response.status);
+        if (response.status === 401) {
+          console.log('🔐 No valid refresh token available (first visit or expired)');
+        } else {
+          console.warn('⚠️ Token refresh failed:', response.status);
+        }
         return null;
       }
 
@@ -198,7 +220,7 @@ class TokenService {
         const tokenData: TokenData = JSON.parse(token);
         
         // Llamar endpoint de logout
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
+        await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/logout`, {
           method: 'POST',
           credentials: 'include',
           headers: {
@@ -221,13 +243,19 @@ class TokenService {
   static async getAuthHeaders(): Promise<Record<string, string>> {
     const token = await this.getValidAccessToken();
     
+    console.log('🔍 TokenService.getAuthHeaders() - Token obtenido:', token ? token.substring(0, 20) + '...' : 'null');
+    
     if (!token) {
+      console.warn('⚠️ No hay token disponible para headers de autorización');
       return {};
     }
 
-    return {
+    const headers = {
       'Authorization': `Bearer ${token}`
     };
+    
+    console.log('✅ Headers de autorización creados:', headers);
+    return headers;
   }
 
   /**

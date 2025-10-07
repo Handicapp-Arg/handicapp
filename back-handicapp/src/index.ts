@@ -12,7 +12,7 @@ const startServer = async (): Promise<void> => {
     
     // Start HTTP server
     const server = app.listen(config.port, config.host, () => {
-      logger.info(`🚀 HandicApp API running on http://${config.host}:${config.port}`);
+  logger.info(`🚀 HandicApp API running on http://${config.host}:${config.port}`);
       if (config.nodeEnv === 'development') {
         logger.info(`📊 Environment: ${config.nodeEnv} | Version: ${config.api.version}`);
       }
@@ -31,7 +31,7 @@ const startServer = async (): Promise<void> => {
           logger.info('✅ Cierre controlado completado');
           process.exit(0);
         } catch (error) {
-          logger.error({ error }, '❌ Error durante el cierre');
+          logger.error('❌ Error durante el cierre', { error });
           process.exit(1);
         }
       });
@@ -43,18 +43,18 @@ const startServer = async (): Promise<void> => {
     
     // Handle uncaught exceptions
     process.on('uncaughtException', (error) => {
-      logger.error({ error }, '💥 Excepción no capturada');
+      logger.error('💥 Excepción no capturada', { error });
       process.exit(1);
     });
     
     // Handle unhandled promise rejections
     process.on('unhandledRejection', (reason, promise) => {
-      logger.error({ reason, promise }, '💥 Promise rechazada no manejada');
+      logger.error('💥 Promise rechazada no manejada', { reason, promise });
       process.exit(1);
     });
     
   } catch (error) {
-    logger.error({ error }, '❌ Error al iniciar servidor');
+    logger.error('❌ Error al iniciar servidor', { error });
     process.exit(1);
   }
 };
