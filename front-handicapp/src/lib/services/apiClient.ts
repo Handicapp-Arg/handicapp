@@ -99,6 +99,13 @@ export class ApiClient {
     });
   }
 
+  static async register(data: { nombre: string; apellido: string; email: string; password: string; telefono?: string }) {
+    return this.request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   static async logout() {
     try {
       await this.request('/auth/logout', {
@@ -121,6 +128,27 @@ export class ApiClient {
   static async refreshToken() {
     return this.request('/auth/refresh', {
       method: 'POST',
+    });
+  }
+
+  static async sendPasswordReset(email: string) {
+    return this.request('/auth/send-reset', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  static async performPasswordReset(token: string, newPassword: string) {
+    return this.request('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword }),
+    });
+  }
+
+  static async verifyEmail(token: string) {
+    return this.request('/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
     });
   }
 

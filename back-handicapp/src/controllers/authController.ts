@@ -12,9 +12,25 @@ export class AuthController {
    * Register new user
    * POST /api/v1/auth/register
    */
-  static register = asyncHandler(async (_req: Request, res: Response, _next: NextFunction) => {
-    // TODO: Implement register method in AuthService
-    return ResponseHelper.badRequest(res, 'Register not implemented yet');
+  static register = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const { nombre, apellido, email, password, telefono } = req.body || {};
+
+    if (!nombre || !apellido || !email || !password) {
+      return ResponseHelper.badRequest(res, 'Faltan campos requeridos', [
+        'nombre, apellido, email y password son requeridos'
+      ]);
+    }
+
+    const result = await AuthService.register({ nombre, apellido, email, password, telefono });
+    if (!result.success) {
+      const message = result.error || 'Error en registro';
+      if (message.toLowerCase().includes('email')) {
+        return ResponseHelper.badRequest(res, message);
+      }
+      return ResponseHelper.internalError(res, message);
+    }
+
+    return ResponseHelper.created(res, result.data, 'Registro exitoso');
   });
 
   /**
@@ -148,6 +164,42 @@ export class AuthController {
         role: user.rol?.clave || 'user'
       }
     }, 'Token válido');
+  });
+
+  /**
+   * Verify email via token
+   * POST /api/v1/auth/verify-email
+   */
+  static verifyEmail = asyncHandler(async (req: Request, res: Response) => {
+    const { token } = req.body || {};
+    if (!token) return ResponseHelper.badRequest(res, 'Token requerido');
+    const result = await AuthService.verifyEmail(token);
+    if (!result.success) return ResponseHelper.badRequest(res, result.error || 'Token inválido');
+    return ResponseHelper.success(res, null, result.message || 'Cuenta verificada');
+  });
+
+  /**
+   * Send password reset email
+   * POST /api/v1/auth/send-reset
+   */
+  static sendReset = asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.body || {};
+    if (!email) return ResponseHelper.badRequest(res, 'Email requerido');
+    const result = await AuthService.sendPasswordReset(email);
+    if (!result.success) return ResponseHelper.internalError(res, result.error || 'Error enviando email');
+    return ResponseHelper.success(res, null, result.message || 'Si el email existe, enviaremos instrucciones.');
+  });
+
+  /**
+   * Reset password with token
+   * POST /api/v1/auth/reset-password
+   */
+  static resetPassword = asyncHandler(async (req: Request, res: Response) => {
+    const { token, newPassword } = req.body || {};
+    if (!token || !newPassword) return ResponseHelper.badRequest(res, 'Token y nueva contraseña requeridos');
+    const result = await AuthService.resetPassword(token, newPassword);
+    if (!result.success) return ResponseHelper.badRequest(res, result.error || 'Token inválido');
+    return ResponseHelper.success(res, null, result.message || 'Contraseña actualizada');
   });
 
   /**

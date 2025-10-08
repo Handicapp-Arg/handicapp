@@ -49,7 +49,7 @@ export default function RegisterPage() {
       return;
     }
     
-    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(password)) {
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])/.test(password)) {
       setError('La contraseña debe contener al menos: 1 minúscula, 1 mayúscula, 1 número y 1 carácter especial');
       return;
     }
@@ -62,23 +62,28 @@ export default function RegisterPage() {
     try {
       setLoading(true);
       
-      const response = await ApiClient.createUser({
+      const resp: any = await ApiClient.register({
         nombre: firstName.trim(),
         apellido: lastName.trim(),
         email: email.trim(),
-        password: password.trim()
+        password: password.trim(),
       });
       
       // Si llegamos aquí sin error, el registro fue exitoso
-      toast('¡Registro exitoso! Ahora puedes iniciar sesión', 'success');
-      
+      const msg = resp?.message || 'Registro exitoso. Te enviamos un correo para verificar la cuenta.';
+      toast(msg, { type: 'success', duration: 4000 });
+
+      // Redirigimos al login con un indicador para mostrar aviso
       setTimeout(() => {
-        router.push('/login');
-      }, 1500);
+        const emailParam = encodeURIComponent(email.trim());
+        router.push(`/login?checkEmail=1&email=${emailParam}`);
+      }, 1600);
       
     } catch (error: any) {
       console.error('Register error:', error);
-      setError(error.message || 'Error al registrar usuario');
+      // Mostrar el primer detalle si viene del backend
+      const details = Array.isArray(error?.details) ? error.details : undefined;
+      setError(details?.[0] || error.message || 'Error al registrar usuario');
     } finally {
       setLoading(false);
     }

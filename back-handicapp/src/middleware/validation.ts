@@ -86,6 +86,29 @@ export const commonValidations = {
 // ====================================
 
 export const userValidations = {
+  publicRegister: [
+    body('email')
+      .isEmail()
+      .normalizeEmail()
+      .withMessage('Email es requerido y debe ser válido'),
+    body('password')
+      .isLength({ min: 8, max: 128 })
+      .withMessage('La contraseña debe tener entre 8 y 128 caracteres')
+      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])/)
+      .withMessage('La contraseña debe contener: 1 minúscula, 1 mayúscula, 1 número y 1 carácter especial'),
+    body('nombre')
+      .isString()
+      .trim()
+      .isLength({ min: 2, max: 100 })
+      .withMessage('Nombre es requerido y debe tener entre 2 y 100 caracteres'),
+    body('apellido')
+      .isString()
+      .trim()
+      .isLength({ min: 2, max: 100 })
+      .withMessage('Apellido es requerido y debe tener entre 2 y 100 caracteres'),
+    commonValidations.telefono('telefono'),
+    handleValidationErrors
+  ],
   create: [
     body('email')
       .isEmail()

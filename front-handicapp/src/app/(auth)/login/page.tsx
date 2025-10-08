@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthNew } from '../../../lib/hooks/useAuthNew';
+import { useSearchParams } from 'next/navigation';
+import { useToaster } from '@/components/ui/toaster';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -12,6 +14,16 @@ export default function LoginPage() {
   
   const router = useRouter();
   const { login, isLoading: authLoading, error: authError } = useAuthNew();
+  const params = useSearchParams();
+  const checkEmail = useMemo(() => params.get('checkEmail') === '1', [params]);
+  const emailParam = useMemo(() => params.get('email') || '', [params]);
+  const { toast } = useToaster();
+
+  useEffect(() => {
+    if (checkEmail) {
+      toast(`Te enviamos un correo a ${emailParam || 'tu casilla'} para verificar la cuenta.`, { type: 'info', duration: 5000 });
+    }
+  }, [checkEmail, emailParam, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,6 +118,14 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 text-center">
+            <div className="mb-3">
+              <button
+                onClick={() => router.push('/forgot-password')}
+                className="text-white/70 hover:text-white font-medium transition-colors"
+              >
+                ¿Olvidaste tu contraseña?
+              </button>
+            </div>
             <p className="text-white/60 text-sm">
               ¿No tienes cuenta?{' '}
               <button

@@ -10,7 +10,7 @@ const router: ExpressRouter = Router();
  * @desc    Register new user
  * @access  Public
  */
-router.post('/register', userValidations.create, AuthController.register);
+router.post('/register', userValidations.publicRegister, AuthController.register);
 
 /**
  * @route   POST /api/v1/auth/login
@@ -25,6 +25,20 @@ router.post('/login', AuthController.login);
  * @access  Public (requires refresh token)
  */
 router.post('/refresh', AuthController.refreshToken);
+
+/**
+ * @route   POST /api/v1/auth/send-reset
+ * @desc    Send password reset email
+ * @access  Public
+ */
+router.post('/send-reset', AuthController.sendReset);
+
+/**
+ * @route   POST /api/v1/auth/reset-password
+ * @desc    Reset password with token
+ * @access  Public
+ */
+router.post('/reset-password', AuthController.resetPassword);
 
 /**
  * @route   GET /api/v1/auth/verify
@@ -46,6 +60,13 @@ router.post('/logout', requireAuth, AuthController.logout);
  * @access  Protected
  */
 router.post('/change-password', requireAuth, userValidations.changePassword, AuthController.changePassword);
+
+/**
+ * @route   POST /api/v1/auth/verify-email
+ * @desc    Verify account via token
+ * @access  Public
+ */
+router.post('/verify-email', AuthController.verifyEmail);
 
 /**
  * @route   GET /api/v1/auth/profile
