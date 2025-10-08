@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     shortcut: "/logos/logo-icon-brown.png",
     apple: "/logos/logo-icon-brown.png",
   },
-  manifest: "/manifest.json",
+  // manifest: "/manifest.json", // Comentado hasta crear el archivo
 };
 
 export const viewport = {

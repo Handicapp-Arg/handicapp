@@ -5,6 +5,7 @@ import { asyncHandler } from '../utils/errors';
 import { LoginData, AuthenticatedRequest } from '../types';
 import { logger } from '../utils/logger';
 import { config } from '../config/config';
+import { clearUserLoginAttempts } from '../middleware/security';
 
 export class AuthController {
   
@@ -33,19 +34,31 @@ export class AuthController {
       const result = await AuthService.login(loginData);
 
       if (result.success && result.data) {
-        // Configurar refresh token como httpOnly cookie
-        res.cookie('refreshToken', result.data.refreshToken, {
+        // Login exitoso - limpiar intentos fallidos del usuario
+        clearUserLoginAttempts(loginData.email);
+
+        // Configurar access token como httpOnly cookie
+        res.cookie('auth-token', result.data.accessToken, {
           httpOnly: true,
           secure: config.nodeEnv === 'production',
-          sameSite: 'strict',
-          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
-          path: '/api/v1/auth/refresh'
+          sameSite: config.nodeEnv === 'production' ? 'strict' : 'lax',
+          maxAge: 60 * 60 * 1000, // 1 hora
+          path: '/'
         });
 
-        // Retornar solo access token y datos del usuario
+        // Configurar refresh token como httpOnly cookie
+        res.cookie('refresh-token', result.data.refreshToken, {
+          httpOnly: true,
+          secure: config.nodeEnv === 'production',
+          sameSite: config.nodeEnv === 'production' ? 'strict' : 'lax',
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
+          path: '/'
+        });
+
+        // Retornar datos del usuario (sin tokens expuestos)
         const responseData = {
           user: result.data.user,
-          accessToken: result.data.accessToken,
+          token: result.data.accessToken, // Solo para compatibilidad con front actual
           expiresIn: result.data.expiresIn
         };
 
@@ -64,7 +77,7 @@ export class AuthController {
    * POST /api/v1/auth/refresh
    */
   static refreshToken = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-    const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
+    const refreshToken = req.cookies['refresh-token'] || req.body.refreshToken;
 
     if (!refreshToken) {
       return ResponseHelper.unauthorized(res, 'Refresh token requerido');
@@ -74,17 +87,26 @@ export class AuthController {
       const result = await AuthService.refreshToken(refreshToken);
 
       if (result.success && result.data) {
-        // Actualizar refresh token cookie
-        res.cookie('refreshToken', result.data.refreshToken, {
+        // Configurar nuevo access token como httpOnly cookie
+        res.cookie('auth-token', result.data.accessToken, {
           httpOnly: true,
           secure: config.nodeEnv === 'production',
-          sameSite: 'strict',
+          sameSite: config.nodeEnv === 'production' ? 'strict' : 'lax',
+          maxAge: 60 * 60 * 1000, // 1 hora
+          path: '/'
+        });
+
+        // Configurar nuevo refresh token como httpOnly cookie (rotación)
+        res.cookie('refresh-token', result.data.refreshToken, {
+          httpOnly: true,
+          secure: config.nodeEnv === 'production',
+          sameSite: config.nodeEnv === 'production' ? 'strict' : 'lax',
           maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
-          path: '/api/v1/auth/refresh'
+          path: '/'
         });
 
         const responseData = {
-          accessToken: result.data.accessToken,
+          success: true,
           expiresIn: result.data.expiresIn
         };
 
@@ -113,10 +135,9 @@ export class AuthController {
       const result = await AuthService.logout(userId);
 
       if (result.success) {
-        // Limpiar refresh token cookie
-        res.clearCookie('refreshToken', {
-          path: '/api/v1/auth/refresh'
-        });
+        // Limpiar cookies de autenticación
+        res.clearCookie('auth-token', { path: '/' });
+        res.clearCookie('refresh-token', { path: '/' });
 
         return ResponseHelper.success(res, null, 'Logout exitoso');
       }

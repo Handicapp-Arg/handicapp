@@ -9,30 +9,10 @@ export class ApiClient {
     options: RequestInit = {}
   ): Promise<T> {
     try {
-      // Obtener token de AuthManager
-      const authManager = AuthManager.getInstance();
-      const state = authManager.getState();
-      
-      // Fallback: si no hay token en estado (p. ej., en el primer render), intentar obtenerlo de la cookie
-      let token = state.token;
-      if (!token && typeof document !== 'undefined') {
-        const cookies = document.cookie.split(';').map(c => c.trim());
-        const authCookie = cookies.find(c => c.startsWith('auth-token='));
-        if (authCookie) {
-          token = authCookie.split('=')[1] || null;
-        }
-      }
-
-      const authHeaders: Record<string, string> = {};
-      if (token) {
-        authHeaders['Authorization'] = `Bearer ${token}`;
-      }
-      
       const config: RequestInit = {
-        credentials: 'include', // Incluir cookies para refresh token
+        credentials: 'include', // Las cookies httpOnly se envían automáticamente
         headers: {
           'Content-Type': 'application/json',
-          ...authHeaders,
           ...options.headers,
         },
         ...options,
@@ -42,19 +22,18 @@ export class ApiClient {
       
       // Manejar errores de autenticación
       if (response.status === 401) {
-        // Token expirado o inválido
-        const errorData = await response.json().catch(() => ({}));
-        
-        if (errorData.code === 'TOKEN_EXPIRED' || errorData.code === 'INVALID_TOKEN') {
-          // Token expirado - limpiar y redirigir al login
-          const authManager = AuthManager.getInstance();
-          await authManager.logout();
-          
-          // Lanzar error para que el componente maneje la redirección
-          throw new Error('Sesión expirada. Inicia sesión nuevamente.');
+        // Si es un endpoint de login/refresh, no intentar renovar
+        if (endpoint.includes('/auth/login') || endpoint.includes('/auth/refresh')) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || 'Credenciales inválidas');
         }
-        
-        throw new Error(errorData.message || 'No autorizado');
+
+        // Token expirado - intentar refresh automático (el interceptor en http.ts lo maneja)
+        // Si llegamos aquí desde apiClient directamente, redirigir a login
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+        throw new Error('Sesión expirada');
       }
       
       if (!response.ok) {

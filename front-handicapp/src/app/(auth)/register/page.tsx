@@ -91,15 +91,7 @@ export default function RegisterPage() {
         {/* Logo y Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-24 h-24 bg-white/10 backdrop-blur-xl rounded-2xl mb-6">
-            <img 
-              src="/logos/logo-icon-white.png" 
-              alt="HandicApp" 
-              className="w-20 h-20"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-              }}
-            />
+            <span className="text-5xl">🏇</span>
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Crear Cuenta</h1>
           <p className="text-[#D2B48C]/80 text-sm">Únete a HandicApp y gestiona tu establecimiento</p>
