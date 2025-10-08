@@ -42,12 +42,22 @@ export default function HomePage() {
       // Usar ApiClient directamente para login
       const response = await ApiClient.login(email.trim(), password.trim());
       
-      if (response && (response as any).success && (response as any).data) {
-        const data = (response as any).data;
+      console.log('Login response:', response);
+      
+      // Verificar si la respuesta tiene éxito
+      const responseData = (response as any);
+      if (responseData && responseData.success && responseData.data) {
+        const data = responseData.data;
         
-        // Guardar token en cookies seguras
-        document.cookie = `auth-token=${data.token}; path=/; max-age=7200; SameSite=Strict; Secure=${window.location.protocol === 'https:' ? 'true' : 'false'}`;
-        document.cookie = `role=${data.user.rol_id}; path=/; max-age=7200; SameSite=Strict; Secure=${window.location.protocol === 'https:' ? 'true' : 'false'}`;
+        console.log('User data:', data.user);
+        
+        // El backend ya setea las cookies httpOnly automáticamente
+        const rolId = data.user.rol?.id || data.user.rol_id || 1;
+        
+        console.log('Rol ID detectado:', rolId);
+        
+        // Guardar rol para acceso rápido (opcional)
+        document.cookie = `role=${rolId}; path=/; max-age=7200; SameSite=Lax`;
         
         toast('¡Login exitoso!', 'success');
         
@@ -61,13 +71,15 @@ export default function HomePage() {
           6: '/propietario'
         };
         
-        const dashboardRoute = roleRoutes[data.user.rol_id] || '/';
+        const dashboardRoute = roleRoutes[rolId] || '/admin';
         
-        setTimeout(() => {
-          router.push(dashboardRoute);
-        }, 500);
+        console.log('Redirigiendo a:', dashboardRoute);
+        
+        // Redirigir inmediatamente
+        router.push(dashboardRoute);
         
       } else {
+        console.error('Respuesta no válida:', response);
         setError('Credenciales incorrectas');
       }
     } catch (error: any) {

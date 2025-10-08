@@ -2,27 +2,36 @@ import { Router, type Router as ExpressRouter } from 'express';
 import { AuthController } from '../controllers/authController';
 import { requireAuth } from '../middleware/auth';
 import { userValidations } from '../middleware/validation';
+import { authRateLimiter, userLoginRateLimiter } from '../middleware/security';
 
 const router: ExpressRouter = Router();
 
 /**
  * @route   POST /api/v1/auth/register
- * @desc    Register new user
+ * @desc    Register new user (público)
  * @access  Public
  */
-router.post('/register', userValidations.publicRegister, AuthController.register);
+router.post('/register', authRateLimiter, userValidations.publicRegister, AuthController.register);
 
 /**
  * @route   POST /api/v1/auth/login
  * @desc    Login user
  * @access  Public
+ * @rateLimit Por IP (5/15min) + Por usuario (10/15min)
  */
-router.post('/login', AuthController.login);
+router.post('/login', authRateLimiter, userLoginRateLimiter, AuthController.login);
+
+/**
+ * @route   POST /api/v1/auth/refresh-token
+ * @desc    Refresh access token
+ * @access  Public (requires refresh token in cookie)
+ */
+router.post('/refresh-token', AuthController.refreshToken);
 
 /**
  * @route   POST /api/v1/auth/refresh
- * @desc    Refresh access token
- * @access  Public (requires refresh token)
+ * @desc    Refresh access token (compat)
+ * @access  Public (requires refresh token in cookie)
  */
 router.post('/refresh', AuthController.refreshToken);
 

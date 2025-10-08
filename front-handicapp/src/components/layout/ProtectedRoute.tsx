@@ -2,22 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import ApiClient from '@/lib/services/apiClient';
 
 /**
  * Componente de protección de rutas basado en roles
- * Verifica la autenticación del usuario y lo redirige a su área autorizada
- * según su rol definido en el sistema
+ * Verifica la autenticación del usuario haciendo request al backend
+ * (las cookies httpOnly se envían automáticamente)
  */
-
-// Mapeo de roles
-const ROLE_MAPPING: Record<number, string> = {
-  1: 'admin',
-  2: 'establecimiento', 
-  3: 'capataz',
-  4: 'veterinario',
-  5: 'empleado',
-  6: 'propietario'
-};
 
 const DASHBOARD_ROUTES: Record<string, string> = {
   admin: '/admin',
@@ -28,13 +19,6 @@ const DASHBOARD_ROUTES: Record<string, string> = {
   propietario: '/propietario'
 };
 
-const getCookie = (name: string): string | null => {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
-  return null;
-};
-
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -42,33 +26,43 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
-    const checkAccess = () => {
-      // Obtener cookies
-      const token = getCookie('auth-token');
-      const roleStr = getCookie('role');
-      
-      if (!token || !roleStr) {
-        router.replace('/');
-        return;
-      }
+    const checkAccess = async () => {
+      try {
+        // Verificar autenticación con el backend (las cookies httpOnly se envían automáticamente)
+        const response: any = await ApiClient.verifyToken();
+        
+        if (!response || !response.success || !response.data || !response.data.user) {
+          router.replace('/login');
+          return;
+        }
 
-      const roleId = parseInt(roleStr);
-      const userRole = ROLE_MAPPING[roleId];
-      
-      if (!userRole) {
-        router.replace('/');
-        return;
-      }
+        const user = response.data.user;
+        const userRole = user.role; // 'admin', 'establecimiento', etc.
+        
+        if (!userRole) {
+          router.replace('/login');
+          return;
+        }
 
-      const allowedPath = DASHBOARD_ROUTES[userRole];
-      
-      if (!pathname.startsWith(allowedPath)) {
-        router.replace(allowedPath);
-        return;
-      }
+        const allowedPath = DASHBOARD_ROUTES[userRole];
+        
+        if (!allowedPath) {
+          router.replace('/login');
+          return;
+        }
+        
+        // Si está en una ruta no permitida para su rol, redirigir
+        if (!pathname.startsWith(allowedPath)) {
+          router.replace(allowedPath);
+          return;
+        }
 
-      setIsAuthorized(true);
-      setIsLoading(false);
+        setIsAuthorized(true);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error verificando autenticación:', error);
+        router.replace('/login');
+      }
     };
 
     checkAccess();

@@ -46,20 +46,68 @@ export const rateLimiter = rateLimit({
   },
 });
 
-// Strict rate limiting for auth endpoints
+// Strict rate limiting for auth endpoints (por IP)
 export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 attempts per window
+  max: 5, // 5 attempts per window per IP
   message: {
     success: false,
-    message: 'Too many authentication attempts, please try again later.',
+    message: 'Demasiados intentos desde esta IP. Intenta en 15 minutos.',
   },
   standardHeaders: true,
   legacyHeaders: false,
   handler: (_req: Request, _res: Response) => {
-    throw new RateLimitError('Too many authentication attempts');
+    throw new RateLimitError('Too many authentication attempts from this IP');
   },
 });
+
+// Rate limiting por usuario (email) para login
+// Previene ataques de fuerza bruta a una cuenta específica desde múltiples IPs
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+
+export const userLoginRateLimiter = (req: Request, res: Response, next: NextFunction) => {
+  const email = req.body.email?.toLowerCase();
+  
+  if (!email) {
+    return next();
+  }
+
+  const now = Date.now();
+  const windowMs = 15 * 60 * 1000; // 15 minutos
+  const maxAttempts = 10; // 10 intentos por usuario en 15 minutos
+
+  const userAttempts = loginAttempts.get(email);
+
+  if (userAttempts) {
+    if (now > userAttempts.resetAt) {
+      // Ventana expirada, resetear
+      loginAttempts.set(email, { count: 1, resetAt: now + windowMs });
+      return next();
+    }
+
+    if (userAttempts.count >= maxAttempts) {
+      res.status(429).json({
+        success: false,
+        message: `Demasiados intentos de login para esta cuenta. Intenta en ${Math.ceil((userAttempts.resetAt - now) / 60000)} minutos.`,
+        code: 'RATE_LIMIT_USER'
+      });
+      return;
+    }
+
+    // Incrementar contador
+    userAttempts.count++;
+  } else {
+    // Primer intento
+    loginAttempts.set(email, { count: 1, resetAt: now + windowMs });
+  }
+
+  next();
+};
+
+// Limpiar intentos exitosos de login (llamar después de login exitoso)
+export const clearUserLoginAttempts = (email: string) => {
+  loginAttempts.delete(email.toLowerCase());
+};
 
 // Helmet security headers
 export const helmetConfig = helmet({

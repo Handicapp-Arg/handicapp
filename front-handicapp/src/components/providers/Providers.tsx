@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { ReactNode } from 'react';
-import { AuthProvider } from '@/lib/components/AuthProvider';
-import { ToasterProvider } from '@/components/ui/toaster';
+import { ReactNode } from "react";
+import { AuthProvider } from "@/lib/components/AuthProvider";
+import { ToasterProvider } from "@/components/ui/Toaster";
 
 interface ProvidersProps {
   children: ReactNode;
@@ -11,9 +11,7 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <AuthProvider>
-      <ToasterProvider>
-        {children}
-      </ToasterProvider>
+      <ToasterProvider>{children}</ToasterProvider>
     </AuthProvider>
   );
 }
