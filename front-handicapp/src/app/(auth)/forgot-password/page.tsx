@@ -15,10 +15,11 @@ export default function ForgotPasswordPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!email) { setError('Ingresá tu email'); return; }
+    const normalized = email.trim().toLowerCase();
+    if (!normalized) { setError('Ingresá tu email'); return; }
     try {
       setLoading(true);
-      await ApiClient.sendPasswordReset(email.trim());
+      await ApiClient.sendPasswordReset(normalized);
       toast('Si el email existe, te enviamos instrucciones', 'success');
       setTimeout(() => router.push('/login'), 1500);
     } catch (err: any) {
@@ -40,7 +41,17 @@ export default function ForgotPasswordPage() {
           <form onSubmit={onSubmit} className="space-y-5">
             <div>
               <label className="block text-white/80 text-sm font-medium mb-2">Correo electrónico</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#D2B48C] focus:border-transparent transition-all" placeholder="tu@email.com"/>
+              <input
+                type="email"
+                name="email"
+                autoComplete="email"
+                autoFocus
+                required
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#D2B48C] focus:border-transparent transition-all"
+                placeholder="tu@email.com"
+              />
             </div>
             {error && <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-3"><p className="text-red-200 text-sm">{error}</p></div>}
             <button disabled={loading} className="w-full bg-gradient-to-r from-[#D2B48C] to-[#F5DEB3] text-[#3C2013] font-semibold py-3 rounded-xl hover:shadow-lg hover:shadow-[#D2B48C]/25 transition-all disabled:opacity-50">{loading ? 'Enviando...' : 'Enviar enlace'}</button>

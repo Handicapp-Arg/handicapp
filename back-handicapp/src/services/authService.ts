@@ -102,13 +102,20 @@ export class AuthService {
       );
       const verifyUrl = `${config.app.webUrl}/verify?token=${encodeURIComponent(verifyToken)}`;
       const html = renderBrandedEmail({
-        title: 'Verifica tu cuenta',
-        intro: `Hola ${user.nombre}, gracias por registrarte en HandicApp. Por favor verifica tu correo para activar tu cuenta.`,
-        actionText: 'Verificar mi cuenta',
+        title: 'Verificá tu cuenta',
+        intro: `Hola ${user.nombre}, gracias por registrarte en HandicApp. Por favor verificá tu correo para activar tu cuenta.`,
+        actionText: 'Verificá mi cuenta',
         actionUrl: verifyUrl,
         footer: 'Equipo HandicApp',
       });
-      try { await sendEmail({ to: user.email, subject: 'Verifica tu cuenta - HandicApp', html }); } catch {}
+      try {
+        await sendEmail({ to: user.email, subject: 'Verifica tu cuenta - HandicApp', html });
+      } catch (err: any) {
+        logger.warn('Fallo enviando email de verificación (register)', {
+          email: user.email,
+          error: err?.message || String(err)
+        });
+      }
 
       logger.info(`Usuario registrado: ${user.email}`);
       return { success: true, data: { user: safeUser }, message: 'Registro exitoso. Revisa tu email para verificar la cuenta.' };
@@ -137,7 +144,14 @@ export class AuthService {
         actionUrl: resetUrl,
         footer: 'Si no fuiste vos, ignora este correo.',
       });
-      try { await sendEmail({ to: user.email, subject: 'Restablecer contraseña - HandicApp', html }); } catch {}
+      try {
+        await sendEmail({ to: user.email, subject: 'Restablecer contraseña - HandicApp', html });
+      } catch (err: any) {
+        logger.warn('Fallo enviando email de reset password', {
+          email: user.email,
+          error: err?.message || String(err)
+        });
+      }
       return { success: true, data: {}, message: 'Si el email existe, enviaremos instrucciones.' };
     } catch (error) {
       logger.error('Error enviando reset password:', error);
@@ -159,6 +173,42 @@ export class AuthService {
     } catch (error) {
       logger.warn('Fallo verificación de email:', error);
       return { success: false, error: 'Token inválido o expirado' };
+    }
+  }
+
+  /** Reenviar verificación a un email */
+  static async resendVerification(email: string): Promise<ServiceResponse<{}>> {
+    try {
+      const user = await User.findOne({ where: { email: email.trim().toLowerCase() } });
+      // Siempre devolvemos éxito para no filtrar existencia de emails
+      if (!user) return { success: true, data: {}, message: 'Si el email existe, enviaremos el enlace.' };
+      if (user.verificado) return { success: true, data: {}, message: 'La cuenta ya está verificada.' };
+
+      const verifyToken = (jwt as any).sign(
+        { type: 'verify', userId: user.id },
+        config.jwt.secret,
+        { expiresIn: '24h' }
+      );
+      const verifyUrl = `${config.app.webUrl}/verify?token=${encodeURIComponent(verifyToken)}`;
+      const html = renderBrandedEmail({
+        title: 'Verificá tu cuenta',
+        intro: `Hola ${user.nombre || ''}, por favor verificá tu correo para activar tu cuenta.`,
+        actionText: 'Verificá mi cuenta',
+        actionUrl: verifyUrl,
+        footer: 'Equipo HandicApp',
+      });
+      try {
+        await sendEmail({ to: user.email, subject: 'Verifica tu cuenta - HandicApp', html });
+      } catch (err: any) {
+        logger.warn('Fallo reenviando email de verificación', {
+          email: user.email,
+          error: err?.message || String(err)
+        });
+      }
+      return { success: true, data: {}, message: 'Si el email existe, enviaremos el enlace.' };
+    } catch (error) {
+      logger.error('Error reenviando verificación:', error);
+      return { success: false, error: 'Error interno del servidor' };
     }
   }
 
@@ -217,7 +267,8 @@ export class AuthService {
    */
   static async login(loginData: LoginRequest): Promise<LoginResponse> {
     try {
-      const { email, password } = loginData;
+      const { password } = loginData;
+      const email = loginData.email.trim().toLowerCase();
 
       // Buscar usuario con rol y contraseña
       const user = await User.scope('withSecret').findOne({

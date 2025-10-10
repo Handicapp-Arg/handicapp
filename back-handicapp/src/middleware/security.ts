@@ -47,15 +47,17 @@ export const rateLimiter = rateLimit({
 });
 
 // Strict rate limiting for auth endpoints (por IP)
+// En desarrollo lo salteamos para no bloquear pruebas locales (skip)
 export const authRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 attempts per window per IP
+  windowMs: config.security.rateLimitWindowMs, // configurable por .env
+  max: config.security.rateLimitMaxRequests,   // configurable por .env (por defecto 100 en dev)
   message: {
     success: false,
-    message: 'Demasiados intentos desde esta IP. Intenta en 15 minutos.',
+    message: 'Demasiados intentos desde esta IP. Intenta más tarde.',
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => config.nodeEnv === 'development',
   handler: (_req: Request, _res: Response) => {
     throw new RateLimitError('Too many authentication attempts from this IP');
   },

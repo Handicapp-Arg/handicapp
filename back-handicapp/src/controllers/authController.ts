@@ -39,7 +39,10 @@ export class AuthController {
    * POST /api/v1/auth/login
    */
   static login = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-    const loginData: LoginData = req.body;
+    const loginData: LoginData = {
+      email: (req.body?.email || '').trim().toLowerCase(),
+      password: req.body?.password
+    };
 
     // Validación básica
     if (!loginData.email || !loginData.password) {
@@ -74,14 +77,16 @@ export class AuthController {
         // Retornar datos del usuario (sin tokens expuestos)
         const responseData = {
           user: result.data.user,
-          token: result.data.accessToken, // Solo para compatibilidad con front actual
+          token: result.data.accessToken, // compat legacy
+          accessToken: result.data.accessToken,
+          refreshToken: result.data.refreshToken,
           expiresIn: result.data.expiresIn
         };
 
         return ResponseHelper.success(res, responseData, result.message);
       }
 
-      return ResponseHelper.badRequest(res, result.error || 'Login failed');
+  return ResponseHelper.badRequest(res, result.message || result.error || 'Login failed');
     } catch (error: any) {
       logger.error('Error en login controller:', error.message || error);
       throw error;
@@ -221,6 +226,18 @@ export class AuthController {
     const result = await AuthService.resetPassword(token, newPassword);
     if (!result.success) return ResponseHelper.badRequest(res, result.error || 'Token inválido');
     return ResponseHelper.success(res, null, result.message || 'Contraseña actualizada');
+  });
+
+  /**
+   * Resend verification email
+   * POST /api/v1/auth/resend-verification
+   */
+  static resendVerification = asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.body || {};
+    if (!email) return ResponseHelper.badRequest(res, 'Email requerido');
+    const result = await AuthService.resendVerification(email);
+    if (!result.success) return ResponseHelper.internalError(res, result.error || 'Error reenviando verificación');
+    return ResponseHelper.success(res, null, result.message || 'Si el email existe, enviaremos el enlace.');
   });
 
   /**

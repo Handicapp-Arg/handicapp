@@ -70,10 +70,7 @@ export default function RegisterPage() {
       });
       
       // Si llegamos aquí sin error, el registro fue exitoso
-      const msg = resp?.message || 'Registro exitoso. Te enviamos un correo para verificar la cuenta.';
-      toast(msg, { type: 'success', duration: 4000 });
-
-      // Redirigimos al login con un indicador para mostrar aviso
+      // Redirigimos al login con un indicador para mostrar aviso (evitamos doble toast aquí)
       setTimeout(() => {
         const emailParam = encodeURIComponent(email.trim());
         router.push(`/login?checkEmail=1&email=${emailParam}`);
@@ -95,8 +92,13 @@ export default function RegisterPage() {
       <div className="w-full max-w-md mx-auto">
         {/* Logo y Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-24 h-24 bg-white/10 backdrop-blur-xl rounded-2xl mb-6">
-            <span className="text-5xl">🏇</span>
+          <div className="inline-flex items-center justify-center w-28 h-28 bg-white/5 border border-white/15 rounded-2xl mb-6 p-4">
+            <img
+              src="/logos/logo-icon-white.png"
+              alt="HandicApp"
+              className="w-full h-full object-contain"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logos/logo-full-white.png'; }}
+            />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Crear Cuenta</h1>
           <p className="text-[#D2B48C]/80 text-sm">Únete a HandicApp y gestiona tu establecimiento</p>

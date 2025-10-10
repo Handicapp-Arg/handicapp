@@ -50,6 +50,13 @@ router.post('/send-reset', AuthController.sendReset);
 router.post('/reset-password', AuthController.resetPassword);
 
 /**
+ * @route   POST /api/v1/auth/resend-verification
+ * @desc    Resend email verification link
+ * @access  Public
+ */
+router.post('/resend-verification', authRateLimiter, AuthController.resendVerification);
+
+/**
  * @route   GET /api/v1/auth/verify
  * @desc    Verify access token
  * @access  Protected

@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthNew } from '../../../lib/hooks/useAuthNew';
 import { useSearchParams } from 'next/navigation';
 import { useToaster } from '@/components/ui/toaster';
+import ApiClient from '@/lib/services/apiClient';
+import AuthManager from '@/lib/auth/AuthManager';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -18,12 +20,31 @@ export default function LoginPage() {
   const checkEmail = useMemo(() => params.get('checkEmail') === '1', [params]);
   const emailParam = useMemo(() => params.get('email') || '', [params]);
   const { toast } = useToaster();
+  const [resending, setResending] = useState(false);
+  const shownInfoRef = useRef(false);
 
   useEffect(() => {
-    if (checkEmail) {
+    if (checkEmail && !shownInfoRef.current) {
+      shownInfoRef.current = true;
       toast(`Te enviamos un correo a ${emailParam || 'tu casilla'} para verificar la cuenta.`, { type: 'info', duration: 5000 });
     }
   }, [checkEmail, emailParam, toast]);
+
+  const onResend = async () => {
+    if (!emailParam) {
+      toast('Ingresá tu email y reintentá', 'warning');
+      return;
+    }
+    try {
+      setResending(true);
+      await ApiClient.resendVerification(emailParam);
+      toast('Si el email existe, reenviamos el enlace de verificación', 'success');
+    } catch (e: any) {
+      toast(e?.message || 'No se pudo reenviar', 'error');
+    } finally {
+      setResending(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,9 +58,16 @@ export default function LoginPage() {
     try {
       setIsLoading(true);
       await login(email, password);
-      
       // Si llegamos aquí, el login fue exitoso
-      router.push('/admin');
+      toast('Inicio de sesión exitoso', 'success');
+      const state = AuthManager.getInstance().getState();
+      const roleKey = state.user?.rol?.clave || 'user';
+      // Redirección por rol: admin -> /admin, propietario/u otros -> home
+      if (roleKey === 'admin') {
+        router.push('/admin');
+      } else {
+        router.push('/');
+      }
     } catch (err) {
       console.error('Error en login:', err);
       const errorMessage = err instanceof Error ? err.message : 'Error inesperado';
@@ -53,8 +81,13 @@ export default function LoginPage() {
     <div className="min-h-screen w-full bg-gradient-to-br from-[#3C2013] via-[#2A1609] to-[#1A0E06] flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md mx-auto">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-24 h-24 bg-white/10 backdrop-blur-xl rounded-2xl mb-6">
-            <span className="text-5xl">🏇</span>
+          <div className="inline-flex items-center justify-center w-28 h-28 bg-white/5 border border-white/15 rounded-2xl mb-6 p-4">
+            <img
+              src="/logos/logo-icon-white.png"
+              alt="HandicApp"
+              className="w-full h-full object-contain"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logos/logo-full-white.png'; }}
+            />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Bienvenido</h1>
           <p className="text-[#D2B48C]/80 text-sm">Accede a tu cuenta HandicApp</p>
@@ -110,6 +143,14 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 text-center">
+            {checkEmail && (
+              <div className="mb-4 flex flex-col items-center gap-2 text-white/80 text-sm">
+                <p>¿No te llegó el correo? Revisá Spam o reenviá el enlace.</p>
+                <button onClick={onResend} disabled={resending} className="px-3 py-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/15">
+                  {resending ? 'Reenviando…' : 'Reenviar verificación'}
+                </button>
+              </div>
+            )}
             <div className="mb-3">
               <button
                 onClick={() => router.push('/forgot-password')}

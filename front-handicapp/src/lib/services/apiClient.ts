@@ -131,6 +131,13 @@ export class ApiClient {
     });
   }
 
+  static async resendVerification(email: string) {
+    return this.request('/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
   // User endpoints
   static async getUsers(page = 1, limit = 10) {
     return this.request(`/users?page=${page}&limit=${limit}`);
