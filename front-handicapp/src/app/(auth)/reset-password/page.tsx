@@ -45,11 +45,11 @@ export default function ResetPasswordPage() {
           <form onSubmit={onSubmit} className="space-y-5">
             <div>
               <label className="block text-white/80 text-sm font-medium mb-2">Nueva contraseña</label>
-              <input type="password" value={p1} onChange={e => setP1(e.target.value)} className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#D2B48C] focus:border-transparent transition-all" placeholder="Mínimo 8 caracteres"/>
+              <input type="password" value={p1} onChange={e => setP1(e.target.value)} className="w-full px-4 py-3 bg-white/90 border border-white/20 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#D2B48C] focus:border-transparent transition-all" placeholder="Mínimo 8 caracteres"/>
             </div>
             <div>
               <label className="block text-white/80 text-sm font-medium mb-2">Confirmar contraseña</label>
-              <input type="password" value={p2} onChange={e => setP2(e.target.value)} className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#D2B48C] focus:border-transparent transition-all" placeholder="Repite tu contraseña"/>
+              <input type="password" value={p2} onChange={e => setP2(e.target.value)} className="w-full px-4 py-3 bg-white/90 border border-white/20 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#D2B48C] focus:border-transparent transition-all" placeholder="Repite tu contraseña"/>
             </div>
             {error && <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-3"><p className="text-red-200 text-sm">{error}</p></div>}
             <button disabled={loading} className="w-full bg-gradient-to-r from-[#D2B48C] to-[#F5DEB3] text-[#3C2013] font-semibold py-3 rounded-xl hover:shadow-lg hover:shadow-[#D2B48C]/25 transition-all disabled:opacity-50">{loading ? 'Actualizando...' : 'Actualizar contraseña'}</button>

@@ -71,18 +71,56 @@ input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.1) inset !important;
-  -webkit-text-fill-color: white !important;
+  -webkit-box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.9) inset !important;
+  -webkit-text-fill-color: #1f2937 !important;
   border: 1px solid rgba(210, 180, 140, 0.3) !important;
-  background-color: rgba(255, 255, 255, 0.1) !important;
+  background-color: rgba(255, 255, 255, 0.9) !important;
   transition: background-color 5000s ease-in-out 0s;
 }
 
 /* Para Firefox */
 input:-moz-autofill {
-  box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.1) inset !important;
-  color: white !important;
-  background-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.9) inset !important;
+  color: #1f2937 !important;
+  background-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Forzar texto negro en TODOS los elementos de formulario */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+input[type="tel"],
+input[type="url"],
+input[type="search"],
+select,
+textarea {
+  color: #1f2937 !important;
+  -webkit-text-fill-color: #1f2937 !important;
+}
+
+/* Asegurar que el texto sea visible incluso en modo oscuro */
+.dark input[type="text"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark input[type="number"],
+.dark input[type="date"],
+.dark input[type="time"],
+.dark input[type="tel"],
+.dark input[type="url"],
+.dark input[type="search"],
+.dark select,
+.dark textarea {
+  color: #1f2937 !important;
+  -webkit-text-fill-color: #1f2937 !important;
+}
+
+/* Opciones de select también en negro */
+select option {
+  color: #1f2937 !important;
+  background-color: white !important;
 }
 
 /* Toaster pop-up overlay + modal */
