@@ -21,7 +21,9 @@ import { Adjunto } from "./Adjunto";
 import { CodigoQR } from "./CodigoQR";
 import { Auditoria } from "./Auditoria";
 import { Notificacion } from "./Notificacion";
+import { PushSubscription } from "./PushSubscription";
 import { EstadoUsuario } from "./enums";
+import { Producto, Categoria, Proveedor, Movimiento } from "./inventario";
 
 // Función para inicializar modelos
 export function initializeModels(sequelize: Sequelize) {
@@ -93,6 +95,17 @@ export function initializeModels(sequelize: Sequelize) {
         set(value: string | null) {
           this.setDataValue("telefono", value?.trim() || null);
         },
+      },
+      ubicacion: {
+        type: DataTypes.STRING(150),
+        allowNull: true,
+        set(value: string | null) {
+          this.setDataValue("ubicacion", value?.trim() || null);
+        },
+      },
+      avatar_url: {
+        type: DataTypes.STRING(512),
+        allowNull: true,
       },
       creado_el: {
         type: DataTypes.DATE,
@@ -351,8 +364,42 @@ export function initializeModels(sequelize: Sequelize) {
   Notificacion.belongsTo(Tarea, { foreignKey: "tarea_id", as: "tarea" });
   Tarea.hasMany(Notificacion, { foreignKey: "tarea_id", as: "notificaciones" });
 
-    // Verificar que todas las relaciones están configuradas
-  logger.info('✅ Todas las relaciones del modelo han sido configuradas correctamente (25 relaciones definidas)');
+  // ===========================================
+  // RELACIONES DE PUSH SUBSCRIPTIONS
+  // ===========================================
+
+  // 26. PushSubscription ↔ Usuario (muchos a uno)
+  PushSubscription.belongsTo(User, { foreignKey: "user_id", as: "user" });
+  User.hasMany(PushSubscription, { foreignKey: "user_id", as: "push_subscriptions" });
+
+  // ===========================================
+  // RELACIONES DE INVENTARIO
+  // ===========================================
+
+  // 27. Producto ↔ Categoria (muchos a uno)
+  Producto.belongsTo(Categoria, { foreignKey: 'categoria_id', as: 'categoria' });
+  Categoria.hasMany(Producto, { foreignKey: 'categoria_id', as: 'productos' });
+
+  // 28. Producto ↔ Proveedor (muchos a uno)
+  Producto.belongsTo(Proveedor, { foreignKey: 'proveedor_id', as: 'proveedor' });
+  Proveedor.hasMany(Producto, { foreignKey: 'proveedor_id', as: 'productos' });
+
+  // 29. Producto ↔ Establecimiento (muchos a uno)
+  Producto.belongsTo(Establecimiento, { foreignKey: 'establecimiento_id', as: 'establecimiento' });
+  Establecimiento.hasMany(Producto, { foreignKey: 'establecimiento_id', as: 'productos' });
+
+  // 30. Movimiento ↔ Producto (muchos a uno)
+  Movimiento.belongsTo(Producto, { foreignKey: 'producto_id', as: 'producto' });
+  Producto.hasMany(Movimiento, { foreignKey: 'producto_id', as: 'movimientos' });
+
+  // 31. Movimiento ↔ Usuario (muchos a uno)
+  Movimiento.belongsTo(User, { foreignKey: 'usuario_id', as: 'usuario' });
+  User.hasMany(Movimiento, { foreignKey: 'usuario_id', as: 'movimientos_inventario' });
+
+  // Relaciones configuradas (solo en modo debug)
+  if (process.env['NODE_ENV'] === 'development' && process.env['DEBUG_MODELS'] === 'true') {
+    logger.debug('Model relations initialized (31 associations)');
+  }
 }
 
 // Registrar modelos en Sequelize
@@ -382,6 +429,13 @@ const db = {
   // Sistema de auditoría y notificaciones
   Auditoria,
   Notificacion,
+  PushSubscription,
+  
+  // Inventario
+  Producto,
+  Categoria,
+  Proveedor,
+  Movimiento,
   
   // Enums para uso en servicios
   EstadoUsuario,

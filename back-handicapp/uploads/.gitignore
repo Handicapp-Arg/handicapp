@@ -1,0 +1,11 @@
+# Ignorar todos los archivos subidos
+*
+
+# Excepto este archivo
+!.gitignore
+
+# Excepto el README
+!README.md
+
+# Excepto el placeholder
+!.keep

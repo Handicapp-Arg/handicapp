@@ -24,19 +24,18 @@ async function initializeApp() {
     const resetOnStart = process.env['DB_RESET_ON_START'] === 'true';
     if (resetOnStart) {
       await sequelize.sync({ force: true });
-      logger.info('✅ Database synced with FORCE (DB_RESET_ON_START=true)');
+      logger.warn('⚠️  Database reset (FORCE mode)');
     } else {
       await sequelize.sync({ alter: true });
-      logger.info('✅ Database synced with ALTER (no data loss)');
+      // Silencioso en producción - solo mostrar en desarrollo
+      if (process.env['NODE_ENV'] === 'development') {
+        logger.debug('Database synced');
+      }
     }
 
-    // 4. Run seeds
-    const seedResult = await seedDatabase();
-    const tipoEventoSeedResult = await TipoEventoSeedService.seedTiposEvento();
-    
-    if (seedResult && tipoEventoSeedResult) {
-      logger.info('✅ Seeds completed');
-    }
+    // 4. Run seeds (silencioso si ya existen)
+    await seedDatabase();
+    await TipoEventoSeedService.seedTiposEvento();
 
     return true;
 

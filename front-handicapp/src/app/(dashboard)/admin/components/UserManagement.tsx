@@ -55,7 +55,7 @@ export function UserManagement() {
       setUsers(usersArray);
       setTotalPages((data as any).meta?.totalPages || (data as any).data?.totalPages || 1);
     } catch (error: any) {
-      logger.error('Error fetching users:', error);
+      console.error('Error fetching users:', error);
       setUsers([]);
     } finally {
       setLoading(false);
@@ -67,7 +67,7 @@ export function UserManagement() {
       const data = await ApiClient.getRoles();
       setRoles((data as any).data.roles || []);
     } catch (error: any) {
-      logger.error('Error fetching roles:', error);
+      console.error('Error fetching roles:', error);
       // No redirigir, solo mostrar error en UI
       setRoles([]);
     }
@@ -102,7 +102,6 @@ export function UserManagement() {
       await ApiClient.deleteUser(userId);
       fetchUsers(currentPage, searchTerm);
     } catch (error: any) {
-      console.error('Error deleting user:', error);
       alert(error.message || 'Error al eliminar usuario');
     }
   };
@@ -112,7 +111,6 @@ export function UserManagement() {
       await ApiClient.toggleUserStatus(userId);
       fetchUsers(currentPage, searchTerm);
     } catch (error: any) {
-      console.error('Error toggling user status:', error);
       alert(error.message || 'Error al cambiar estado del usuario');
     }
   };

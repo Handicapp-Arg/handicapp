@@ -38,7 +38,7 @@ export function TareaList() {
       setTareas(list);
       setTotalPages(totalPagesData);
     } catch (error) {
-      logger.error('Error loading tareas:', error);
+      console.error('Error loading tareas:', error);
       setTareas([]);
       setTotalPages(1);
     } finally {
@@ -62,7 +62,7 @@ export function TareaList() {
         await tareaService.delete(id);
         setTareas(tareas.filter(t => t.id !== id));
       } catch (error) {
-        logger.error('Error deleting tarea:', error);
+        console.error('Error deleting tarea:', error);
         alert('Error al eliminar la tarea');
       }
     }
@@ -80,7 +80,7 @@ export function TareaList() {
       await tareaService.update(tarea.id, updateData);
       setTareas(tareas.map(t => t.id === tarea.id ? { ...t, estado: 'completada' } : t));
     } catch (error) {
-      logger.error('Error completing task:', error);
+      console.error('Error completing task:', error);
       alert('Error al completar la tarea');
     }
   };
@@ -154,16 +154,17 @@ export function TareaList() {
         {canCreateTasks() && (
           <button 
             onClick={handleCreateTarea}
-            className="inline-flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm text-sm font-medium"
+            className="inline-flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm text-sm font-semibold whitespace-nowrap"
           >
-            <PlusIcon className="h-4 w-4 mr-2" />
+            <PlusIcon className="h-5 w-5 mr-2" />
             Nueva Tarea
           </button>
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredTareas.length === 0 ? (
+      <div className="max-w-7xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredTareas.length === 0 ? (
           <div className="text-center py-16 w-full col-span-full">
             <div className="text-6xl mb-6">📝</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No hay tareas</h3>
@@ -281,6 +282,7 @@ export function TareaList() {
             </div>
           ))
         )}
+        </div>
       </div>
       {/* Paginación */}
       {totalPages > 1 && (

@@ -31,8 +31,6 @@ export function StatsCards() {
       const data = await ApiClient.getUserStats();
       setStats((data as any).data || data);
     } catch (error: any) {
-      console.error('Error fetching stats:', error);
-      
       // Si es error de autenticación, no reintentar
       if (error.message?.includes('autorizado') || error.message?.includes('Sesión expirada')) {
         setError('No tienes permisos para ver estas estadísticas');
@@ -42,7 +40,6 @@ export function StatsCards() {
       
       // Reintentar hasta 2 veces en caso de error de servidor
       if (retryCount < 2) {
-        console.log(`Reintentando obtener estadísticas (intento ${retryCount + 1}/2)`);
         setTimeout(() => fetchStats(retryCount + 1), 1000);
         return;
       }

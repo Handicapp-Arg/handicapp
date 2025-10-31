@@ -1,4 +1,5 @@
 import { appConfig } from "./config";
+import { errorLogger } from "./errorLogger";
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -131,7 +132,7 @@ export async function httpJson<TResponse = unknown, TBody = unknown>(
             }
 
             return retryPayload as TResponse;
-          } catch (refreshError) {
+          } catch {
             // Si falla el refresh, redirigir a login
             if (typeof window !== 'undefined') {
               window.location.href = '/login';
@@ -147,11 +148,17 @@ export async function httpJson<TResponse = unknown, TBody = unknown>(
           attempt += 1;
           continue;
         }
-        throw new HttpError(
+        
+        const error = new HttpError(
           `HTTP ${res.status} for ${method} ${url}`,
           res.status,
           payload
         );
+        
+        // Log error API
+        errorLogger.logApiError(error, path, method, res.status);
+        
+        throw error;
       }
 
       return payload as TResponse;

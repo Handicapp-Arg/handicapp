@@ -13,6 +13,8 @@ export class User extends Model {
   declare nombre: string;
   declare apellido: string;
   declare telefono: CreationOptional<string | null>;
+  declare ubicacion: CreationOptional<string | null>;
+  declare avatar_url: CreationOptional<string | null>;
   declare creado_el: CreationOptional<Date>;
   declare actualizado_el: CreationOptional<Date | null>;
   declare ultimo_acceso_el: CreationOptional<Date | null>;

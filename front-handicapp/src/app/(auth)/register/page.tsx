@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useToaster } from '@/components/ui/toaster';
 import ApiClient from '@/lib/services/apiClient';
 
 export default function RegisterPage() {
@@ -14,7 +13,6 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { toast } = useToaster();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +60,7 @@ export default function RegisterPage() {
     try {
       setLoading(true);
       
-      const resp: any = await ApiClient.register({
+      await ApiClient.register({
         nombre: firstName.trim(),
         apellido: lastName.trim(),
         email: email.trim(),
@@ -70,47 +68,36 @@ export default function RegisterPage() {
       });
       
       // Si llegamos aquí sin error, el registro fue exitoso
-      // Redirigimos al login con un indicador para mostrar aviso (evitamos doble toast aquí)
+      // Redirigimos al login con un indicador para mostrar aviso
       setTimeout(() => {
         const emailParam = encodeURIComponent(email.trim());
         router.push(`/login?checkEmail=1&email=${emailParam}`);
       }, 1600);
       
-    } catch (error: any) {
-      console.error('Register error:', error);
-      // Mostrar el primer detalle si viene del backend
-      const details = Array.isArray(error?.details) ? error.details : undefined;
-      setError(details?.[0] || error.message || 'Error al registrar usuario');
+    } catch (error) {
+      const err = error as { message?: string; details?: string[] };
+      const details = Array.isArray(err?.details) ? err.details : undefined;
+      setError(details?.[0] || err.message || 'Error al registrar usuario');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-[#3C2013] via-[#2A1609] to-[#1A0E06] flex items-center justify-center px-4 py-8">
-      {/* Contenedor Principal */}
-      <div className="w-full max-w-md mx-auto">
-        {/* Logo y Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-28 h-28 bg-white/5 border border-white/15 rounded-2xl mb-6 p-4">
-            <img
-              src="/logos/logo-icon-white.png"
-              alt="HandicApp"
-              className="w-full h-full object-contain"
-              onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logos/logo-full-white.png'; }}
-            />
+    <div className="min-h-screen w-full flex">
+      {/* Left Side - Formulario */}
+      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-white lg:px-8">
+        <div className="w-full max-w-md">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">Crear Cuenta</h1>
+            <p className="text-slate-600">Únete a HandicApp y gestiona tu establecimiento ecuestre</p>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Crear Cuenta</h1>
-          <p className="text-[#D2B48C]/80 text-sm">Únete a HandicApp y gestiona tu establecimiento</p>
-        </div>
 
-        {/* Formulario */}
-        <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Nombre y Apellido */}
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-white/80 text-sm font-medium mb-2">
+                <label className="block text-slate-700 text-sm font-medium mb-2">
                   Nombre
                 </label>
                 <input
@@ -119,13 +106,13 @@ export default function RegisterPage() {
                   autoComplete="given-name"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/90 border border-white/20 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#D2B48C] focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#af936f] focus:border-transparent transition-all"
                   placeholder="Juan"
                   required
                 />
               </div>
               <div>
-                <label className="block text-white/80 text-sm font-medium mb-2">
+                <label className="block text-slate-700 text-sm font-medium mb-2">
                   Apellido
                 </label>
                 <input
@@ -134,7 +121,7 @@ export default function RegisterPage() {
                   autoComplete="family-name"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/90 border border-white/20 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#D2B48C] focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#af936f] focus:border-transparent transition-all"
                   placeholder="Pérez"
                   required
                 />
@@ -143,7 +130,7 @@ export default function RegisterPage() {
 
             {/* Email */}
             <div>
-              <label className="block text-white/80 text-sm font-medium mb-2">
+              <label className="block text-slate-700 text-sm font-medium mb-2">
                 Correo electrónico
               </label>
               <input
@@ -152,7 +139,7 @@ export default function RegisterPage() {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-white/90 border border-white/20 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#D2B48C] focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#af936f] focus:border-transparent transition-all"
                 placeholder="tu@email.com"
                 required
               />
@@ -160,7 +147,7 @@ export default function RegisterPage() {
 
             {/* Password */}
             <div>
-              <label className="block text-white/80 text-sm font-medium mb-2">
+              <label className="block text-slate-700 text-sm font-medium mb-2">
                 Contraseña
               </label>
               <input
@@ -169,15 +156,16 @@ export default function RegisterPage() {
                 autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-white/90 border border-white/20 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#D2B48C] focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#af936f] focus:border-transparent transition-all"
                 placeholder="Mínimo 8 caracteres"
                 required
               />
+              <p className="mt-1 text-xs text-slate-500">Debe incluir mayúsculas, minúsculas, números y símbolos</p>
             </div>
 
             {/* Confirm Password */}
             <div>
-              <label className="block text-white/80 text-sm font-medium mb-2">
+              <label className="block text-slate-700 text-sm font-medium mb-2">
                 Confirmar contraseña
               </label>
               <input
@@ -186,16 +174,31 @@ export default function RegisterPage() {
                 autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-white/90 border border-white/20 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#D2B48C] focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#af936f] focus:border-transparent transition-all"
                 placeholder="Repite tu contraseña"
                 required
               />
             </div>
 
+            {/* Términos y condiciones */}
+            <div className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                required
+                className="w-4 h-4 mt-1 rounded border-slate-300 text-[#1e293b] focus:ring-[#af936f] focus:ring-offset-0"
+              />
+              <label className="text-sm text-slate-600">
+                Acepto los{' '}
+                <button type="button" className="text-[#af936f] hover:text-[#8f7657] font-medium">
+                  términos y condiciones
+                </button>
+              </label>
+            </div>
+
             {/* Error Message */}
             {error && (
-              <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-3">
-                <p className="text-red-200 text-sm">{error}</p>
+              <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+                <p className="text-red-600 text-sm">{error}</p>
               </div>
             )}
 
@@ -203,31 +206,79 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-[#D2B48C] to-[#F5DEB3] text-[#3C2013] font-semibold py-3 rounded-xl hover:shadow-lg hover:shadow-[#D2B48C]/25 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-[#1e293b] text-white font-semibold py-3.5 rounded-xl hover:bg-[#0f172a] hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
             </button>
           </form>
 
-          {/* Login Link */}
-          <div className="mt-6 text-center">
-            <p className="text-white/60 text-sm">
+          {/* Footer */}
+          <div className="mt-8 text-center">
+            <p className="text-slate-600 text-sm">
               ¿Ya tienes cuenta?{' '}
               <button
                 onClick={() => router.push('/login')}
-                className="text-[#D2B48C] hover:text-[#F5DEB3] font-medium transition-colors"
+                className="text-[#af936f] hover:text-[#8f7657] font-semibold transition-colors"
               >
-                Inicia sesión
+                Iniciar sesión
               </button>
             </p>
           </div>
         </div>
+      </div>
 
-        {/* Footer */}
-        <div className="text-center mt-8">
-          <p className="text-white/40 text-xs">
-            Al registrarte, aceptas nuestros términos y condiciones
-          </p>
+      {/* Right Side - Visual/Branding */}
+      <div className="hidden lg:flex lg:flex-1 items-center justify-center p-8">
+        <div className="relative bg-[#0f172a] overflow-hidden rounded-3xl h-full w-full shadow-2xl">
+          {/* Pattern Background */}
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-60"></div>
+          
+          {/* Gradient Orbs */}
+          <div className="absolute top-20 right-20 w-72 h-72 bg-[#0e445d]/30 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 left-20 w-64 h-64 bg-[#af936f]/20 rounded-full blur-3xl"></div>
+          
+          {/* Content */}
+          <div className="relative z-10 flex flex-col items-center justify-center w-full h-full px-12 text-center">
+            {/* Logo Icon */}
+            <div className="mb-8">
+              <img
+                src="/logos/logo-icon-white.png"
+                alt="HandicApp"
+                className="h-32 w-32 object-contain"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logos/logo-full-white.png'; }}
+              />
+            </div>
+            
+            {/* Main Message */}
+            <h2 className="text-4xl font-bold text-white mb-4">
+              Bienvenido a HandicApp
+            </h2>
+            <p className="text-white/70 text-lg max-w-md mb-12">
+              Únete a cientos de profesionales que ya confían en nuestra plataforma para gestionar sus establecimientos ecuestres.
+            </p>
+            
+            {/* Features */}
+            <div className="space-y-4 max-w-md">
+              <div className="flex items-start gap-3 text-white/90">
+                <div className="w-6 h-6 rounded-lg bg-[#af936f]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-[#af936f] text-sm font-bold">✓</span>
+                </div>
+                <span className="text-sm text-left">Gestión completa de caballos y establecimientos</span>
+              </div>
+              <div className="flex items-start gap-3 text-white/90">
+                <div className="w-6 h-6 rounded-lg bg-[#af936f]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-[#af936f] text-sm font-bold">✓</span>
+                </div>
+                <span className="text-sm text-left">Control de salud y eventos veterinarios</span>
+              </div>
+              <div className="flex items-start gap-3 text-white/90">
+                <div className="w-6 h-6 rounded-lg bg-[#af936f]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-[#af936f] text-sm font-bold">✓</span>
+                </div>
+                <span className="text-sm text-left">Reportes y estadísticas en tiempo real</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

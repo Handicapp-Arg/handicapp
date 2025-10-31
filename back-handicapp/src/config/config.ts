@@ -40,6 +40,9 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
   CORS_CREDENTIALS: z.string().transform(val => val === 'true').default(true),
   
+  // Frontend URL (for WebSocket CORS)
+  FRONTEND_URL: z.string().url().default('http://localhost:3000'),
+  
   // Logging
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
   LOG_FILE: z.string().default('logs/app.log'),
@@ -71,6 +74,8 @@ export const config = {
   nodeEnv: env.NODE_ENV,
   port: env.PORT,
   host: env.HOST,
+  frontend_url: env.FRONTEND_URL,
+  jwt_secret: env.JWT_SECRET,
   
   database: {
     host: env.DB_HOST,

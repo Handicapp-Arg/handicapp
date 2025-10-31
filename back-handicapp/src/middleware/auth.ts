@@ -80,6 +80,8 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
       nombre: user.nombre,
       apellido: user.apellido,
       telefono: user.telefono ? String(user.telefono) : undefined,
+      ubicacion: user.ubicacion || undefined,
+      verificado: user.verificado,
       activo: user.isActive,
       rol: user.rol ? {
         id: Number(user.rol.id),
@@ -188,6 +190,8 @@ export const optionalAuth = async (req: AuthenticatedRequest, _res: Response, ne
         nombre: user.nombre,
         apellido: user.apellido,
         telefono: user.telefono ? String(user.telefono) : undefined,
+        ubicacion: user.ubicacion || undefined,
+        verificado: user.verificado,
         activo: user.isActive,
         rol: user.rol ? {
           id: Number(user.rol.id),

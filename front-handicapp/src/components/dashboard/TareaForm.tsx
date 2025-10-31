@@ -108,27 +108,39 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
   const loadCaballos = async () => {
     try {
       const response = await caballoService.getAll() as any;
-      setCaballos(response.data || []);
+      // Manejar estructura de respuesta anidada
+      const caballosArray = Array.isArray(response) 
+        ? response 
+        : response?.data?.caballos || response?.data || [];
+      setCaballos(caballosArray);
     } catch (error) {
-      console.error('Error cargando caballos:', error);
+      setCaballos([]);
     }
   };
 
   const loadEstablecimientos = async () => {
     try {
       const response = await establecimientoService.getAll() as any;
-      setEstablecimientos(response.data || []);
+      // Manejar estructura de respuesta anidada
+      const establecimientosArray = Array.isArray(response) 
+        ? response 
+        : response?.data?.establecimientos || response?.data || [];
+      setEstablecimientos(establecimientosArray);
     } catch (error) {
-      console.error('Error cargando establecimientos:', error);
+      setEstablecimientos([]);
     }
   };
 
   const loadUsuarios = async () => {
     try {
       const response = await userService.getAll() as any;
-      setUsuarios(response.data || []);
+      // Manejar estructura de respuesta anidada
+      const usuariosArray = Array.isArray(response) 
+        ? response 
+        : response?.data?.usuarios || response?.data || [];
+      setUsuarios(usuariosArray);
     } catch (error) {
-      console.error('Error cargando usuarios:', error);
+      setUsuarios([]);
     }
   };
 

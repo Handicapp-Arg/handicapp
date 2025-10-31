@@ -1,45 +1,91 @@
-import { forwardRef, ButtonHTMLAttributes } from 'react';
+import * as React from "react"
+import { Slot } from "@radix-ui/react-slot"
+import { cva, type VariantProps } from "class-variance-authority"
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'brand';
-type ButtonSize = 'sm' | 'md' | 'lg';
+import { cn } from "@/lib/utils"
 
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
+const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-smooth focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  {
+    variants: {
+      variant: {
+        default:
+          "bg-primary text-primary-foreground shadow hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+        outline:
+          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+        // Variant personalizada para HandicApp
+        brand: "bg-primary text-white shadow-lg hover:bg-primary/90 hover:shadow-xl transition-all duration-300 border-0",
+        success: "bg-success text-success-foreground shadow hover:bg-success/90",
+        warning: "bg-warning text-warning-foreground shadow hover:bg-warning/90",
+      },
+      size: {
+        default: "h-9 px-4 py-2",
+        sm: "h-8 rounded-md px-3 text-xs",
+        lg: "h-10 rounded-md px-8",
+        icon: "h-9 w-9",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+)
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
   isLoading?: boolean;
 }
 
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ children, className = '', variant = 'primary', size = 'md', disabled, isLoading, ...rest }, ref) => {
-    const base = "inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed touch-manipulation gap-2";
-
-    const byVariant: Record<ButtonVariant, string> = {
-  primary: "bg-foreground text-background hover:opacity-90 focus-visible:ring-foreground disabled:opacity-60",
-  secondary: "bg-white border border-gray-300 text-gray-800 hover:bg-gray-100 focus-visible:ring-gray-400 disabled:opacity-60",
-  ghost: "bg-transparent text-foreground hover:bg-foreground/10 focus-visible:ring-foreground disabled:opacity-60",
-  brand: "bg-[#3C2013] text-white hover:bg-[#5A3420] focus-visible:ring-[#3C2013]/80 disabled:bg-[#3C2013]/50 disabled:text-white",
-    };
-
-    const sizeClasses: Record<ButtonSize, string> = {
-      sm: "px-3 py-1.5 text-sm min-h-[32px]",
-      md: "px-4 py-3 sm:py-2 text-base sm:text-sm min-h-[44px] sm:min-h-[36px]",
-      lg: "px-6 py-4 text-lg min-h-[52px]"
-    };
-
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, isLoading, children, disabled, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button"
     return (
-      <button
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
-        className={`${base} ${byVariant[variant]} ${sizeClasses[size]} ${className}`}
         disabled={disabled || isLoading}
-        {...rest}
+        {...props}
       >
-        {isLoading && (
-          <span className="inline-block h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" aria-hidden="true" />
+        {isLoading ? (
+          <>
+            <svg
+              className="animate-spin h-4 w-4 mr-2"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            {children}
+          </>
+        ) : (
+          children
         )}
-        <span>{children}</span>
-      </button>
-    );
+      </Comp>
+    )
   }
-);
+)
+Button.displayName = "Button"
 
-Button.displayName = "Button";
+export { Button, buttonVariants }

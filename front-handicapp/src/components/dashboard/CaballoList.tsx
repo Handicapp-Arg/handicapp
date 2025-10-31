@@ -1,158 +1,195 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useAuthNew } from '@/lib/hooks/useAuthNew';
-import { caballoService, type Caballo } from '@/lib/services/caballoService';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useCaballos, useEliminarCaballo } from '@/lib/hooks';
+import { type Caballo } from '@/lib/services/caballoService';
+// ...existing code...
 import { usePermissions } from '@/lib/hooks/usePermissions';
-import { PlusIcon, MagnifyingGlassIcon, PencilIcon, EyeIcon, TrashIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, MagnifyingGlassIcon, PencilIcon, EyeIcon, TrashIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { useRouter } from 'next/navigation';
 import { logger } from '@/lib/utils/logger';
-// @ts-ignore
 import CaballoForm from './CaballoForm';
+import CaballoCard from './CaballoCard';
+import { generarReporteCaballosPDF, exportarCaballosExcel } from '@/lib/services/reporteService';
 
 export function CaballoList() {
-  const [caballos, setCaballos] = useState<Caballo[]>([]);
-  const [stats, setStats] = useState({
-    total: 0,
-    activos: 0,
-    conEventos: 0,
-    nuevos: 0
-  });
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const searchRef = useRef<number | NodeJS.Timeout | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [itemsPerPage] = useState<number>(9);
   const [showForm, setShowForm] = useState(false);
   const [selectedCaballo, setSelectedCaballo] = useState<Caballo | undefined>();
-  const { user, isAuthenticated, isLoading: authLoading } = useAuthNew();
-  const { canManageHorses, canDeleteHorses, canViewMedicalHistory, getUserRole } = usePermissions();
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const { isAuthenticated, isLoading: authLoading } = useAuthNew();
+  const { canManageHorses, canDeleteHorses, getUserRole } = usePermissions();
+  const router = useRouter();
 
+  // ✅ React Query - Cache automático
+  const { 
+    data: response, 
+    isLoading: loadingQuery,
+    refetch 
+  } = useCaballos({
+    page: currentPage,
+    limit: itemsPerPage,
+    search: searchTerm
+  });
+
+  const deleteCaballoMutation = useEliminarCaballo();
+
+  const loading = loadingQuery || authLoading;
+
+  // Normalizar datos
+  const caballos = useMemo(() => {
+    if (!response) return [];
+    const data = (response as { data?: { caballos?: Caballo[] }; caballos?: Caballo[] });
+    const list = data?.data?.caballos || data?.caballos || [];
+    return Array.isArray(list) ? list : [];
+  }, [response]);
+
+  const totalPages = useMemo(() => {
+    if (!response) return 1;
+    const data = response as { meta?: { totalPages?: number }; data?: { totalPages?: number }; totalPages?: number };
+    return data?.meta?.totalPages || data?.data?.totalPages || data?.totalPages || 1;
+  }, [response]);
+
+  const stats = useMemo(() => {
+    const activos = caballos.filter((c: Caballo) => c.estado_global === 'activo').length;
+    const conEventos = caballos.filter((c: Caballo) => c._count?.eventos && c._count.eventos > 0).length;
+    const treintaDiasAtras = new Date();
+    treintaDiasAtras.setDate(treintaDiasAtras.getDate() - 30);
+    const nuevos = caballos.filter((c: Caballo) => new Date(c.creado_el) > treintaDiasAtras).length;
+
+    const totalData = (response as { meta?: { total?: number }; data?: { total?: number }; total?: number })?.meta?.total 
+      || (response as { data?: { total?: number } })?.data?.total 
+      || caballos.length;
+
+    return {
+      total: totalData,
+      activos,
+      conEventos,
+      nuevos
+    };
+  }, [caballos, response]);
+
+  // Debounce search
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      fetchCaballos();
-    }
-  }, [currentPage, searchTerm, authLoading, isAuthenticated]);
+    if (searchRef.current) clearTimeout(searchRef.current as number);
+    searchRef.current = setTimeout(() => {
+      setCurrentPage(1);
+      refetch();
+    }, 500);
+  }, [searchTerm, refetch]);
 
-  const fetchCaballos = async () => {
-    if (authLoading || !isAuthenticated) return;
-    try {
-      setLoading(true);
-      const response: any = await caballoService.getAll({
-        page: currentPage,
-        limit: 10,
-        search: searchTerm
-      });
-      
-      if (response && (response.success || response.data)) {
-        const caballosData = response.data?.caballos || response.caballos || response.data || response;
-        const list: Caballo[] = Array.isArray(caballosData) ? caballosData : [];
-        const totalData = response.meta?.total || response.data?.total || response.total || list.length;
-        const totalPagesData = response.meta?.totalPages || response.data?.totalPages || response.totalPages || 1;
-
-        setCaballos(list);
-        setTotalPages(totalPagesData);
-
-        // Calcular estadísticas de forma segura
-        const activos = list.filter((c: Caballo) => c.estado_global === 'activo').length;
-        const conEventos = list.filter((c: Caballo) => c._count?.eventos && c._count.eventos > 0).length;
-        const treintaDiasAtras = new Date();
-        treintaDiasAtras.setDate(treintaDiasAtras.getDate() - 30);
-        const nuevos = list.filter((c: Caballo) => new Date(c.creado_el) > treintaDiasAtras).length;
-
-        setStats({
-          total: totalData,
-          activos,
-          conEventos,
-          nuevos
-        });
-      }
-    } catch (error) {
-      logger.error('Error loading caballos:', error);
-      setCaballos([]);
-      setStats({ total: 0, activos: 0, conEventos: 0, nuevos: 0 });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreateCaballo = () => {
+  // 🚀 Memoizar callbacks para evitar re-creación
+  const handleCreateCaballo = useCallback(() => {
     setSelectedCaballo(undefined);
     setShowForm(true);
-  };
+  }, []);
 
-  const handleEditCaballo = (caballo: Caballo) => {
+  const handleEditCaballo = useCallback((caballo: Caballo) => {
+    // Abrir modal de edición con los datos del caballo
     setSelectedCaballo(caballo);
     setShowForm(true);
-  };
+  }, []);
 
-  const handleFormSuccess = (caballo: Caballo) => {
-    // Actualizar la lista
-    fetchCaballos();
-  };
+  const handleViewCaballo = useCallback((caballo: Caballo) => {
+    // Navegar a la página de detalle del caballo usando el rol del usuario
+    const userRole = getUserRole();
+    const rolePath = userRole || 'propietario'; // Fallback a propietario
+    
+    try {
+      router.push(`/${rolePath}/caballos/${caballo.id}`);
+    } catch {
+      window.location.href = `/${rolePath}/caballos/${caballo.id}`;
+    }
+  }, [router, getUserRole]);
 
-  const handleDeleteCaballo = async (caballo: Caballo) => {
+  const handleFormSuccess = useCallback(() => {
+    // Cerrar el modal primero
+    setShowForm(false);
+    setSelectedCaballo(undefined);
+    // Forzar recarga con React Query
+    setTimeout(() => {
+      refetch();
+    }, 100);
+  }, [refetch]);
+
+  const handleDeleteCaballo = useCallback(async (caballo: Caballo) => {
     if (window.confirm(`¿Estás seguro de que quieres eliminar el caballo "${caballo.nombre}"?`)) {
       try {
-        const result: any = await caballoService.delete(caballo.id);
-        if (result.success || result) {
-          fetchCaballos(); // Recargar lista
-        } else {
-          alert('Error al eliminar el caballo');
-        }
+        await deleteCaballoMutation.mutateAsync(caballo.id);
+        refetch(); // Recargar lista
       } catch (error) {
-        logger.error('Error deleting caballo:', error);
+        console.error('Error deleting caballo:', error);
         alert('Error al eliminar el caballo');
       }
     }
-  };
+  }, [deleteCaballoMutation, refetch]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Exportar reportes
+  const handleExportPDF = useCallback(async () => {
+    try {
+      await generarReporteCaballosPDF(caballos, {
+        titulo: 'Reporte de Caballos',
+        subtitulo: getUserRole() === 'propietario' ? 'Mi Haras' : 'Gestión de Equinos',
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Error al generar el reporte PDF');
+    }
+  }, [caballos, getUserRole]);
+
+  const handleExportExcel = useCallback(() => {
+    try {
+      exportarCaballosExcel(caballos);
+    } catch (error) {
+      console.error('Error generating Excel:', error);
+      alert('Error al generar el archivo Excel');
+    }
+  }, [caballos]);
+
+  // Helper to compute page numbers for pagination display (max window)
+  const getPageNumbers = useMemo(() => () => {
+    const maxButtons = 7;
+    const pages: number[] = [];
+    let start = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+    let end = start + maxButtons - 1;
+    if (end > totalPages) {
+      end = totalPages;
+      start = Math.max(1, end - maxButtons + 1);
+    }
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  }, [currentPage, totalPages]);
+
+  // search handled directly by handleSearchChange (debounced)
+
+  // Debounce search input to avoid too many requests
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
     setCurrentPage(1);
-    fetchCaballos();
+    // El debounce ya está manejado en el useEffect anterior
   };
 
-  const getSexoBadgeColor = (sexo: string | null) => {
-    switch (sexo) {
-      case 'macho': return 'bg-blue-100 text-blue-800';
-      case 'hembra': return 'bg-pink-100 text-pink-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getEstadoBadgeColor = (estado: string) => {
-    switch (estado) {
-      case 'activo': return 'bg-green-100 text-green-800';
-      case 'inactivo': return 'bg-yellow-100 text-yellow-800';
-      case 'vendido': return 'bg-purple-100 text-purple-800';
-      case 'fallecido': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'No especificada';
-    return new Date(dateString).toLocaleDateString('es-AR');
-  };
-
-  const calculateAge = (birthDate: string | null) => {
-    if (!birthDate) return null;
-    const today = new Date();
-    const birth = new Date(birthDate);
-    const age = Math.floor((today.getTime() - birth.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-    return age;
-  };
+  // helper functions removed (not used in this file)
 
   if (loading && caballos.length === 0) {
     return (
-      <div className="p-6">
-        <div className="flex items-center justify-center h-64">
+      <div className="p-6 sm:p-8">
+        <div className="flex items-center justify-center h-96">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Cargando caballos...</p>
+            {/* Spinner moderno */}
+            <div className="relative inline-block mb-6">
+              <div className="absolute inset-0 bg-[#af936f]/20 rounded-full blur-2xl animate-pulse"></div>
+              <div className="relative w-16 h-16 mx-auto">
+                <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-[#0f172a] rounded-full border-t-transparent animate-spin"></div>
+              </div>
+            </div>
+            <p className="text-gray-600 font-medium">Cargando caballos...</p>
+            <p className="text-gray-400 text-sm mt-2">Un momento por favor</p>
           </div>
         </div>
       </div>
@@ -160,203 +197,294 @@ export function CaballoList() {
   }
 
   return (
-    <div className="p-6">
-      {/* Buscador + Acción */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-8">
-        <div className="relative flex-1">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+    <div className="p-6 sm:p-8">
+      {/* Header mejorado con búsqueda y controles */}
+      <div className="flex flex-col gap-4 mb-8">
+        {/* Buscador principal */}
+        <div className="relative">
+          <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 pointer-events-none" />
           <input
             type="text"
             placeholder="Buscar por nombre, raza o microchip..."
             value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            onChange={(e) => handleSearchChange(e.target.value)}
+            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Enter') { e.preventDefault(); refetch(); } }}
+            className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#0f172a] focus:border-[#0f172a] bg-white shadow-sm transition-all duration-200 text-sm"
           />
         </div>
-        {canManageHorses() && (
-          <button 
-            onClick={handleCreateCaballo}
-            className="inline-flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm text-sm font-medium"
-          >
-            <PlusIcon className="h-4 w-4 mr-2" />
-            Registrar Caballo
-          </button>
-        )}
-      </div>
 
-      {/* Lista de caballos */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {caballos.map((caballo) => {
-          const edad = calculateAge(caballo.fecha_nacimiento);
-          const propietario = caballo.propiedades?.[0]?.propietario;
-          
-          return (
-            <Card key={caballo.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-lg">{caballo.nombre}</CardTitle>
-                    <p className="text-sm text-gray-600">{caballo.raza || 'Raza no especificada'}</p>
-                  </div>
-                  <div className="flex gap-1">
-                    {/* Botón Ver: siempre visible */}
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => handleEditCaballo(caballo)}
-                      title={canManageHorses() ? "Editar caballo" : "Ver detalles"}
-                    >
-                      {canManageHorses() ? <PencilIcon className="h-3 w-3" /> : <EyeIcon className="h-3 w-3" />}
-                    </Button>
-                    
-                    {/* Botón Eliminar: solo admin */}
-                    {canDeleteHorses() && (
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => handleDeleteCaballo(caballo)}
-                        className="text-red-600 hover:text-red-700"
-                        title="Eliminar caballo"
-                      >
-                        <TrashIcon className="h-3 w-3" />
-                      </Button>
-                    )}
-                    
-                    {/* Indicador de permisos médicos */}
-                    {canViewMedicalHistory() && (
-                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full" title="Acceso a historial médico">
-                        🚑
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="space-y-3">
-                {/* Imagen del caballo */}
-                {caballo.foto_url ? (
-                  <img
-                    src={caballo.foto_url}
-                    alt={caballo.nombre}
-                    className="w-full h-32 object-cover rounded-md"
-                  />
-                ) : (
-                  <div className="w-full h-32 bg-gray-100 rounded-md flex items-center justify-center">
-                    <span className="text-4xl">🐎</span>
-                  </div>
-                )}
-
-                {/* Información básica */}
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Sexo:</span>
-                    <Badge className={getSexoBadgeColor(caballo.sexo)}>
-                      {caballo.sexo === 'macho' ? '♂ Macho' : caballo.sexo === 'hembra' ? '♀ Hembra' : 'No especificado'}
-                    </Badge>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Estado:</span>
-                    <Badge className={getEstadoBadgeColor(caballo.estado_global)}>
-                      {caballo.estado_global}
-                    </Badge>
-                  </div>
-
-                  {edad && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Edad:</span>
-                      <span className="text-sm font-medium">{edad} años</span>
-                    </div>
-                  )}
-
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Nacimiento:</span>
-                    <span className="text-sm">{formatDate(caballo.fecha_nacimiento)}</span>
-                  </div>
-
-                  {caballo.pelaje && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Pelaje:</span>
-                      <span className="text-sm">{caballo.pelaje}</span>
-                    </div>
-                  )}
-
-                  {caballo.disciplina && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Disciplina:</span>
-                      <span className="text-sm capitalize">{caballo.disciplina}</span>
-                    </div>
-                  )}
-
-                  {propietario && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Propietario:</span>
-                      <span className="text-sm">{propietario.nombre} {propietario.apellido}</span>
-                    </div>
-                  )}
-
-                  {caballo.microchip && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Microchip:</span>
-                      <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">
-                        {caballo.microchip}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Mensaje si no hay caballos */}
-      {!loading && caballos.length === 0 && (
-        <div className="text-center py-16">
-          <div className="text-6xl mb-6">🐎</div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No hay caballos registrados</h3>
-          <p className="text-gray-600 mb-6 max-w-md mx-auto">
-            {searchTerm ? 'No se encontraron caballos que coincidan con tu búsqueda.' : 'Comienza registrando tu primer caballo.'}
-          </p>
-          {!searchTerm && canManageHorses() && (
-            <button 
-              onClick={handleCreateCaballo}
-              className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
-            >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              Registrar Primer Caballo
-            </button>
-          )}
-          {!searchTerm && !canManageHorses() && (
-            <p className="text-sm text-gray-500 mt-2">
-              {getUserRole() === 'empleado' ? 'Contacta a tu supervisor para registrar caballos.' : 'No tienes permisos para registrar caballos.'}
+        {/* Controles secundarios */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          {/* Izquierda: Info de paginación */}
+          <div className="flex items-center gap-3">
+            <p className="text-sm text-gray-600">
+              Mostrando {caballos.length} de {stats.total} caballos
             </p>
-          )}
+          </div>
+
+          {/* Derecha: Botón crear y vista */}
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            {/* Botones de exportación */}
+            {caballos.length > 0 && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleExportPDF}
+                  className="inline-flex items-center justify-center px-3 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all duration-200 shadow-md hover:shadow-lg text-xs font-medium"
+                  title="Descargar PDF"
+                >
+                  <ArrowDownTrayIcon className="h-4 w-4 mr-1.5" />
+                  PDF
+                </button>
+                <button
+                  onClick={handleExportExcel}
+                  className="inline-flex items-center justify-center px-3 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all duration-200 shadow-md hover:shadow-lg text-xs font-medium"
+                  title="Descargar Excel"
+                >
+                  <ArrowDownTrayIcon className="h-4 w-4 mr-1.5" />
+                  Excel
+                </button>
+              </div>
+            )}
+            
+            {canManageHorses() && (
+              <button
+                onClick={handleCreateCaballo}
+                className="flex-1 sm:flex-none inline-flex items-center justify-center px-5 py-2.5 bg-[#0f172a] text-white rounded-xl hover:bg-[#0f172a]/90 transition-all duration-200 shadow-lg hover:shadow-xl text-sm font-medium group"
+              >
+                <PlusIcon className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" />
+                Registrar Caballo
+              </button>
+            )}
+
+            {/* Selector de vista moderno */}
+            <div className="inline-flex items-center rounded-xl bg-gray-100 p-1 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setViewMode('cards')}
+                className={`px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                  viewMode === 'cards' 
+                    ? 'bg-white text-[#0f172a] shadow-sm' 
+                    : 'text-gray-600 hover:text-[#0f172a]'
+                } whitespace-nowrap`}
+              >
+                Tarjetas
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('table')}
+                className={`px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                  viewMode === 'table' 
+                    ? 'bg-white text-[#0f172a] shadow-sm' 
+                    : 'text-gray-600 hover:text-[#0f172a]'
+                } whitespace-nowrap`}
+              >
+                Tabla
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Lista en modo tarjetas */}
+      {viewMode === 'cards' && (
+        <div className="max-w-7xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {caballos.map((caballo) => (
+              <div key={caballo.id}>
+                <CaballoCard
+                  caballo={caballo}
+                  onEdit={canManageHorses() ? handleEditCaballo : undefined}
+                  onView={handleViewCaballo}
+                  onDelete={canDeleteHorses() ? handleDeleteCaballo : undefined}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Paginación */}
+      {/* Lista en modo tabla */}
+      {viewMode === 'table' && (
+        <div className="overflow-x-auto rounded-xl border border-gray-100">
+          <table className="w-full text-sm">
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+              <tr>
+                <th className="text-left p-4 font-semibold text-gray-700">Nombre</th>
+                <th className="text-left p-4 font-semibold text-gray-700">Sexo</th>
+                <th className="text-left p-4 font-semibold text-gray-700">Raza</th>
+                <th className="text-left p-4 font-semibold text-gray-700">Estado</th>
+                <th className="text-left p-4 font-semibold text-gray-700">Microchip</th>
+                <th className="text-center p-4 font-semibold text-gray-700">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {caballos.map((c) => (
+                <tr 
+                  key={c.id} 
+                  className="hover:bg-gray-50 transition-colors group"
+                >
+                  <td className="p-4">
+                    <button
+                      onClick={() => handleViewCaballo(c)}
+                      className="font-semibold text-gray-900 hover:text-[#0f172a] transition-colors text-left"
+                    >
+                      {c.nombre}
+                    </button>
+                  </td>
+                  <td className="p-4 text-gray-600">{c.sexo || '—'}</td>
+                  <td className="p-4 text-gray-600">{c.raza || '—'}</td>
+                  <td className="p-4">
+                    <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${
+                      c.estado_global === 'activo' 
+                        ? 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-500/20'
+                        : c.estado_global === 'inactivo'
+                        ? 'bg-amber-100 text-amber-800 ring-1 ring-amber-500/20'
+                        : c.estado_global === 'vendido'
+                        ? 'bg-blue-100 text-blue-800 ring-1 ring-blue-500/20'
+                        : 'bg-gray-100 text-gray-800 ring-1 ring-gray-500/20'
+                    }`}>
+                      {c.estado_global}
+                    </span>
+                  </td>
+                  <td className="p-4">
+                    <span className="font-mono text-xs text-gray-600">
+                      {c.microchip || '—'}
+                    </span>
+                  </td>
+                  <td className="p-4">
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => canManageHorses() ? handleEditCaballo(c) : handleViewCaballo(c)}
+                        className="p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-[#0f172a] hover:text-white transition-all duration-200 hover:scale-110"
+                        title={canManageHorses() ? 'Editar' : 'Ver'}
+                      >
+                        {canManageHorses() ? <PencilIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                      </button>
+                      {canDeleteHorses() && (
+                        <button
+                          onClick={() => handleDeleteCaballo(c)}
+                          className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all duration-200 hover:scale-110"
+                          title="Eliminar"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Mensaje si no hay caballos */}
+      {!loading && caballos.length === 0 && (
+        <div className="text-center py-20 px-4">
+          <div className="max-w-md mx-auto">
+            {/* Icono con efecto */}
+            <div className="relative inline-block mb-6">
+              <div className="absolute inset-0 bg-[#af936f]/20 rounded-full blur-2xl"></div>
+              <div className="relative text-7xl sm:text-8xl">🐎</div>
+            </div>
+            
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">
+              {searchTerm ? 'No se encontraron caballos' : 'No hay caballos registrados'}
+            </h3>
+            <p className="text-gray-600 mb-8 text-sm sm:text-base leading-relaxed">
+              {searchTerm 
+                ? 'Intenta con otros términos de búsqueda o revisa los filtros aplicados.' 
+                : 'Comienza registrando tu primer caballo para empezar a gestionar tu haras.'}
+            </p>
+            
+            {!searchTerm && canManageHorses() && (
+              <button
+                onClick={handleCreateCaballo}
+                className="inline-flex items-center px-6 py-3 bg-[#0f172a] text-white rounded-xl hover:bg-[#0f172a]/90 transition-all duration-200 shadow-lg hover:shadow-xl font-medium group"
+              >
+                <PlusIcon className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
+                Registrar Primer Caballo
+              </button>
+            )}
+            
+            {!searchTerm && !canManageHorses() && (
+              <div className="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-600 rounded-xl text-sm">
+                <span className="mr-2">ℹ️</span>
+                {getUserRole() === 'empleado' 
+                  ? 'Contacta a tu supervisor para registrar caballos.' 
+                  : 'No tienes permisos para registrar caballos.'}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Paginación moderna */}
       {totalPages > 1 && (
-        <div className="flex justify-center gap-2">
-          <Button
-            variant="secondary"
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={currentPage === 1 || loading}
-          >
-            Anterior
-          </Button>
-          
-          <span className="flex items-center px-4 text-sm text-gray-600">
-            Página {currentPage} de {totalPages}
-          </span>
-          
-          <Button
-            variant="secondary"
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages || loading}
-          >
-            Siguiente
-          </Button>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-6 border-t border-gray-100">
+          {/* Info de página */}
+          <div className="text-sm text-gray-600 font-medium">
+            Mostrando <span className="text-gray-900 font-semibold">{caballos.length}</span> de{' '}
+            <span className="text-gray-900 font-semibold">{stats.total}</span> caballos
+          </div>
+
+          {/* Controles de paginación */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1 || loading}
+              className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+            >
+              Primera
+            </button>
+            
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1 || loading}
+              className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+            >
+              Anterior
+            </button>
+
+            {/* Números de página */}
+            <div className="hidden sm:flex items-center gap-1">
+              {getPageNumbers().map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setCurrentPage(p)}
+                  disabled={loading}
+                  className={`min-w-[40px] px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                    p === currentPage
+                      ? 'bg-[#0f172a] text-white shadow-md'
+                      : 'text-gray-700 bg-white border border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+
+            {/* Indicador móvil de página actual */}
+            <div className="sm:hidden px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg border border-gray-200">
+              {currentPage} / {totalPages}
+            </div>
+
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages || loading}
+              className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+            >
+              Siguiente
+            </button>
+            
+            <button
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages || loading}
+              className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+            >
+              Última
+            </button>
+          </div>
         </div>
       )}
 

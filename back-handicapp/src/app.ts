@@ -4,6 +4,8 @@ import { config } from './config/config';
 import { apiRoutes } from './routes';
 import { errorHandler, notFoundHandler } from './utils/errors';
 import { requestLogger } from './utils/logger';
+import path from 'path';
+import { config as appConfig } from './config/config';
 
 const app: Express = express();
 
@@ -25,6 +27,9 @@ app.use(cors({
 
 // Concise request logs (method, url, status, duration)
 app.use(requestLogger);
+
+// Static files for uploads (served at /uploads)
+app.use('/uploads', express.static(path.resolve(process.cwd(), appConfig.upload.path)));
 
 // API routes
 app.use(`${config.api.prefix}/${config.api.version}`, apiRoutes);

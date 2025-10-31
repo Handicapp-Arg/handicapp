@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import Image from 'next/image';
 import ApiClient from '@/lib/services/apiClient';
 
 /**
@@ -31,13 +32,14 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
         // Verificar autenticación con el backend (las cookies httpOnly se envían automáticamente)
         const response: any = await ApiClient.verifyToken();
         
-        if (!response || !response.success || !response.data || !response.data.user) {
+        // El backend devuelve: { success: true, data: { valid: true, user: { id, email, role } } }
+        if (!response || !response.success || !response.data || !response.data.user || !response.data.valid) {
           router.replace('/login');
           return;
         }
 
         const user = response.data.user;
-        const userRole = user.role; // 'admin', 'establecimiento', etc.
+        const userRole = user.role; // 'admin', 'establecimiento', 'capataz', 'veterinario', 'empleado', 'propietario'
         
         if (!userRole) {
           router.replace('/login');
@@ -61,6 +63,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       } catch (error) {
         console.error('Error verificando autenticación:', error);
+        setIsLoading(false);
         router.replace('/login');
       }
     };
@@ -70,10 +73,28 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center space-y-4">
-          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <div className="text-lg text-gray-600">Verificando permisos...</div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center space-y-6">
+          {/* Logo con animación de pulso */}
+          <div className="relative">
+            <div className="absolute inset-0 animate-ping opacity-20">
+              <div className="w-24 h-24 mx-auto rounded-2xl bg-[#0f172a]"></div>
+            </div>
+            <div className="relative bg-[#0f172a] w-24 h-24 rounded-2xl flex items-center justify-center mx-auto shadow-xl">
+              <Image 
+                src="/logos/logo-icon-white.png" 
+                alt="HandicApp" 
+                width={64}
+                height={64}
+                className="object-contain"
+              />
+            </div>
+          </div>
+          
+          {/* Spinner debajo del logo */}
+          <div className="flex justify-center">
+            <div className="w-8 h-8 border-3 border-[#af936f] border-t-transparent rounded-full animate-spin"></div>
+          </div>
         </div>
       </div>
     );
@@ -81,10 +102,28 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!isAuthorized) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center space-y-4">
-          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <div className="text-lg text-gray-600">Redirigiendo...</div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center space-y-6">
+          {/* Logo con animación de pulso */}
+          <div className="relative">
+            <div className="absolute inset-0 animate-ping opacity-20">
+              <div className="w-24 h-24 mx-auto rounded-2xl bg-[#0f172a]"></div>
+            </div>
+            <div className="relative bg-[#0f172a] w-24 h-24 rounded-2xl flex items-center justify-center mx-auto shadow-xl">
+              <Image 
+                src="/logos/logo-icon-white.png" 
+                alt="HandicApp" 
+                width={64}
+                height={64}
+                className="object-contain"
+              />
+            </div>
+          </div>
+          
+          {/* Spinner debajo del logo */}
+          <div className="flex justify-center">
+            <div className="w-8 h-8 border-3 border-[#af936f] border-t-transparent rounded-full animate-spin"></div>
+          </div>
         </div>
       </div>
     );

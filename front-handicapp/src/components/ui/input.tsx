@@ -1,31 +1,52 @@
-import { forwardRef, InputHTMLAttributes } from 'react';
+import * as React from "react"
 
-export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+import { cn } from "@/lib/utils"
+
+export interface InputProps extends React.ComponentProps<"input"> {
   label?: string;
   error?: string;
 }
 
-export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, className = '', id, ...rest }, ref) => {
-    const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
-
-    return (
-      <div className="flex flex-col gap-1">
-        {label && (
-          <label htmlFor={inputId} className="text-sm text-foreground/80">
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, label, error, ...props }, ref) => {
+    if (label) {
+      return (
+        <div className="space-y-2">
+          <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
             {label}
           </label>
+          <input
+            type={type}
+            className={cn(
+              "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-smooth file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+              error && "border-destructive focus-visible:ring-destructive",
+              className
+            )}
+            ref={ref}
+            {...props}
+          />
+          {error && (
+            <p className="text-sm text-destructive">{error}</p>
+          )}
+        </div>
+      );
+    }
+    
+    return (
+      <input
+        type={type}
+        className={cn(
+          "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-smooth file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+          error && "border-destructive focus-visible:ring-destructive",
+          className
         )}
-        <input
-          id={inputId}
-          ref={ref}
-          className={`w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder-foreground/50 focus:outline-none focus:ring-2 focus:ring-foreground focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
-          {...rest}
-        />
-        {error && <span className="text-xs text-red-600">{error}</span>}
-      </div>
-    );
+        ref={ref}
+        {...props}
+      />
+    )
   }
-);
+)
+Input.displayName = "Input"
 
-Input.displayName = "Input";
+export { Input }
+

@@ -5,6 +5,8 @@ import { asyncHandler } from '../utils/errors';
 import { LoginData, AuthenticatedRequest } from '../types';
 import { logger } from '../utils/logger';
 import { config } from '../config/config';
+import bcrypt from 'bcrypt';
+import { User } from '../models/User';
 import { clearUserLoginAttempts } from '../middleware/security';
 
 export class AuthController {
@@ -251,8 +253,36 @@ export class AuthController {
       return ResponseHelper.unauthorized(res, 'Usuario no autenticado');
     }
 
-    // TODO: Implement changePassword method in AuthService
-    return ResponseHelper.badRequest(res, 'Cambio de contraseña no implementado aún');
+    const { currentPassword, newPassword } = req.body || {};
+
+    if (!newPassword) {
+      return ResponseHelper.badRequest(res, 'Nueva contraseña requerida');
+    }
+    if (!currentPassword) {
+      return ResponseHelper.badRequest(res, 'Contraseña actual requerida');
+    }
+
+    try {
+      const user = await User.findByPk(userId);
+      if (!user) {
+        return ResponseHelper.notFound(res, 'Usuario no encontrado');
+      }
+
+      const ok = await user.validatePassword(currentPassword);
+      if (!ok) {
+        return ResponseHelper.badRequest(res, 'Contraseña actual incorrecta');
+      }
+
+      const rounds = config.security?.bcryptRounds ?? 12;
+      const salt = await bcrypt.genSalt(rounds);
+      const hash = await bcrypt.hash(String(newPassword).trim(), salt);
+      await user.update({ hash_contrasena: hash });
+
+      return ResponseHelper.success(res, null, 'Contraseña actualizada exitosamente');
+    } catch (error: any) {
+      logger.error('Error cambiando contraseña:', error?.message || String(error));
+      return ResponseHelper.internalError(res, 'Error interno del servidor');
+    }
   });
 
   /**

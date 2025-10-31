@@ -2,8 +2,104 @@
 
 import React from 'react';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
+import { DashboardHero } from '@/components/dashboard/DashboardHero';
+import { StatsGrid, StatCard } from '@/components/dashboard/StatsGrid';
+import { ActionGrid, ActionCardProps } from '@/components/dashboard/ActionCard';
+import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
+import { useStats } from '@/lib/hooks/useStats';
+import { useEventosProximos } from '@/lib/hooks/useEventosProximos';
+import { getRoleInfo } from '@/lib/design-tokens';
+import { Users, ClipboardList, Activity, Calendar, FileText, Circle } from 'lucide-react';
 
 export default function CapatazDashboard() {
+  const { stats, loading } = useStats();
+  const { eventos } = useEventosProximos({ limit: 5 });
+  const roleInfo = getRoleInfo('capataz');
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+      </div>
+    );
+  }
+
+  // Stats principales
+  const dashboardStats: StatCard[] = [
+    {
+      label: 'Personal Activo',
+      value: stats.empleados?.activos || 0,
+      icon: Users,
+      color: 'primary',
+      badges: [{ label: 'Bajo supervisión', variant: 'secondary' }],
+    },
+    {
+      label: 'Tareas Asignadas',
+      value: stats.tareas?.pendientes || 0,
+      icon: ClipboardList,
+      color: 'warning',
+      trend: { value: `${stats.tareas?.completadas || 0} completadas`, direction: 'up' },
+    },
+    {
+      label: 'Caballos',
+      value: stats.caballos?.activos || 0,
+      icon: Circle,
+      color: 'accent',
+      badges: [{ label: 'En cuidado', variant: 'outline' }],
+    },
+    {
+      label: 'Eventos Próximos',
+      value: eventos.length,
+      icon: Calendar,
+      color: 'info',
+      trend: { value: 'Programados', direction: 'neutral' },
+    },
+  ];
+
+  // Acciones principales
+  const actions: ActionCardProps[] = [
+    {
+      title: 'Personal',
+      description: 'Supervisar empleados',
+      href: '/capataz/personal',
+      icon: Users,
+      colorScheme: 'orange',
+      count: stats.empleados?.activos || 0,
+    },
+    {
+      title: 'Tareas',
+      description: 'Asignar y monitorear tareas',
+      href: '/capataz/tareas',
+      icon: ClipboardList,
+      colorScheme: 'red',
+      badge: stats.tareas?.pendientes ? { 
+        label: `${stats.tareas.pendientes} pendientes`, 
+        variant: 'destructive' 
+      } : undefined,
+    },
+    {
+      title: 'Caballos',
+      description: 'Recursos bajo cuidado',
+      href: '/capataz/caballos',
+      icon: Circle,
+      colorScheme: 'teal',
+    },
+    {
+      title: 'Eventos',
+      description: 'Calendario y programación',
+      href: '/capataz/eventos',
+      icon: Calendar,
+      colorScheme: 'blue',
+    },
+    {
+      title: 'Reportes',
+      description: 'Informes de operaciones',
+      href: '/capataz/reportes',
+      icon: FileText,
+      colorScheme: 'purple',
+    },
+  ];
+
   return (
     <SimpleRoleGuard roles={['capataz']} fallback={
       <div className="flex items-center justify-center h-64">
@@ -15,138 +111,55 @@ export default function CapatazDashboard() {
       </div>
     }>
       <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Panel de Capataz</h1>
-            <p className="text-gray-600 text-sm sm:text-base">Supervisa las operaciones diarias del establecimiento</p>
-          </div>
+        {/* Hero Section */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+          <DashboardHero
+            title={roleInfo.title}
+            description={roleInfo.description}
+            roleEmoji={roleInfo.emoji}
+            colorScheme="orange"
+            showLogo={true}
+            ctaButtons={[
+              {
+                label: 'Ver Personal',
+                href: '/capataz/personal',
+                variant: 'primary',
+              },
+              {
+                label: 'Asignar Tareas',
+                href: '/capataz/tareas',
+                variant: 'secondary',
+                icon: ClipboardList,
+              },
+            ]}
+          />
+        </div>
 
-          {/* Estadísticas Principales */}
-          <div className="space-y-6 sm:space-y-8">
-            <div>
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">Operaciones del Día</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-white rounded-lg shadow p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Empleados Trabajando</p>
-                      <p className="text-2xl font-bold text-green-600">18</p>
-                    </div>
-                    <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-                      <span className="text-2xl">👷</span>
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <span>2 ausentes hoy</span>
-                    </div>
-                  </div>
-                </div>
+        {/* Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+          {/* Stats Grid */}
+          <StatsGrid stats={dashboardStats} columns={4} />
 
-                <div className="bg-white rounded-lg shadow p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Tareas Completadas</p>
-                      <p className="text-2xl font-bold text-blue-600">24</p>
-                    </div>
-                    <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <span className="text-2xl">✅</span>
-                    </div>
+          {/* Grid Layout: Actions + Sidebar */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Content - Actions (2/3) */}
+            <div className="lg:col-span-2 space-y-8">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                  <div className="p-2 bg-gradient-to-br from-orange-400 to-amber-500 rounded-xl shadow-lg">
+                    <Activity className="w-5 h-5 text-white" />
                   </div>
-                  <div className="mt-2">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <span>de 30 programadas</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Caballos Atendidos</p>
-                      <p className="text-2xl font-bold text-purple-600">85</p>
-                    </div>
-                    <div className="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <span className="text-2xl">🐎</span>
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <span>Alimentación y cuidado</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Incidencias</p>
-                      <p className="text-2xl font-bold text-orange-600">2</p>
-                    </div>
-                    <div className="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                      <span className="text-2xl">⚠️</span>
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <span>1 resuelta, 1 pendiente</span>
-                    </div>
-                  </div>
-                </div>
+                  Acciones Rápidas
+                </h2>
+                <ActionGrid actions={actions} columns={2} />
               </div>
             </div>
 
-            {/* Acciones Rápidas */}
-            <div>
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">Supervisión y Control</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <a href="/capataz/personal" className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-all duration-200 p-6 border border-gray-100 cursor-pointer hover:scale-[1.02] hover:border-gray-200 block">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-3 rounded-lg bg-green-100 flex-shrink-0">
-                      <span className="text-xl">👥</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 mb-1 truncate">Control de Personal</h3>
-                      <p className="text-sm text-gray-600 line-clamp-2">Gestionar horarios y asistencia del equipo</p>
-                    </div>
-                    <div className="flex-shrink-0">
-                      <span className="text-gray-400">→</span>
-                    </div>
-                  </div>
-                </a>
-
-                <a href="/capataz/tareas" className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-all duration-200 p-6 border border-gray-100 cursor-pointer hover:scale-[1.02] hover:border-gray-200 block">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-3 rounded-lg bg-blue-100 flex-shrink-0">
-                      <span className="text-xl">📋</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 mb-1 truncate">Asignación de Tareas</h3>
-                      <p className="text-sm text-gray-600 line-clamp-2">Distribuir y supervisar tareas diarias</p>
-                    </div>
-                    <div className="flex-shrink-0">
-                      <span className="text-gray-400">→</span>
-                    </div>
-                  </div>
-                </a>
-
-                <a href="/capataz/reportes" className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-all duration-200 p-6 border border-gray-100 cursor-pointer hover:scale-[1.02] hover:border-gray-200 block">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-3 rounded-lg bg-purple-100 flex-shrink-0">
-                      <span className="text-xl">📊</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 mb-1 truncate">Reportes Operativos</h3>
-                      <p className="text-sm text-gray-600 line-clamp-2">Informes de productividad y rendimiento</p>
-                    </div>
-                    <div className="flex-shrink-0">
-                      <span className="text-gray-400">→</span>
-                    </div>
-                  </div>
-                </a>
-              </div>
-            </div>
+            {/* Sidebar - Events (1/3) */}
+            <DashboardSidebar 
+              role="capataz" 
+              eventos={eventos}
+            />
           </div>
         </div>
       </div>

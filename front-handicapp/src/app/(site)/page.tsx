@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { useToaster } from '@/components/ui/toaster';
 import ApiClient from '@/lib/services/apiClient';
 
@@ -42,19 +41,13 @@ export default function HomePage() {
       // Usar ApiClient directamente para login
       const response = await ApiClient.login(email.trim(), password.trim());
       
-      console.log('Login response:', response);
-      
       // Verificar si la respuesta tiene éxito
-      const responseData = (response as any);
+      const responseData = response as { success?: boolean; data?: { user: { rol?: { id?: number }; rol_id?: number } } };
       if (responseData && responseData.success && responseData.data) {
         const data = responseData.data;
         
-        console.log('User data:', data.user);
-        
         // El backend ya setea las cookies httpOnly automáticamente
         const rolId = data.user.rol?.id || data.user.rol_id || 1;
-        
-        console.log('Rol ID detectado:', rolId);
         
         // Guardar rol para acceso rápido (opcional)
         document.cookie = `role=${rolId}; path=/; max-age=7200; SameSite=Lax`;
@@ -73,18 +66,15 @@ export default function HomePage() {
         
         const dashboardRoute = roleRoutes[rolId] || '/admin';
         
-        console.log('Redirigiendo a:', dashboardRoute);
-        
         // Redirigir inmediatamente
         router.push(dashboardRoute);
         
       } else {
-        console.error('Respuesta no válida:', response);
         setError('Credenciales incorrectas');
       }
-    } catch (error: any) {
-      console.error('Login error:', error);
-      setError(error.message || 'Error al iniciar sesión');
+    } catch (error) {
+      const err = error as { message?: string };
+      setError(err.message || 'Error al iniciar sesión');
     } finally {
       setLoading(false);
     }

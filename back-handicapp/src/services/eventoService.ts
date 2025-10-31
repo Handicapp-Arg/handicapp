@@ -8,6 +8,7 @@ import { Evento } from '../models/Evento';
 import { TipoEvento } from '../models/TipoEvento';
 import { Caballo } from '../models/Caballo';
 import { User } from '../models/User';
+import { Role } from '../models/roles';
 import { Establecimiento } from '../models/Establecimiento';
 import { Adjunto } from '../models/Adjunto';
 import { ServiceResponse, PaginationQuery } from '../types';
@@ -22,6 +23,13 @@ interface CreateEventoData {
   establecimiento_id?: number;
   costo_monto?: string;
   costo_moneda?: string;
+  hora_inicio?: string;
+  hora_fin?: string;
+  ubicacion?: string;
+  estado?: string;
+  prioridad?: string;
+  es_publico?: boolean;
+  requiere_validacion?: boolean;
 }
 
 interface UpdateEventoData extends Partial<CreateEventoData> {
@@ -71,9 +79,11 @@ export class EventoService {
       }
       if (veterinarioId) where.validado_por_usuario_id = veterinarioId;
 
+      // 🚀 OPTIMIZACIÓN: Agregar eager loading de Caballo para evitar N+1
       const { count, rows } = await Evento.findAndCountAll({
         where,
         include: [
+          { model: Caballo, as: 'caballo', attributes: ['id', 'nombre', 'raza', 'sexo'], required: false },
           { model: TipoEvento, as: 'tipo_evento', attributes: ['id', 'nombre', 'clave', 'disciplina'] },
           { model: User, as: 'creado_por', attributes: ['id', 'nombre', 'apellido'] },
           { model: User, as: 'validado_por', attributes: ['id', 'nombre', 'apellido'], required: false },
@@ -83,6 +93,7 @@ export class EventoService {
         offset,
         order: [[sortBy, sortOrder]],
         distinct: true,
+        subQuery: false, // ← Previene subqueries ineficientes
       });
 
       const totalPages = Math.ceil(count / limit);
@@ -351,18 +362,43 @@ export class EventoService {
         };
       }
 
-      // Verificar permisos: solo el creador puede modificar
-      if (evento.creado_por_usuario_id !== userId) {
+      // Verificar permisos: admin, creador, o mismo establecimiento
+      const usuario = await User.findByPk(userId, {
+        include: [{ model: Role, as: 'rol' }]
+      });
+
+      if (!usuario) {
+        return {
+          success: false,
+          error: 'Usuario no encontrado',
+        };
+      }
+
+      const rolClave = usuario.rol?.clave;
+      const esCreador = evento.creado_por_usuario_id === userId;
+      const esAdmin = rolClave === 'admin';
+      const mismoEstablecimiento = evento.establecimiento_id === usuario.establecimiento_id;
+
+      if (!esAdmin && !esCreador && !mismoEstablecimiento) {
         return {
           success: false,
           error: 'Sin permisos para modificar este evento',
         };
       }
+      
+      // Convertir strings vacíos a null
+      const cleanedData: any = {};
+      for (const [key, value] of Object.entries(data)) {
+        cleanedData[key] = value === '' ? null : value;
+      }
 
       await evento.update({
-        ...data,
+        ...cleanedData,
         actualizado_el: new Date(),
       });
+      
+      // Recargar el evento para obtener los valores actualizados
+      await evento.reload();
 
       return {
         success: true,

@@ -1,144 +1,234 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: 0 0% 100%;
-  --foreground: 240 10% 3.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 240 10% 3.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 3.9%;
-  --primary: 240 9% 89%;
-  --primary-foreground: 355.7 100% 97.3%;
-  --secondary: 240 4.8% 95.9%;
-  --secondary-foreground: 240 5.9% 10%;
-  --muted: 240 4.8% 95.9%;
-  --muted-foreground: 240 3.8% 46.1%;
-  --accent: 240 4.8% 95.9%;
-  --accent-foreground: 240 5.9% 10%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 5.9% 90%;
-  --input: 240 5.9% 90%;
-  --ring: 240 10% 3.9%;
-  --radius: 0.5rem;
-  --brown-primary: #92400e;
-  --brown-secondary: #a16207;
-  --brown-accent: #d97706;
-}
-
-@media (prefers-color-scheme: dark) {
+/* Theme tokens as CSS variables */
+@layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    /* Base Colors - Nueva Paleta HandicApp 2.0 */
+    --background: 0 0% 100%; /* Blanco #ffffff */
+    --foreground: 215 43% 11%; /* Dark #0f172a */
+    
+    /* Primary - Azul slate oscuro */
+    --primary: 215 31% 18%; /* #1e293b - PRIMARIO */
+    --primary-foreground: 0 0% 100%; /* Blanco sobre primario */
+    
+    /* Secondary - Rosa/Beige */
+    --secondary: 17 24% 69%; /* #c6a594 - SECUNDARIO */
+    --secondary-foreground: 215 43% 11%; /* Dark sobre secundario */
+    
+    /* Accent - Dorado/Bronce (Info) */
+    --accent: 36 28% 56%; /* #af936f - INFO */
+    --accent-foreground: 0 0% 100%; /* Blanco sobre accent */
+    
+    /* Muted - Gris claro */
+    --muted: 40 3% 85%; /* #d9d8d6 - LIGHT */
+    --muted-foreground: 215 43% 11%; /* Dark sobre muted */
+    
+    /* Card */
+    --card: 0 0% 100%; /* Blanco */
+    --card-foreground: 215 43% 11%; /* Dark */
+    
+    /* Popover */
+    --popover: 0 0% 100%; /* Blanco */
+    --popover-foreground: 215 43% 11%; /* Dark */
+    
+    /* Destructive - Rojo brillante */
+    --destructive: 2 95% 49%; /* #f31309 - DANGER */
+    --destructive-foreground: 0 0% 100%; /* Blanco */
+    
+    /* Success - Verde */
+    --success: 151 77% 36%; /* #15a45e - SUCCESS */
+    --success-foreground: 0 0% 100%; /* Blanco */
+    
+    /* Warning - Amarillo */
+    --warning: 54 89% 49%; /* #e3cb15 - WARNING */
+    --warning-foreground: 215 43% 11%; /* Dark */
+    
+    /* Info - Dorado/Bronce */
+    --info: 36 28% 56%; /* #af936f - INFO */
+    --info-foreground: 0 0% 100%; /* Blanco */
+    
+    /* Border & Input */
+    --border: 40 3% 85%; /* Light */
+    --input: 40 3% 85%; /* Light */
+    --ring: 215 31% 18%; /* Primary */
+    
+    --radius: 0.75rem;
+    
+    /* Extended Palette - Acentos adicionales */
+    --accent-1: 194 54% 21%; /* #0e445d - ACCENT 1 (azul petróleo) */
+    --accent-2: 197 29% 38%; /* #446c7f - ACCENT 2 (azul grisáceo) */
+    --accent-3: 225 13% 66%; /* #a0a5b3 - ACCENT 3 (gris azulado) */
+    
+    /* Legacy support */
+    --leather-dark: 215 31% 18%; /* Primary */
+    --leather-light: 40 3% 85%; /* Light */
+    --gold-metallic: 36 28% 56%; /* Info */
+    --bronze: 36 28% 56%; /* Info */
+    --meadow-green: 151 77% 36%; /* Success */
+    --sky-blue: 197 29% 38%; /* Accent-2 */
+    --earth: 40 3% 85%; /* Light */
+  }
+
+  .dark {
+    /* Dark mode - Colores adaptados */
+    --background: 215 43% 8%; /* Dark más suave */
+    --foreground: 0 0% 95%; /* Blanco suave */
+    
+    --primary: 215 31% 25%; /* Primary más claro en dark */
+    --primary-foreground: 0 0% 100%; /* Blanco */
+    
+    --secondary: 17 24% 60%; /* Secondary más claro */
+    --secondary-foreground: 215 43% 11%; /* Dark */
+    
+    --accent: 36 28% 65%; /* Info más claro */
+    --accent-foreground: 215 43% 11%; /* Dark */
+    
+    --muted: 215 20% 15%; /* Dark suave */
+    --muted-foreground: 40 3% 75%; /* Light */
+    
+    --card: 215 30% 12%; /* Dark card */
+    --card-foreground: 0 0% 95%; /* Blanco suave */
+    
+    --popover: 215 30% 12%; /* Dark */
+    --popover-foreground: 0 0% 95%; /* Blanco suave */
+    
+    --destructive: 2 95% 55%; /* Danger más claro */
+    --destructive-foreground: 0 0% 100%; /* Blanco */
+    
+    --border: 215 20% 20%; /* Dark borde */
+    --input: 215 20% 20%; /* Dark input */
+    --ring: 30 38% 50%; /* Información */
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
-body {
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
-    Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial,
-    "Apple Color Emoji", "Segoe UI Emoji";
-  margin: 0;
-  padding: 0;
-}
+@layer utilities {
+  .glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+  
+  .glass-dark {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  }
+  
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
 
-html, body {
-  height: 100%;
-  width: 100%;
-  overflow-x: hidden;
-}
+  /* Animaciones modernas para modales y transiciones */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
 
-/* Estilos para autocompletado del navegador */
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus,
-input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.9) inset !important;
-  -webkit-text-fill-color: #1f2937 !important;
-  border: 1px solid rgba(210, 180, 140, 0.3) !important;
-  background-color: rgba(255, 255, 255, 0.9) !important;
-  transition: background-color 5000s ease-in-out 0s;
-}
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 
-/* Para Firefox */
-input:-moz-autofill {
-  box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.9) inset !important;
-  color: #1f2937 !important;
-  background-color: rgba(255, 255, 255, 0.9) !important;
-}
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 
-/* Forzar texto negro en TODOS los elementos de formulario */
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="number"],
-input[type="date"],
-input[type="time"],
-input[type="tel"],
-input[type="url"],
-input[type="search"],
-select,
-textarea {
-  color: #1f2937 !important;
-  -webkit-text-fill-color: #1f2937 !important;
-}
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
 
-/* Asegurar que el texto sea visible incluso en modo oscuro */
-.dark input[type="text"],
-.dark input[type="email"],
-.dark input[type="password"],
-.dark input[type="number"],
-.dark input[type="date"],
-.dark input[type="time"],
-.dark input[type="tel"],
-.dark input[type="url"],
-.dark input[type="search"],
-.dark select,
-.dark textarea {
-  color: #1f2937 !important;
-  -webkit-text-fill-color: #1f2937 !important;
-}
+  .animate-fadeIn {
+    animation: fadeIn 0.2s ease-out;
+  }
 
-/* Opciones de select también en negro */
-select option {
-  color: #1f2937 !important;
-  background-color: white !important;
-}
+  .animate-slideUp {
+    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
 
-/* Toaster pop-up overlay + modal */
-.toast-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.35);
-  z-index: 90;
-}
-.toast-modal {
-  backdrop-filter: saturate(1.3) blur(6px);
-}
+  .animate-slideDown {
+    animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
 
-@keyframes toastIn {
-  0% { transform: translateY(8px) scale(0.98); opacity: 0; }
-  60% { transform: translateY(-2px) scale(1.01); opacity: 1; }
-  100% { transform: translateY(0) scale(1); opacity: 1; }
-}
-.animate-toast-in {
-  animation: toastIn 220ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  .animate-scaleIn {
+    animation: scaleIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Custom Scrollbar Styles */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 10px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    transition: background 0.2s ease;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  /* Firefox scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  }
+
+  /* Smooth scrolling behavior */
+  .scrollbar-thin {
+    scroll-behavior: smooth;
+  }
 }

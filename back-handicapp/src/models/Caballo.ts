@@ -15,6 +15,19 @@ interface CaballoAttrs {
   estado_global: EstadoGlobalCaballo;
   padre_id: number | null;
   madre_id: number | null;
+  
+  // Documentación e identificación oficial
+  rp: string | null; // Registro de Pedigree / Identificador único
+  sba: string | null; // Registro Stud Book Argentino
+  adn: string | null; // Verificación genética / Código ADN
+  pasaporte: string | null; // Número de pasaporte equino
+  numero_fei: string | null; // Número FEI (Federación Ecuestre Internacional)
+  ueln: string | null; // Universal Equine Life Number (identificador universal)
+  
+  // Datos físicos
+  altura: number | null; // Altura en centímetros
+  peso: number | null; // Peso en kilogramos
+  
   creado_el: Date;
   actualizado_el: Date | null;
   eliminado_el: Date | null;
@@ -32,27 +45,48 @@ type CaballoCreation = Optional<
   | "foto_url"
   | "padre_id"
   | "madre_id"
+  | "rp"
+  | "sba"
+  | "adn"
+  | "pasaporte"
+  | "numero_fei"
+  | "ueln"
+  | "altura"
+  | "peso"
   | "creado_el"
   | "actualizado_el"
   | "eliminado_el"
 >;
 
 export class Caballo extends Model<CaballoAttrs, CaballoCreation> implements CaballoAttrs {
-  public id!: number;
-  public nombre!: string;
-  public sexo!: SexoCaballo | null;
-  public fecha_nacimiento!: Date | null;
-  public pelaje!: string | null;
-  public raza!: string | null;
-  public disciplina!: Disciplina | null;
-  public microchip!: string | null;
-  public foto_url!: string | null;
-  public estado_global!: EstadoGlobalCaballo;
-  public padre_id!: number | null;
-  public madre_id!: number | null;
-  public creado_el!: Date;
-  public actualizado_el!: Date | null;
-  public eliminado_el!: Date | null;
+  declare id: number;
+  declare nombre: string;
+  declare sexo: SexoCaballo | null;
+  declare fecha_nacimiento: Date | null;
+  declare pelaje: string | null;
+  declare raza: string | null;
+  declare disciplina: Disciplina | null;
+  declare microchip: string | null;
+  declare foto_url: string | null;
+  declare estado_global: EstadoGlobalCaballo;
+  declare padre_id: number | null;
+  declare madre_id: number | null;
+  
+  // Documentación e identificación oficial
+  declare rp: string | null;
+  declare sba: string | null;
+  declare adn: string | null;
+  declare pasaporte: string | null;
+  declare numero_fei: string | null;
+  declare ueln: string | null;
+  
+  // Datos físicos
+  declare altura: number | null;
+  declare peso: number | null;
+  
+  declare creado_el: Date;
+  declare actualizado_el: Date | null;
+  declare eliminado_el: Date | null;
 }
 
 Caballo.init(
@@ -64,7 +98,7 @@ Caballo.init(
     pelaje: { type: DataTypes.STRING(80), allowNull: true },
     raza: { type: DataTypes.STRING(80), allowNull: true },
     disciplina: { type: DataTypes.ENUM(...Object.values(Disciplina)), allowNull: true },
-    microchip: { type: DataTypes.STRING(80), allowNull: true, unique: true },
+    microchip: { type: DataTypes.STRING(80), allowNull: true },
     foto_url: { type: DataTypes.STRING(300), allowNull: true },
     estado_global: {
       type: DataTypes.ENUM(...Object.values(EstadoGlobalCaballo)),
@@ -73,6 +107,51 @@ Caballo.init(
     },
     padre_id: { type: DataTypes.INTEGER, allowNull: true },
     madre_id: { type: DataTypes.INTEGER, allowNull: true },
+    
+    // Documentación e identificación oficial
+    rp: { 
+      type: DataTypes.STRING(100), 
+      allowNull: true,
+      comment: 'Registro de Pedigree - Identificador único del ejemplar'
+    },
+    sba: { 
+      type: DataTypes.STRING(100), 
+      allowNull: true,
+      comment: 'Stud Book Argentino - Registro oficial en Argentina'
+    },
+    adn: { 
+      type: DataTypes.STRING(150), 
+      allowNull: true,
+      comment: 'Código de verificación genética / ADN'
+    },
+    pasaporte: { 
+      type: DataTypes.STRING(100), 
+      allowNull: true,
+      comment: 'Número de pasaporte equino'
+    },
+    numero_fei: { 
+      type: DataTypes.STRING(50), 
+      allowNull: true,
+      comment: 'Número FEI - Federación Ecuestre Internacional'
+    },
+    ueln: { 
+      type: DataTypes.STRING(50), 
+      allowNull: true,
+      comment: 'Universal Equine Life Number - Identificador universal'
+    },
+    
+    // Datos físicos
+    altura: { 
+      type: DataTypes.DECIMAL(5, 2), 
+      allowNull: true,
+      comment: 'Altura en centímetros'
+    },
+    peso: { 
+      type: DataTypes.DECIMAL(6, 2), 
+      allowNull: true,
+      comment: 'Peso en kilogramos'
+    },
+    
     creado_el: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
     actualizado_el: { type: DataTypes.DATE, allowNull: true },
     eliminado_el: { type: DataTypes.DATE, allowNull: true },
@@ -82,7 +161,9 @@ Caballo.init(
     tableName: "caballos",
     timestamps: false,
     indexes: [
-      { name: "ux_caballos_microchip", unique: true, fields: ["microchip"] },
+      // Índice único parcial: solo aplica cuando microchip NO es NULL
+      // Este índice se crea manualmente via migración SQL, no automáticamente por Sequelize
+      // { name: "ux_caballos_microchip", unique: true, fields: ["microchip"], where: { microchip: { [Op.ne]: null } } },
       { name: "ix_caballos_estado", fields: ["estado_global"] },
       { name: "ix_caballos_nombre", fields: ["nombre"] },
     ],

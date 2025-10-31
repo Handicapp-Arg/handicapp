@@ -14,6 +14,19 @@ export interface Caballo {
   estado_global: 'activo' | 'inactivo' | 'vendido' | 'fallecido';
   padre_id: number | null;
   madre_id: number | null;
+  
+  // Documentación e identificación oficial
+  rp: string | null; // Registro de Pedigree
+  sba: string | null; // Stud Book Argentino
+  adn: string | null; // Verificación genética
+  pasaporte: string | null; // Pasaporte equino
+  numero_fei: string | null; // Número FEI
+  ueln: string | null; // Universal Equine Life Number
+  
+  // Datos físicos
+  altura: number | null; // Altura en cm
+  peso: number | null; // Peso en kg
+  
   creado_el: string;
   actualizado_el: string | null;
   
@@ -52,11 +65,48 @@ export interface CaballoEstablecimiento {
   fecha_inicio: string;
   fecha_fin: string | null;
   estado_asociacion: 'pending' | 'accepted' | 'rejected' | 'finished';
+  solicitante_id?: number;
+  aprobador_id?: number;
+  fecha_solicitud?: string;
+  fecha_respuesta?: string | null;
+  caballo?: {
+    id: number;
+    nombre: string;
+    raza?: string;
+  };
   establecimiento?: {
     id: number;
     nombre: string;
     direccion?: string;
   };
+  propietario?: {
+    nombre: string;
+    apellido: string;
+  };
+}
+
+export interface CaballoPedigreeNode {
+  id: number;
+  nombre: string;
+}
+
+export interface CaballoPedigree {
+  caballo: CaballoPedigreeNode;
+  padre: CaballoPedigreeNode | null;
+  madre: CaballoPedigreeNode | null;
+  abueloPaterno: CaballoPedigreeNode | null;
+  abuelaPaterna: CaballoPedigreeNode | null;
+  abueloMaterno: CaballoPedigreeNode | null;
+  abuelaMaterna: CaballoPedigreeNode | null;
+}
+
+export interface HistorialMedicoItem {
+  id: number;
+  fecha_evento: string;
+  titulo: string | null;
+  descripcion: string | null;
+  tipo_evento?: { id: number; nombre: string; categoria?: string };
+  veterinario?: { id: number; nombre: string; apellido: string } | null;
 }
 
 export interface CreateCaballoData {
@@ -70,6 +120,19 @@ export interface CreateCaballoData {
   foto_url?: string;
   padre_id?: number;
   madre_id?: number;
+  
+  // Documentación e identificación oficial
+  rp?: string;
+  sba?: string;
+  adn?: string;
+  pasaporte?: string;
+  numero_fei?: string;
+  ueln?: string;
+  
+  // Datos físicos
+  altura?: number;
+  peso?: number;
+  
   establecimiento_id?: number;
   propietario_usuario_id?: number;
   porcentaje_tenencia?: number;
@@ -89,27 +152,37 @@ export interface CaballoFilters {
   estado?: string;
 }
 
+export interface CaballoStats {
+  totalEventos: number;
+  descendencia: number;
+  ultimoEvento: { fecha: string; tipo: string } | null;
+  edad: number | null;
+}
+
 export const caballoService = {
   /**
    * Obtener todos los caballos con filtros
    */
   async getAll(filters: CaballoFilters = {}) {
     try {
-      const params = new URLSearchParams({
+      const params: Record<string, string> = {
         page: (filters.page || 1).toString(),
         limit: (filters.limit || 10).toString(),
-        ...(filters.search && { search: filters.search }),
-        ...(typeof filters.establecimiento === 'number' && { establecimiento: String(filters.establecimiento) }),
-        ...(filters.raza && { raza: filters.raza }),
-        ...(filters.sexo && { sexo: filters.sexo }),
-        ...(filters.estado && { estado: filters.estado })
-      });
+      };
+
+      if (filters.search) params.search = filters.search;
+      if (typeof filters.establecimiento === 'number') params.establecimiento = String(filters.establecimiento);
+      if (filters.raza) params.raza = filters.raza;
+      if (filters.sexo) params.sexo = filters.sexo;
+      if (filters.estado) params.estado = filters.estado;
       
-      return await ApiClient.makeRequest(`/caballos?${params}`, {
+      const queryString = new URLSearchParams(params).toString();
+      
+      return await ApiClient.makeRequest(`/caballos?${queryString}`, {
         method: 'GET',
       });
     } catch (error) {
-  logger.error('Error fetching caballos:', error);
+      console.error('Error fetching caballos:', error);
       return { data: { caballos: [], total: 0, totalPages: 1 } };
     }
   },
@@ -123,7 +196,35 @@ export const caballoService = {
         method: 'GET',
       });
     } catch (error) {
-  logger.error('Error fetching caballo:', error);
+  console.error('Error fetching caballo:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtener pedigrí (padres y abuelos)
+   */
+  async getPedigree(id: number) {
+    try {
+      return await ApiClient.makeRequest(`/caballos/${id}/pedigree`, {
+        method: 'GET',
+      });
+    } catch (error) {
+  console.error('Error fetching pedigree:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtener historial médico del caballo
+   */
+  async getHistorialMedico(id: number) {
+    try {
+      return await ApiClient.makeRequest(`/caballos/${id}/historial-medico`, {
+        method: 'GET',
+      });
+    } catch (error) {
+  console.error('Error fetching historial médico:', error);
       throw error;
     }
   },
@@ -138,7 +239,7 @@ export const caballoService = {
         body: JSON.stringify(data),
       });
     } catch (error) {
-  logger.error('Error creating caballo:', error);
+  console.error('Error creating caballo:', error);
       throw error;
     }
   },
@@ -153,7 +254,7 @@ export const caballoService = {
         body: JSON.stringify(data),
       });
     } catch (error) {
-  logger.error('Error updating caballo:', error);
+  console.error('Error updating caballo:', error);
       throw error;
     }
   },
@@ -167,7 +268,7 @@ export const caballoService = {
         method: 'DELETE',
       });
     } catch (error) {
-  logger.error('Error deleting caballo:', error);
+  console.error('Error deleting caballo:', error);
       throw error;
     }
   },
@@ -207,13 +308,40 @@ export const caballoService = {
    * Obtener estadísticas de un caballo
    */
   async getStats(caballoId: number) {
-    // TODO: Implementar endpoint de estadísticas
-    return {
-      totalEventos: 0,
-      descendencia: 0,
-      ultimoEvento: null,
-      edad: null
-    };
+    try {
+      return await ApiClient.makeRequest(`/caballos/${caballoId}/estadisticas`, {
+        method: 'GET',
+      });
+    } catch (error) {
+  console.error('Error fetching stats:', error);
+      throw error;
+    }
+  },
+
+  /** Obtener descendencia (hijos/hijas) */
+  async getDescendencia(caballoId: number) {
+    try {
+      return await ApiClient.makeRequest(`/caballos/${caballoId}/descendencia`, {
+        method: 'GET',
+      });
+    } catch (error) {
+  console.error('Error fetching descendencia:', error);
+      throw error;
+    }
+  },
+
+  /** Obtener solicitudes pendientes de asociación para el usuario actual */
+  async getSolicitudesPendientes(): Promise<CaballoEstablecimiento[]> {
+    try {
+      // Este endpoint debería filtrar las solicitudes según el rol del usuario
+      const response = await ApiClient.makeRequest('/caballos/solicitudes-pendientes', {
+        method: 'GET',
+      });
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching solicitudes pendientes:', error);
+      throw error;
+    }
   },
 
   /**

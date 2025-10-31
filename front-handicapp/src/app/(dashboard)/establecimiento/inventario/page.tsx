@@ -1,0 +1,789 @@
+﻿'use client';
+
+import { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Package, TrendingDown, AlertTriangle, DollarSign, Search, Plus, FileText, Download, Eye, TrendingUp, Edit, Trash2 } from 'lucide-react';
+import { inventarioService, type Producto } from '@/lib/inventarioService';
+import { toast } from 'react-hot-toast';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+
+export default function EstablecimientoInventarioPage() {
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busqueda, setBusqueda] = useState('');
+  const [filtroStockBajo, setFiltroStockBajo] = useState(false);
+  const [modalNuevo, setModalNuevo] = useState(false);
+  const [modalEditar, setModalEditar] = useState(false);
+  const [modalConfirm, setModalConfirm] = useState(false);
+  const [productoActual, setProductoActual] = useState<Producto | null>(null);
+  const [productoAEliminar, setProductoAEliminar] = useState<Producto | null>(null);
+
+  const [formData, setFormData] = useState({
+    nombre: '',
+    codigo: '',
+    descripcion: '',
+    precio_unitario: '' as number | '',
+    stock_actual: '' as number | '',
+    stock_minimo: '' as number | '',
+    stock_maximo: '' as number | '',
+    unidad_medida: 'kg' as 'kg' | 'litro' | 'unidad',
+    categoria_id: 3,
+  });
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const prodData = await inventarioService.getProductos();
+      setProductos(prodData || []);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNuevoProducto = () => {
+    setFormData({
+      nombre: '',
+      codigo: '',
+      descripcion: '',
+      precio_unitario: '',
+      stock_actual: '',
+      stock_minimo: '',
+      stock_maximo: '',
+      unidad_medida: 'kg',
+      categoria_id: 3,
+    });
+    setProductoActual(null);
+    setModalNuevo(true);
+  };
+
+  const handleEditarProducto = (producto: Producto) => {
+    setFormData({
+      nombre: producto.nombre,
+      codigo: producto.codigo,
+      descripcion: producto.descripcion || '',
+      precio_unitario: producto.precio_unitario,
+      stock_actual: producto.stock_actual,
+      stock_minimo: producto.stock_minimo,
+      stock_maximo: producto.stock_maximo || 0,
+      unidad_medida: producto.unidad_medida as 'kg' | 'litro' | 'unidad',
+      categoria_id: producto.categoria_id,
+    });
+    setProductoActual(producto);
+    setModalEditar(true);
+  };
+
+  const handleGuardarProducto = async () => {
+    try {
+      const dataToSend = {
+        ...formData,
+        precio_unitario: Number(formData.precio_unitario) || 0,
+        stock_actual: Number(formData.stock_actual) || 0,
+        stock_minimo: Number(formData.stock_minimo) || 0,
+        stock_maximo: Number(formData.stock_maximo) || 0,
+      };
+
+      if (productoActual) {
+        const success = await inventarioService.actualizarProducto(productoActual.id, dataToSend);
+        if (success) {
+          toast.success('Producto actualizado correctamente');
+          setModalEditar(false);
+          loadData();
+        } else {
+          toast.error('Error al actualizar producto');
+        }
+      } else {
+        const nuevo = await inventarioService.crearProducto(dataToSend);
+        if (nuevo) {
+          toast.success('Producto creado correctamente');
+          setModalNuevo(false);
+          loadData();
+        } else {
+          toast.error('Error al crear producto');
+        }
+      }
+    } catch (error) {
+      console.error('Error guardando producto:', error);
+      toast.error('Error al guardar producto');
+    }
+  };
+
+  const handleEliminarProducto = (producto: Producto) => {
+    setProductoAEliminar(producto);
+    setModalConfirm(true);
+  };
+
+  const confirmarEliminar = async () => {
+    if (!productoAEliminar) return;
+
+    const success = await inventarioService.eliminarProducto(productoAEliminar.id);
+    if (success) {
+      toast.success('Producto eliminado correctamente');
+      loadData();
+    } else {
+      toast.error('Error al eliminar producto');
+    }
+    
+    setModalConfirm(false);
+    setProductoAEliminar(null);
+  };
+
+  const exportarAPDF = () => {
+    try {
+      const doc = new jsPDF();
+      
+      // Título
+      doc.setFontSize(18);
+      doc.text('Inventario de Productos', 14, 20);
+      
+      // Fecha
+      doc.setFontSize(10);
+      doc.text(`Fecha: ${new Date().toLocaleDateString('es-AR')}`, 14, 28);
+      
+      // Estadísticas
+      doc.text(`Total Productos: ${stats.total}`, 14, 35);
+      doc.text(`Stock Bajo: ${stats.stockBajo}`, 70, 35);
+      doc.text(`Categorías: ${stats.categorias}`, 120, 35);
+      doc.text(`Valor Total: $${stats.valorTotal.toLocaleString()}`, 14, 42);
+      
+      // Tabla
+      const tableData = productos.map(p => [
+        p.codigo,
+        p.nombre,
+        p.stock_actual.toString(),
+        p.stock_minimo.toString(),
+        `$${p.precio_unitario.toLocaleString()}`,
+        p.stock_actual < p.stock_minimo ? 'Stock Bajo' : 'OK'
+      ]);
+      
+      autoTable(doc, {
+        startY: 50,
+        head: [['Código', 'Producto', 'Stock', 'Mínimo', 'Precio', 'Estado']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [16, 185, 129] }, // emerald-600
+        styles: { fontSize: 9 },
+        columnStyles: {
+          0: { cellWidth: 25 },
+          1: { cellWidth: 60 },
+          2: { cellWidth: 20 },
+          3: { cellWidth: 20 },
+          4: { cellWidth: 25 },
+          5: { cellWidth: 30 }
+        }
+      });
+      
+      doc.save(`inventario_${new Date().toISOString().split('T')[0]}.pdf`);
+      toast.success('PDF generado correctamente');
+    } catch (error) {
+      console.error('Error generando PDF:', error);
+      toast.error('Error al generar PDF');
+    }
+  };
+
+  const exportarAExcel = () => {
+    try {
+      // Datos de la tabla
+      const dataExport = productos.map(p => ({
+        'Código': p.codigo,
+        'Producto': p.nombre,
+        'Descripción': p.descripcion || '',
+        'Stock Actual': p.stock_actual,
+        'Stock Mínimo': p.stock_minimo,
+        'Stock Máximo': p.stock_maximo || 0,
+        'Unidad': p.unidad_medida,
+        'Precio Unitario': p.precio_unitario,
+        'Valor Total': p.stock_actual * p.precio_unitario,
+        'Estado': p.stock_actual < p.stock_minimo ? 'Stock Bajo' : 'OK'
+      }));
+      
+      // Crear hoja de cálculo
+      const ws = XLSX.utils.json_to_sheet(dataExport);
+      
+      // Ajustar ancho de columnas
+      const colWidths = [
+        { wch: 12 }, // Código
+        { wch: 30 }, // Producto
+        { wch: 40 }, // Descripción
+        { wch: 12 }, // Stock Actual
+        { wch: 12 }, // Stock Mínimo
+        { wch: 12 }, // Stock Máximo
+        { wch: 10 }, // Unidad
+        { wch: 15 }, // Precio
+        { wch: 15 }, // Valor Total
+        { wch: 12 }  // Estado
+      ];
+      ws['!cols'] = colWidths;
+      
+      // Crear libro
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Inventario');
+      
+      // Guardar archivo
+      XLSX.writeFile(wb, `inventario_${new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success('Excel generado correctamente');
+    } catch (error) {
+      console.error('Error generando Excel:', error);
+      toast.error('Error al generar Excel');
+    }
+  };
+
+  const stats = useMemo(() => {
+    // Calcular desde los productos reales
+    const total = productos.length;
+    const stockBajo = productos.filter(p => p.stock_actual < p.stock_minimo).length;
+    
+    // Contar categorías únicas
+    const categoriasUnicas = new Set(productos.map(p => p.categoria_id));
+    const categorias = categoriasUnicas.size;
+    
+    // Calcular valor total del inventario
+    const valorTotal = productos.reduce((sum, p) => {
+      return sum + (p.stock_actual * p.precio_unitario);
+    }, 0);
+
+    return {
+      total,
+      stockBajo,
+      categorias,
+      valorTotal: Math.round(valorTotal), // Redondear a entero
+    };
+  }, [productos]);
+
+  const productosFiltrados = productos.filter(prod => {
+    const matchesBusqueda = 
+      prod.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+      prod.codigo.toLowerCase().includes(busqueda.toLowerCase());
+    const matchesStockBajo = !filtroStockBajo || prod.stock_actual < prod.stock_minimo;
+    return matchesBusqueda && matchesStockBajo;
+  });
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8">
+        <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,transparent,black)]" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-green-500/20 rounded-full blur-3xl" />
+        
+        <div className="relative">
+          <div className="flex items-center gap-3 mb-2">
+            <Package className="w-8 h-8 text-emerald-400" />
+            <h1 className="text-3xl font-bold text-white">Gestión de Inventario</h1>
+          </div>
+          <p className="text-slate-300 text-lg">
+            Controla productos, stock y movimientos del establecimiento
+          </p>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm font-medium">Total Productos</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.total}</p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+                <Package className="w-6 h-6 text-emerald-600" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                En catálogo
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm font-medium">Stock Bajo</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.stockBajo}</p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center">
+                <TrendingDown className="w-6 h-6 text-orange-600" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <Badge variant="secondary" className="bg-orange-50 text-orange-700 border-orange-200">
+                Requieren reposición
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm font-medium">Categorías</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.categorias}</p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-purple-600" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-200">
+                Tipos de producto
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm font-medium">Valor Total</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">${stats.valorTotal.toLocaleString()}</p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
+                Inventario valorizado
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Content Card */}
+      <Card className="rounded-2xl shadow-xl">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardDescription>
+              Lista completa de productos en inventario
+            </CardDescription>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/establecimiento/inventario/movimientos"
+                className="px-3 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors flex items-center gap-2 text-sm"
+              >
+                <TrendingUp className="w-4 h-4" />
+                Movimientos
+              </Link>
+              <button
+                onClick={exportarAPDF}
+                className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors flex items-center gap-2 text-sm"
+              >
+                <FileText className="w-4 h-4" />
+                PDF
+              </button>
+              <button
+                onClick={exportarAExcel}
+                className="px-3 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors flex items-center gap-2 text-sm"
+              >
+                <Download className="w-4 h-4" />
+                Excel
+              </button>
+              <button
+                onClick={handleNuevoProducto}
+                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Nuevo Producto
+              </button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Filters */}
+          <div className="mb-6 flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                placeholder="Buscar por nombre o código..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              />
+              <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+            </div>
+            <label className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg cursor-pointer">
+              <input
+                type="checkbox"
+                checked={filtroStockBajo}
+                onChange={(e) => setFiltroStockBajo(e.target.checked)}
+                className="rounded"
+              />
+              <span className="text-sm">Solo stock bajo</span>
+            </label>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <div className="min-w-full inline-block align-middle">
+              <div className="overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mínimo</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {productosFiltrados.map((prod) => (
+                      <tr key={prod.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">{prod.codigo}</td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-medium text-gray-900">{prod.nombre}</div>
+                          <div className="text-sm text-gray-500">{prod.descripcion}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{prod.stock_actual} {prod.unidad_medida}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{prod.stock_minimo}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${prod.precio_unitario}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge variant={prod.stock_actual < prod.stock_minimo ? 'destructive' : 'default'}>
+                            {prod.stock_actual < prod.stock_minimo ? 'Stock Bajo' : 'OK'}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex items-center justify-center gap-2">
+                            <Link
+                              href={`/establecimiento/inventario/${prod.id}`}
+                              className="p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-purple-600 hover:text-white transition-all duration-200 hover:scale-110 inline-block"
+                              title="Ver detalle"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Link>
+                            <Link
+                              href={`/establecimiento/inventario/${prod.id}/movimientos`}
+                              className="p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-amber-600 hover:text-white transition-all duration-200 hover:scale-110 inline-block"
+                              title="Ver movimientos"
+                            >
+                              <TrendingUp className="h-4 w-4" />
+                            </Link>
+                            <button
+                              onClick={() => handleEditarProducto(prod)}
+                              type="button"
+                              className="p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-blue-600 hover:text-white transition-all duration-200 hover:scale-110"
+                              title="Editar"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleEliminarProducto(prod)}
+                              type="button"
+                              className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all duration-200 hover:scale-110"
+                              title="Eliminar"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {productosFiltrados.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-gray-500">No se encontraron productos</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Modal Nuevo Producto */}
+      <Dialog open={modalNuevo} onOpenChange={setModalNuevo}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+              <Plus className="w-6 h-6 text-emerald-600" />
+              Nuevo Producto
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Código</label>
+                <input
+                  type="text"
+                  value={formData.codigo}
+                  onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
+                  className="w-full mt-1 px-3 py-2 border rounded-lg"
+                  placeholder="ALI-001"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Unidad de medida</label>
+                <select
+                  value={formData.unidad_medida}
+                  onChange={(e) => setFormData({ ...formData, unidad_medida: e.target.value as 'kg' | 'litro' | 'unidad' })}
+                  className="w-full mt-1 px-3 py-2 border rounded-lg"
+                >
+                  <option value="kg">Kilogramos</option>
+                  <option value="litro">Litros</option>
+                  <option value="unidad">Unidades</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Nombre del producto</label>
+              <input
+                type="text"
+                value={formData.nombre}
+                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                className="w-full mt-1 px-3 py-2 border rounded-lg"
+                placeholder="Avena Premium"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Descripción</label>
+              <textarea
+                value={formData.descripcion}
+                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                className="w-full mt-1 px-3 py-2 border rounded-lg"
+                rows={3}
+                placeholder="Descripción del producto..."
+              />
+            </div>
+            <div className="grid grid-cols-4 gap-4">
+              <div>
+                <label className="text-sm font-medium">Precio unitario</label>
+                <input
+                  type="number"
+                  value={formData.precio_unitario}
+                  onChange={(e) => setFormData({ ...formData, precio_unitario: e.target.value === '' ? '' : parseFloat(e.target.value) })}
+                  className="w-full mt-1 px-3 py-2 border rounded-lg"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Stock actual</label>
+                <input
+                  type="number"
+                  value={formData.stock_actual}
+                  onChange={(e) => setFormData({ ...formData, stock_actual: e.target.value === '' ? '' : parseFloat(e.target.value) })}
+                  className="w-full mt-1 px-3 py-2 border rounded-lg"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Stock mínimo</label>
+                <input
+                  type="number"
+                  value={formData.stock_minimo}
+                  onChange={(e) => setFormData({ ...formData, stock_minimo: e.target.value === '' ? '' : parseFloat(e.target.value) })}
+                  className="w-full mt-1 px-3 py-2 border rounded-lg"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Stock máximo</label>
+                <input
+                  type="number"
+                  value={formData.stock_maximo}
+                  onChange={(e) => setFormData({ ...formData, stock_maximo: e.target.value === '' ? '' : parseFloat(e.target.value) })}
+                  className="w-full mt-1 px-3 py-2 border rounded-lg"
+                  placeholder="0"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <button
+              onClick={() => setModalNuevo(false)}
+              className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleGuardarProducto}
+              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+            >
+              Guardar Producto
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Editar Producto */}
+      <Dialog open={modalEditar} onOpenChange={setModalEditar}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+              <Package className="w-6 h-6 text-blue-600" />
+              Editar Producto
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Código</label>
+                <input
+                  type="text"
+                  value={formData.codigo}
+                  onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
+                  className="w-full mt-1 px-3 py-2 border rounded-lg"
+                  placeholder="ALI-001"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Unidad de medida</label>
+                <select
+                  value={formData.unidad_medida}
+                  onChange={(e) => setFormData({ ...formData, unidad_medida: e.target.value as 'kg' | 'litro' | 'unidad' })}
+                  className="w-full mt-1 px-3 py-2 border rounded-lg"
+                >
+                  <option value="kg">Kilogramos</option>
+                  <option value="litro">Litros</option>
+                  <option value="unidad">Unidades</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Nombre del producto</label>
+              <input
+                type="text"
+                value={formData.nombre}
+                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                className="w-full mt-1 px-3 py-2 border rounded-lg"
+                placeholder="Avena Premium"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Descripción</label>
+              <textarea
+                value={formData.descripcion}
+                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                className="w-full mt-1 px-3 py-2 border rounded-lg"
+                rows={3}
+                placeholder="Descripción del producto..."
+              />
+            </div>
+            <div className="grid grid-cols-4 gap-4">
+              <div>
+                <label className="text-sm font-medium">Precio unitario</label>
+                <input
+                  type="number"
+                  value={formData.precio_unitario}
+                  onChange={(e) => setFormData({ ...formData, precio_unitario: e.target.value === '' ? '' : parseFloat(e.target.value) })}
+                  className="w-full mt-1 px-3 py-2 border rounded-lg"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Stock actual</label>
+                <input
+                  type="number"
+                  value={formData.stock_actual}
+                  onChange={(e) => setFormData({ ...formData, stock_actual: e.target.value === '' ? '' : parseFloat(e.target.value) })}
+                  className="w-full mt-1 px-3 py-2 border rounded-lg"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Stock mínimo</label>
+                <input
+                  type="number"
+                  value={formData.stock_minimo}
+                  onChange={(e) => setFormData({ ...formData, stock_minimo: e.target.value === '' ? '' : parseFloat(e.target.value) })}
+                  className="w-full mt-1 px-3 py-2 border rounded-lg"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Stock máximo</label>
+                <input
+                  type="number"
+                  value={formData.stock_maximo}
+                  onChange={(e) => setFormData({ ...formData, stock_maximo: e.target.value === '' ? '' : parseFloat(e.target.value) })}
+                  className="w-full mt-1 px-3 py-2 border rounded-lg"
+                  placeholder="0"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <button
+              onClick={() => setModalEditar(false)}
+              className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleGuardarProducto}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Guardar Cambios
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Confirmación para Eliminar */}
+      <Dialog open={modalConfirm} onOpenChange={setModalConfirm}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-red-600">
+              <Trash2 className="w-6 h-6" />
+              Confirmar Eliminación
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-gray-700">
+              ¿Estás seguro de eliminar el producto{' '}
+              <span className="font-bold">{productoAEliminar?.nombre}</span>?
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              Esta acción no se puede deshacer. Se perderá toda la información del producto y su historial.
+            </p>
+          </div>
+          <DialogFooter>
+            <button
+              onClick={() => {
+                setModalConfirm(false);
+                setProductoAEliminar(null);
+              }}
+              className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={confirmarEliminar}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            >
+              Eliminar Producto
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

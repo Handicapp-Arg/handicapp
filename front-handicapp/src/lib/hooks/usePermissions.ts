@@ -39,11 +39,11 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   ],
   
   establecimiento: [
-    'users:read',
+    'users:read', 'users:write',  // ✅ Puede crear y gestionar usuarios (capataz, veterinario, empleado)
     'establishments:read', 'establishments:write',
     'establishments:manage_users', 'establishments:view_stats',
-    'horses:read', 'horses:write',
-    'horses:manage_owners', 'horses:view_medical',
+    'horses:read',  // ❌ SIN horses:write - establecimiento NO puede editar caballos
+    'horses:view_medical',  // Solo puede VER historial médico
     'events:read', 'events:write',
     'events:view_reports',
     'tasks:read', 'tasks:write',
@@ -62,8 +62,8 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   veterinario: [
     'users:read',
     'establishments:read',
-    'horses:read', 'horses:write',
-    'horses:view_medical', 'horses:edit_medical',
+    'horses:read',  // ❌ SIN horses:write - veterinario NO puede editar datos básicos del caballo
+    'horses:view_medical', 'horses:edit_medical',  // ✅ Solo puede editar historial médico
     'events:read', 'events:write', 'events:delete',
     'events:create_medical',
     'tasks:read', 'tasks:write',
@@ -73,17 +73,18 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   capataz: [
     'users:read',
     'establishments:read',
-    'horses:read', 'horses:write',
+    'horses:read',  // ❌ SIN horses:write - capataz NO puede editar datos del caballo
     'events:read', 'events:write',
     'tasks:read', 'tasks:write', 'tasks:delete',
     'tasks:assign', 'tasks:complete', 'tasks:view_all'
   ],
   
   empleado: [
+    'users:read',
     'establishments:read',
     'horses:read',
-    'events:read',
-    'tasks:read', 'tasks:complete'
+    'events:read', 'events:write',  // ✅ Puede crear y ver eventos
+    'tasks:read', 'tasks:write', 'tasks:complete'  // ✅ Puede crear, ver y completar tareas
   ]
 };
 

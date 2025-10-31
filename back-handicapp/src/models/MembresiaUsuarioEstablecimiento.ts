@@ -22,14 +22,14 @@ export class MembresiaUsuarioEstablecimiento
   extends Model<MUEAttrs, MUECreation>
   implements MUEAttrs
 {
-  public id!: number;
-  public usuario_id!: number;
-  public establecimiento_id!: number;
-  public rol_en_establecimiento!: RolEnEstablecimiento;
-  public estado_membresia!: EstadoMembresia;
-  public fecha_inicio!: Date | null;
-  public fecha_fin!: Date | null;
-  public creado_el!: Date;
+  declare id: number;
+  declare usuario_id: number;
+  declare establecimiento_id: number;
+  declare rol_en_establecimiento: RolEnEstablecimiento;
+  declare estado_membresia: EstadoMembresia;
+  declare fecha_inicio: Date | null;
+  declare fecha_fin: Date | null;
+  declare creado_el: Date;
 }
 
 MembresiaUsuarioEstablecimiento.init(

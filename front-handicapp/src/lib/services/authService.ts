@@ -95,7 +95,7 @@ class AuthService {
         headers: this.getAuthHeaders(),
       });
     } catch (error) {
-      logger.warn('Error en logout del backend:', error);
+      console.warn('Error en logout del backend:', error);
     } finally {
       // Limpiar datos locales siempre
       this.clearAuthData();
@@ -110,7 +110,7 @@ class AuthService {
       const token = await this.getValidAccessToken();
       return token !== null;
     } catch (error) {
-      logger.warn('Error verificando autenticación:', error);
+      console.warn('Error verificando autenticación:', error);
       return false;
     }
   }
@@ -123,7 +123,7 @@ class AuthService {
       const userData = localStorage.getItem(STORAGE_KEYS.USER_DATA);
       return userData ? JSON.parse(userData) : null;
     } catch (error) {
-      logger.error('Error obteniendo usuario:', error);
+      console.error('Error obteniendo usuario:', error);
       return null;
     }
   }
@@ -151,7 +151,7 @@ class AuthService {
 
       return tokenData.accessToken;
     } catch (error) {
-      logger.error('Error obteniendo token válido:', error);
+      console.error('Error obteniendo token válido:', error);
       this.clearAuthData();
       return null;
     }
@@ -227,7 +227,7 @@ class AuthService {
 
       throw new Error('Invalid refresh response');
     } catch (error) {
-      logger.error('Error refreshing token:', error);
+      console.error('Error refreshing token:', error);
       this.clearAuthData();
       return null;
     }
@@ -256,7 +256,7 @@ class AuthService {
       this.setCookie(COOKIE_KEYS.ROLE, user.rol.id.toString(), expires);
       
     } catch (error) {
-      logger.error('Error guardando datos de autenticación:', error);
+      console.error('Error guardando datos de autenticación:', error);
       throw error;
     }
   }
@@ -275,7 +275,7 @@ class AuthService {
       this.deleteCookie(COOKIE_KEYS.ROLE);
       
     } catch (error) {
-      logger.error('Error limpiando datos de autenticación:', error);
+      console.error('Error limpiando datos de autenticación:', error);
     }
   }
 
@@ -287,7 +287,7 @@ class AuthService {
       const tokenData = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
       return tokenData ? JSON.parse(tokenData) : null;
     } catch (error) {
-      logger.error('Error obteniendo token data:', error);
+      console.error('Error obteniendo token data:', error);
       return null;
     }
   }

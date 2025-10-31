@@ -15,8 +15,17 @@ interface EventoAttrs {
   estado_validacion: EstadoValidacionEvento;
   validado_por_usuario_id: number | null;
   validado_el: Date | null;
-  costo_monto: string | null;   // usamos string por DECIMAL; si preferís number, ajustar parseo
-  costo_moneda: string | null;  // char(3)
+  costo_monto: string | null;
+  costo_moneda: string | null;
+  // Nuevos campos
+  hora_inicio: string | null;
+  hora_fin: string | null;
+  ubicacion: string | null;
+  estado: string | null;
+  prioridad: string | null;
+  es_publico: boolean;
+  requiere_validacion: boolean;
+  // Timestamps
   creado_el: Date;
   actualizado_el: Date | null;
   eliminado_el: Date | null;
@@ -34,6 +43,13 @@ type EventoCreate = Optional<
   | "validado_el"
   | "costo_monto"
   | "costo_moneda"
+  | "hora_inicio"
+  | "hora_fin"
+  | "ubicacion"
+  | "estado"
+  | "prioridad"
+  | "es_publico"
+  | "requiere_validacion"
   | "creado_el"
   | "actualizado_el"
   | "eliminado_el"
@@ -54,6 +70,13 @@ export class Evento extends Model<EventoAttrs, EventoCreate> implements EventoAt
   public validado_el!: Date | null;
   public costo_monto!: string | null;
   public costo_moneda!: string | null;
+  public hora_inicio!: string | null;
+  public hora_fin!: string | null;
+  public ubicacion!: string | null;
+  public estado!: string | null;
+  public prioridad!: string | null;
+  public es_publico!: boolean;
+  public requiere_validacion!: boolean;
   public creado_el!: Date;
   public actualizado_el!: Date | null;
   public eliminado_el!: Date | null;
@@ -79,6 +102,13 @@ Evento.init(
     validado_el: { type: DataTypes.DATE, allowNull: true },
     costo_monto: { type: DataTypes.DECIMAL(14, 2), allowNull: true },
     costo_moneda: { type: DataTypes.CHAR(3), allowNull: true },
+    hora_inicio: { type: DataTypes.TIME, allowNull: true },
+    hora_fin: { type: DataTypes.TIME, allowNull: true },
+    ubicacion: { type: DataTypes.STRING(255), allowNull: true },
+    estado: { type: DataTypes.STRING(20), allowNull: true, defaultValue: 'programado' },
+    prioridad: { type: DataTypes.STRING(20), allowNull: true, defaultValue: 'media' },
+    es_publico: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+    requiere_validacion: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
     creado_el: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
     actualizado_el: { type: DataTypes.DATE, allowNull: true },
     eliminado_el: { type: DataTypes.DATE, allowNull: true },

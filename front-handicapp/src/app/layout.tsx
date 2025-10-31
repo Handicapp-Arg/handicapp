@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers/Providers";
+import { RootErrorBoundary } from "@/components/error";
+import { PWAInstallPrompt, PWAUpdateNotification, OfflineIndicator } from "@/components/pwa";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,13 +27,35 @@ export const metadata: Metadata = {
     shortcut: "/logos/logo-icon-brown.png",
     apple: "/logos/logo-icon-brown.png",
   },
-  // manifest: "/manifest.json", // Comentado hasta crear el archivo
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "HandicApp",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  openGraph: {
+    type: "website",
+    siteName: "HandicApp",
+    title: "HandicApp - Sistema de Gestión Equina",
+    description: "Sistema integral de gestión para establecimientos equinos",
+  },
+  twitter: {
+    card: "summary",
+    title: "HandicApp",
+    description: "Sistema de Gestión Equina",
+  },
 };
 
 export const viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#3C2013",
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: "#0f172a",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -42,11 +66,18 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}>
-        <Providers>
-          <div className="h-full w-full">
-            {children}
-          </div>
-        </Providers>
+        <RootErrorBoundary showDetails={process.env.NODE_ENV === 'development'}>
+          <Providers>
+            <div className="h-full w-full">
+              {/* PWA Components */}
+              <OfflineIndicator />
+              <PWAUpdateNotification />
+              <PWAInstallPrompt />
+              
+              {children}
+            </div>
+          </Providers>
+        </RootErrorBoundary>
       </body>
     </html>
   );

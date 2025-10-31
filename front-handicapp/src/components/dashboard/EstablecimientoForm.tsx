@@ -4,9 +4,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { establecimientoService, type Establecimiento, type CreateEstablecimientoData } from '@/lib/services/establecimientoService';
-import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { establecimientoService, type Establecimiento } from '@/lib/services/establecimientoService';
 import { Modal } from '@/components/ui/modal';
 
 interface EstablecimientoFormProps {
@@ -22,25 +20,21 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<CreateEstablecimientoData>({
+  const [formData, setFormData] = useState({
     nombre: establecimiento?.nombre || '',
-    direccion: establecimiento?.direccion || '',
+    cuit: '',
+    direccion_calle: establecimiento?.direccion || '',
     telefono: establecimiento?.telefono || '',
     email: establecimiento?.email || '',
-    tipo_establecimiento: establecimiento?.tipo_establecimiento || 'haras',
-    superficie_hectareas: establecimiento?.superficie_hectareas || undefined,
-    cantidad_boxes: establecimiento?.cantidad_boxes || undefined,
-    cantidad_paddocks: establecimiento?.cantidad_paddocks || undefined,
-    servicios_disponibles: establecimiento?.servicios_disponibles || []
+    tipo_establecimiento: (establecimiento as any)?.tipo_establecimiento || 'mixto',
+    estado: (establecimiento as any)?.estado || 'activo',
+    superficie_hectareas: (establecimiento as any)?.superficie_hectareas || '',
+    cantidad_boxes: (establecimiento as any)?.cantidad_boxes || '',
+    servicios: (establecimiento as any)?.servicios || []
   });
 
-  const handleInputChange = (field: keyof CreateEstablecimientoData, value: any) => {
+  const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleServiciosChange = (servicios: string) => {
-    const serviciosArray = servicios.split(',').map(s => s.trim()).filter(s => s.length > 0);
-    setFormData(prev => ({ ...prev, servicios_disponibles: serviciosArray }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,16 +46,31 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
       let result: Establecimiento;
       
       if (establecimiento?.id) {
-        // Editar establecimiento existente
         result = await establecimientoService.update(establecimiento.id, formData);
       } else {
-        // Crear nuevo establecimiento
-        result = await establecimientoService.create(formData);
+        result = await establecimientoService.create(formData as any);
       }
 
       onSave?.(result);
     } catch (err: any) {
-      setError(err.message || 'Error al guardar el establecimiento');
+      // Extraer el mensaje de error más específico
+      let errorMessage = 'Error al guardar el establecimiento';
+      
+      if (err.data) {
+        const data = err.data;
+        if (data.errors && Array.isArray(data.errors)) {
+          // Errores de validación de express-validator
+          errorMessage = data.errors.map((e: any) => `${e.path}: ${e.msg}`).join(', ');
+        } else if (data.message) {
+          errorMessage = data.message;
+        } else if (data.error) {
+          errorMessage = data.error;
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -78,9 +87,9 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
           )}
 
           {/* Grid de dos columnas para organizar mejor */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6">
             
-            {/* Columna izquierda */}
+            {/* Información básica y contacto */}
             <div className="space-y-4 sm:space-y-6">
               {/* Información básica */}
               <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
@@ -100,32 +109,95 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
                   </div>
 
                   <div>
-                    <Label htmlFor="tipo_establecimiento" className="text-sm font-medium text-gray-700">Tipo *</Label>
+                    <Label htmlFor="cuit" className="text-sm font-medium text-gray-700">CUIT *</Label>
+                    <Input
+                      id="cuit"
+                      value={formData.cuit}
+                      onChange={(e) => handleInputChange('cuit', e.target.value)}
+                      placeholder="20-12345678-9"
+                      className="mt-1 focus:ring-blue-500 focus:border-blue-500"
+                      required
+                      minLength={11}
+                      maxLength={13}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">Formato: XX-XXXXXXXX-X (11-13 caracteres)</p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="direccion_calle" className="text-sm font-medium text-gray-700">Dirección *</Label>
+                    <Input
+                      id="direccion_calle"
+                      value={formData.direccion_calle}
+                      onChange={(e) => handleInputChange('direccion_calle', e.target.value)}
+                      placeholder="Dirección completa"
+                      className="mt-1 focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Detalles del establecimiento */}
+              <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Detalles</h3>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="tipo_establecimiento" className="text-sm font-medium text-gray-700">Tipo</Label>
                     <select
                       id="tipo_establecimiento"
                       value={formData.tipo_establecimiento}
-                      onChange={(e) => handleInputChange('tipo_establecimiento', e.target.value as any)}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      required
+                      onChange={(e) => handleInputChange('tipo_establecimiento', e.target.value)}
+                      className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                     >
+                      <option value="mixto">Mixto</option>
                       <option value="haras">Haras</option>
                       <option value="polo">Polo</option>
                       <option value="salto">Salto</option>
                       <option value="doma">Doma</option>
                       <option value="turf">Turf</option>
-                      <option value="mixto">Mixto</option>
+                      <option value="enduro">Enduro</option>
+                      <option value="otro">Otro</option>
                     </select>
                   </div>
 
                   <div>
-                    <Label htmlFor="direccion" className="text-sm font-medium text-gray-700">Dirección *</Label>
+                    <Label htmlFor="estado" className="text-sm font-medium text-gray-700">Estado</Label>
+                    <select
+                      id="estado"
+                      value={formData.estado}
+                      onChange={(e) => handleInputChange('estado', e.target.value)}
+                      className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                    >
+                      <option value="activo">Activo</option>
+                      <option value="inactivo">Inactivo</option>
+                      <option value="mantenimiento">Mantenimiento</option>
+                      <option value="suspendido">Suspendido</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="superficie_hectareas" className="text-sm font-medium text-gray-700">Superficie (hectáreas)</Label>
                     <Input
-                      id="direccion"
-                      value={formData.direccion}
-                      onChange={(e) => handleInputChange('direccion', e.target.value)}
-                      placeholder="Dirección completa"
+                      id="superficie_hectareas"
+                      type="number"
+                      step="0.01"
+                      value={formData.superficie_hectareas}
+                      onChange={(e) => handleInputChange('superficie_hectareas', e.target.value ? parseFloat(e.target.value) : '')}
+                      placeholder="50.5"
                       className="mt-1 focus:ring-blue-500 focus:border-blue-500"
-                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="cantidad_boxes" className="text-sm font-medium text-gray-700">Cantidad de boxes</Label>
+                    <Input
+                      id="cantidad_boxes"
+                      type="number"
+                      value={formData.cantidad_boxes}
+                      onChange={(e) => handleInputChange('cantidad_boxes', e.target.value ? parseInt(e.target.value) : '')}
+                      placeholder="20"
+                      className="mt-1 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                 </div>
@@ -158,76 +230,6 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
                       className="mt-1 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Columna derecha */}
-            <div className="space-y-4 sm:space-y-6">
-              {/* Características físicas */}
-              <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Características</h3>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4">
-                  <div>
-                    <Label htmlFor="superficie_hectareas" className="text-sm font-medium text-gray-700">Superficie (ha)</Label>
-                    <Input
-                      id="superficie_hectareas"
-                      type="number"
-                      min="0"
-                      step="0.1"
-                      value={formData.superficie_hectareas || ''}
-                      onChange={(e) => handleInputChange('superficie_hectareas', e.target.value ? parseFloat(e.target.value) : undefined)}
-                      placeholder="0.0"
-                      className="mt-1 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="cantidad_boxes" className="text-sm font-medium text-gray-700">Boxes</Label>
-                    <Input
-                      id="cantidad_boxes"
-                      type="number"
-                      min="0"
-                      value={formData.cantidad_boxes || ''}
-                      onChange={(e) => handleInputChange('cantidad_boxes', e.target.value ? parseInt(e.target.value) : undefined)}
-                      placeholder="0"
-                      className="mt-1 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="cantidad_paddocks" className="text-sm font-medium text-gray-700">Paddocks</Label>
-                    <Input
-                      id="cantidad_paddocks"
-                      type="number"
-                      min="0"
-                      value={formData.cantidad_paddocks || ''}
-                      onChange={(e) => handleInputChange('cantidad_paddocks', e.target.value ? parseInt(e.target.value) : undefined)}
-                      placeholder="0"
-                      className="mt-1 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Servicios disponibles */}
-              <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Servicios</h3>
-                
-                <div>
-                  <Label htmlFor="servicios_disponibles" className="text-sm font-medium text-gray-700">Servicios disponibles</Label>
-                  <Textarea
-                    id="servicios_disponibles"
-                    value={formData.servicios_disponibles?.join(', ') || ''}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleServiciosChange(e.target.value)}
-                    placeholder="Veterinaria, Herrería, Entrenamiento..."
-                    rows={4}
-                    className="mt-1 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Separados por comas
-                  </p>
                 </div>
               </div>
             </div>

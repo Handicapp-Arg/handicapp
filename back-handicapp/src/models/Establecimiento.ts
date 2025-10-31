@@ -2,6 +2,24 @@ import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/database";
 import { Disciplina } from "./enums";
 
+export enum TipoEstablecimiento {
+  haras = 'haras',
+  polo = 'polo',
+  salto = 'salto',
+  doma = 'doma',
+  turf = 'turf',
+  enduro = 'enduro',
+  mixto = 'mixto',
+  otro = 'otro'
+}
+
+export enum EstadoEstablecimiento {
+  activo = 'activo',
+  inactivo = 'inactivo',
+  mantenimiento = 'mantenimiento',
+  suspendido = 'suspendido'
+}
+
 interface EstabAttrs {
   id: number;
   nombre: string;
@@ -19,6 +37,12 @@ interface EstabAttrs {
 
   logo_url: string | null;
   disciplina_principal: Disciplina | null;
+  
+  tipo_establecimiento: TipoEstablecimiento;
+  estado: EstadoEstablecimiento;
+  superficie_hectareas: number | null;
+  cantidad_boxes: number | null;
+  servicios: string[];
 
   creado_el: Date;
   actualizado_el: Date | null;
@@ -38,6 +62,11 @@ type EstabCreation = Optional<
   | "pais"
   | "logo_url"
   | "disciplina_principal"
+  | "tipo_establecimiento"
+  | "estado"
+  | "superficie_hectareas"
+  | "cantidad_boxes"
+  | "servicios"
   | "creado_el"
   | "actualizado_el"
 >;
@@ -46,25 +75,31 @@ export class Establecimiento
   extends Model<EstabAttrs, EstabCreation>
   implements EstabAttrs
 {
-  public id!: number;
-  public nombre!: string;
-  public cuit!: string;
-  public email!: string | null;
-  public telefono!: string | null;
+  declare id: number;
+  declare nombre: string;
+  declare cuit: string;
+  declare email: string | null;
+  declare telefono: string | null;
 
-  public direccion_calle!: string | null;
-  public direccion_numero!: string | null;
-  public direccion_complemento!: string | null;
-  public codigo_postal!: string | null;
-  public ciudad!: string | null;
-  public provincia!: string | null;
-  public pais!: string | null;
+  declare direccion_calle: string | null;
+  declare direccion_numero: string | null;
+  declare direccion_complemento: string | null;
+  declare codigo_postal: string | null;
+  declare ciudad: string | null;
+  declare provincia: string | null;
+  declare pais: string | null;
 
-  public logo_url!: string | null;
-  public disciplina_principal!: Disciplina | null;
+  declare logo_url: string | null;
+  declare disciplina_principal: Disciplina | null;
+  
+  declare tipo_establecimiento: TipoEstablecimiento;
+  declare estado: EstadoEstablecimiento;
+  declare superficie_hectareas: number | null;
+  declare cantidad_boxes: number | null;
+  declare servicios: string[];
 
-  public creado_el!: Date;
-  public actualizado_el!: Date | null;
+  declare creado_el: Date;
+  declare actualizado_el: Date | null;
 }
 
 Establecimiento.init(
@@ -89,6 +124,30 @@ Establecimiento.init(
       allowNull: true,
     },
 
+    tipo_establecimiento: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      defaultValue: 'mixto',
+    },
+    estado: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      defaultValue: 'activo',
+    },
+    superficie_hectareas: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+    },
+    cantidad_boxes: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    servicios: {
+      type: DataTypes.JSONB,
+      allowNull: false,
+      defaultValue: [],
+    },
+
     creado_el: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
     actualizado_el: { type: DataTypes.DATE, allowNull: true },
   },
@@ -102,6 +161,8 @@ Establecimiento.init(
       { name: "ix_establecimientos_cp", fields: ["codigo_postal"] },
       { name: "ix_establecimientos_provincia", fields: ["provincia"] },
       { name: "ix_establecimientos_ciudad", fields: ["ciudad"] },
+      { name: "ix_establecimientos_tipo", fields: ["tipo_establecimiento"] },
+      { name: "ix_establecimientos_estado", fields: ["estado"] },
     ],
   }
 );

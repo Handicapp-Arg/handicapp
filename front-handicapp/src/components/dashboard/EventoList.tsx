@@ -18,7 +18,7 @@ export function EventoList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showForm, setShowForm] = useState(false);
-  const [selectedEvento, setSelectedEvento] = useState<Evento | null>(null);
+  const [selectedEventoId, setSelectedEventoId] = useState<number | null>(null);
   const { isAuthenticated, isLoading: authLoading } = useAuthNew();
   const { canCreateEvents, canDeleteEvents, getUserRole } = usePermissions();
 
@@ -39,7 +39,7 @@ export function EventoList() {
       setEventos(list);
       setTotalPages(totalPagesData);
     } catch (error) {
-      logger.error('Error loading eventos:', error);
+      console.error('Error loading eventos:', error);
       setEventos([]);
       setTotalPages(1);
     } finally {
@@ -48,12 +48,12 @@ export function EventoList() {
   };
 
   const handleCreateEvento = () => {
-    setSelectedEvento(null);
+    setSelectedEventoId(null);
     setShowForm(true);
   };
 
   const handleEditEvento = (evento: Evento) => {
-    setSelectedEvento(evento);
+    setSelectedEventoId(evento.id);
     setShowForm(true);
   };
 
@@ -63,15 +63,27 @@ export function EventoList() {
         await eventoService.delete(id);
         setEventos(eventos.filter(e => e.id !== id));
       } catch (error) {
-        logger.error('Error deleting evento:', error);
+        console.error('Error deleting evento:', error);
         alert('Error al eliminar el evento');
       }
     }
   };
 
   const handleFormSuccess = async () => {
+    setShowForm(false);
+    setSelectedEventoId(null);
     await fetchEventos();
   };
+
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setSelectedEventoId(null);
+  };
+
+  // Obtener el evento seleccionado de la lista actualizada
+  const selectedEvento = selectedEventoId 
+    ? eventos.find(e => e.id === selectedEventoId) || null
+    : null;
 
   const filteredEventos = eventos.filter(evento =>
     evento.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -126,9 +138,10 @@ export function EventoList() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredEventos.map((evento) => (
-          <Card key={evento.id} className="hover:shadow-lg transition-shadow">
+      <div className="max-w-7xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredEventos.map((evento) => (
+            <Card key={evento.id} className="hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex justify-between items-start">
                 <CardTitle className="text-lg">{evento.titulo}</CardTitle>
@@ -194,6 +207,7 @@ export function EventoList() {
             </CardContent>
           </Card>
         ))}
+        </div>
       </div>
 
       {/* Empty state moderno */}

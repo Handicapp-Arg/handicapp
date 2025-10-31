@@ -2,6 +2,7 @@
 
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useState, useMemo } from 'react';
+import Image from 'next/image';
 import ApiClient from '@/lib/services/apiClient';
 import { useToaster } from '@/components/ui/toaster';
 
@@ -36,7 +37,7 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-md mx-auto">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-24 h-24 bg-white/10 backdrop-blur-xl rounded-2xl mb-6">
-            <img src="/logos/logo-icon-white.png" alt="HandicApp" className="w-20 h-20" />
+            <Image src="/logos/logo-icon-white.png" alt="HandicApp" width={80} height={80} />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Restablecer contraseña</h1>
           <p className="text-[#D2B48C]/80 text-sm">Ingresá tu nueva contraseña</p>

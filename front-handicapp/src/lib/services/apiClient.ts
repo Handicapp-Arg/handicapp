@@ -1,7 +1,6 @@
 'use client';
 import { appConfig } from '@/lib/config';
 import AuthManager from '../auth/AuthManager';
-import { logger } from '@/lib/utils/logger';
 
 export class ApiClient {
   private static async request<T>(
@@ -9,16 +8,25 @@ export class ApiClient {
     options: RequestInit = {}
   ): Promise<T> {
     try {
+      // Obtener token del AuthManager (opcional, las cookies HTTP-only funcionan automáticamente)
+      const token = AuthManager.getInstance().getAuthToken();
+      
+      const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+      const headers: HeadersInit = {
+        ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+        // Solo agregar Authorization header si hay token en memoria (opcional)
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+        ...(options.headers as any),
+      };
       const config: RequestInit = {
-        credentials: 'include', // Las cookies httpOnly se envían automáticamente
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
+        credentials: 'include', // ✅ CRÍTICO: Las cookies httpOnly se envían automáticamente
+        headers,
         ...options,
       };
 
-      const response = await fetch(`${appConfig.apiBaseUrl}${endpoint}`, config);
+      const fullUrl = `${appConfig.apiBaseUrl}${endpoint}`;
+
+      const response = await fetch(fullUrl, config);
       
       // Manejar errores de autenticación
       if (response.status === 401) {
@@ -41,6 +49,10 @@ export class ApiClient {
         let errorDetails: string[] | undefined;
         try {
           const errorData = await response.json();
+          console.error(`❌ API Error Response:`, errorData);
+          console.error(`❌ Request URL:`, fullUrl);
+          console.error(`❌ Request Method:`, options.method || 'GET');
+          
           if (errorData.message) {
             errorMessage = errorData.message;
           }
@@ -49,20 +61,30 @@ export class ApiClient {
             // Si hay detalles, agregamos el primero al mensaje para visibilidad inmediata
             errorMessage = `${errorMessage}${errorDetails ? `: ${errorDetails[0]}` : ''}`;
           }
+          
+          // Si el errorData está vacío, usar mensaje genérico con más info
+          if (Object.keys(errorData).length === 0) {
+            errorMessage = `Error ${response.status}: La solicitud falló. URL: ${endpoint}`;
+          }
         } catch (e) {
-          // If can't parse error response, use default message
+          console.error(`❌ Could not parse error response:`, e);
+          // If can't parse error response, use default message with more context
+          errorMessage = `Error ${response.status}: ${response.statusText} - ${endpoint}`;
         }
         
         const err = new Error(errorMessage) as Error & { details?: string[] };
         if (errorDetails) err.details = errorDetails;
+        console.error(`❌ Throwing error:`, err);
         throw err;
       }
 
-      return response.json();
+  // Si no hay contenido, devolver objeto vacío
+  if (response.status === 204) return {} as any;
+  return response.json();
     } catch (error) {
       // Si es un error de red o similar, también verificar autenticación
       if (error instanceof TypeError && error.message.includes('fetch')) {
-  logger.error('Network error:', error);
+  console.error('Network error:', error);
         throw new Error('Error de conexión. Verifica tu conexión a internet.');
       }
       
@@ -92,7 +114,7 @@ export class ApiClient {
       });
     } catch (error) {
       // Ignorar errores en logout, siempre limpiar tokens locales
-  logger.warn('Error during logout:', error);
+  console.warn('Error during logout:', error);
     } finally {
       await AuthManager.getInstance().logout();
     }

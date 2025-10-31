@@ -3,6 +3,8 @@ import { config } from './config/config';
 import { logger } from './utils/logger';
 import { initializeApp } from './scripts/init-models';
 import { closeDatabase } from './config/database';
+import { websocketService } from './services/websocketService';
+import http from 'http';
 
 // Start server with complete initialization
 const startServer = async (): Promise<void> => {
@@ -10,9 +12,16 @@ const startServer = async (): Promise<void> => {
     // Initialize complete application (models, relations, seeds)
     await initializeApp();
     
+    // Create HTTP server (necesario para Socket.IO)
+    const httpServer = http.createServer(app);
+    
+    // Initialize WebSocket server
+    websocketService.initialize(httpServer);
+    logger.info('🔌 WebSocket server initialized');
+    
     // Start HTTP server
-    const server = app.listen(config.port, config.host, () => {
-  logger.info(`🚀 HandicApp API running on http://${config.host}:${config.port}`);
+    httpServer.listen(config.port, config.host, () => {
+      logger.info(`🚀 HandicApp API running on http://${config.host}:${config.port}`);
       if (config.nodeEnv === 'development') {
         logger.info(`📊 Environment: ${config.nodeEnv} | Version: ${config.api.version}`);
       }
@@ -23,10 +32,14 @@ const startServer = async (): Promise<void> => {
     const gracefulShutdown = async (signal: string) => {
       logger.info(`📡 Señal ${signal} recibida. Iniciando cierre controlado...`);
       
-      server.close(async () => {
+      httpServer.close(async () => {
         logger.info('🔌 Servidor HTTP cerrado');
         
         try {
+          // Cerrar WebSocket server
+          await websocketService.close();
+          logger.info('🔌 WebSocket server cerrado');
+          
           await closeDatabase();
           logger.info('✅ Cierre controlado completado');
           process.exit(0);

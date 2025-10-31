@@ -28,19 +28,22 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-[#3C2013] via-[#2A1609] to-[#1A0E06] flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md mx-auto">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-24 h-24 bg-white/10 backdrop-blur-xl rounded-2xl mb-6">
-            <img src="/logos/logo-icon-white.png" alt="HandicApp" className="w-20 h-20" />
+    <div className="min-h-screen w-full flex">
+      {/* Left Side - Formulario */}
+      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-white lg:px-8">
+        <div className="w-full max-w-md">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">Recuperar Contraseña</h1>
+            <p className="text-slate-600">Te enviaremos un enlace para restablecerla</p>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Recuperar contraseña</h1>
-          <p className="text-[#D2B48C]/80 text-sm">Te enviaremos un enlace para restablecerla</p>
-        </div>
-        <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10">
+
           <form onSubmit={onSubmit} className="space-y-5">
+            {/* Email */}
             <div>
-              <label className="block text-white/80 text-sm font-medium mb-2">Correo electrónico</label>
+              <label className="block text-slate-700 text-sm font-medium mb-2">
+                Correo electrónico
+              </label>
               <input
                 type="email"
                 name="email"
@@ -48,16 +51,70 @@ export default function ForgotPasswordPage() {
                 autoFocus
                 required
                 value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-white/90 border border-white/20 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#D2B48C] focus:border-transparent transition-all"
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#af936f] focus:border-transparent transition-all"
                 placeholder="tu@email.com"
               />
             </div>
-            {error && <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-3"><p className="text-red-200 text-sm">{error}</p></div>}
-            <button disabled={loading} className="w-full bg-gradient-to-r from-[#D2B48C] to-[#F5DEB3] text-[#3C2013] font-semibold py-3 rounded-xl hover:shadow-lg hover:shadow-[#D2B48C]/25 transition-all disabled:opacity-50">{loading ? 'Enviando...' : 'Enviar enlace'}</button>
+
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+                <p className="text-red-600 text-sm">{error}</p>
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#1e293b] text-white font-semibold py-3.5 rounded-xl hover:bg-[#0f172a] hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Enviando...' : 'Enviar Enlace'}
+            </button>
           </form>
-          <div className="mt-6 text-center">
-            <button onClick={() => router.push('/login')} className="text-[#D2B48C] hover:text-[#F5DEB3] font-medium transition-colors">Volver al login</button>
+
+          {/* Footer */}
+          <div className="mt-8 text-center">
+            <button
+              onClick={() => router.push('/login')}
+              className="text-[#af936f] hover:text-[#8f7657] font-semibold transition-colors"
+            >
+              Volver al login
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side - Visual/Branding */}
+      <div className="hidden lg:flex lg:flex-1 items-center justify-center p-8">
+        <div className="relative bg-[#0f172a] overflow-hidden rounded-3xl h-full w-full shadow-2xl">
+          {/* Pattern Background */}
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-60"></div>
+          
+          {/* Gradient Orbs */}
+          <div className="absolute top-20 right-20 w-72 h-72 bg-[#0e445d]/30 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 left-20 w-64 h-64 bg-[#af936f]/20 rounded-full blur-3xl"></div>
+          
+          {/* Content */}
+          <div className="relative z-10 flex flex-col items-center justify-center w-full h-full px-12 text-center">
+            {/* Logo Icon */}
+            <div className="mb-8">
+              <img
+                src="/logos/logo-icon-white.png"
+                alt="HandicApp"
+                className="h-32 w-32 object-contain"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logos/logo-full-white.png'; }}
+              />
+            </div>
+            
+            {/* Main Message */}
+            <h2 className="text-4xl font-bold text-white mb-4">
+              Recupera tu Acceso
+            </h2>
+            <p className="text-white/70 text-lg max-w-md">
+              No te preocupes, te ayudaremos a recuperar el acceso a tu cuenta de forma segura y rápida.
+            </p>
           </div>
         </div>
       </div>

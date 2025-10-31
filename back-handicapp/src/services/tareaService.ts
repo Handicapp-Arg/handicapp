@@ -75,14 +75,17 @@ export class TareaService {
         if (fechaVencimientoFin) where.fecha_vencimiento[Op.lte] = new Date(fechaVencimientoFin);
       }
 
-      // Control de acceso básico: si no es admin, mostrar tareas creadas o asignadas al usuario
-      if (userRole && userRole !== 'admin' && usuarioId) {
+      // Control de acceso: solo filtrar por usuario si NO tiene permiso tasks:view_all
+      // Admin, establecimiento y capataz pueden ver todas las tareas
+      const rolesConVistaCompleta = ['admin', 'establecimiento', 'capataz'];
+      if (userRole && !rolesConVistaCompleta.includes(userRole) && usuarioId) {
         where[Op.or] = [
           { creado_por_usuario_id: usuarioId },
           { asignado_a_usuario_id: usuarioId },
         ];
       }
 
+      // 🚀 OPTIMIZACIÓN: subQuery: false previene subqueries ineficientes
       const { count, rows } = await Tarea.findAndCountAll({
         where,
         include: [
@@ -95,6 +98,7 @@ export class TareaService {
         offset,
         order: [[sortBy, sortOrder]],
         distinct: true,
+        subQuery: false, // ← Previene subqueries ineficientes
       });
 
       const totalPages = Math.ceil(count / limit);

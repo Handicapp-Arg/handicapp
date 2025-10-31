@@ -27,14 +27,10 @@ export interface Establecimiento {
 
 export interface CreateEstablecimientoData {
   nombre: string;
-  direccion: string;
+  cuit: string;
+  direccion_calle?: string;
   telefono?: string;
   email?: string;
-  tipo_establecimiento: 'haras' | 'polo' | 'salto' | 'doma' | 'turf' | 'mixto';
-  superficie_hectareas?: number;
-  cantidad_boxes?: number;
-  cantidad_paddocks?: number;
-  servicios_disponibles?: string[];
 }
 
 export interface EstablecimientoFilters {
@@ -107,6 +103,33 @@ class EstablecimientoService {
 
   async removeUsuario(establecimientoId: number, usuarioId: number): Promise<{ success: boolean }> {
     const response = await apiClient.delete(`${this.baseUrl}/${establecimientoId}/usuarios/${usuarioId}`) as any;
+    return response.data;
+  }
+
+  async asociarCaballo(establecimientoId: number, caballoId: number): Promise<any> {
+    const response = await apiClient.post(`${this.baseUrl}/${establecimientoId}/caballos`, {
+      caballo_id: caballoId
+    }) as any;
+    return response.data;
+  }
+
+  // Flujo bidireccional de asociaciones
+  async solicitarCaballo(establecimientoId: number, caballoId: number): Promise<any> {
+    const response = await apiClient.post(`${this.baseUrl}/${establecimientoId}/solicitar-caballo`, {
+      caballo_id: caballoId
+    }) as any;
+    return response.data;
+  }
+
+  async aprobarAsociacion(establecimientoId: number, caballoId: number): Promise<any> {
+    const response = await apiClient.post(`${this.baseUrl}/${establecimientoId}/caballos/${caballoId}/aprobar`) as any;
+    return response.data;
+  }
+
+  async rechazarAsociacion(establecimientoId: number, caballoId: number, motivo?: string): Promise<any> {
+    const response = await apiClient.post(`${this.baseUrl}/${establecimientoId}/caballos/${caballoId}/rechazar`, {
+      motivo
+    }) as any;
     return response.data;
   }
 }

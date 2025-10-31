@@ -6,7 +6,15 @@ import { establecimientoRoutes } from './establecimientoRoutes';
 import { caballoRoutes } from './caballoRoutes';
 import { eventoRoutes } from './eventoRoutes';
 import { tareaRoutes } from './tareaRoutes';
+import adjuntoRoutes from './adjuntoRoutes';
+import qrCodeRoutes from './qrCodeRoutes';
+import auditoriaRoutes from './auditoriaRoutes';
+import { notificacionRoutes } from './notificacionRoutes';
+import pushRoutes from './pushRoutes';
+import { inventarioRoutes } from './inventarioRoutes';
 import { config } from '../config/config';
+import { Router as ExpressRouter2 } from 'express';
+import { UploadController, uploader } from '../controllers/uploadController';
 
 const router: ExpressRouter = Router();
 
@@ -32,6 +40,29 @@ router.use('/establecimientos', establecimientoRoutes);
 router.use('/caballos', caballoRoutes);
 router.use('/eventos', eventoRoutes);
 router.use('/tareas', tareaRoutes);
+
+// Inventario routes (Establecimiento)
+router.use('/establecimiento/inventario', inventarioRoutes);
+
+// Notification routes
+router.use('/notificaciones', notificacionRoutes);
+
+// Push notification routes
+router.use('/push', pushRoutes);
+
+// Document management routes
+router.use('/adjuntos', adjuntoRoutes);
+
+// QR Code routes
+router.use('/qr', qrCodeRoutes);
+
+// Audit routes (Admin only)
+router.use('/auditoria', auditoriaRoutes);
+
+// Upload routes
+const uploadRouter: ExpressRouter2 = Router();
+uploadRouter.post('/image', uploader.single('file'), UploadController.uploadImage);
+router.use('/uploads', uploadRouter);
 
 export { router as apiRoutes };
 

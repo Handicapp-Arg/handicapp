@@ -75,7 +75,7 @@ export function CreateUserModal({ roles, onClose, onUserCreated }: CreateUserMod
       onUserCreated();
       onClose();
     } catch (error: any) {
-      logger.error('Error creating user:', error);
+      console.error('Error creating user:', error);
       const message = error?.message || 'Error al crear usuario';
       const details: string[] | undefined = error?.details;
       setError(message);

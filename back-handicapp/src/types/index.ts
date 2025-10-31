@@ -15,6 +15,8 @@ export interface User {
   nombre: string;
   apellido: string;
   telefono?: string | undefined;
+  ubicacion?: string | undefined;
+  verificado: boolean;
   activo: boolean;
   rol?: {
     id: number;
@@ -160,10 +162,15 @@ export interface CreateUserData {
 }
 
 export interface UpdateUserData {
+  nombre?: string;
+  apellido?: string;
   email?: string;
-  firstName?: string;
-  lastName?: string;
-  role?: string;
+  telefono?: string;
+  ubicacion?: string;
+  avatar_url?: string;
+  rol_id?: number;
+  verificado?: boolean;
+  estado_usuario?: string;
 }
 
 export interface LoginData {

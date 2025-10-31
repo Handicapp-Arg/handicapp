@@ -204,9 +204,48 @@ npm run type-check  # Verificar tipos
 - `DELETE /api/v1/users/:id` - Eliminar usuario (Admin)
 - `PATCH /api/v1/users/:id/toggle-status` - Activar/Desactivar usuario (Admin)
 - `GET /api/v1/users/search` - Buscar usuarios (Admin)
-- `GET /api/v1/users/stats` - EstadÃ­sticas de usuarios (Admin)
+- `GET /api/v1/users/stats` - Estadísticas de usuarios (Admin)
 - `GET /api/v1/users/profile` - Obtener perfil propio
 - `PUT /api/v1/users/profile` - Actualizar perfil propio
+
+### 🔔 Notificaciones
+- `GET /api/v1/notificaciones` - Listar notificaciones (con filtros)
+- `GET /api/v1/notificaciones/stats` - Obtener estadísticas
+- `GET /api/v1/notificaciones/contador` - Contador de no leídas
+- `GET /api/v1/notificaciones/:id` - Obtener notificación
+- `PATCH /api/v1/notificaciones/:id/leer` - Marcar como leída
+- `PATCH /api/v1/notificaciones/leer-multiples` - Marcar múltiples
+- `PATCH /api/v1/notificaciones/leer-todas` - Marcar todas
+- `DELETE /api/v1/notificaciones/:id` - Eliminar notificación
+- `DELETE /api/v1/notificaciones/eliminar-multiples` - Eliminar múltiples
+- `DELETE /api/v1/notificaciones/eliminar-leidas` - Eliminar leídas
+
+**📚 Documentación completa**: Ver [NOTIFICACIONES_IMPLEMENTACION.md](./NOTIFICACIONES_IMPLEMENTACION.md)
+
+**🧪 Guía de testing**: Ver [TESTING_NOTIFICACIONES.md](./TESTING_NOTIFICACIONES.md)
+
+**🔌 WebSockets en tiempo real**: Ver [WEBSOCKETS_DOCUMENTACION.md](./WEBSOCKETS_DOCUMENTACION.md)
+
+---
+
+### 🔌 WebSockets (Tiempo Real)
+
+**Sistema de notificaciones push con Socket.IO**
+
+- ✅ Autenticación JWT
+- ✅ Rooms privados por usuario
+- ✅ Eventos en tiempo real (crear, leer, eliminar)
+- ✅ Reconexión automática
+- ✅ CORS configurado
+
+**Eventos disponibles**:
+- `notificacion:nueva` - Nueva notificación creada
+- `notificacion:leida` - Notificación marcada como leída
+- `notificacion:eliminada` - Notificación eliminada
+- `notificaciones:contador` - Actualización de contador
+- `authenticated` - Confirmación de conexión
+
+**📚 Documentación**: Ver [WEBSOCKETS_DOCUMENTACION.md](./WEBSOCKETS_DOCUMENTACION.md)
 
 ### Sistema
 - `GET /api/v1/health` - Health check

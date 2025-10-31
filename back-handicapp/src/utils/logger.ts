@@ -63,26 +63,41 @@ export const requestLogger = (req: any, res: any, next: any) => {
   
   req.requestId = req.headers['x-request-id'] || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   
-  // Only log non-static requests
-  if (!req.url.includes('/favicon') && !req.url.includes('/public')) {
-    logger.info('→ Request', {
-      method: req.method,
-      url: req.url,
-      ip: req.ip,
-    });
-  }
+  // Solo loguear requests en desarrollo o si hay error
+  const shouldLogRequest = process.env['NODE_ENV'] === 'development' || process.env['DEBUG_REQUESTS'] === 'true';
   
   res.on('finish', () => {
     const duration = Date.now() - start;
     
-    // Only log significant requests or errors
-    if (res.statusCode >= 400 || duration > 1000 || (!req.url.includes('/favicon') && !req.url.includes('/public'))) {
-      logger.info(res.statusCode >= 400 ? '✗ Request failed' : '✓ Request completed', {
+    // Solo loguear errores o requests lentos (>1s) o si DEBUG está activo
+    const isError = res.statusCode >= 400;
+    const isSlow = duration > 1000;
+    const isStaticFile = req.url.includes('/favicon') || req.url.includes('/public') || req.url.includes('/_next');
+    
+    // Endpoints que generan 401 esperados (verificación de token, no son errores)
+    const isAuthCheck = req.url.includes('/auth/verify') && res.statusCode === 401;
+    
+    if (isStaticFile || isAuthCheck) return; // Ignorar archivos estáticos y verificaciones de token
+    
+    if (isError) {
+      // Errores reales siempre se loguean
+      logger.warn('✗ Request failed', {
         method: req.method,
         url: req.url,
         status: res.statusCode,
         duration: `${duration}ms`,
       });
+    } else if (isSlow) {
+      // Requests lentos se loguean como warning
+      logger.warn('⚠ Slow request', {
+        method: req.method,
+        url: req.url,
+        status: res.statusCode,
+        duration: `${duration}ms`,
+      });
+    } else if (shouldLogRequest) {
+      // Requests normales solo en desarrollo
+      logger.debug(`${req.method} ${req.url} ${res.statusCode} (${duration}ms)`);
     }
   });
   

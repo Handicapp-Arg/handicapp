@@ -5,6 +5,7 @@
 
 import { Response } from 'express';
 import { TareaService } from '../services/tareaService';
+import { NotificacionService } from '../services/notificacionService';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '../utils/response';
 import { AuthenticatedRequest } from '../types';
@@ -58,6 +59,13 @@ export class TareaController {
       if (!tareaResult.success || !tareaResult.data) {
         res.status(400).json(ApiResponse.error(tareaResult.error || 'No se pudo crear la tarea'));
         return;
+      }
+
+      // 🔔 Notificar automáticamente si hay un usuario asignado
+      if (asignadoAUsuarioId && asignadoAUsuarioId !== usuarioId) {
+        NotificacionService.notificarTareaAsignada(tareaResult.data).catch(err => 
+          logger.error('Error al notificar tarea asignada', { error: err })
+        );
       }
 
       logger.info(`Tarea creada: ${tareaResult.data.id}`);
@@ -252,7 +260,12 @@ export class TareaController {
         return;
       }
 
-  logger.info('Tarea completada', { usuarioId, tareaId });
+      // 🔔 Notificar al creador de la tarea que fue completada
+      NotificacionService.notificarTareaCompletada(result.data, usuarioId).catch(err => 
+        logger.error('Error al notificar tarea completada', { error: err })
+      );
+
+      logger.info('Tarea completada', { usuarioId, tareaId });
       res.json(ApiResponse.success(result.data, 'Tarea completada exitosamente'));
     } catch (error) {
       logger.error('Error completando tarea', { error });

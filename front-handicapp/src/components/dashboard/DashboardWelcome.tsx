@@ -1,6 +1,7 @@
-'use client';
+ 'use client';
 
 import { useState, useEffect } from 'react';
+import DashboardTopStats from './DashboardTopStats';
 
 interface WelcomeCardProps {
   title: string;
@@ -89,6 +90,10 @@ export default function DashboardWelcome() {
         <p className="text-sm sm:text-base text-gray-600">
           Panel de control para {userRole} - Gestión integral de handicaps ecuestres
         </p>
+      </div>
+      {/* Top stats (real data) */}
+      <div>
+        <DashboardTopStats />
       </div>
 
       {/* Quick Stats Grid */}

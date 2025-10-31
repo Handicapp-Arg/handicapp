@@ -4,7 +4,7 @@ const envSchema = z.object({
   NEXT_PUBLIC_APP_ENV: z.enum(["development", "test", "production"]).default("development"),
   // Hacemos opcional para permitir fallback local en desarrollo
   NEXT_PUBLIC_API_BASE_URL: z.string().url().optional(),
-  NEXT_PUBLIC_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(15000),
+  NEXT_PUBLIC_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
   NEXT_PUBLIC_REQUEST_MAX_RETRIES: z.coerce.number().int().min(0).max(5).default(1),
 });
 
