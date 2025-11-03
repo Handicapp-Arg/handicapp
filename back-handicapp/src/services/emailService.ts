@@ -86,7 +86,7 @@ export function renderBrandedEmail({ title, intro, actionText, actionUrl, footer
   const accent = '#af936f';        // color dorado/bronceado de la marca
   const btnBg = '#1e293b';         // slate-800 - botón principal
   const btnText = '#ffffff';       // blanco
-  const btnHover = '#0f172a';      // slate-900
+  // const btnHover = '#0f172a';      // slate-900 (Removed unused variable)
 
   const logo = loadEmbeddedLogo();
   const logoTag = logo

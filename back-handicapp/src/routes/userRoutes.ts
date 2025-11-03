@@ -1,7 +1,7 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import { UserController } from '../controllers/userController';
 import { requireAuth, adminOnly } from '../middleware/auth';
-import { requireRole, requirePermission } from '../middleware/authorization';
+import { requirePermission } from '../middleware/authorization';
 import { userValidations, paramValidations } from '../middleware/validation';
 import { uploader } from '../controllers/uploadController';
 
