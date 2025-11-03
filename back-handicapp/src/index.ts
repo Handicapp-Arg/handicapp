@@ -19,9 +19,14 @@ const startServer = async (): Promise<void> => {
     websocketService.initialize(httpServer);
     logger.info('🔌 WebSocket server initialized');
     
+    // Use host 0.0.0.0 if in production, otherwise use config.host
+    const listenHost = process.env['NODE_ENV'] === 'production' ? '0.0.0.0' : config.host;
+    // Use Render's PORT env var if available, otherwise config.port
+    const listenPort = process.env['PORT'] ? Number(process.env['PORT']) : config.port;
+
     // Start HTTP server
-    httpServer.listen(config.port, config.host, () => {
-      logger.info(`🚀 HandicApp API running on http://${config.host}:${config.port}`);
+    httpServer.listen(listenPort, listenHost, () => {
+      logger.info(`🚀 HandicApp API running on http://${listenHost}:${listenPort}`);
       if (config.nodeEnv === 'development') {
         logger.info(`📊 Environment: ${config.nodeEnv} | Version: ${config.api.version}`);
       }
