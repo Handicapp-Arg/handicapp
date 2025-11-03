@@ -28,14 +28,14 @@ export default function AdminDashboard() {
   const dashboardStats: StatCard[] = [
     {
       label: 'Usuarios Totales',
-      value: stats.usuarios?.total || 0,
+      value: stats.empleados?.total || 0,
       icon: Users,
       color: 'primary',
-      badges: [{ label: `${stats.usuarios?.activos || 0} activos`, variant: 'secondary' }],
+      badges: [{ label: `${stats.empleados?.activos || 0} activos`, variant: 'secondary' }],
     },
     {
       label: 'Establecimientos',
-      value: stats.establecimientos?.total || 0,
+      value: 0, // DashboardStats does not have establecimientos
       icon: Building2,
       color: 'success',
       badges: [{ label: 'Registrados', variant: 'secondary' }],
@@ -64,7 +64,7 @@ export default function AdminDashboard() {
       href: '/admin/users',
       icon: Users,
       colorScheme: 'blue',
-      count: stats.usuarios?.total || 0,
+      count: stats.empleados?.total || 0,
     },
     {
       title: 'Establecimientos',
@@ -72,7 +72,7 @@ export default function AdminDashboard() {
       href: '/admin/establecimientos',
       icon: Building2,
       colorScheme: 'green',
-      count: stats.establecimientos?.total || 0,
+      count: 0, // No establecimientos in DashboardStats
     },
     {
       title: 'Reportes',

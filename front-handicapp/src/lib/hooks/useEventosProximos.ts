@@ -45,7 +45,7 @@ export function useEventosProximos(options: UseEventosProximosOptions = {}) {
         const response = await eventoService.getAll({
           page: 1,
           limit,
-          fechaInicio: today,
+          fecha_desde: today,
         });
 
         // Filtrar y ordenar eventos futuros

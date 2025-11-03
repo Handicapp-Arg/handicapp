@@ -24,14 +24,11 @@ export class UserController {
     // Si es admin, mostrar todos
     let result;
     if (currentUserRole === 'establecimiento') {
-      result = await UserService.getUsers({ 
-        page, 
-        limit, 
-        sortBy, 
-        sortOrder,
-        roleIds: [3, 4, 5], // Capataz, Veterinario, Empleado
-        establecimiento_id: currentUser.establecimiento_id // Filtrar por su establecimiento
-      });
+      const query: any = { page, limit, sortBy, sortOrder, roleIds: [3, 4, 5] };
+      if (typeof currentUser.establecimiento_id === 'number') {
+        query.establecimiento_id = currentUser.establecimiento_id;
+      }
+      result = await UserService.getUsers(query);
     } else {
       result = await UserService.getUsers({ page, limit, sortBy, sortOrder });
     }

@@ -9,8 +9,6 @@ import { NotificacionService } from '../services/notificacionService';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '../utils/response';
 import { AuthenticatedRequest } from '../types';
-import { CaballoEstablecimiento } from '../models/CaballoEstablecimiento';
-import User from '../models/User';
 import User from '../models/User';
 
 export class TareaController {
