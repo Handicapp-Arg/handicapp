@@ -337,7 +337,7 @@ export const caballoService = {
       const response = await ApiClient.makeRequest('/caballos/solicitudes-pendientes', {
         method: 'GET',
       });
-      return response.data || [];
+      return (response as any).data || [];
     } catch (error) {
       console.error('Error fetching solicitudes pendientes:', error);
       throw error;

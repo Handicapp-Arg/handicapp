@@ -146,16 +146,12 @@ export function TareaList() {
     
     switch (estado.toLowerCase()) {
       case 'completada':
-      case 'done':
         return 'bg-green-100 text-green-800';
       case 'en_progreso':
-      case 'in_progress':
         return 'bg-blue-100 text-blue-800';
       case 'pendiente':
-      case 'open':
         return 'bg-yellow-100 text-yellow-800';
       case 'cancelada':
-      case 'cancelled':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -236,10 +232,10 @@ export function TareaList() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">{tarea.titulo}</h3>
                   <div className="flex flex-wrap gap-2">
                     <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${getStatusColor(tarea.estado)}`}>
-                      {tarea.estado === 'open' || tarea.estado === 'pendiente' ? 'Pendiente' : 
-                       tarea.estado === 'in_progress' || tarea.estado === 'en_progreso' ? 'En Progreso' :
-                       tarea.estado === 'done' || tarea.estado === 'completada' ? 'Completada' : 
-                       tarea.estado === 'cancelled' || tarea.estado === 'cancelada' ? 'Cancelada' : tarea.estado}
+                      {tarea.estado === 'pendiente' ? 'Pendiente' :
+                       tarea.estado === 'en_progreso' ? 'En Progreso' :
+                       tarea.estado === 'completada' ? 'Completada' :
+                       tarea.estado === 'cancelada' ? 'Cancelada' : tarea.estado}
                     </span>
                     {tarea.prioridad && (
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${getPriorityColor(tarea.prioridad)}`}>
@@ -253,7 +249,7 @@ export function TareaList() {
                 
                 {/* Botones de acción */}
                 <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {tarea.estado !== 'completada' && tarea.estado !== 'done' && hasPermission('tasks:complete') && (
+                  {tarea.estado !== 'completada' && hasPermission('tasks:complete') && (
                     <button 
                       onClick={() => handleCompleteTask(tarea)}
                       className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"

@@ -19,9 +19,13 @@ const startServer = async (): Promise<void> => {
     websocketService.initialize(httpServer);
     logger.info('🔌 WebSocket server initialized');
     
+    // Use Render's PORT env var if available, otherwise fallback to 3000
+    const listenPort = process.env['PORT'] ? Number(process.env['PORT']) : 3000;
+    const listenHost = '0.0.0.0';
+
     // Start HTTP server
-    httpServer.listen(config.port, config.host, () => {
-      logger.info(`🚀 HandicApp API running on http://${config.host}:${config.port}`);
+    httpServer.listen(listenPort, listenHost, () => {
+      logger.info(`🚀 HandicApp API running on http://${listenHost}:${listenPort}`);
       if (config.nodeEnv === 'development') {
         logger.info(`📊 Environment: ${config.nodeEnv} | Version: ${config.api.version}`);
       }

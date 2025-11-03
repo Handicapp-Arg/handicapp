@@ -81,9 +81,9 @@ export function TareaCompletarModal({ tarea, isOpen, onClose, onSuccess }: Tarea
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600">Prioridad:</span>
                 <span className={`font-medium capitalize ${
-                  tarea.prioridad === 'critica' ? 'text-red-600' :
                   tarea.prioridad === 'alta' ? 'text-orange-600' :
                   tarea.prioridad === 'media' ? 'text-blue-600' :
+                  tarea.prioridad === 'urgente' ? 'text-red-600' :
                   'text-gray-600'
                 }`}>
                   {tarea.prioridad}

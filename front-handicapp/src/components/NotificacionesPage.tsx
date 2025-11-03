@@ -8,9 +8,13 @@ interface Notificacion {
   tipo: string;
   titulo: string;
   mensaje: string;
-  leido: boolean;
-  importante?: boolean;
-  fecha_creacion: string;
+  leida: boolean;
+  importante: boolean;
+  url?: string;
+  datos_adicionales?: any;
+  usuario_id: number;
+  creado_el: string;
+  leido_el?: string;
 }
 
 export default function NotificacionesPage() {
@@ -39,7 +43,7 @@ export default function NotificacionesPage() {
     try {
       await notificacionService.marcarComoLeida(id);
       setNotificaciones(prev =>
-        prev.map(n => n.id === id ? { ...n, leido: true } : n)
+        prev.map(n => n.id === id ? { ...n, leida: true } : n)
       );
     } catch (error) {
       console.error('Error marking as read:', error);
@@ -49,7 +53,7 @@ export default function NotificacionesPage() {
   const handleMarkAllAsRead = async () => {
     try {
       await notificacionService.marcarTodasComoLeidas();
-      setNotificaciones(prev => prev.map(n => ({ ...n, leido: true })));
+      setNotificaciones(prev => prev.map(n => ({ ...n, leida: true })));
     } catch (error) {
       console.error('Error marking all as read:', error);
     }
@@ -65,15 +69,15 @@ export default function NotificacionesPage() {
   };
 
   const filteredNotificaciones = notificaciones.filter(n => {
-    if (filter === 'no_leidas') return !n.leido;
-    if (filter === 'leidas') return n.leido;
+    if (filter === 'no_leidas') return !n.leida;
+    if (filter === 'leidas') return n.leida;
     return true;
   });
 
   const stats = {
     total: notificaciones.length,
-    noLeidas: notificaciones.filter(n => !n.leido).length,
-    leidas: notificaciones.filter(n => n.leido).length
+    noLeidas: notificaciones.filter(n => !n.leida).length,
+    leidas: notificaciones.filter(n => n.leida).length
   };
 
   const getNotificationIcon = (tipo: string) => {
@@ -219,7 +223,7 @@ export default function NotificacionesPage() {
                 <div
                   key={notif.id}
                   className={`bg-white rounded-xl shadow-sm border transition-all ${
-                    notif.leido
+                    notif.leida
                       ? 'border-gray-200 opacity-75'
                       : 'border-blue-200 shadow-md'
                   }`}
@@ -235,7 +239,7 @@ export default function NotificacionesPage() {
                           <div>
                             <h3 className="text-lg font-semibold text-gray-900 mb-1">
                               {notif.titulo}
-                              {!notif.leido && (
+                              {!notif.leida && (
                                 <span className="ml-2 inline-block w-2 h-2 bg-blue-600 rounded-full"></span>
                               )}
                             </h3>
@@ -243,7 +247,7 @@ export default function NotificacionesPage() {
                           </div>
 
                           <div className="flex gap-2 flex-shrink-0">
-                            {!notif.leido && (
+                            {!notif.leida && (
                               <button
                                 onClick={() => handleMarkAsRead(notif.id)}
                                 className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -263,7 +267,7 @@ export default function NotificacionesPage() {
                         </div>
 
                         <p className="text-sm text-gray-500">
-                          {new Date(notif.fecha_creacion).toLocaleString('es-AR')}
+                          {new Date(notif.creado_el).toLocaleString('es-AR')}
                         </p>
                       </div>
                     </div>

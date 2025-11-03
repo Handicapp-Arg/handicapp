@@ -189,6 +189,8 @@ export interface PaginationQuery {
   search?: string;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
+  roleIds?: number[];
+  establecimiento_id?: number;
 }
 
 export interface EstablecimientoQuery extends PaginationQuery {
