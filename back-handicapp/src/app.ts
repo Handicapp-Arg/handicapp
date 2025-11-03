@@ -1,28 +1,35 @@
 import express, { type Express } from 'express';
+import cookieParser from 'cookie-parser';
 import { config } from './config/config';
 import { apiRoutes } from './routes';
 import { errorHandler, notFoundHandler } from './utils/errors';
 import { requestLogger } from './utils/logger';
+import path from 'path';
+import { config as appConfig } from './config/config';
 
 const app: Express = express();
 
 // Request parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser()); // Parse cookies
 
 // CORS configuration
 import cors from 'cors';
 
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001', 'http://127.0.0.1:3001'],
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001', 'http://127.0.0.1:3001', 'http://localhost:3003', 'http://127.0.0.1:3003'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  credentials: true,
+  credentials: true, // Importante: permite envío de cookies
   optionsSuccessStatus: 200
 }));
 
 // Concise request logs (method, url, status, duration)
 app.use(requestLogger);
+
+// Static files for uploads (served at /uploads)
+app.use('/uploads', express.static(path.resolve(process.cwd(), appConfig.upload.path)));
 
 // API routes
 app.use(`${config.api.prefix}/${config.api.version}`, apiRoutes);

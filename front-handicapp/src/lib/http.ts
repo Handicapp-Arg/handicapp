@@ -1,4 +1,5 @@
 import { appConfig } from "./config";
+import { errorLogger } from "./errorLogger";
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -32,6 +33,40 @@ function buildUrl(path: string, baseUrl: string = appConfig.apiBaseUrl): string 
   return `${normalizedBase}${normalizedPath}`;
 }
 
+let isRefreshing = false;
+let refreshPromise: Promise<void> | null = null;
+
+async function refreshAccessToken(): Promise<void> {
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise;
+  }
+
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch(buildUrl('/auth/refresh-token'), {
+        method: 'POST',
+        credentials: 'include', // Envía cookies httpOnly
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to refresh token');
+      }
+
+      // El backend ya setea las nuevas cookies httpOnly
+      await response.json();
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
 export async function httpJson<TResponse = unknown, TBody = unknown>(
   path: string,
   options: HttpRequestOptions<TBody> = {}
@@ -61,6 +96,7 @@ export async function httpJson<TResponse = unknown, TBody = unknown>(
         body,
         signal: controller.signal,
         cache: "no-store",
+        credentials: 'include', // Envía cookies httpOnly
       });
 
       clearTimeout(id);
@@ -70,6 +106,41 @@ export async function httpJson<TResponse = unknown, TBody = unknown>(
       const payload = isJson ? await res.json().catch(() => null) : await res.text();
 
       if (!res.ok) {
+        // 401 Unauthorized => intentar refresh token
+        if (res.status === 401 && !path.includes('/auth/login') && !path.includes('/auth/refresh')) {
+          try {
+            await refreshAccessToken();
+            // Reintentar request original con nuevo token
+            const retryRes = await fetch(url, {
+              method,
+              headers,
+              body,
+              credentials: 'include',
+              cache: "no-store",
+            });
+
+            const retryPayload = retryRes.headers.get("content-type")?.includes("application/json")
+              ? await retryRes.json().catch(() => null)
+              : await retryRes.text();
+
+            if (!retryRes.ok) {
+              throw new HttpError(
+                `HTTP ${retryRes.status} for ${method} ${url}`,
+                retryRes.status,
+                retryPayload
+              );
+            }
+
+            return retryPayload as TResponse;
+          } catch {
+            // Si falla el refresh, redirigir a login
+            if (typeof window !== 'undefined') {
+              window.location.href = '/login';
+            }
+            throw new HttpError('Session expired', 401, null);
+          }
+        }
+
         // 5xx y 429 son candidatos a retry
         if ((res.status >= 500 || res.status === 429) && attempt < maxRetries) {
           const backoffMs = Math.min(1000 * 2 ** attempt, 4000);
@@ -77,11 +148,17 @@ export async function httpJson<TResponse = unknown, TBody = unknown>(
           attempt += 1;
           continue;
         }
-        throw new HttpError(
+        
+        const error = new HttpError(
           `HTTP ${res.status} for ${method} ${url}`,
           res.status,
           payload
         );
+        
+        // Log error API
+        errorLogger.logApiError(error, path, method, res.status);
+        
+        throw error;
       }
 
       return payload as TResponse;

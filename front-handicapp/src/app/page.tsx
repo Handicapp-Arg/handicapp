@@ -1,5 +1,28 @@
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-export default function HomePage() {
-  redirect('/login');
+function getDashboardUrlByRoleId(roleId?: string): string {
+  const map: Record<string, string> = {
+    '1': '/admin',
+    '2': '/establecimiento',
+    '3': '/capataz',
+    '4': '/veterinario',
+    '5': '/empleado',
+    '6': '/propietario',
+  };
+  return map[roleId || ''] || '/propietario';
+}
+
+export default async function HomePage() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get('auth-token')?.value;
+  const roleId = cookieStore.get('role')?.value;
+
+  // Si no está autenticado, enviar a login
+  if (!token) {
+    redirect('/login');
+  }
+
+  // Autenticado: llevar directo a su dashboard por rol (fallback propietario)
+  redirect(getDashboardUrlByRoleId(roleId));
 }

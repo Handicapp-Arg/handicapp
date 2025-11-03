@@ -5,6 +5,8 @@
 
 import { Router, type Router as ExpressRouter } from 'express';
 import { CaballoController } from '../controllers/caballoController';
+import { AdjuntoController } from '../controllers/adjuntoController';
+import { QRCodeController } from '../controllers/qrCodeController';
 import { requireAuth } from '../middleware/auth';
 import { requireRole, requirePermission, auditAccess } from '../middleware/authorization';
 import { caballoValidations, paramValidations } from '../middleware/validation';
@@ -35,6 +37,17 @@ router.post(
   requireRole('admin', 'establecimiento', 'propietario', 'veterinario'),
   caballoValidations.create,
   CaballoController.create
+);
+
+/**
+ * @route   GET /api/v1/caballos/solicitudes-pendientes
+ * @desc    Obtener solicitudes pendientes de asociación para el usuario actual
+ * @access  Propietarios y Establecimientos
+ */
+router.get(
+  '/solicitudes-pendientes',
+  requireAuth,
+  CaballoController.getSolicitudesPendientes
 );
 
 /**
@@ -104,7 +117,7 @@ router.post(
 
 /**
  * @route   GET /api/v1/caballos/:id/propietarios
- * @desc    Obtener propietarios del caballo
+ * @desc    Obtener propietarios actuales del caballo
  * @access  Usuarios con acceso al caballo
  */
 router.get(
@@ -112,6 +125,42 @@ router.get(
   paramValidations.id,
   requirePermission('horses:read'),
   CaballoController.getPropietarios
+);
+
+/**
+ * @route   GET /api/v1/caballos/:id/propietarios/historial
+ * @desc    Obtener historial completo de propietarios (actuales + históricos)
+ * @access  Usuarios con acceso al caballo
+ */
+router.get(
+  '/:id/propietarios/historial',
+  paramValidations.id,
+  requirePermission('horses:read'),
+  CaballoController.getHistorialPropietarios
+);
+
+/**
+ * @route   PATCH /api/v1/caballos/:id/propietarios/:propietarioId
+ * @desc    Actualizar datos de propiedad (porcentaje, fechas, estado)
+ * @access  Admin, Propietario actual del caballo
+ */
+router.patch(
+  '/:id/propietarios/:propietarioId',
+  paramValidations.id,
+  requirePermission('horses:manage_owners'),
+  CaballoController.updatePropietario
+);
+
+/**
+ * @route   DELETE /api/v1/caballos/:id/propietarios/:propietarioId
+ * @desc    Finalizar propiedad (marcar como histórico)
+ * @access  Admin, Propietario actual del caballo
+ */
+router.delete(
+  '/:id/propietarios/:propietarioId',
+  paramValidations.id,
+  requirePermission('horses:manage_owners'),
+  CaballoController.removePropietario
 );
 
 // ====================================
@@ -188,6 +237,62 @@ router.get(
   paramValidations.id,
   requirePermission('horses:read'),
   CaballoController.getStats
+);
+
+// ====================================
+// ADJUNTOS / DOCUMENTOS
+// ====================================
+
+/**
+ * @route   GET /api/v1/caballos/:id/adjuntos
+ * @desc    Obtener todos los adjuntos del caballo
+ * @access  Usuarios con acceso al caballo
+ */
+router.get(
+  '/:id/adjuntos',
+  paramValidations.id,
+  requirePermission('horses:read'),
+  AdjuntoController.getByCaballo
+);
+
+/**
+ * @route   GET /api/v1/caballos/:id/adjuntos/estadisticas
+ * @desc    Obtener estadísticas de adjuntos por categoría
+ * @access  Usuarios con acceso al caballo
+ */
+router.get(
+  '/:id/adjuntos/estadisticas',
+  paramValidations.id,
+  requirePermission('horses:read'),
+  AdjuntoController.getEstadisticas
+);
+
+// ====================================
+// CÓDIGOS QR
+// ====================================
+
+/**
+ * @route   GET /api/v1/caballos/:id/qr
+ * @desc    Obtener o generar QR code para el caballo
+ * @access  Usuarios con acceso al caballo
+ */
+router.get(
+  '/:id/qr',
+  paramValidations.id,
+  requirePermission('horses:read'),
+  QRCodeController.getOrCreate
+);
+
+/**
+ * @route   GET /api/v1/caballos/:id/qr/todos
+ * @desc    Obtener todos los QR codes del caballo
+ * @access  Usuarios con acceso al caballo
+ */
+router.get(
+  '/:id/qr/todos',
+  paramValidations.id,
+  requirePermission('horses:read'),
+  QRCodeController.getAllByCaballo
 );
 
 export { router as caballoRoutes };

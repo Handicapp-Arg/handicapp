@@ -8,11 +8,14 @@ export class User extends Model {
   declare email: string;
   declare hash_contrasena: string;
   declare rol_id: number;
+  declare establecimiento_id: CreationOptional<number | null>;
   declare verificado: CreationOptional<boolean>;
   declare estado_usuario: CreationOptional<EstadoUsuario>;
   declare nombre: string;
   declare apellido: string;
   declare telefono: CreationOptional<string | null>;
+  declare ubicacion: CreationOptional<string | null>;
+  declare avatar_url: CreationOptional<string | null>;
   declare creado_el: CreationOptional<Date>;
   declare actualizado_el: CreationOptional<Date | null>;
   declare ultimo_acceso_el: CreationOptional<Date | null>;

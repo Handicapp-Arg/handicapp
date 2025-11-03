@@ -1,8 +1,17 @@
 import { Op } from 'sequelize';
 import { User } from '../models/User';
 import { Role } from '../models/roles';
-import { UpdateUserData, PaginationQuery, ServiceResponse } from '../types';
+import { UpdateUserData, ServiceResponse } from '../types';
 import { NotFoundError, ConflictError } from '../utils/errors';
+
+interface PaginationQuery {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
+  roleIds?: number[]; // ✅ Nuevo filtro para roles
+  establecimiento_id?: number; // ✅ Filtro por establecimiento
+}
 
 export class UserService {
   // Get all users with pagination
@@ -10,20 +19,28 @@ export class UserService {
     pagination: PaginationQuery = {}
   ): Promise<ServiceResponse<{ users: User[]; total: number; totalPages: number }>> {
     try {
-      console.log('🔍 UserService.getUsers called with:', pagination);
-      
       const {
         page = 1,
         limit = 10,
-  sortBy = 'creado_el', // usar el nombre real del campo en el modelo
+        sortBy = 'creado_el',
         sortOrder = 'DESC',
+        roleIds,
+        establecimiento_id,
       } = pagination;
 
       const offset = (page - 1) * limit;
-      
-      console.log('📊 Query parameters:', { page, limit, sortBy, sortOrder, offset });
+
+      // Construir condiciones de filtro
+      const whereConditions: any = {};
+      if (roleIds && roleIds.length > 0) {
+        whereConditions.rol_id = { [Op.in]: roleIds };
+      }
+      if (establecimiento_id) {
+        whereConditions.establecimiento_id = establecimiento_id;
+      }
 
       const { count, rows } = await User.findAndCountAll({
+        where: whereConditions,
         attributes: { exclude: ['hash_contrasena'] },
         include: [{
           model: Role,
@@ -34,8 +51,6 @@ export class UserService {
         offset,
         order: [[sortBy, sortOrder]],
       });
-
-      console.log('✅ Query result:', { count, usersFound: rows.length });
 
       const totalPages = Math.ceil(count / limit);
 
@@ -177,7 +192,8 @@ export class UserService {
         throw new NotFoundError('User not found');
       }
 
-      const newStatus = user.estado_usuario === 'active' ? 'inactive' : 'active';
+      // Toggle between 'active' and 'disabled' (not 'inactive')
+      const newStatus = user.estado_usuario === 'active' ? 'disabled' : 'active';
       await user.update({ estado_usuario: newStatus });
 
       return {

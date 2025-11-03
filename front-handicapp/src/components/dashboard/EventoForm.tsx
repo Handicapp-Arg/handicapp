@@ -53,7 +53,6 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
     caballo_id: undefined,
     establecimiento_id: undefined,
     ubicacion: '',
-    observaciones: '',
     estado: 'programado',
     prioridad: 'media',
     es_publico: false,
@@ -82,13 +81,13 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
         hora_fin: evento.hora_fin || '',
         tipo_evento_id: evento.tipo_evento_id || 0,
         caballo_id: evento.caballo_id,
-        establecimiento_id: evento.establecimiento_id,
+        establecimiento_id: (evento as any).establecimiento_id || user?.establecimiento_id,
         ubicacion: evento.ubicacion || '',
-        observaciones: evento.observaciones || '',
         estado: evento.estado || 'programado',
         prioridad: evento.prioridad || 'media',
         es_publico: evento.es_publico || false,
-        requiere_validacion: evento.requiere_validacion || false
+        requiere_validacion: evento.requiere_validacion || false,
+        costo: evento.costo
       });
     } else if (isOpen) {
       // Reset para nuevo evento
@@ -102,7 +101,6 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
         caballo_id: undefined,
         establecimiento_id: user?.establecimiento_id || undefined,
         ubicacion: '',
-        observaciones: '',
         estado: 'programado',
         prioridad: 'media',
         es_publico: false,
@@ -133,26 +131,32 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
         : allTipos.filter(tipo => tipo.categoria !== 'salud');
         
       setTiposEvento(filteredTipos);
-    } catch (error) {
-      console.error('Error cargando tipos de evento:', error);
-    }
+    } catch (error) {    }
   };
 
   const loadCaballos = async () => {
     try {
       const response = await caballoService.getAll() as any;
-      setCaballos(response.data || []);
+      // Manejar estructura de respuesta anidada
+      const caballosArray = Array.isArray(response) 
+        ? response 
+        : response?.data?.caballos || response?.data || [];
+      setCaballos(caballosArray);
     } catch (error) {
-      console.error('Error cargando caballos:', error);
+      setCaballos([]);
     }
   };
 
   const loadEstablecimientos = async () => {
     try {
       const response = await establecimientoService.getAll() as any;
-      setEstablecimientos(response.data || []);
+      // Manejar estructura de respuesta anidada
+      const establecimientosArray = Array.isArray(response) 
+        ? response 
+        : response?.data?.establecimientos || response?.data || [];
+      setEstablecimientos(establecimientosArray);
     } catch (error) {
-      console.error('Error cargando establecimientos:', error);
+      setEstablecimientos([]);
     }
   };
 
@@ -167,12 +171,16 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
         titulo: formData.titulo,
         descripcion: formData.descripcion,
         fecha_evento: formData.fecha_evento,
+        hora_inicio: formData.hora_inicio,
+        hora_fin: formData.hora_fin,
         tipo_evento_id: formData.tipo_evento_id,
         caballo_id: formData.caballo_id,
         establecimiento_id: formData.establecimiento_id,
         ubicacion: formData.ubicacion,
-        observaciones: formData.observaciones,
+        estado: formData.estado,
         prioridad: formData.prioridad,
+        es_publico: formData.es_publico,
+        requiere_validacion: formData.requiere_validacion,
         costo: formData.costo
       };
 
@@ -440,21 +448,6 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
                 Requiere validación veterinaria
               </label>
             </div>
-          </div>
-
-          {/* Observaciones */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Observaciones
-            </label>
-            <textarea
-              name="observaciones"
-              value={formData.observaciones}
-              onChange={handleChange}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Observaciones adicionales"
-            />
           </div>
 
           {/* Botones */}

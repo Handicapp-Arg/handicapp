@@ -56,7 +56,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   
   establecimiento: [
     // Gestión de su establecimiento
-    'users:read',
+    'users:read', 'users:write',  // ✅ Puede crear y gestionar usuarios de su establecimiento
     'establishments:read', 'establishments:write',
     'establishments:manage_users', 'establishments:view_stats',
     'horses:read', 'horses:write',
@@ -101,10 +101,11 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   
   empleado: [
     // Operaciones básicas
+    'users:read',
     'establishments:read',
     'horses:read',
-    'events:read',
-    'tasks:read', 'tasks:complete'
+    'events:read', 'events:write',  // ✅ Puede crear y editar eventos
+    'tasks:read', 'tasks:write', 'tasks:complete'  // ✅ Puede crear, editar y completar tareas
   ]
 };
 
@@ -124,7 +125,7 @@ export function requireRole(...allowedRoles: UserRole[]) {
 
       // Verificar que el usuario tenga un rol válido
       if (!userRole) {
-  logger.warn('Usuario sin rol asignado', { userId: req.user.id });
+        logger.warn('Usuario sin rol asignado', { userId: req.user.id });
         res.status(403).json(ApiResponse.error('Usuario sin rol asignado'));
         return;
       }
@@ -142,15 +143,9 @@ export function requireRole(...allowedRoles: UserRole[]) {
         return;
       }
 
-      // Admin siempre tiene acceso
-      if (userRole === 'admin') {
-        next();
-        return;
-      }
-
       next();
     } catch (error) {
-  logger.error('Error en middleware requireRole:', error);
+      logger.error('Error en middleware requireRole:', error);
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
   };

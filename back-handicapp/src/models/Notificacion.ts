@@ -8,13 +8,15 @@ interface NotifAttrs {
   tipo: string;
   payload_json: string | null;
   estado: EstadoNotificacion;
+  evento_id: number | null;
+  tarea_id: number | null;
   creado_el: Date;
   leido_el: Date | null;
 }
 
 type NotifCreate = Optional<
   NotifAttrs,
-  "id" | "payload_json" | "estado" | "creado_el" | "leido_el"
+  "id" | "payload_json" | "estado" | "evento_id" | "tarea_id" | "creado_el" | "leido_el"
 >;
 
 export class Notificacion extends Model<NotifAttrs, NotifCreate> implements NotifAttrs {
@@ -23,6 +25,8 @@ export class Notificacion extends Model<NotifAttrs, NotifCreate> implements Noti
   public tipo!: string;
   public payload_json!: string | null;
   public estado!: EstadoNotificacion;
+  public evento_id!: number | null;
+  public tarea_id!: number | null;
   public creado_el!: Date;
   public leido_el!: Date | null;
 }
@@ -38,6 +42,8 @@ Notificacion.init(
       allowNull: false,
       defaultValue: EstadoNotificacion.unread,
     },
+    evento_id: { type: DataTypes.INTEGER, allowNull: true },
+    tarea_id: { type: DataTypes.INTEGER, allowNull: true },
     creado_el: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
     leido_el: { type: DataTypes.DATE, allowNull: true },
   },
@@ -49,6 +55,8 @@ Notificacion.init(
       { name: "ix_notif_usuario", fields: ["usuario_id"] },
       { name: "ix_notif_estado", fields: ["estado"] },
       { name: "ix_notif_creado", fields: ["creado_el"] },
+      { name: "ix_notif_evento", fields: ["evento_id"] },
+      { name: "ix_notif_tarea", fields: ["tarea_id"] },
     ],
   }
 );

@@ -5,9 +5,13 @@
 
 import { Response } from 'express';
 import { TareaService } from '../services/tareaService';
+import { NotificacionService } from '../services/notificacionService';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '../utils/response';
 import { AuthenticatedRequest } from '../types';
+import { CaballoEstablecimiento } from '../models/CaballoEstablecimiento';
+import User from '../models/User';
+import User from '../models/User';
 
 export class TareaController {
 
@@ -34,6 +38,16 @@ export class TareaController {
       } = req.body;
       
       const usuarioId = req.user!.id;
+      const userRole = req.user!.rol?.clave;
+      let userEstablecimientoId = req.user!.establecimiento_id;
+
+      // DEBUG: Log para ver qué está llegando
+      logger.info('DEBUG - Tarea create request:', {
+        body: req.body,
+        userRole,
+        userEstablecimientoId,
+        usuarioId
+      });
 
       // Validaciones básicas
       if (!titulo || !descripcion || !fechaVencimiento) {
@@ -41,12 +55,43 @@ export class TareaController {
         return;
       }
 
+      // Determinar establecimiento_id según el contexto
+      let finalEstablecimientoId = establecimientoId;
+      
+      // Si es establecimiento, SIEMPRE consultar el establecimiento_id desde la DB
+      // Esto asegura que tengamos el valor actualizado incluso si el JWT es antiguo
+      if (userRole === 'establecimiento') {
+        if (!userEstablecimientoId) {
+          // Consultar desde la base de datos
+          const userFromDb = await User.findByPk(usuarioId, {
+            attributes: ['id', 'establecimiento_id']
+          });
+          
+          if (userFromDb?.establecimiento_id) {
+            userEstablecimientoId = userFromDb.establecimiento_id;
+            logger.info(`Usuario ${usuarioId}: establecimiento_id=${userEstablecimientoId} obtenido desde DB`);
+          } else {
+            logger.warn(`Usuario ${usuarioId} (rol: establecimiento) no tiene establecimiento_id asignado en la base de datos.`);
+          }
+        }
+        
+        // Usar el establecimiento del usuario establecimiento
+        if (userEstablecimientoId) {
+          finalEstablecimientoId = userEstablecimientoId;
+          logger.info(`Tarea auto-asignada al establecimiento ${userEstablecimientoId} del usuario ${usuarioId}`);
+        } else {
+          logger.error(`Usuario ${usuarioId} con rol establecimiento no puede crear tareas sin establecimiento_id asignado`);
+          res.status(400).json(ApiResponse.error('Tu usuario no tiene un establecimiento asignado. Contacta al administrador.'));
+          return;
+        }
+      }
+
       const createPayload = {
         titulo,
         descripcion,
         fechaVencimiento,
         // mapeo a modelo backend
-        establecimiento_id: establecimientoId!,
+        establecimiento_id: finalEstablecimientoId,
         caballo_id: caballoId,
         tipo: (categoria as any) || 'otro',
         notas: observaciones || descripcion,
@@ -58,6 +103,13 @@ export class TareaController {
       if (!tareaResult.success || !tareaResult.data) {
         res.status(400).json(ApiResponse.error(tareaResult.error || 'No se pudo crear la tarea'));
         return;
+      }
+
+      // 🔔 Notificar automáticamente si hay un usuario asignado
+      if (asignadoAUsuarioId && asignadoAUsuarioId !== usuarioId) {
+        NotificacionService.notificarTareaAsignada(tareaResult.data).catch(err => 
+          logger.error('Error al notificar tarea asignada', { error: err })
+        );
       }
 
       logger.info(`Tarea creada: ${tareaResult.data.id}`);
@@ -161,6 +213,8 @@ export class TareaController {
     try {
       const tareaId = parseInt((req.params['id'] as string) || '');
       const usuarioId = req.user!.id;
+      const userRole = req.user!.rol?.clave;
+      const userEstablecimientoId = req.user!.establecimiento_id;
       const updateData = req.body;
 
       if (isNaN(tareaId)) {
@@ -171,7 +225,9 @@ export class TareaController {
       const updateResult = await TareaService.updateTarea(
         tareaId,
         updateData,
-        usuarioId
+        usuarioId,
+        userRole,
+        userEstablecimientoId
       );
 
       if (!updateResult.success || !updateResult.data) {
@@ -252,7 +308,12 @@ export class TareaController {
         return;
       }
 
-  logger.info('Tarea completada', { usuarioId, tareaId });
+      // 🔔 Notificar al creador de la tarea que fue completada
+      NotificacionService.notificarTareaCompletada(result.data, usuarioId).catch(err => 
+        logger.error('Error al notificar tarea completada', { error: err })
+      );
+
+      logger.info('Tarea completada', { usuarioId, tareaId });
       res.json(ApiResponse.success(result.data, 'Tarea completada exitosamente'));
     } catch (error) {
       logger.error('Error completando tarea', { error });

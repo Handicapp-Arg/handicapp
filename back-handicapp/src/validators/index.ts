@@ -59,10 +59,11 @@ export const createUserSchema = z.object({
 });
 
 export const updateUserSchema = z.object({
-  email: z.string().email("Invalid email format").optional(),
-  firstName: z.string().min(2, "First name must be at least 2 characters").optional(),
-  lastName: z.string().min(2, "Last name must be at least 2 characters").optional(),
-  role: z.enum(["user", "admin", "moderator"]).optional(),
+  nombre: z.string().min(2, "Nombre debe tener al menos 2 caracteres").max(80).optional(),
+  apellido: z.string().min(2, "Apellido debe tener al menos 2 caracteres").max(80).optional(),
+  email: z.string().email("Formato de email inválido").optional(),
+  telefono: z.string().max(40).optional().nullable(),
+  ubicacion: z.string().max(150).optional().nullable(),
 });
 
 export const loginSchema = z.object({

@@ -2,22 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import Image from 'next/image';
+import ApiClient from '@/lib/services/apiClient';
 
 /**
  * Componente de protección de rutas basado en roles
- * Verifica la autenticación del usuario y lo redirige a su área autorizada
- * según su rol definido en el sistema
+ * Verifica la autenticación del usuario haciendo request al backend
+ * (las cookies httpOnly se envían automáticamente)
  */
-
-// Mapeo de roles
-const ROLE_MAPPING: Record<number, string> = {
-  1: 'admin',
-  2: 'establecimiento', 
-  3: 'capataz',
-  4: 'veterinario',
-  5: 'empleado',
-  6: 'propietario'
-};
 
 const DASHBOARD_ROUTES: Record<string, string> = {
   admin: '/admin',
@@ -28,13 +20,6 @@ const DASHBOARD_ROUTES: Record<string, string> = {
   propietario: '/propietario'
 };
 
-const getCookie = (name: string): string | null => {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
-  return null;
-};
-
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -42,33 +27,45 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
-    const checkAccess = () => {
-      // Obtener cookies
-      const token = getCookie('auth-token');
-      const roleStr = getCookie('role');
-      
-      if (!token || !roleStr) {
-        router.replace('/');
-        return;
-      }
+    const checkAccess = async () => {
+      try {
+        // Verificar autenticación con el backend (las cookies httpOnly se envían automáticamente)
+        const response: any = await ApiClient.verifyToken();
+        
+        // El backend devuelve: { success: true, data: { valid: true, user: { id, email, role } } }
+        if (!response || !response.success || !response.data || !response.data.user || !response.data.valid) {
+          router.replace('/login');
+          return;
+        }
 
-      const roleId = parseInt(roleStr);
-      const userRole = ROLE_MAPPING[roleId];
-      
-      if (!userRole) {
-        router.replace('/');
-        return;
-      }
+        const user = response.data.user;
+        const userRole = user.role; // 'admin', 'establecimiento', 'capataz', 'veterinario', 'empleado', 'propietario'
+        
+        if (!userRole) {
+          router.replace('/login');
+          return;
+        }
 
-      const allowedPath = DASHBOARD_ROUTES[userRole];
-      
-      if (!pathname.startsWith(allowedPath)) {
-        router.replace(allowedPath);
-        return;
-      }
+        const allowedPath = DASHBOARD_ROUTES[userRole];
+        
+        if (!allowedPath) {
+          router.replace('/login');
+          return;
+        }
+        
+        // Si está en una ruta no permitida para su rol, redirigir
+        if (!pathname.startsWith(allowedPath)) {
+          router.replace(allowedPath);
+          return;
+        }
 
-      setIsAuthorized(true);
-      setIsLoading(false);
+        setIsAuthorized(true);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error verificando autenticación:', error);
+        setIsLoading(false);
+        router.replace('/login');
+      }
     };
 
     checkAccess();
@@ -76,10 +73,28 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center space-y-4">
-          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <div className="text-lg text-gray-600">Verificando permisos...</div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center space-y-6">
+          {/* Logo con animación de pulso */}
+          <div className="relative">
+            <div className="absolute inset-0 animate-ping opacity-20">
+              <div className="w-24 h-24 mx-auto rounded-2xl bg-[#0f172a]"></div>
+            </div>
+            <div className="relative bg-[#0f172a] w-24 h-24 rounded-2xl flex items-center justify-center mx-auto shadow-xl">
+              <Image 
+                src="/logos/logo-icon-white.png" 
+                alt="HandicApp" 
+                width={64}
+                height={64}
+                className="object-contain"
+              />
+            </div>
+          </div>
+          
+          {/* Spinner debajo del logo */}
+          <div className="flex justify-center">
+            <div className="w-8 h-8 border-3 border-[#af936f] border-t-transparent rounded-full animate-spin"></div>
+          </div>
         </div>
       </div>
     );
@@ -87,10 +102,28 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!isAuthorized) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center space-y-4">
-          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <div className="text-lg text-gray-600">Redirigiendo...</div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center space-y-6">
+          {/* Logo con animación de pulso */}
+          <div className="relative">
+            <div className="absolute inset-0 animate-ping opacity-20">
+              <div className="w-24 h-24 mx-auto rounded-2xl bg-[#0f172a]"></div>
+            </div>
+            <div className="relative bg-[#0f172a] w-24 h-24 rounded-2xl flex items-center justify-center mx-auto shadow-xl">
+              <Image 
+                src="/logos/logo-icon-white.png" 
+                alt="HandicApp" 
+                width={64}
+                height={64}
+                className="object-contain"
+              />
+            </div>
+          </div>
+          
+          {/* Spinner debajo del logo */}
+          <div className="flex justify-center">
+            <div className="w-8 h-8 border-3 border-[#af936f] border-t-transparent rounded-full animate-spin"></div>
+          </div>
         </div>
       </div>
     );

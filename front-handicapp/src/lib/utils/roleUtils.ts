@@ -29,7 +29,7 @@ export const ROLE_DASHBOARD_ROUTES: Record<UserRole, string> = {
 export function getDashboardRoute(roleId: number): string {
   const roleKey = ROLE_ID_TO_ROLE_KEY[roleId];
   if (!roleKey) {
-  logger.warn(`Unknown role ID: ${roleId}, redirecting to default`);
+  console.warn(`Unknown role ID: ${roleId}, redirecting to default`);
     return '/';
   }
   return ROLE_DASHBOARD_ROUTES[roleKey];

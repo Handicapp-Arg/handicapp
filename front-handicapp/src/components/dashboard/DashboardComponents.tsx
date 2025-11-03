@@ -1,65 +1,53 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
+import { ChevronRightIcon } from '@heroicons/react/24/outline';
+import { Activity } from 'lucide-react';
 
-interface StatCardProps {
+export interface StatCardProps {
   title: string;
   value: string | number;
   subtitle?: string;
-  icon: string; // emoji
-  color: 'blue' | 'green' | 'purple' | 'orange' | 'red' | 'indigo' | 'yellow' | 'pink' | 'gray';
+  // icon can be an emoji string or a React node (Heroicon, SVG, etc.)
+  icon?: React.ReactNode | string;
   trend?: {
     value: number;
     isPositive: boolean;
   };
+  // allow rendering additional nodes such as a sparkline
+  children?: React.ReactNode;
 }
 
-const colorVariants = {
-  blue: 'bg-blue-100 text-blue-800 border-blue-200',
-  green: 'bg-green-100 text-green-800 border-green-200',
-  purple: 'bg-purple-100 text-purple-800 border-purple-200',
-  orange: 'bg-orange-100 text-orange-800 border-orange-200',
-  red: 'bg-red-100 text-red-800 border-red-200',
-  indigo: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-  yellow: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  pink: 'bg-pink-100 text-pink-800 border-pink-200',
-  gray: 'bg-gray-100 text-gray-800 border-gray-200',
-};
-
-const iconBgVariants = {
-  blue: 'bg-blue-100',
-  green: 'bg-green-100',
-  purple: 'bg-purple-100',
-  orange: 'bg-orange-100',
-  red: 'bg-red-100',
-  indigo: 'bg-indigo-100',
-  yellow: 'bg-yellow-100',
-  pink: 'bg-pink-100',
-  gray: 'bg-gray-100',
-};
-
-export function StatCard({ title, value, subtitle, icon, color, trend }: StatCardProps) {
+/**
+ * Modern stat card for dashboard: clean typography, consistent icon badge using the app brown tones,
+ * subtle shadow and accessible color for trend.
+ */
+export function StatCard({ title, value, subtitle, icon, trend, children }: StatCardProps) {
   return (
-    <Card className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 p-6">
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 mb-1">{value}</p>
-          {subtitle && (
-            <p className="text-xs text-gray-500">{subtitle}</p>
-          )}
-          {trend && (
-            <div className="flex items-center mt-2">
-              <span className={`text-xs font-medium ${
-                trend.isPositive ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {trend.isPositive ? '↗' : '↘'} {Math.abs(trend.value)}%
-              </span>
-              <span className="text-xs text-gray-500 ml-1">vs anterior</span>
-            </div>
-          )}
+    <Card className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 p-5">
+      <div className="flex items-center gap-4">
+        <div className="flex-shrink-0">
+          <div className="h-14 w-14 rounded-lg flex items-center justify-center bg-gradient-to-br from-[#5A3420] to-[#3C2013] text-white shadow">
+            {icon ? (
+              typeof icon === 'string' ? <span className="text-xl leading-none" aria-hidden>{icon}</span> : icon
+            ) : (
+              <Activity className="h-6 w-6" aria-hidden />
+            )}
+          </div>
         </div>
-        <div className={`h-12 w-12 rounded-lg flex items-center justify-center ${iconBgVariants[color]}`}>
-          <span className="text-2xl">{icon}</span>
+
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold uppercase text-gray-500 truncate">{title}</p>
+          <div className="flex items-baseline gap-3">
+            <p className="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight">{value}</p>
+            {trend && (
+              <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ${trend.isPositive ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                {trend.isPositive ? '▲' : '▼'} {Math.abs(trend.value)}%
+              </span>
+            )}
+          </div>
+          {subtitle && <p className="text-sm text-gray-500 mt-1 truncate">{subtitle}</p>}
+          {/* small sparkline or custom children */}
+          {children && <div className="mt-3">{children}</div>}
         </div>
       </div>
     </Card>
@@ -69,30 +57,33 @@ export function StatCard({ title, value, subtitle, icon, color, trend }: StatCar
 interface ActionCardProps {
   title: string;
   description: string;
-  icon: string; // emoji
-  color: 'blue' | 'green' | 'purple' | 'orange' | 'red' | 'indigo' | 'yellow' | 'pink' | 'gray';
+  icon?: React.ReactNode | string;
   onClick?: () => void;
   href?: string;
   disabled?: boolean;
 }
 
-export function ActionCard({ title, description, icon, color, onClick, href, disabled = false }: ActionCardProps) {
-  const baseClasses = "bg-white rounded-lg shadow-sm hover:shadow-lg transition-all duration-200 p-6 border border-gray-100";
-  const interactiveClasses = disabled 
-    ? "opacity-50 cursor-not-allowed" 
-    : "cursor-pointer hover:scale-[1.02] hover:border-gray-200";
+export function ActionCard({ title, description, icon, onClick, href, disabled = false }: ActionCardProps) {
+  const baseClasses = "bg-white rounded-lg shadow-sm hover:shadow-lg transition-all duration-200 p-5 border border-gray-100";
+  const interactiveClasses = disabled
+    ? "opacity-50 cursor-not-allowed"
+    : "cursor-pointer hover:translate-y-0.5 hover:shadow-md";
 
   const content = (
-    <div className="flex items-center space-x-4">
-      <div className={`p-3 rounded-lg ${iconBgVariants[color]} flex-shrink-0`}>
-        <span className="text-xl">{icon}</span>
-      </div>
-      <div className="flex-1 min-w-0">
-        <h3 className="font-semibold text-gray-900 mb-1 truncate">{title}</h3>
-        <p className="text-sm text-gray-600 line-clamp-2">{description}</p>
-      </div>
+    <div className="flex items-center gap-4">
       <div className="flex-shrink-0">
-        <span className="text-gray-400">→</span>
+        <div className="h-12 w-12 rounded-lg flex items-center justify-center bg-gradient-to-br from-[#5A3420] to-[#3C2013] text-white shadow">
+          {typeof icon === 'string' ? <span className="text-lg">{icon}</span> : icon}
+        </div>
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <h3 className="font-semibold text-gray-900 mb-0 truncate text-sm">{title}</h3>
+        <p className="text-sm text-gray-500 mt-1 line-clamp-2">{description}</p>
+      </div>
+
+      <div className="flex-shrink-0 text-gray-400">
+        <ChevronRightIcon className="h-5 w-5" />
       </div>
     </div>
   );
@@ -106,7 +97,7 @@ export function ActionCard({ title, description, icon, color, onClick, href, dis
   }
 
   return (
-    <div 
+    <div
       className={`${baseClasses} ${interactiveClasses}`}
       onClick={disabled ? undefined : onClick}
     >

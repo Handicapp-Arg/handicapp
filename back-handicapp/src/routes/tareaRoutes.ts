@@ -28,11 +28,11 @@ router.use(auditAccess());
 /**
  * @route   POST /api/v1/tareas
  * @desc    Crear nueva tarea
- * @access  Admin, Establecimiento, Capataz, Veterinario
+ * @access  Admin, Establecimiento, Capataz, Veterinario, Empleado
  */
 router.post(
   '/',
-  requireRole('admin', 'establecimiento', 'capataz', 'veterinario'),
+  requireRole('admin', 'establecimiento', 'capataz', 'veterinario', 'empleado'),
   tareaValidations.create,
   TareaController.create
 );

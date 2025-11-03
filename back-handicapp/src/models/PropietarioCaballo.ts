@@ -1,5 +1,6 @@
-import { DataTypes, Model, Optional } from "sequelize";
+import { DataTypes, Model, Optional, NonAttribute } from "sequelize";
 import { sequelize } from "../config/database";
+import type { User } from "./User";
 
 interface PCAttrs {
   id: number;
@@ -21,14 +22,17 @@ export class PropietarioCaballo
   extends Model<PCAttrs, PCCreation>
   implements PCAttrs
 {
-  public id!: number;
-  public caballo_id!: number;
-  public propietario_usuario_id!: number;
-  public actual!: boolean;
-  public porcentaje_tenencia!: number | null;
-  public fecha_inicio!: Date | null;
-  public fecha_fin!: Date | null;
-  public creado_el!: Date;
+  declare id: number;
+  declare caballo_id: number;
+  declare propietario_usuario_id: number;
+  declare actual: boolean;
+  declare porcentaje_tenencia: number | null;
+  declare fecha_inicio: Date | null;
+  declare fecha_fin: Date | null;
+  declare creado_el: Date;
+  
+  // Associations
+  declare propietario?: NonAttribute<User>;
 }
 
 PropietarioCaballo.init(

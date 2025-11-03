@@ -75,14 +75,17 @@ export class TareaService {
         if (fechaVencimientoFin) where.fecha_vencimiento[Op.lte] = new Date(fechaVencimientoFin);
       }
 
-      // Control de acceso básico: si no es admin, mostrar tareas creadas o asignadas al usuario
-      if (userRole && userRole !== 'admin' && usuarioId) {
+      // Control de acceso: solo filtrar por usuario si NO tiene permiso tasks:view_all
+      // Admin, establecimiento y capataz pueden ver todas las tareas
+      const rolesConVistaCompleta = ['admin', 'establecimiento', 'capataz'];
+      if (userRole && !rolesConVistaCompleta.includes(userRole) && usuarioId) {
         where[Op.or] = [
           { creado_por_usuario_id: usuarioId },
           { asignado_a_usuario_id: usuarioId },
         ];
       }
 
+      // 🚀 OPTIMIZACIÓN: subQuery: false previene subqueries ineficientes
       const { count, rows } = await Tarea.findAndCountAll({
         where,
         include: [
@@ -95,6 +98,7 @@ export class TareaService {
         offset,
         order: [[sortBy, sortOrder]],
         distinct: true,
+        subQuery: false, // ← Previene subqueries ineficientes
       });
 
       const totalPages = Math.ceil(count / limit);
@@ -447,13 +451,15 @@ export class TareaService {
     creadoPorUserId: number
   ): Promise<ServiceResponse<Tarea>> {
     try {
-      // Verificar que el establecimiento existe
-      const establecimiento = await Establecimiento.findByPk(data.establecimiento_id);
-      if (!establecimiento) {
-        return {
-          success: false,
-          error: 'Establecimiento no encontrado',
-        };
+      // Verificar que el establecimiento existe (solo si se especifica)
+      if (data.establecimiento_id) {
+        const establecimiento = await Establecimiento.findByPk(data.establecimiento_id);
+        if (!establecimiento) {
+          return {
+            success: false,
+            error: 'Establecimiento no encontrado',
+          };
+        }
       }
 
       // Verificar que el caballo existe si se especifica
@@ -500,23 +506,48 @@ export class TareaService {
   static async updateTarea(
     tareaId: number,
     data: UpdateTareaData,
-    userId: number
+    userId: number,
+    userRole?: string,
+    userEstablecimientoId?: number
   ): Promise<ServiceResponse<Tarea>> {
     try {
-      const tarea = await Tarea.findByPk(tareaId);
+      // Usar raw: true para evitar problemas con TypeScript public class fields
+      const tareaRaw: any = await Tarea.findByPk(tareaId, { raw: true });
       
-      if (!tarea) {
+      if (!tareaRaw) {
         return {
           success: false,
           error: 'Tarea no encontrada',
         };
       }
 
-      // Verificar permisos: creador o asignado pueden modificar
-      if (tarea.creado_por_usuario_id !== userId && tarea.asignado_a_usuario_id !== userId) {
+      // Verificar permisos:
+      // 1. Admin puede editar todo
+      // 2. Creador puede editar
+      // 3. Usuario asignado puede editar
+      // 4. Establecimiento o capataz del mismo establecimiento puede editar
+      const esCreador = tareaRaw.creado_por_usuario_id === userId;
+      const esAsignado = tareaRaw.asignado_a_usuario_id === userId;
+      const esAdmin = userRole === 'admin';
+      const esDelMismoEstablecimiento = userEstablecimientoId && 
+                                         tareaRaw.establecimiento_id === userEstablecimientoId &&
+                                         (userRole === 'establecimiento' || userRole === 'capataz');
+
+      const tienePermiso = esAdmin || esCreador || esAsignado || esDelMismoEstablecimiento;
+
+      if (!tienePermiso) {
         return {
           success: false,
           error: 'Sin permisos para modificar esta tarea',
+        };
+      }
+
+      // Ahora sí cargar la instancia del modelo para poder actualizar
+      const tarea = await Tarea.findByPk(tareaId);
+      if (!tarea) {
+        return {
+          success: false,
+          error: 'Tarea no encontrada',
         };
       }
 

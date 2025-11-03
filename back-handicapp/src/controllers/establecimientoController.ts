@@ -18,15 +18,26 @@ export class EstablecimientoController {
       const usuarioId = req.user!.id;
       const userRole = req.user!.rol?.clave;
 
+      logger.info('📋 getAll establecimientos', { userRole, usuarioId, page, limit, search });
+
       let result;
       
       if (userRole === 'admin') {
+        // Admin ve solo sus establecimientos (con membresía)
         result = await EstablecimientoService.searchEstablecimientos(
           search || '',
           usuarioId,
           { page, limit }
         );
+      } else if (userRole === 'propietario') {
+        // Propietarios ven TODOS los establecimientos activos + sus caballos en cada uno
+        result = await EstablecimientoService.getAllPublicEstablecimientos({
+          page,
+          limit,
+          search
+        }, usuarioId);
       } else {
+        // Otros roles (veterinario, capataz, etc.) ven sus establecimientos
         result = await EstablecimientoService.getEstablecimientosByUser(usuarioId, {
           page,
           limit,
@@ -88,7 +99,18 @@ export class EstablecimientoController {
    */
   static async create(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const { nombre, cuit, direccion_calle, telefono, email } = req.body;
+      const { 
+        nombre, 
+        cuit, 
+        direccion_calle, 
+        telefono, 
+        email,
+        tipo_establecimiento,
+        estado,
+        superficie_hectareas,
+        cantidad_boxes,
+        servicios
+      } = req.body;
       const usuarioId = req.user!.id;
 
       if (!nombre || !cuit) {
@@ -101,7 +123,12 @@ export class EstablecimientoController {
         cuit,
         direccion_calle,
         telefono,
-        email
+        email,
+        tipo_establecimiento,
+        estado,
+        superficie_hectareas,
+        cantidad_boxes,
+        servicios
       }, usuarioId);
 
       if (result.success && result.data) {
@@ -125,13 +152,24 @@ export class EstablecimientoController {
       const establecimientoId = parseInt(req.params['id'] || '0');
       const updateData = req.body;
       const usuarioId = req.user!.id;
+      const userRole = req.user!.rol?.clave;
+      const userEstablecimientoId = req.user!.establecimiento_id;
+
+      console.log('🔵 CONTROLLER - Datos recibidos:', JSON.stringify(updateData, null, 2));
+      console.log('🔵 CONTROLLER - Usuario:', { usuarioId, userRole, userEstablecimientoId });
 
       if (isNaN(establecimientoId)) {
         ResponseHelper.badRequest(res, 'ID de establecimiento inválido');
         return;
       }
 
-      const result = await EstablecimientoService.updateEstablecimiento(establecimientoId, updateData, usuarioId);
+      const result = await EstablecimientoService.updateEstablecimiento(
+        establecimientoId, 
+        updateData, 
+        usuarioId,
+        userRole,
+        userEstablecimientoId
+      );
 
       if (result.success && result.data) {
         ResponseHelper.success(res, result.data, 'Establecimiento actualizado exitosamente');
@@ -219,6 +257,140 @@ export class EstablecimientoController {
       ResponseHelper.notFound(res, 'Funcionalidad no implementada');
     } catch (error) {
       logger.error('Error obteniendo estadísticas', { error });
+      ResponseHelper.internalError(res, 'Error interno del servidor');
+    }
+  }
+
+  /**
+   * Propietario solicita asociar su caballo al establecimiento
+   * POST /api/v1/establecimientos/:id/caballos
+   */
+  static async asociarCaballo(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const establecimientoId = parseInt(req.params['id'] || '0');
+      const { caballo_id } = req.body;
+      const usuarioId = req.user!.id;
+
+      if (isNaN(establecimientoId) || !caballo_id) {
+        ResponseHelper.badRequest(res, 'ID de establecimiento y caballo_id son requeridos');
+        return;
+      }
+
+      const result = await EstablecimientoService.asociarCaballo(
+        establecimientoId,
+        parseInt(caballo_id),
+        usuarioId
+      );
+
+      if (result.success && result.data) {
+        ResponseHelper.success(res, result.data, 'Solicitud enviada exitosamente');
+      } else {
+        ResponseHelper.badRequest(res, result.error || 'Error al solicitar asociación');
+      }
+
+    } catch (error) {
+      logger.error('Error al solicitar asociación', { error });
+      ResponseHelper.internalError(res, 'Error interno del servidor');
+    }
+  }
+
+  /**
+   * Establecimiento solicita asociar un caballo
+   * POST /api/v1/establecimientos/:id/solicitar-caballo
+   */
+  static async solicitarCaballo(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const establecimientoId = parseInt(req.params['id'] || '0');
+      const { caballo_id } = req.body;
+      const usuarioId = req.user!.id;
+
+      if (isNaN(establecimientoId) || !caballo_id) {
+        ResponseHelper.badRequest(res, 'ID de establecimiento y caballo_id son requeridos');
+        return;
+      }
+
+      const result = await EstablecimientoService.solicitarCaballo(
+        establecimientoId,
+        parseInt(caballo_id),
+        usuarioId
+      );
+
+      if (result.success && result.data) {
+        ResponseHelper.success(res, result.data, 'Solicitud enviada al propietario');
+      } else {
+        ResponseHelper.badRequest(res, result.error || 'Error al solicitar caballo');
+      }
+
+    } catch (error) {
+      logger.error('Error al solicitar caballo', { error });
+      ResponseHelper.internalError(res, 'Error interno del servidor');
+    }
+  }
+
+  /**
+   * Aprobar solicitud de asociación
+   * POST /api/v1/establecimientos/:id/caballos/:caballoId/aprobar
+   */
+  static async aprobarAsociacion(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const establecimientoId = parseInt(req.params['id'] || '0');
+      const caballoId = parseInt(req.params['caballoId'] || '0');
+      const usuarioId = req.user!.id;
+
+      if (isNaN(establecimientoId) || isNaN(caballoId)) {
+        ResponseHelper.badRequest(res, 'IDs inválidos');
+        return;
+      }
+
+      const result = await EstablecimientoService.aprobarAsociacion(
+        establecimientoId,
+        caballoId,
+        usuarioId
+      );
+
+      if (result.success && result.data) {
+        ResponseHelper.success(res, result.data, 'Asociación aprobada exitosamente');
+      } else {
+        ResponseHelper.badRequest(res, result.error || 'Error al aprobar asociación');
+      }
+
+    } catch (error) {
+      logger.error('Error al aprobar asociación', { error });
+      ResponseHelper.internalError(res, 'Error interno del servidor');
+    }
+  }
+
+  /**
+   * Rechazar solicitud de asociación
+   * POST /api/v1/establecimientos/:id/caballos/:caballoId/rechazar
+   */
+  static async rechazarAsociacion(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const establecimientoId = parseInt(req.params['id'] || '0');
+      const caballoId = parseInt(req.params['caballoId'] || '0');
+      const usuarioId = req.user!.id;
+      const { motivo } = req.body;
+
+      if (isNaN(establecimientoId) || isNaN(caballoId)) {
+        ResponseHelper.badRequest(res, 'IDs inválidos');
+        return;
+      }
+
+      const result = await EstablecimientoService.rechazarAsociacion(
+        establecimientoId,
+        caballoId,
+        usuarioId,
+        motivo
+      );
+
+      if (result.success && result.data) {
+        ResponseHelper.success(res, result.data, 'Solicitud rechazada');
+      } else {
+        ResponseHelper.badRequest(res, result.error || 'Error al rechazar solicitud');
+      }
+
+    } catch (error) {
+      logger.error('Error al rechazar solicitud', { error });
       ResponseHelper.internalError(res, 'Error interno del servidor');
     }
   }

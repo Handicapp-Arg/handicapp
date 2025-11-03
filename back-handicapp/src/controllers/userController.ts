@@ -11,13 +11,31 @@ import { config } from '../config/config';
 
 export class UserController {
   // Get all users
-  static getUsers = asyncHandler(async (_req: Request, res: Response, _next: NextFunction) => {
-  const page = Number((_req.query['page'] as string) || 1);
-  const limit = Number((_req.query['limit'] as string) || 10);
-  const sortBy = (_req.query['sortBy'] as string) || 'creado_el';
-  const sortOrder = (_req.query['sortOrder'] as string) === 'ASC' ? 'ASC' : 'DESC';
+  static getUsers = asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
+    const page = Number((req.query['page'] as string) || 1);
+    const limit = Number((req.query['limit'] as string) || 10);
+    const sortBy = (req.query['sortBy'] as string) || 'creado_el';
+    const sortOrder = (req.query['sortOrder'] as string) === 'ASC' ? 'ASC' : 'DESC';
 
-    const result = await UserService.getUsers({ page, limit, sortBy, sortOrder });
+    const currentUser = req.user!;
+    const currentUserRole = currentUser.rol?.clave;
+
+    // Si es establecimiento, filtrar solo empleados de su establecimiento
+    // Si es admin, mostrar todos
+    let result;
+    if (currentUserRole === 'establecimiento') {
+      result = await UserService.getUsers({ 
+        page, 
+        limit, 
+        sortBy, 
+        sortOrder,
+        roleIds: [3, 4, 5], // Capataz, Veterinario, Empleado
+        establecimiento_id: currentUser.establecimiento_id // Filtrar por su establecimiento
+      });
+    } else {
+      result = await UserService.getUsers({ page, limit, sortBy, sortOrder });
+    }
+
     return ResponseHelper.success(res, result.data, 'Users retrieved successfully');
   });
 
@@ -139,14 +157,22 @@ export class UserController {
   // Get current user profile (re-export from auth controller)
   static getProfile = AuthController.getProfile;
 
-  // Create new user (admin only)
+  // Create new user (admin + establecimiento con permisos limitados)
   static createUser = asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
-    const { nombre, apellido, email, password, rol_id, telefono } = req.body;
+    const { nombre, apellido, email, password, rol_id, telefono, documento } = req.body;
     
-    // Verificar que el usuario actual es admin
     const currentUser = req.user!;
-    if (currentUser.rol?.clave !== 'admin') {
-      return ResponseHelper.forbidden(res, 'Solo los administradores pueden crear usuarios');
+    const currentUserRole = currentUser.rol?.clave;
+    
+    // Verificar permisos según el rol
+    if (currentUserRole === 'establecimiento') {
+      // Establecimiento solo puede crear: capataz (3), veterinario (4), empleado (5)
+      const allowedRoles = [3, 4, 5];
+      if (!allowedRoles.includes(rol_id)) {
+        return ResponseHelper.forbidden(res, 'Los establecimientos solo pueden crear usuarios con roles: Capataz, Veterinario o Empleado');
+      }
+    } else if (currentUserRole !== 'admin') {
+      return ResponseHelper.forbidden(res, 'No tienes permisos para crear usuarios');
     }
 
     try {
@@ -160,6 +186,12 @@ export class UserController {
       const salt = await bcrypt.genSalt(config.security.bcryptRounds);
       const hashedPassword = await bcrypt.hash(password, salt);
 
+      // Si es establecimiento creando un empleado, asignar el establecimiento_id automáticamente
+      let establecimientoId = null;
+      if (currentUserRole === 'establecimiento' && [3, 4, 5].includes(rol_id)) {
+        establecimientoId = currentUser.establecimiento_id;
+      }
+
       // Crear usuario
       const newUser = await User.create({
         nombre,
@@ -168,9 +200,36 @@ export class UserController {
         hash_contrasena: hashedPassword,
         rol_id,
         telefono,
+        documento,
         verificado: true,
-        estado_usuario: 'active'
+        estado_usuario: 'active',
+        establecimiento_id: establecimientoId
       });
+
+      // Si es establecimiento creando empleado/capataz/veterinario, crear membresía
+      if (currentUserRole === 'establecimiento' && [3, 4, 5].includes(rol_id)) {
+        // Buscar el establecimiento del usuario que está creando
+        const { MembresiaUsuarioEstablecimiento } = require('../models');
+        const { EstadoMembresia } = require('../models/enums');
+        
+        const membresiasEstablecimiento = await MembresiaUsuarioEstablecimiento.findAll({
+          where: {
+            usuario_id: currentUser.id,
+            estado_membresia: EstadoMembresia.active
+          }
+        });
+
+        // Crear membresía en cada establecimiento del creador
+        for (const membresia of membresiasEstablecimiento) {
+          await MembresiaUsuarioEstablecimiento.create({
+            usuario_id: newUser.id,
+            establecimiento_id: membresia.establecimiento_id,
+            rol_en_establecimiento: rol_id === 3 ? 'capataz' : rol_id === 4 ? 'veterinario' : 'empleado',
+            estado_membresia: EstadoMembresia.active,
+            fecha_inicio: new Date()
+          });
+        }
+      }
 
       // Obtener usuario con rol
       const userWithRole = await User.findByPk(newUser.id, {
@@ -238,6 +297,44 @@ export class UserController {
     } catch (error) {
       console.error('Error changing password:', error);
       return ResponseHelper.internalError(res, 'Error al cambiar contraseña');
+    }
+  });
+
+  // Upload avatar
+  static uploadAvatar = asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      return ResponseHelper.unauthorized(res, 'Usuario no autenticado');
+    }
+
+    const file = (req as any).file as Express.Multer.File | undefined;
+    if (!file) {
+      return ResponseHelper.badRequest(res, 'No se recibió ninguna imagen');
+    }
+
+    try {
+      // Build avatar URL
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const avatarUrl = `${baseUrl}/uploads/${file.filename}`;
+
+      // Update user with avatar URL
+      const result = await UserService.updateUser(userId.toString(), { 
+        avatar_url: avatarUrl 
+      } as any);
+
+      if (result.success) {
+        return ResponseHelper.success(
+          res, 
+          { avatar_url: avatarUrl, filename: file.filename }, 
+          'Avatar actualizado exitosamente'
+        );
+      }
+      
+      return ResponseHelper.badRequest(res, result.error || 'Error al actualizar avatar');
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      return ResponseHelper.internalError(res, 'Error al subir avatar');
     }
   });
 }

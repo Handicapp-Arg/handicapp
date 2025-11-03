@@ -40,9 +40,23 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
   CORS_CREDENTIALS: z.string().transform(val => val === 'true').default(true),
   
+  // Frontend URL (for WebSocket CORS)
+  FRONTEND_URL: z.string().url().default('http://localhost:3000'),
+  
   // Logging
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
   LOG_FILE: z.string().default('logs/app.log'),
+  
+  // Web App base URL (for links in emails)
+  APP_WEB_URL: z.string().url().default('http://localhost:3000'),
+  
+  // SMTP / Email
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string().transform(Number).optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM_EMAIL: z.string().email().optional(),
+  SMTP_FROM_NAME: z.string().optional(),
   
   // API
   API_VERSION: z.string().default('v1'),
@@ -60,6 +74,8 @@ export const config = {
   nodeEnv: env.NODE_ENV,
   port: env.PORT,
   host: env.HOST,
+  frontend_url: env.FRONTEND_URL,
+  jwt_secret: env.JWT_SECRET,
   
   database: {
     host: env.DB_HOST,
@@ -101,6 +117,10 @@ export const config = {
     file: env.LOG_FILE,
   },
   
+  app: {
+    webUrl: env.APP_WEB_URL,
+  },
+  
   api: {
     version: env.API_VERSION,
     prefix: env.API_PREFIX,
@@ -110,4 +130,17 @@ export const config = {
     maxFileSize: env.MAX_FILE_SIZE,
     path: env.UPLOAD_PATH,
   },
+  
+  email: {
+    smtp: {
+      host: env.SMTP_HOST,
+      port: env.SMTP_PORT,
+      user: env.SMTP_USER,
+      pass: env.SMTP_PASS,
+    },
+    from: {
+      email: env.SMTP_FROM_EMAIL,
+      name: env.SMTP_FROM_NAME || 'HandicApp',
+    }
+  }
 } as const;

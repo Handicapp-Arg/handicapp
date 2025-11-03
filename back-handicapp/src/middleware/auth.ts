@@ -13,18 +13,16 @@ import { AuthService } from '../services/authService';
  */
 export const requireAuth = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const authHeader = req.headers.authorization;
+    // Intentar obtener token de cookie httpOnly primero, luego del header Authorization
+    let token = req.cookies['auth-token'];
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      res.status(401).json({
-        success: false,
-        message: 'Token de acceso requerido',
-        code: 'MISSING_TOKEN'
-      });
-      return;
+    // Fallback: buscar en Authorization header (para compatibilidad con clientes que usen Bearer)
+    if (!token) {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      }
     }
-    
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
     
     if (!token) {
       res.status(401).json({
@@ -82,7 +80,10 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
       nombre: user.nombre,
       apellido: user.apellido,
       telefono: user.telefono ? String(user.telefono) : undefined,
+      ubicacion: user.ubicacion || undefined,
+      verificado: user.verificado,
       activo: user.isActive,
+      establecimiento_id: user.establecimiento_id || undefined,
       rol: user.rol ? {
         id: Number(user.rol.id),
         clave: user.rol.clave,
@@ -190,7 +191,10 @@ export const optionalAuth = async (req: AuthenticatedRequest, _res: Response, ne
         nombre: user.nombre,
         apellido: user.apellido,
         telefono: user.telefono ? String(user.telefono) : undefined,
+        ubicacion: user.ubicacion || undefined,
+        verificado: user.verificado,
         activo: user.isActive,
+        establecimiento_id: user.establecimiento_id || undefined,
         rol: user.rol ? {
           id: Number(user.rol.id),
           clave: user.rol.clave,

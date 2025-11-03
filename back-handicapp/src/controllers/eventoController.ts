@@ -5,6 +5,7 @@
 
 import { Response } from 'express';
 import { EventoService } from '../services/eventoService';
+import { NotificacionService } from '../services/notificacionService';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '../utils/response';
 import { AuthenticatedRequest } from '../types';
@@ -58,6 +59,11 @@ export class EventoController {
         res.status(400).json(ApiResponse.error(eventoResult.error || 'No se pudo crear el evento'));
         return;
       }
+
+      // 🔔 Notificar automáticamente sobre el nuevo evento
+      NotificacionService.notificarEventoCreado(eventoResult.data, usuarioId).catch(err => 
+        logger.error('Error al notificar evento creado', { error: err })
+      );
 
       logger.info(`Evento creado: ${eventoResult.data.id}`);
       res.status(201).json(ApiResponse.success(eventoResult.data, 'Evento creado exitosamente'));
@@ -159,19 +165,24 @@ export class EventoController {
         return;
       }
 
-      const evento = await EventoService.updateEvento(
+      const result = await EventoService.updateEvento(
         eventoId,
         updateData,
         usuarioId
       );
-      if (!evento) {
-        res.status(404).json(ApiResponse.error('Evento no encontrado o sin permisos'));
+      
+      if (!result.success || !result.data) {
+        res.status(404).json(ApiResponse.error(result.error || 'Evento no encontrado o sin permisos'));
         return;
       }
 
-  logger.info(`Evento actualizado: ${eventoId}`);
-      res.json(ApiResponse.success(evento, 'Evento actualizado exitosamente'));
+      // 🔔 Notificar automáticamente sobre la actualización del evento
+      NotificacionService.notificarEventoActualizado(result.data, usuarioId).catch(err => 
+        logger.error('Error al notificar evento actualizado', { error: err })
+      );
 
+      logger.info(`Evento actualizado: ${eventoId}`);
+      res.json(ApiResponse.success(result.data, 'Evento actualizado exitosamente'));
     } catch (error: any) {
       logger.error('Error actualizando evento', { error });
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
@@ -269,13 +280,49 @@ export class EventoController {
 
   /**
    * Obtener eventos programados (próximos)
-   * GET /api/v1/eventos/programados?dias=30&establecimiento=1
+   * GET /api/v1/eventos/programados?dias=30&establecimiento=1&limit=200
    * Roles: todos los autenticados
    */
-  static async getProgramados(_req: AuthenticatedRequest, res: Response): Promise<void> {
+  static async getProgramados(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      // Método no implementado en el servicio; responder 501 por ahora
-      res.status(501).json(ApiResponse.error('Endpoint no implementado'));
+      const limit = parseInt((req.query['limit'] as string) || '50');
+      const dias = parseInt((req.query['dias'] as string) || '90'); // Por defecto 90 días hacia adelante
+      const establecimientoId = req.query['establecimiento'] ? parseInt(req.query['establecimiento'] as string) : undefined;
+      const caballoId = req.query['caballo'] ? parseInt(req.query['caballo'] as string) : undefined;
+      
+      const usuarioId = req.user!.id;
+      const userRole = req.user!.rol?.clave;
+
+      // Calcular fecha de inicio (hoy) y fecha fin (días adelante)
+      const fechaInicio = new Date().toISOString().split('T')[0];
+      const fechaFin = new Date(Date.now() + dias * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      const filterPayload: any = { 
+        page: 1, 
+        limit, 
+        usuarioId, 
+        userRole,
+        fechaInicio,
+        fechaFin,
+        sortBy: 'fecha_evento',
+        sortOrder: 'ASC' as const
+      };
+      
+      if (establecimientoId) filterPayload.establecimientoId = establecimientoId;
+      if (caballoId) filterPayload.caballoId = caballoId;
+
+      const result = await EventoService.getAllEventos(filterPayload);
+
+      if (!result.success || !result.data) {
+        res.status(500).json(ApiResponse.error(result.error || 'Error al obtener eventos programados'));
+        return;
+      }
+
+      res.json({
+        success: true,
+        message: 'Eventos programados obtenidos exitosamente',
+        data: result.data.eventos
+      });
 
     } catch (error: any) {
       logger.error('Error obteniendo eventos programados', { error });

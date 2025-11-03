@@ -98,3 +98,9 @@ Thumbs.db
 
 # Local development
 .local
+
+# Validation reports
+validation-report.json
+security-report.json
+functionality-report.json
+performance-report.json

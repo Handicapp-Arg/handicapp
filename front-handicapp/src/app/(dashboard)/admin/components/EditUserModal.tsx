@@ -63,7 +63,7 @@ export function EditUserModal({ user, roles, onClose, onUserUpdated }: EditUserM
       toast('Usuario actualizado', { type: 'success' });
       onUserUpdated();
     } catch (error: any) {
-      logger.error('Error updating user:', error);
+      console.error('Error updating user:', error);
       setError(error.message || 'Error al actualizar usuario');
       toast(error.message || 'Error al actualizar usuario', { type: 'error' });
     } finally {
@@ -100,7 +100,7 @@ export function EditUserModal({ user, roles, onClose, onUserUpdated }: EditUserM
       setPasswordData({ newPassword: '', confirmPassword: '' });
       setShowPasswordSection(false);
     } catch (error: any) {
-      logger.error('Error changing password:', error);
+      console.error('Error changing password:', error);
       setPasswordError(error.message || 'Error al cambiar contraseña');
       toast(error.message || 'Error al cambiar contraseña', { type: 'error' });
     } finally {

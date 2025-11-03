@@ -1,7 +1,6 @@
 'use client';
 import { appConfig } from '@/lib/config';
 import AuthManager from '../auth/AuthManager';
-import { logger } from '@/lib/utils/logger';
 
 export class ApiClient {
   private static async request<T>(
@@ -9,52 +8,40 @@ export class ApiClient {
     options: RequestInit = {}
   ): Promise<T> {
     try {
-      // Obtener token de AuthManager
-      const authManager = AuthManager.getInstance();
-      const state = authManager.getState();
+      // Obtener token del AuthManager (opcional, las cookies HTTP-only funcionan automáticamente)
+      const token = AuthManager.getInstance().getAuthToken();
       
-      // Fallback: si no hay token en estado (p. ej., en el primer render), intentar obtenerlo de la cookie
-      let token = state.token;
-      if (!token && typeof document !== 'undefined') {
-        const cookies = document.cookie.split(';').map(c => c.trim());
-        const authCookie = cookies.find(c => c.startsWith('auth-token='));
-        if (authCookie) {
-          token = authCookie.split('=')[1] || null;
-        }
-      }
-
-      const authHeaders: Record<string, string> = {};
-      if (token) {
-        authHeaders['Authorization'] = `Bearer ${token}`;
-      }
-      
+      const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+      const headers: HeadersInit = {
+        ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+        // Solo agregar Authorization header si hay token en memoria (opcional)
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+        ...(options.headers as any),
+      };
       const config: RequestInit = {
-        credentials: 'include', // Incluir cookies para refresh token
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders,
-          ...options.headers,
-        },
+        credentials: 'include', // ✅ CRÍTICO: Las cookies httpOnly se envían automáticamente
+        headers,
         ...options,
       };
 
-      const response = await fetch(`${appConfig.apiBaseUrl}${endpoint}`, config);
+      const fullUrl = `${appConfig.apiBaseUrl}${endpoint}`;
+
+      const response = await fetch(fullUrl, config);
       
       // Manejar errores de autenticación
       if (response.status === 401) {
-        // Token expirado o inválido
-        const errorData = await response.json().catch(() => ({}));
-        
-        if (errorData.code === 'TOKEN_EXPIRED' || errorData.code === 'INVALID_TOKEN') {
-          // Token expirado - limpiar y redirigir al login
-          const authManager = AuthManager.getInstance();
-          await authManager.logout();
-          
-          // Lanzar error para que el componente maneje la redirección
-          throw new Error('Sesión expirada. Inicia sesión nuevamente.');
+        // Si es un endpoint de login/refresh, no intentar renovar
+        if (endpoint.includes('/auth/login') || endpoint.includes('/auth/refresh')) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || 'Credenciales inválidas');
         }
-        
-        throw new Error(errorData.message || 'No autorizado');
+
+        // Token expirado - intentar refresh automático (el interceptor en http.ts lo maneja)
+        // Si llegamos aquí desde apiClient directamente, redirigir a login
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+        throw new Error('Sesión expirada');
       }
       
       if (!response.ok) {
@@ -62,6 +49,10 @@ export class ApiClient {
         let errorDetails: string[] | undefined;
         try {
           const errorData = await response.json();
+          console.error(`❌ API Error Response:`, errorData);
+          console.error(`❌ Request URL:`, fullUrl);
+          console.error(`❌ Request Method:`, options.method || 'GET');
+          
           if (errorData.message) {
             errorMessage = errorData.message;
           }
@@ -70,20 +61,30 @@ export class ApiClient {
             // Si hay detalles, agregamos el primero al mensaje para visibilidad inmediata
             errorMessage = `${errorMessage}${errorDetails ? `: ${errorDetails[0]}` : ''}`;
           }
+          
+          // Si el errorData está vacío, usar mensaje genérico con más info
+          if (Object.keys(errorData).length === 0) {
+            errorMessage = `Error ${response.status}: La solicitud falló. URL: ${endpoint}`;
+          }
         } catch (e) {
-          // If can't parse error response, use default message
+          console.error(`❌ Could not parse error response:`, e);
+          // If can't parse error response, use default message with more context
+          errorMessage = `Error ${response.status}: ${response.statusText} - ${endpoint}`;
         }
         
         const err = new Error(errorMessage) as Error & { details?: string[] };
         if (errorDetails) err.details = errorDetails;
+        console.error(`❌ Throwing error:`, err);
         throw err;
       }
 
-      return response.json();
+  // Si no hay contenido, devolver objeto vacío
+  if (response.status === 204) return {} as any;
+  return response.json();
     } catch (error) {
       // Si es un error de red o similar, también verificar autenticación
       if (error instanceof TypeError && error.message.includes('fetch')) {
-  logger.error('Network error:', error);
+  console.error('Network error:', error);
         throw new Error('Error de conexión. Verifica tu conexión a internet.');
       }
       
@@ -99,6 +100,13 @@ export class ApiClient {
     });
   }
 
+  static async register(data: { nombre: string; apellido: string; email: string; password: string; telefono?: string }) {
+    return this.request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   static async logout() {
     try {
       await this.request('/auth/logout', {
@@ -106,7 +114,7 @@ export class ApiClient {
       });
     } catch (error) {
       // Ignorar errores en logout, siempre limpiar tokens locales
-  logger.warn('Error during logout:', error);
+  console.warn('Error during logout:', error);
     } finally {
       await AuthManager.getInstance().logout();
     }
@@ -121,6 +129,34 @@ export class ApiClient {
   static async refreshToken() {
     return this.request('/auth/refresh', {
       method: 'POST',
+    });
+  }
+
+  static async sendPasswordReset(email: string) {
+    return this.request('/auth/send-reset', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  static async performPasswordReset(token: string, newPassword: string) {
+    return this.request('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword }),
+    });
+  }
+
+  static async verifyEmail(token: string) {
+    return this.request('/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  }
+
+  static async resendVerification(email: string) {
+    return this.request('/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
     });
   }
 

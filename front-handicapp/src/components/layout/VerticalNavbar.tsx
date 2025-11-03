@@ -1,75 +1,104 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { 
-  HomeIcon,
-  UserGroupIcon,
-  CogIcon,
-  ChartBarIcon,
-  DocumentTextIcon,
-  BuildingOfficeIcon,
-  UserIcon,
-  ClipboardDocumentListIcon,
-  BeakerIcon,
-  CalendarDaysIcon
-} from '@heroicons/react/24/outline';
+  Home,
+  Users,
+  Settings,
+  BarChart3,
+  FileText,
+  Building2,
+  User,
+  ClipboardList,
+  Stethoscope,
+  Calendar,
+  X,
+  Bell,
+  Trophy,
+  Activity,
+  Package
+} from 'lucide-react';
 
 // Definir los menús por rol con estructura clara
 const ROLE_MENUS = {
   admin: [
-    { name: 'Dashboard', href: '/admin', icon: HomeIcon },
-    { name: 'Establecimientos', href: '/admin/establecimientos', icon: BuildingOfficeIcon },
-    { name: 'Caballos', href: '/admin/caballos', icon: ClipboardDocumentListIcon },
-    { name: 'Eventos', href: '/admin/eventos', icon: CalendarDaysIcon },
-    { name: 'Tareas', href: '/admin/tareas', icon: DocumentTextIcon },
-    { name: 'Usuarios', href: '/admin/users', icon: UserGroupIcon },
-    { name: 'Estadísticas', href: '/admin/stats', icon: ChartBarIcon },
-    { name: 'Configuración', href: '/admin/settings', icon: CogIcon },
+    { name: 'Dashboard', href: '/admin', icon: Home },
+    { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
+    { name: 'Usuarios', href: '/admin/users', icon: Users },
+    { name: 'Roles', href: '/admin/roles', icon: Users },
+    { name: 'Establecimientos', href: '/admin/establecimientos', icon: Building2 },
+    { name: 'Caballos', href: '/admin/caballos', icon: ClipboardList },
+    { name: 'Eventos', href: '/admin/eventos', icon: Calendar },
+    { name: 'Tareas', href: '/admin/tareas', icon: FileText },
+    { name: 'Auditoría', href: '/admin/auditoria', icon: FileText },
+    { name: 'Configuración', href: '/admin/configuracion', icon: Settings },
+    { name: 'Mi Perfil', href: '/admin/perfil', icon: User },
   ],
   establecimiento: [
-    { name: 'Dashboard', href: '/establecimiento', icon: HomeIcon },
-    { name: 'Mi Establecimiento', href: '/establecimiento/perfil', icon: BuildingOfficeIcon },
-    { name: 'Caballos', href: '/establecimiento/caballos', icon: ClipboardDocumentListIcon },
-    { name: 'Eventos', href: '/establecimiento/eventos', icon: CalendarDaysIcon },
-    { name: 'Tareas', href: '/establecimiento/tareas', icon: DocumentTextIcon },
-    { name: 'Personal', href: '/establecimiento/personal', icon: UserGroupIcon },
-    { name: 'Configuración', href: '/establecimiento/configuracion', icon: CogIcon },
+    { name: 'Dashboard', href: '/establecimiento', icon: Home },
+    { name: 'Caballos', href: '/establecimiento/caballos', icon: ClipboardList },
+    { name: 'Eventos', href: '/establecimiento/eventos', icon: Calendar },
+    { name: 'Tareas', href: '/establecimiento/tareas', icon: FileText },
+    { name: 'Personal', href: '/establecimiento/personal', icon: Users },
+    { name: 'Inventario', href: '/establecimiento/inventario', icon: Package },
+    { name: 'Reportes', href: '/establecimiento/reportes', icon: BarChart3 },
+    { name: 'Notificaciones', href: '/establecimiento/notificaciones', icon: Bell },
+    { name: 'Configuración', href: '/establecimiento/configuracion', icon: Settings },
   ],
   capataz: [
-    { name: 'Dashboard', href: '/capataz', icon: HomeIcon },
-    { name: 'Establecimiento', href: '/capataz/establecimiento', icon: BuildingOfficeIcon },
-    { name: 'Caballos', href: '/capataz/caballos', icon: ClipboardDocumentListIcon },
-    { name: 'Eventos', href: '/capataz/eventos', icon: CalendarDaysIcon },
-    { name: 'Tareas', href: '/capataz/tareas', icon: DocumentTextIcon },
-    { name: 'Reportes', href: '/capataz/reportes', icon: ChartBarIcon },
-    { name: 'Mi Perfil', href: '/capataz/perfil', icon: UserIcon },
+    { name: 'Dashboard', href: '/capataz', icon: Home },
+    { name: 'Notificaciones', href: '/capataz/notificaciones', icon: Bell },
+    { name: 'Establecimiento', href: '/capataz/establecimiento', icon: Building2 },
+    { name: 'Caballos', href: '/capataz/caballos', icon: ClipboardList },
+    { name: 'Eventos', href: '/capataz/eventos', icon: Calendar },
+    { name: 'Tareas', href: '/capataz/tareas', icon: FileText },
+    { name: 'Personal', href: '/capataz/personal', icon: Users },
+    { name: 'Reportes', href: '/capataz/reportes', icon: BarChart3 },
+    { name: 'Configuración', href: '/capataz/configuracion', icon: Settings },
+    { name: 'Mi Perfil', href: '/capataz/perfil', icon: User },
   ],
   veterinario: [
-    { name: 'Dashboard', href: '/veterinario', icon: HomeIcon },
-    { name: 'Establecimientos', href: '/veterinario/establecimientos', icon: BuildingOfficeIcon },
-    { name: 'Caballos', href: '/veterinario/caballos', icon: ClipboardDocumentListIcon },
-    { name: 'Eventos Médicos', href: '/veterinario/eventos', icon: BeakerIcon },
-    { name: 'Historial Médico', href: '/veterinario/historial', icon: CalendarDaysIcon },
-    { name: 'Tareas', href: '/veterinario/tareas', icon: DocumentTextIcon },
-    { name: 'Mi Perfil', href: '/veterinario/perfil', icon: UserIcon },
+    { name: 'Dashboard', href: '/veterinario', icon: Home },
+    { name: 'Notificaciones', href: '/veterinario/notificaciones', icon: Bell },
+    { name: 'Caballos', href: '/veterinario/caballos', icon: ClipboardList },
+    { name: 'Consultas', href: '/veterinario/consultas', icon: Stethoscope },
+    { name: 'Tratamientos', href: '/veterinario/tratamientos', icon: Activity },
+    { name: 'Reportes Médicos', href: '/veterinario/reportes-medicos', icon: FileText },
+    { name: 'Estadísticas', href: '/veterinario/estadisticas', icon: BarChart3 },
+    { name: 'Historial Médico', href: '/veterinario/historial', icon: Calendar },
+    { name: 'Eventos Médicos', href: '/veterinario/eventos', icon: Calendar },
+    { name: 'Tareas', href: '/veterinario/tareas', icon: FileText },
+    { name: 'Reportes', href: '/veterinario/reportes', icon: BarChart3 },
+    { name: 'Configuración', href: '/veterinario/configuracion', icon: Settings },
+    { name: 'Mi Perfil', href: '/veterinario/perfil', icon: User },
   ],
   empleado: [
-    { name: 'Dashboard', href: '/empleado', icon: HomeIcon },
-    { name: 'Establecimiento', href: '/empleado/establecimiento', icon: BuildingOfficeIcon },
-    { name: 'Caballos', href: '/empleado/caballos', icon: ClipboardDocumentListIcon },
-    { name: 'Eventos', href: '/empleado/eventos', icon: CalendarDaysIcon },
-    { name: 'Mis Tareas', href: '/empleado/tareas', icon: DocumentTextIcon },
-    { name: 'Mi Perfil', href: '/empleado/perfil', icon: UserIcon },
+    { name: 'Dashboard', href: '/empleado', icon: Home },
+    { name: 'Notificaciones', href: '/empleado/notificaciones', icon: Bell },
+    { name: 'Establecimiento', href: '/empleado/establecimiento', icon: Building2 },
+    { name: 'Caballos', href: '/empleado/caballos', icon: ClipboardList },
+    { name: 'Eventos', href: '/empleado/eventos', icon: Calendar },
+    { name: 'Mis Tareas', href: '/empleado/tareas', icon: FileText },
+    { name: 'Configuración', href: '/empleado/configuracion', icon: Settings },
+    { name: 'Mi Perfil', href: '/empleado/perfil', icon: User },
   ],
   propietario: [
-    { name: 'Dashboard', href: '/propietario', icon: HomeIcon },
-    { name: 'Establecimientos', href: '/propietario/establecimientos', icon: BuildingOfficeIcon },
-    { name: 'Mis Caballos', href: '/propietario/caballos', icon: ClipboardDocumentListIcon },
-    { name: 'Eventos', href: '/propietario/eventos', icon: CalendarDaysIcon },
-    { name: 'Tareas', href: '/propietario/tareas', icon: DocumentTextIcon },
-    { name: 'Mi Perfil', href: '/propietario/perfil', icon: UserIcon },
+    { name: 'Dashboard', href: '/propietario', icon: Home },
+    { name: 'Notificaciones', href: '/propietario/notificaciones', icon: Bell },
+    { name: 'Establecimientos', href: '/propietario/establecimientos', icon: Building2 },
+    { name: 'Mis Caballos', href: '/propietario/caballos', icon: ClipboardList },
+    { name: 'Salud', href: '/propietario/salud', icon: Stethoscope },
+    { name: 'Competencias', href: '/propietario/competencias', icon: Trophy },
+    { name: 'Entrenamiento', href: '/propietario/entrenamiento', icon: Activity },
+    { name: 'Eventos', href: '/propietario/eventos', icon: Calendar },
+    { name: 'Reportes', href: '/propietario/reportes', icon: BarChart3 },
+    { name: 'Tareas', href: '/propietario/tareas', icon: FileText },
+    { name: 'Configuración', href: '/propietario/configuracion', icon: Settings },
+    { name: 'Mi Perfil', href: '/propietario/perfil', icon: User },
+    { name: 'Suscripciones', href: '/propietario/suscripciones', icon: Users },
   ],
 };
 
@@ -111,11 +140,11 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
   if (isLoading || !userRole) {
     return (
       <div className={`hidden lg:flex lg:flex-col transition-all duration-300 ${
-        isCollapsed ? 'lg:w-16' : 'lg:w-64'
+        isCollapsed ? 'lg:w-20' : 'lg:w-72'
       }`}>
-        <div className="flex flex-col flex-grow text-white" style={{backgroundColor: '#3C2013'}}>
-          <div className="flex items-center justify-center h-16 px-4 border-b" style={{borderColor: '#D2B48C'}}>
-            <div className="animate-pulse h-8 w-32 rounded" style={{backgroundColor: '#D2B48C'}}></div>
+        <div className="flex flex-col flex-grow bg-card border-r border-border">
+          <div className="flex items-center justify-center h-14 sm:h-16 px-4">
+            <div className="animate-pulse h-8 w-32 bg-muted rounded"></div>
           </div>
         </div>
       </div>
@@ -127,90 +156,85 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
   return (
     <>
       {/* Desktop Sidebar */}
-      <div className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 transition-all duration-300 ${
-        isCollapsed ? 'lg:w-16' : 'lg:w-64'
-      }`}>
-        <div className="flex flex-col flex-grow text-white shadow-xl" style={{backgroundColor: '#3C2013'}}>
+      <div className={`hidden lg:flex lg:flex-col lg:fixed transition-all duration-300 ${
+        isCollapsed ? 'lg:w-20 lg:left-4' : 'lg:w-72 lg:left-4'
+      } lg:top-4 lg:bottom-4 z-30`}>
+        <div className="flex flex-col h-full bg-[#0f172a] rounded-2xl shadow-xl overflow-hidden"
+             style={{
+               boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), inset 0 0 0 1px rgba(255, 255, 255, 0.05)'
+             }}>
           {/* Logo/Header */}
-          <div className="flex items-center justify-center h-20 px-4 pb-2 border-b" style={{borderColor: '#3C2013'}}>
-            {isCollapsed ? (
-              <img 
-                src="/logos/logo-icon-white.png" 
-                alt="HandicApp" 
-                className="h-8 w-8"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                  target.nextElementSibling!.classList.remove('hidden');
-                }}
-              />
-            ) : (
-              <img 
-                src="/logos/logo-icon-white.png" 
-                alt="HandicApp" 
-                className="h-20 w-auto"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                  target.nextElementSibling!.classList.remove('hidden');
-                }}
-              />
-            )}
-            <div className="hidden text-xl font-bold text-white">HandicApp</div>
+          <div className="relative h-14 sm:h-16 border-b border-white/10 flex-shrink-0">
+            <div className="flex items-center justify-center h-full px-4">
+              {!isCollapsed ? (
+                <div className="flex items-center gap-3">
+                  <Image 
+                    src="/logos/logo-icon-white.png" 
+                    alt="HandicApp Icon" 
+                    width={48} 
+                    height={48}
+                    className="object-contain flex-shrink-0"
+                  />
+                  <Image 
+                    src="/logos/logo-text-brown.png" 
+                    alt="HandicApp" 
+                    width={130} 
+                    height={28}
+                    className="object-contain flex-shrink-0 brightness-0 invert"
+                  />
+                </div>
+              ) : (
+                <Image 
+                  src="/logos/logo-icon-white.png" 
+                  alt="HandicApp" 
+                  width={42} 
+                  height={42}
+                  className="object-contain"
+                />
+              )}
+            </div>
           </div>
 
           {/* Navigation Menu */}
-          <nav className={`flex-1 px-3 pb-4 space-y-2 ${
-            isCollapsed ? 'overflow-hidden' : 'overflow-y-auto'
-          }`}>
+          <nav className={`flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent hover:scrollbar-thumb-white/30 ${
+            isCollapsed ? 'overflow-x-hidden' : ''
+          }`}
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent'
+          }}>
             {menuItems.map((item) => {
               const Icon = item.icon;
-              // Detección de ruta activa para estructura por roles
               const isActive = pathname === item.href || 
-                             (item.href !== '/admin' && item.href !== '/establecimiento' && 
-                              item.href !== '/capataz' && item.href !== '/veterinario' && 
-                              item.href !== '/empleado' && item.href !== '/propietario' && 
-                              pathname.startsWith(item.href + '/'));
-              
+                (item.href !== '/admin' && item.href !== '/establecimiento' && 
+                  item.href !== '/capataz' && item.href !== '/veterinario' && 
+                  item.href !== '/empleado' && item.href !== '/propietario' && 
+                  pathname.startsWith(item.href + '/'));
+
               return (
                 <div key={item.name} className="relative group">
                   <Link
                     href={item.href}
                     className={`
-                      flex items-center py-2.5 text-sm font-medium rounded-lg transition-all duration-200
-                      ${isCollapsed ? 'px-2 justify-center' : 'px-3'}
+                      flex items-center py-2.5 rounded-lg transition-smooth
+                      ${isCollapsed ? 'px-2 justify-center' : 'px-3 gap-3'}
                       ${isActive
-                        ? 'text-white shadow-lg border-l-4'
-                        : 'text-gray-200 hover:text-white'
+                        ? 'bg-[#af936f] text-white shadow-md shadow-[#af936f]/20'
+                        : 'text-white/70 hover:text-white hover:bg-white/10'
                       }
                     `}
-                    style={isActive ? {
-                      backgroundColor: 'rgba(210, 180, 140, 0.3)',
-                      borderLeftColor: '#D2B48C'
-                    } : {}}
-                    onMouseEnter={(e) => {
-                      if (!isActive) {
-                        e.currentTarget.style.backgroundColor = 'rgba(210, 180, 140, 0.2)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isActive) {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }
-                    }}
                     title={isCollapsed ? item.name : undefined}
                   >
-                    <Icon className={`h-5 w-5 flex-shrink-0 ${isCollapsed ? '' : 'mr-3'}`} />
+                    <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-white' : ''}`} />
                     {!isCollapsed && (
-                      <span className="truncate">{item.name}</span>
+                      <span className="truncate font-medium">{item.name}</span>
                     )}
                   </Link>
-                  
-                  {/* Tooltip for collapsed mode */}
+                  {/* Tooltip para modo colapsado */}
                   {isCollapsed && (
-                    <div className="absolute left-full top-1/2 transform -translate-y-1/2 ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 whitespace-nowrap">
+                    <div className="absolute left-full top-1/2 transform -translate-y-1/2 ml-2 px-3 py-2 bg-[#1e293b] text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-smooth z-50 whitespace-nowrap border border-white/10 shadow-lg">
                       {item.name}
-                      <div className="absolute top-1/2 left-0 transform -translate-y-1/2 -translate-x-full border-4 border-transparent border-r-gray-900"></div>
+                      <div className="absolute top-1/2 left-0 transform -translate-y-1/2 -translate-x-full border-4 border-transparent border-r-[#1e293b]"></div>
                     </div>
                   )}
                 </div>
@@ -220,57 +244,49 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
         </div>
       </div>
 
-      {/* Desktop Spacer */}
-      <div className={`hidden lg:block lg:flex-shrink-0 transition-all duration-300 ${
-        isCollapsed ? 'lg:w-16' : 'lg:w-64'
-      }`}>
-        {/* Spacer for fixed sidebar */}
-      </div>
-
       {/* Mobile Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-50 w-72 text-white shadow-2xl transform transition-transform duration-300 ease-in-out lg:hidden
+        fixed inset-y-0 left-0 z-50 w-72 bg-[#0f172a] border-r border-white/10 shadow-2xl transform transition-smooth lg:hidden
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}
-      style={{backgroundColor: '#3C2013'}}>
+      `}>
         {/* Mobile Header */}
-        <div className="flex items-center justify-between h-18 px-4 pb-2 border-b" style={{borderColor: '#D2B48C'}}>
-          <div className="flex items-center">
-            <img 
-              src="/logos/logo-full-white.png" 
-              alt="HandicApp" 
-              className="h-8 w-auto"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-                target.nextElementSibling!.classList.remove('hidden');
-              }}
-            />
-            <div className="hidden text-lg font-bold text-white ml-2">HandicApp</div>
+        <div className="relative h-14 sm:h-16 border-b border-white/10">
+          <div className="flex items-center justify-between h-full px-4">
+            <div className="flex items-center gap-3">
+              <Image 
+                src="/logos/logo-icon-white.png" 
+                alt="HandicApp Icon" 
+                width={48} 
+                height={48}
+                className="object-contain flex-shrink-0"
+              />
+              <Image 
+                src="/logos/logo-text-brown.png" 
+                alt="HandicApp" 
+                width={130} 
+                height={28}
+                className="object-contain flex-shrink-0 brightness-0 invert"
+              />
+            </div>
+            
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg hover:bg-white/10 transition-smooth touch-manipulation flex-shrink-0"
+              aria-label="Cerrar menú"
+            >
+              <X className="h-5 w-5 text-white/70" />
+            </button>
           </div>
-          
-          <button
-            onClick={onClose}
-            className="p-2 rounded-md transition-colors touch-manipulation hover:bg-gray-700"
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(210, 180, 140, 0.2)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }}
-            aria-label="Cerrar menú"
-          >
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
         </div>
 
         {/* Mobile Navigation */}
-        <nav className="flex-1 px-3 pt-6 pb-4 space-y-2 overflow-y-auto">
+        <nav className="flex-1 px-3 pt-4 pb-4 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent hover:scrollbar-thumb-white/30"
+        style={{
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent'
+        }}>
           {menuItems.map((item) => {
             const Icon = item.icon;
-            // Detección de ruta activa para estructura por roles
             const isActive = pathname === item.href || 
                            (item.href !== '/admin' && item.href !== '/establecimiento' && 
                             item.href !== '/capataz' && item.href !== '/veterinario' && 
@@ -283,39 +299,23 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
                 href={item.href}
                 onClick={onClose}
                 className={`
-                  flex items-center px-4 py-3.5 text-base font-medium rounded-lg transition-all duration-200 touch-manipulation
+                  flex items-center px-3 py-3 gap-3 rounded-lg transition-smooth touch-manipulation
                   ${isActive
-                    ? 'text-white shadow-lg border-l-4'
-                    : 'text-gray-200'
+                    ? 'bg-[#af936f] text-white shadow-md shadow-[#af936f]/20'
+                    : 'text-white/70 hover:text-white hover:bg-white/10'
                   }
                 `}
-                style={isActive ? {
-                  backgroundColor: 'rgba(210, 180, 140, 0.3)',
-                  borderLeftColor: '#D2B48C'
-                } : {}}
-                onTouchStart={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.backgroundColor = 'rgba(210, 180, 140, 0.2)';
-                  }
-                }}
-                onTouchEnd={(e) => {
-                  if (!isActive) {
-                    setTimeout(() => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }, 150);
-                  }
-                }}
               >
-                <Icon className="mr-4 h-6 w-6 flex-shrink-0" />
-                <span className="truncate">{item.name}</span>
+                <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-white' : ''}`} />
+                <span className="truncate font-medium">{item.name}</span>
               </Link>
             );
           })}
         </nav>
 
         {/* Mobile Footer */}
-        <div className="flex-shrink-0 p-4 border-t" style={{borderColor: '#D2B48C'}}>
-          <div className="text-xs text-center" style={{color: '#D2B48C'}}>
+        <div className="flex-shrink-0 p-4 border-t border-white/10">
+          <div className="text-xs text-center text-muted-foreground">
             © 2025 HandicApp
           </div>
         </div>

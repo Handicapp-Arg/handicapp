@@ -57,10 +57,14 @@ export const EstablecimientoList: React.FC<EstablecimientoListProps> = ({
       setError(null);
       
       const response = await establecimientoService.getAll(filters);
+      const establecimientosArray = Array.isArray(response) 
+        ? response 
+        : (response as any)?.data?.items || (response as any)?.items || (response as any)?.data?.establecimientos || (response as any)?.data || [];
       
-      setEstablecimientos(response.data || []);
+      setEstablecimientos(establecimientosArray);
     } catch (err: any) {
       setError(err.message || 'Error al cargar establecimientos');
+      setEstablecimientos([]);
     } finally {
       setLoading(false);
     }
@@ -140,7 +144,7 @@ export const EstablecimientoList: React.FC<EstablecimientoListProps> = ({
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
-        <SimpleAdminOnly>
+        {canCreate && onCreateEstablecimiento && (
           <button 
             onClick={onCreateEstablecimiento}
             className="inline-flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm text-sm font-medium"
@@ -148,7 +152,7 @@ export const EstablecimientoList: React.FC<EstablecimientoListProps> = ({
             <PlusIcon className="h-4 w-4 mr-2" />
             Nuevo Establecimiento
           </button>
-        </SimpleAdminOnly>
+        )}
       </div>
 
       {/* Filtros modernos */}
@@ -198,14 +202,14 @@ export const EstablecimientoList: React.FC<EstablecimientoListProps> = ({
                   </div>
                 </div>
                 
-                <SimpleAdminOnly>
+                {canCreate && onEditEstablecimiento && (
                   <button
                     onClick={() => onEditEstablecimiento?.(establecimiento)}
                     className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                   >
                     <PencilIcon className="h-4 w-4" />
                   </button>
-                </SimpleAdminOnly>
+                )}
               </div>
 
               {/* Información básica */}
@@ -313,7 +317,7 @@ export const EstablecimientoList: React.FC<EstablecimientoListProps> = ({
           <p className="text-gray-600 mb-6 max-w-md mx-auto">
             Comienza creando tu primer establecimiento ecuestre
           </p>
-          <SimpleAdminOnly>
+          {canCreate && onCreateEstablecimiento && (
             <button 
               onClick={onCreateEstablecimiento}
               className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
@@ -321,7 +325,7 @@ export const EstablecimientoList: React.FC<EstablecimientoListProps> = ({
               <PlusIcon className="h-5 w-5 mr-2" />
               Crear Establecimiento
             </button>
-          </SimpleAdminOnly>
+          )}
         </div>
       )}
     </div>

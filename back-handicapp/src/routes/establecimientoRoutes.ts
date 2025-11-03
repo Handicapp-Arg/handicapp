@@ -135,6 +135,54 @@ router.delete(
 // ====================================
 
 /**
+ * @route   POST /api/v1/establecimientos/:id/caballos
+ * @desc    Propietario solicita asociar su caballo al establecimiento
+ * @access  Propietarios del caballo
+ */
+router.post(
+  '/:id/caballos',
+  paramValidations.id,
+  requireAuth,
+  EstablecimientoController.asociarCaballo
+);
+
+/**
+ * @route   POST /api/v1/establecimientos/:id/solicitar-caballo
+ * @desc    Establecimiento solicita asociar un caballo (flujo inverso)
+ * @access  Capataces del establecimiento
+ */
+router.post(
+  '/:id/solicitar-caballo',
+  paramValidations.id,
+  requireAuth,
+  EstablecimientoController.solicitarCaballo
+);
+
+/**
+ * @route   POST /api/v1/establecimientos/:id/caballos/:caballoId/aprobar
+ * @desc    Aprobar solicitud de asociación (ambas direcciones)
+ * @access  Receptor de la solicitud (establecimiento o propietario)
+ */
+router.post(
+  '/:id/caballos/:caballoId/aprobar',
+  paramValidations.id,
+  requireAuth,
+  EstablecimientoController.aprobarAsociacion
+);
+
+/**
+ * @route   POST /api/v1/establecimientos/:id/caballos/:caballoId/rechazar
+ * @desc    Rechazar solicitud de asociación (ambas direcciones)
+ * @access  Receptor de la solicitud (establecimiento o propietario)
+ */
+router.post(
+  '/:id/caballos/:caballoId/rechazar',
+  paramValidations.id,
+  requireAuth,
+  EstablecimientoController.rechazarAsociacion
+);
+
+/**
  * @route   GET /api/v1/establecimientos/:id/caballos
  * @desc    Obtener caballos del establecimiento
  * @access  Usuarios con acceso al establecimiento

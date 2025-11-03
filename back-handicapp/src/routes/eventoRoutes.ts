@@ -6,6 +6,7 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import { param } from 'express-validator';
 import { EventoController } from '../controllers/eventoController';
+import { AdjuntoController } from '../controllers/adjuntoController';
 import { requireAuth } from '../middleware/auth';
 import { requireRole, requirePermission, auditAccess } from '../middleware/authorization';
 import { eventoValidations, paramValidations, handleValidationErrors } from '../middleware/validation';
@@ -29,11 +30,11 @@ router.use(auditAccess());
 /**
  * @route   POST /api/v1/eventos
  * @desc    Crear nuevo evento
- * @access  Admin, Establecimiento, Veterinario
+ * @access  Admin, Establecimiento, Veterinario, Capataz, Empleado
  */
 router.post(
   '/',
-  requireRole('admin', 'establecimiento', 'veterinario'),
+  requireRole('admin', 'establecimiento', 'veterinario', 'capataz', 'empleado'),
   eventoValidations.create,
   EventoController.create
 );
@@ -51,6 +52,75 @@ router.get(
   ],
   EventoController.getAll
 );
+
+// ====================================
+// RUTAS ESPECÍFICAS (ANTES DE /:id)
+// ====================================
+// IMPORTANTE: Las rutas específicas deben ir ANTES de las rutas con parámetros dinámicos
+// para evitar que Express matchee "programados" o "tipos" como un ID
+
+/**
+ * @route   GET /api/v1/eventos/programados
+ * @desc    Obtener eventos programados (próximos)
+ * @access  Todos los autenticados
+ */
+router.get(
+  '/programados',
+  requirePermission('events:read'),
+  EventoController.getProgramados
+);
+
+/**
+ * @route   GET /api/v1/eventos/tipos
+ * @desc    Obtener tipos de eventos disponibles
+ * @access  Todos los autenticados
+ */
+router.get(
+  '/tipos',
+  EventoController.getTipos
+);
+
+/**
+ * @route   GET /api/v1/eventos/historial-medico/caballo/:caballoId
+ * @desc    Obtener historial médico completo de un caballo
+ * @access  Propietario, Veterinario autorizado
+ */
+router.get(
+  '/historial-medico/caballo/:caballoId',
+  [
+    param('caballoId').isInt({ min: 1 }).withMessage('ID de caballo debe ser válido'),
+    handleValidationErrors
+  ],
+  requirePermission('horses:view_medical'),
+  EventoController.getHistorialMedico
+);
+
+/**
+ * @route   GET /api/v1/eventos/reporte
+ * @desc    Obtener reporte de eventos por periodo
+ * @access  Admin, Establecimiento autorizado
+ */
+router.get(
+  '/reporte',
+  paramValidations.dateRange,
+  requirePermission('events:view_reports'),
+  EventoController.getReporte
+);
+
+/**
+ * @route   GET /api/v1/eventos/estadisticas
+ * @desc    Obtener estadísticas de eventos
+ * @access  Admin, Establecimiento autorizado
+ */
+router.get(
+  '/estadisticas',
+  requirePermission('events:view_reports'),
+  EventoController.getEstadisticas
+);
+
+// ====================================
+// RUTAS CON PARÁMETROS DINÁMICOS
+// ====================================
 
 /**
  * @route   GET /api/v1/eventos/:id
@@ -90,96 +160,8 @@ router.delete(
 );
 
 // ====================================
-// TIPOS DE EVENTO
-// ====================================
-
-/**
- * @route   GET /api/v1/eventos/tipos
- * @desc    Obtener tipos de eventos disponibles
- * @access  Todos los autenticados
- */
-router.get(
-  '/tipos',
-  EventoController.getTipos
-);
-
-// ====================================
-// HISTORIAL MÉDICO
-// ====================================
-
-/**
- * @route   GET /api/v1/eventos/historial-medico/caballo/:caballoId
- * @desc    Obtener historial médico completo de un caballo
- * @access  Propietario, Veterinario autorizado
- */
-router.get(
-  '/historial-medico/caballo/:caballoId',
-  [
-    param('caballoId').isInt({ min: 1 }).withMessage('ID de caballo debe ser válido'),
-    handleValidationErrors
-  ],
-  requirePermission('horses:view_medical'),
-  EventoController.getHistorialMedico
-);
-
-// ====================================
-// EVENTOS PROGRAMADOS
-// ====================================
-
-/**
- * @route   GET /api/v1/eventos/programados
- * @desc    Obtener eventos programados (próximos)
- * @access  Todos los autenticados
- */
-router.get(
-  '/programados',
-  requirePermission('events:read'),
-  EventoController.getProgramados
-);
-
-// ====================================
-// REPORTES Y ESTADÍSTICAS
-// ====================================
-
-/**
- * @route   GET /api/v1/eventos/reporte
- * @desc    Obtener reporte de eventos por periodo
- * @access  Admin, Establecimiento autorizado
- */
-router.get(
-  '/reporte',
-  paramValidations.dateRange,
-  requirePermission('events:view_reports'),
-  EventoController.getReporte
-);
-
-/**
- * @route   GET /api/v1/eventos/estadisticas
- * @desc    Obtener estadísticas de eventos
- * @access  Admin, Establecimiento autorizado
- */
-router.get(
-  '/estadisticas',
-  requirePermission('events:view_reports'),
-  EventoController.getEstadisticas
-);
-
-// ====================================
 // ADJUNTOS
 // ====================================
-
-/**
- * @route   POST /api/v1/eventos/:id/adjuntos
- * @desc    Agregar adjunto a evento
- * @access  Veterinario que creó el evento, Admin
- */
-router.post(
-  '/:id/adjuntos',
-  paramValidations.id,
-  requirePermission('events:write'),
-  eventoValidations.addAdjunto,
-  EventoController.addAdjunto
-);
 
 /**
  * @route   GET /api/v1/eventos/:id/adjuntos
@@ -190,7 +172,7 @@ router.get(
   '/:id/adjuntos',
   paramValidations.id,
   requirePermission('events:read'),
-  EventoController.getAdjuntos
+  AdjuntoController.getByEvento
 );
 
 export { router as eventoRoutes };

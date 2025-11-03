@@ -5,6 +5,10 @@
 
 import { appConfig } from '@/lib/config';
 
+const DEBUG = process.env.NODE_ENV !== 'production';
+const dbg = (...args: unknown[]) => { if (DEBUG) console.log(...args); };
+const wrn = (...args: unknown[]) => { if (DEBUG) console.warn(...args); };
+
 interface TokenData {
   accessToken: string;
   expiresIn: number; // segundos
@@ -58,10 +62,10 @@ class TokenService {
     try {
       const tokenDataStr = localStorage.getItem(this.ACCESS_TOKEN_KEY);
       
-      console.log('🔍 getValidAccessToken() - Token en localStorage:', tokenDataStr ? 'Existe' : 'No existe');
+  dbg('🔍 getValidAccessToken() - Token en localStorage:', tokenDataStr ? 'Existe' : 'No existe');
       
       if (!tokenDataStr) {
-        console.warn('⚠️ No hay token en localStorage');
+  wrn('⚠️ No hay token en localStorage');
         return null;
       }
 
@@ -69,7 +73,7 @@ class TokenService {
       const now = Math.floor(Date.now() / 1000);
       const expiresAt = tokenData.issuedAt + tokenData.expiresIn;
 
-      console.log('🕐 Token info:', {
+  dbg('🕐 Token info:', {
         issuedAt: tokenData.issuedAt,
         expiresIn: tokenData.expiresIn,
         expiresAt: expiresAt,
@@ -79,25 +83,25 @@ class TokenService {
 
       // Si el token está por expirar o ya expiró, intentar refrescarlo
       if (now >= (expiresAt - this.TOKEN_EXPIRY_BUFFER)) {
-        console.log('🔄 Token expiring soon, attempting refresh...');
+  dbg('🔄 Token expiring soon, attempting refresh...');
         
         const newTokenData = await this.refreshAccessToken();
         
         if (newTokenData) {
-          console.log('✅ Token refreshed successfully');
+          dbg('✅ Token refreshed successfully');
           return newTokenData.accessToken;
         } else {
-          console.log('🔐 No refresh token available, user needs to login');
+          dbg('🔐 No refresh token available, user needs to login');
           // Si no se pudo refrescar, limpiar datos
           this.clearTokens();
           return null;
         }
       }
 
-      console.log('✅ Token válido encontrado');
+  dbg('✅ Token válido encontrado');
       return tokenData.accessToken;
     } catch (error) {
-      console.error('❌ Error obteniendo access token:', error);
+  console.error('❌ Error obteniendo access token:', error);
       this.clearTokens();
       return null;
     }
@@ -127,7 +131,7 @@ class TokenService {
    */
   private static async performTokenRefresh(): Promise<TokenData | null> {
     try {
-      console.log('🔄 Attempting token refresh...');
+  dbg('🔄 Attempting token refresh...');
       
       const response = await fetch(`${appConfig.apiBaseUrl}/auth/refresh`, {
         method: 'POST',
@@ -139,9 +143,9 @@ class TokenService {
 
       if (!response.ok) {
         if (response.status === 401) {
-          console.log('🔐 No valid refresh token available (first visit or expired)');
+          dbg('🔐 No valid refresh token available (first visit or expired)');
         } else {
-          console.warn('⚠️ Token refresh failed:', response.status);
+          wrn('⚠️ Token refresh failed:', response.status);
         }
         return null;
       }
@@ -158,13 +162,13 @@ class TokenService {
         // Actualizar token en localStorage
         localStorage.setItem(this.ACCESS_TOKEN_KEY, JSON.stringify(newTokenData));
         
-        console.log('Token refreshed successfully');
+  dbg('Token refreshed successfully');
         return newTokenData;
       }
 
       return null;
     } catch (error) {
-      console.error('Error refreshing token:', error);
+  console.error('Error refreshing token:', error);
       return null;
     }
   }
@@ -243,10 +247,10 @@ class TokenService {
   static async getAuthHeaders(): Promise<Record<string, string>> {
     const token = await this.getValidAccessToken();
     
-    console.log('🔍 TokenService.getAuthHeaders() - Token obtenido:', token ? token.substring(0, 20) + '...' : 'null');
+  dbg('🔍 TokenService.getAuthHeaders() - Token obtenido:', token ? token.substring(0, 20) + '...' : 'null');
     
     if (!token) {
-      console.warn('⚠️ No hay token disponible para headers de autorización');
+  wrn('⚠️ No hay token disponible para headers de autorización');
       return {};
     }
 
@@ -254,7 +258,7 @@ class TokenService {
       'Authorization': `Bearer ${token}`
     };
     
-    console.log('✅ Headers de autorización creados:', headers);
+  dbg('✅ Headers de autorización creados:', headers);
     return headers;
   }
 

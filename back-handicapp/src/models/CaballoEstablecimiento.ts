@@ -11,13 +11,17 @@ interface CEAttrs {
   fecha_inicio: Date | null;
   fecha_fin: Date | null;
   comentarios: string | null;
+  solicitante_id: number | null; // ID del usuario que solicitó (propietario o capataz)
+  aprobador_id: number | null; // ID del usuario que aprobó/rechazó
+  fecha_solicitud: Date | null;
+  fecha_respuesta: Date | null;
   creado_el: Date;
   actualizado_el: Date | null;
 }
 
 type CECreate = Optional<
   CEAttrs,
-  "id" | "estado_interno" | "fecha_inicio" | "fecha_fin" | "comentarios" | "creado_el" | "actualizado_el"
+  "id" | "estado_interno" | "fecha_inicio" | "fecha_fin" | "comentarios" | "solicitante_id" | "aprobador_id" | "fecha_solicitud" | "fecha_respuesta" | "creado_el" | "actualizado_el"
 >;
 
 export class CaballoEstablecimiento
@@ -32,6 +36,10 @@ export class CaballoEstablecimiento
   public fecha_inicio!: Date | null;
   public fecha_fin!: Date | null;
   public comentarios!: string | null;
+  public solicitante_id!: number | null;
+  public aprobador_id!: number | null;
+  public fecha_solicitud!: Date | null;
+  public fecha_respuesta!: Date | null;
   public creado_el!: Date;
   public actualizado_el!: Date | null;
 }
@@ -53,6 +61,10 @@ CaballoEstablecimiento.init(
     fecha_inicio: { type: DataTypes.DATE, allowNull: true },
     fecha_fin: { type: DataTypes.DATE, allowNull: true },
     comentarios: { type: DataTypes.TEXT, allowNull: true },
+    solicitante_id: { type: DataTypes.INTEGER, allowNull: true },
+    aprobador_id: { type: DataTypes.INTEGER, allowNull: true },
+    fecha_solicitud: { type: DataTypes.DATE, allowNull: true, defaultValue: DataTypes.NOW },
+    fecha_respuesta: { type: DataTypes.DATE, allowNull: true },
     creado_el: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
     actualizado_el: { type: DataTypes.DATE, allowNull: true },
   },

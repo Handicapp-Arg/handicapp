@@ -15,6 +15,7 @@ export interface UserData {
   nombre: string;
   apellido: string;
   establecimiento_id?: number;
+  ultimo_acceso_el?: string | null;
   rol: {
     id: number;
     nombre: string;
@@ -61,6 +62,18 @@ class AuthManager {
 
   private constructor() {
     this.initializeAuth();
+  }
+
+  /**
+   * Actualizar los datos de usuario y persistirlos (localStorage + cookies)
+   */
+  public updateUser(partial: Partial<UserData>): void {
+    const current = this.currentState.user;
+    const token = this.currentState.token;
+    if (!current || !token) return;
+    const merged: UserData = { ...current, ...partial } as UserData;
+    this.saveAuthData(token, merged);
+    this.updateState({ user: merged });
   }
 
   static getInstance(): AuthManager {
@@ -185,6 +198,10 @@ class AuthManager {
       }
 
       const { user, accessToken } = data.data;
+      
+      if (!accessToken) {
+        throw new Error('No se recibió accessToken del servidor');
+      }
       
       // Guardar datos
       this.saveAuthData(accessToken, user);

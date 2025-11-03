@@ -21,21 +21,21 @@ async function initializeApp() {
     initializeModels(sequelize);
 
     // 3. Sync database
-    if (process.env['NODE_ENV'] === 'development') {
+    const resetOnStart = process.env['DB_RESET_ON_START'] === 'true';
+    if (resetOnStart) {
       await sequelize.sync({ force: true });
-      logger.info('✅ Database synced (development)');
+      logger.warn('⚠️  Database reset (FORCE mode)');
     } else {
       await sequelize.sync({ alter: true });
-      logger.info('✅ Database synced (production)');
+      // Silencioso en producción - solo mostrar en desarrollo
+      if (process.env['NODE_ENV'] === 'development') {
+        logger.debug('Database synced');
+      }
     }
 
-    // 4. Run seeds
-    const seedResult = await seedDatabase();
-    const tipoEventoSeedResult = await TipoEventoSeedService.seedTiposEvento();
-    
-    if (seedResult && tipoEventoSeedResult) {
-      logger.info('✅ Seeds completed');
-    }
+    // 4. Run seeds (silencioso si ya existen)
+    await seedDatabase();
+    await TipoEventoSeedService.seedTiposEvento();
 
     return true;
 
