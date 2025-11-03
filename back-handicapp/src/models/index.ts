@@ -51,7 +51,9 @@ export function initializeModels(sequelize: Sequelize) {
           len: [5, 150],
         },
         set(value: string) {
-          this.setDataValue("email", value?.trim().toLowerCase());
+          if (value) {
+            this.setDataValue("email", value.trim().toLowerCase());
+          }
         },
       },
       hash_contrasena: {
@@ -62,6 +64,14 @@ export function initializeModels(sequelize: Sequelize) {
         type: DataTypes.INTEGER,
         allowNull: false,
         validate: { min: 1 },
+      },
+      establecimiento_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'establecimientos',
+          key: 'id'
+        }
       },
       verificado: {
         type: DataTypes.BOOLEAN,

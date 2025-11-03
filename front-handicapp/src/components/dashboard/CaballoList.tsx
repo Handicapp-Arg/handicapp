@@ -15,6 +15,7 @@ import { generarReporteCaballosPDF, exportarCaballosExcel } from '@/lib/services
 
 export function CaballoList() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const searchRef = useRef<number | NodeJS.Timeout | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState<number>(9);
@@ -33,7 +34,7 @@ export function CaballoList() {
   } = useCaballos({
     page: currentPage,
     limit: itemsPerPage,
-    search: searchTerm
+    search: debouncedSearchTerm
   });
 
   const deleteCaballoMutation = useEliminarCaballo();
@@ -73,14 +74,18 @@ export function CaballoList() {
     };
   }, [caballos, response]);
 
-  // Debounce search
+  // Debounce search - actualizar el término buscado después de 500ms
   useEffect(() => {
     if (searchRef.current) clearTimeout(searchRef.current as number);
     searchRef.current = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
       setCurrentPage(1);
-      refetch();
     }, 500);
-  }, [searchTerm, refetch]);
+    
+    return () => {
+      if (searchRef.current) clearTimeout(searchRef.current as number);
+    };
+  }, [searchTerm]);
 
   // 🚀 Memoizar callbacks para evitar re-creación
   const handleCreateCaballo = useCallback(() => {
@@ -169,8 +174,7 @@ export function CaballoList() {
   // Debounce search input to avoid too many requests
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
-    setCurrentPage(1);
-    // El debounce ya está manejado en el useEffect anterior
+    // El debounce se maneja en el useEffect que actualiza debouncedSearchTerm
   };
 
   // helper functions removed (not used in this file)
@@ -197,51 +201,51 @@ export function CaballoList() {
   }
 
   return (
-    <div className="p-6 sm:p-8">
+    <div className="p-3 sm:p-4 md:p-6 lg:p-8">
       {/* Header mejorado con búsqueda y controles */}
-      <div className="flex flex-col gap-4 mb-8">
+      <div className="flex flex-col gap-3 sm:gap-4 mb-6 sm:mb-8">
         {/* Buscador principal */}
         <div className="relative">
-          <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 pointer-events-none" />
+          <MagnifyingGlassIcon className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 sm:h-5 sm:w-5 pointer-events-none" />
           <input
             type="text"
             placeholder="Buscar por nombre, raza o microchip..."
             value={searchTerm}
             onChange={(e) => handleSearchChange(e.target.value)}
             onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Enter') { e.preventDefault(); refetch(); } }}
-            className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#0f172a] focus:border-[#0f172a] bg-white shadow-sm transition-all duration-200 text-sm"
+            className="w-full pl-9 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#0f172a] focus:border-[#0f172a] bg-white shadow-sm transition-all duration-200 text-xs sm:text-sm"
           />
         </div>
 
         {/* Controles secundarios */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           {/* Izquierda: Info de paginación */}
           <div className="flex items-center gap-3">
-            <p className="text-sm text-gray-600">
-              Mostrando {caballos.length} de {stats.total} caballos
+            <p className="text-xs sm:text-sm text-gray-600">
+              Mostrando <span className="font-semibold">{caballos.length}</span> de <span className="font-semibold">{stats.total}</span>
             </p>
           </div>
 
           {/* Derecha: Botón crear y vista */}
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
             {/* Botones de exportación */}
             {caballos.length > 0 && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <button
                   onClick={handleExportPDF}
-                  className="inline-flex items-center justify-center px-3 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all duration-200 shadow-md hover:shadow-lg text-xs font-medium"
+                  className="inline-flex items-center justify-center px-2 sm:px-3 py-2 sm:py-2.5 bg-red-600 text-white rounded-lg sm:rounded-xl hover:bg-red-700 active:bg-red-800 transition-all duration-200 shadow-md hover:shadow-lg text-xs font-medium"
                   title="Descargar PDF"
                 >
-                  <ArrowDownTrayIcon className="h-4 w-4 mr-1.5" />
-                  PDF
+                  <ArrowDownTrayIcon className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1.5" />
+                  <span className="hidden sm:inline">PDF</span>
                 </button>
                 <button
                   onClick={handleExportExcel}
-                  className="inline-flex items-center justify-center px-3 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all duration-200 shadow-md hover:shadow-lg text-xs font-medium"
+                  className="inline-flex items-center justify-center px-2 sm:px-3 py-2 sm:py-2.5 bg-green-600 text-white rounded-lg sm:rounded-xl hover:bg-green-700 active:bg-green-800 transition-all duration-200 shadow-md hover:shadow-lg text-xs font-medium"
                   title="Descargar Excel"
                 >
-                  <ArrowDownTrayIcon className="h-4 w-4 mr-1.5" />
-                  Excel
+                  <ArrowDownTrayIcon className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1.5" />
+                  <span className="hidden sm:inline">Excel</span>
                 </button>
               </div>
             )}
@@ -249,19 +253,20 @@ export function CaballoList() {
             {canManageHorses() && (
               <button
                 onClick={handleCreateCaballo}
-                className="flex-1 sm:flex-none inline-flex items-center justify-center px-5 py-2.5 bg-[#0f172a] text-white rounded-xl hover:bg-[#0f172a]/90 transition-all duration-200 shadow-lg hover:shadow-xl text-sm font-medium group"
+                className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 sm:px-5 py-2 sm:py-2.5 bg-[#0f172a] text-white rounded-lg sm:rounded-xl hover:bg-[#0f172a]/90 active:bg-[#0f172a]/80 transition-all duration-200 shadow-lg hover:shadow-xl text-xs sm:text-sm font-medium group"
               >
-                <PlusIcon className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" />
-                Registrar Caballo
+                <PlusIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 group-hover:scale-110 transition-transform" />
+                <span className="hidden xs:inline">Registrar</span>
+                <span className="xs:hidden">Nuevo</span>
               </button>
             )}
 
             {/* Selector de vista moderno */}
-            <div className="inline-flex items-center rounded-xl bg-gray-100 p-1 shadow-sm">
+            <div className="inline-flex items-center rounded-lg sm:rounded-xl bg-gray-100 p-0.5 sm:p-1 shadow-sm">
               <button
                 type="button"
                 onClick={() => setViewMode('cards')}
-                className={`px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium transition-all duration-200 ${
                   viewMode === 'cards' 
                     ? 'bg-white text-[#0f172a] shadow-sm' 
                     : 'text-gray-600 hover:text-[#0f172a]'
@@ -272,7 +277,7 @@ export function CaballoList() {
               <button
                 type="button"
                 onClick={() => setViewMode('table')}
-                className={`px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium transition-all duration-200 ${
                   viewMode === 'table' 
                     ? 'bg-white text-[#0f172a] shadow-sm' 
                     : 'text-gray-600 hover:text-[#0f172a]'
@@ -305,36 +310,36 @@ export function CaballoList() {
 
       {/* Lista en modo tabla */}
       {viewMode === 'table' && (
-        <div className="overflow-x-auto rounded-xl border border-gray-100">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-lg sm:rounded-xl border border-gray-100 -mx-3 sm:mx-0">
+          <table className="w-full text-xs sm:text-sm min-w-[640px]">
             <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
               <tr>
-                <th className="text-left p-4 font-semibold text-gray-700">Nombre</th>
-                <th className="text-left p-4 font-semibold text-gray-700">Sexo</th>
-                <th className="text-left p-4 font-semibold text-gray-700">Raza</th>
-                <th className="text-left p-4 font-semibold text-gray-700">Estado</th>
-                <th className="text-left p-4 font-semibold text-gray-700">Microchip</th>
-                <th className="text-center p-4 font-semibold text-gray-700">Acciones</th>
+                <th className="text-left p-2 sm:p-4 font-semibold text-gray-700">Nombre</th>
+                <th className="text-left p-2 sm:p-4 font-semibold text-gray-700">Sexo</th>
+                <th className="text-left p-2 sm:p-4 font-semibold text-gray-700">Raza</th>
+                <th className="text-left p-2 sm:p-4 font-semibold text-gray-700">Estado</th>
+                <th className="text-left p-2 sm:p-4 font-semibold text-gray-700">Microchip</th>
+                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {caballos.map((c) => (
                 <tr 
                   key={c.id} 
-                  className="hover:bg-gray-50 transition-colors group"
+                  className="hover:bg-gray-50 active:bg-gray-100 transition-colors group"
                 >
-                  <td className="p-4">
+                  <td className="p-2 sm:p-4">
                     <button
                       onClick={() => handleViewCaballo(c)}
-                      className="font-semibold text-gray-900 hover:text-[#0f172a] transition-colors text-left"
+                      className="font-semibold text-gray-900 hover:text-[#0f172a] active:text-[#0f172a]/80 transition-colors text-left truncate max-w-[120px] sm:max-w-none"
                     >
                       {c.nombre}
                     </button>
                   </td>
-                  <td className="p-4 text-gray-600">{c.sexo || '—'}</td>
-                  <td className="p-4 text-gray-600">{c.raza || '—'}</td>
-                  <td className="p-4">
-                    <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${
+                  <td className="p-2 sm:p-4 text-gray-600">{c.sexo || '—'}</td>
+                  <td className="p-2 sm:p-4 text-gray-600 truncate max-w-[100px] sm:max-w-none">{c.raza || '—'}</td>
+                  <td className="p-2 sm:p-4">
+                    <span className={`inline-flex px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold whitespace-nowrap ${
                       c.estado_global === 'activo' 
                         ? 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-500/20'
                         : c.estado_global === 'inactivo'
@@ -346,27 +351,27 @@ export function CaballoList() {
                       {c.estado_global}
                     </span>
                   </td>
-                  <td className="p-4">
-                    <span className="font-mono text-xs text-gray-600">
+                  <td className="p-2 sm:p-4">
+                    <span className="font-mono text-[10px] sm:text-xs text-gray-600">
                       {c.microchip || '—'}
                     </span>
                   </td>
-                  <td className="p-4">
-                    <div className="flex items-center justify-center gap-2">
+                  <td className="p-2 sm:p-4">
+                    <div className="flex items-center justify-center gap-1 sm:gap-2">
                       <button
                         onClick={() => canManageHorses() ? handleEditCaballo(c) : handleViewCaballo(c)}
-                        className="p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-[#0f172a] hover:text-white transition-all duration-200 hover:scale-110"
+                        className="p-1.5 sm:p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-[#0f172a] hover:text-white active:bg-[#0f172a]/80 transition-all duration-200 hover:scale-110"
                         title={canManageHorses() ? 'Editar' : 'Ver'}
                       >
-                        {canManageHorses() ? <PencilIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                        {canManageHorses() ? <PencilIcon className="h-3 w-3 sm:h-4 sm:w-4" /> : <EyeIcon className="h-3 w-3 sm:h-4 sm:w-4" />}
                       </button>
                       {canDeleteHorses() && (
                         <button
                           onClick={() => handleDeleteCaballo(c)}
-                          className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all duration-200 hover:scale-110"
+                          className="p-1.5 sm:p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 active:bg-red-200 transition-all duration-200 hover:scale-110"
                           title="Eliminar"
                         >
-                          <TrashIcon className="h-4 w-4" />
+                          <TrashIcon className="h-3 w-3 sm:h-4 sm:w-4" />
                         </button>
                       )}
                     </div>

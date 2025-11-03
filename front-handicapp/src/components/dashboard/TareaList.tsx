@@ -7,7 +7,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TareaForm } from './TareaForm';
 import { usePermissions } from '@/lib/hooks/usePermissions';
-import { PlusIcon, PencilIcon, TrashIcon, CheckIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { 
+  Plus, 
+  Search, 
+  Edit2, 
+  Trash2, 
+  CheckCircle2, 
+  Clock, 
+  MapPin, 
+  User, 
+  Calendar,
+  FileText,
+  Timer,
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles
+} from 'lucide-react';
 import { logger } from '@/lib/utils/logger';
 
 export function TareaList() {
@@ -70,12 +86,19 @@ export function TareaList() {
 
   const handleCompleteTask = async (tarea: Tarea) => {
     try {
-      // Crear objeto con propiedades que coincidan con CreateTareaData
+      // Crear objeto con todas las propiedades necesarias
       const updateData = {
         titulo: tarea.titulo,
-        descripcion: tarea.descripcion,
-        tipo: tarea.tipo as any, // Se necesita cast porque los tipos pueden diferir
-        prioridad: tarea.prioridad as any
+        descripcion: tarea.descripcion || 'Tarea completada', // Evitar descripción vacía
+        tipo: tarea.tipo as any,
+        prioridad: tarea.prioridad as any,
+        fecha_vencimiento: tarea.fecha_vencimiento || '',
+        estado: 'completada' as any,
+        caballo_id: tarea.caballo_id,
+        asignado_a_usuario_id: tarea.asignado_a_usuario_id,
+        establecimiento_id: tarea.establecimiento_id,
+        tiempo_estimado_minutos: tarea.tiempo_estimado_minutos,
+        ubicacion: tarea.ubicacion
       };
       await tareaService.update(tarea.id, updateData);
       setTareas(tareas.map(t => t.id === tarea.id ? { ...t, estado: 'completada' } : t));
@@ -102,9 +125,12 @@ export function TareaList() {
     });
   };
 
-  const getPriorityColor = (prioridad: string) => {
+  const getPriorityColor = (prioridad: string | undefined) => {
+    if (!prioridad) return 'bg-gray-100 text-gray-800';
+    
     switch (prioridad.toLowerCase()) {
       case 'alta':
+      case 'urgente':
         return 'bg-red-100 text-red-800';
       case 'media':
         return 'bg-yellow-100 text-yellow-800';
@@ -115,14 +141,22 @@ export function TareaList() {
     }
   };
 
-  const getStatusColor = (estado: string) => {
+  const getStatusColor = (estado: string | undefined) => {
+    if (!estado) return 'bg-gray-100 text-gray-800';
+    
     switch (estado.toLowerCase()) {
       case 'completada':
+      case 'done':
         return 'bg-green-100 text-green-800';
       case 'en_progreso':
+      case 'in_progress':
         return 'bg-blue-100 text-blue-800';
       case 'pendiente':
+      case 'open':
         return 'bg-yellow-100 text-yellow-800';
+      case 'cancelada':
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -142,13 +176,13 @@ export function TareaList() {
       {/* Buscador + Acción */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-8">
         <div className="relative flex-1">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
           <input
             type="text"
             placeholder="Buscar por título o descripción..."
             value={searchTerm}
             onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
         {canCreateTasks() && (
@@ -156,7 +190,7 @@ export function TareaList() {
             onClick={handleCreateTarea}
             className="inline-flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm text-sm font-semibold whitespace-nowrap"
           >
-            <PlusIcon className="h-5 w-5 mr-2" />
+            <Plus className="h-5 w-5 mr-2" />
             Nueva Tarea
           </button>
         )}
@@ -176,109 +210,141 @@ export function TareaList() {
                 onClick={handleCreateTarea}
                 className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
               >
-                <PlusIcon className="h-5 w-5 mr-2" />
+                <Plus className="h-5 w-5 mr-2" />
                 Crear Tarea
               </button>
             )}
           </div>
         ) : (
           filteredTareas.map((tarea) => (
-            <div key={tarea.id} className="bg-white border rounded-lg p-6 hover:shadow-lg transition-all duration-200">
-              <div className="flex justify-between items-start">
-                <div className="space-y-3 flex-1">
-                  <div className="flex items-start justify-between">
-                    <h3 className="text-lg font-semibold text-gray-900">{tarea.titulo}</h3>
-                    <div className="flex gap-2">
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPriorityColor(tarea.prioridad)}`}>
-                        {tarea.prioridad}
+            <div 
+              key={tarea.id} 
+              className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-all duration-200 group relative overflow-hidden"
+            >
+              {/* Barra de color según prioridad */}
+              <div className={`absolute top-0 left-0 w-1 h-full ${
+                tarea.prioridad?.toLowerCase() === 'alta' || tarea.prioridad?.toLowerCase() === 'urgente' 
+                  ? 'bg-red-500' 
+                  : tarea.prioridad?.toLowerCase() === 'media' 
+                  ? 'bg-yellow-500' 
+                  : 'bg-green-500'
+              }`}></div>
+
+              {/* Header con título y badges */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1 pr-2">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">{tarea.titulo}</h3>
+                  <div className="flex flex-wrap gap-2">
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${getStatusColor(tarea.estado)}`}>
+                      {tarea.estado === 'open' || tarea.estado === 'pendiente' ? 'Pendiente' : 
+                       tarea.estado === 'in_progress' || tarea.estado === 'en_progreso' ? 'En Progreso' :
+                       tarea.estado === 'done' || tarea.estado === 'completada' ? 'Completada' : 
+                       tarea.estado === 'cancelled' || tarea.estado === 'cancelada' ? 'Cancelada' : tarea.estado}
+                    </span>
+                    {tarea.prioridad && (
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${getPriorityColor(tarea.prioridad)}`}>
+                        {tarea.prioridad === 'urgente' ? 'Urgente' : 
+                         tarea.prioridad === 'alta' ? 'Alta' :
+                         tarea.prioridad === 'media' ? 'Media' : 'Baja'}
                       </span>
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(tarea.estado)}`}>
-                        {tarea.estado.replace('_', ' ')}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {tarea.descripcion && (
-                    <p className="text-sm text-gray-600 line-clamp-2">{tarea.descripcion}</p>
-                  )}
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium">📋 Tipo:</span> {tarea.tipo}
-                    </p>
-                    {tarea.fecha_vencimiento && (
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium">⏰ Vencimiento:</span> {formatDate(tarea.fecha_vencimiento)}
-                      </p>
-                    )}
-                    {tarea.asignado_a && (
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium">👤 Asignado a:</span> {tarea.asignado_a.nombre} {tarea.asignado_a.apellido}
-                      </p>
-                    )}
-                    {tarea.caballo && (
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium">🐎 Caballo:</span> {tarea.caballo.nombre}
-                      </p>
-                    )}
-                    {tarea.ubicacion && (
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium">📍 Ubicación:</span> {tarea.ubicacion}
-                      </p>
-                    )}
-                    {tarea.tiempo_estimado_minutos && (
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium">⏱️ Tiempo estimado:</span> {tarea.tiempo_estimado_minutos} min
-                      </p>
                     )}
                   </div>
                 </div>
                 
-                <div className="flex gap-2 ml-4">
-                  {/* Botón Completar: empleados, capataces y veterinarios pueden completar */}
-                  {tarea.estado !== 'completada' && hasPermission('tasks:complete') && (
-                    <Button 
-                      variant="secondary" 
-                      size="sm" 
+                {/* Botones de acción */}
+                <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {tarea.estado !== 'completada' && tarea.estado !== 'done' && hasPermission('tasks:complete') && (
+                    <button 
                       onClick={() => handleCompleteTask(tarea)}
-                      className="flex items-center gap-1 text-green-600 hover:text-green-700"
+                      className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                      title="Completar"
                     >
-                      <CheckIcon className="h-3 w-3" />
-                      Completar
-                    </Button>
+                      <CheckCircle2 className="h-4 w-4" />
+                    </button>
                   )}
-                  {/* Botón Editar: solo roles con permisos de escritura */}
                   {canCreateTasks() && (
-                    <Button 
-                      variant="secondary" 
-                      size="sm" 
+                    <button 
                       onClick={() => handleEditTarea(tarea)}
-                      className="flex items-center gap-1"
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="Editar"
                     >
-                      <PencilIcon className="h-3 w-3" />
-                      Editar
-                    </Button>
+                      <Edit2 className="h-4 w-4" />
+                    </button>
                   )}
-                  {/* Botón Eliminar: solo admin y capataz */}
                   {canDeleteTasks() && (
-                    <Button 
-                      variant="secondary" 
-                      size="sm" 
+                    <button 
                       onClick={() => handleDeleteTarea(tarea.id)}
-                      className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Eliminar"
                     >
-                      <TrashIcon className="h-3 w-3" />
-                      Eliminar
-                    </Button>
-                  )}
-                  {/* Indicador de solo lectura */}
-                  {!hasPermission('tasks:complete') && !canCreateTasks() && !canDeleteTasks() && (
-                    <span className="text-xs text-gray-500 px-2 py-1 bg-gray-100 rounded">
-                      Solo lectura
-                    </span>
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   )}
                 </div>
               </div>
+              
+              {/* Descripción */}
+              {tarea.descripcion && (
+                <p className="text-sm text-gray-600 mb-4 line-clamp-2">{tarea.descripcion}</p>
+              )}
+              
+              {/* Grid de información */}
+              <div className="space-y-2.5 text-sm">
+                <div className="flex items-center text-gray-600">
+                  <FileText className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
+                  <span className="font-medium mr-1">Tipo:</span> 
+                  <span className="capitalize">{tarea.tipo}</span>
+                </div>
+                
+                {tarea.fecha_vencimiento && (
+                  <div className="flex items-center text-gray-600">
+                    <Calendar className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
+                    <span className="font-medium mr-1">Vence:</span> 
+                    <span>{formatDate(tarea.fecha_vencimiento)}</span>
+                  </div>
+                )}
+                
+                {tarea.asignado_a && (
+                  <div className="flex items-center text-gray-600">
+                    <User className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
+                    <span className="font-medium mr-1">Asignado:</span> 
+                    <span className="truncate">{tarea.asignado_a.nombre} {tarea.asignado_a.apellido}</span>
+                  </div>
+                )}
+                
+                {tarea.caballo && (
+                  <div className="flex items-center text-gray-600">
+                    <Sparkles className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
+                    <span className="font-medium mr-1">Caballo:</span> 
+                    <span className="truncate">{tarea.caballo.nombre}</span>
+                  </div>
+                )}
+                
+                {tarea.ubicacion && (
+                  <div className="flex items-center text-gray-600">
+                    <MapPin className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
+                    <span className="font-medium mr-1">Ubicación:</span> 
+                    <span className="truncate">{tarea.ubicacion}</span>
+                  </div>
+                )}
+                
+                {tarea.tiempo_estimado_minutos && (
+                  <div className="flex items-center text-gray-600">
+                    <Timer className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
+                    <span className="font-medium mr-1">Tiempo:</span> 
+                    <span>{tarea.tiempo_estimado_minutos} min</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Indicador de solo lectura */}
+              {!hasPermission('tasks:complete') && !canCreateTasks() && !canDeleteTasks() && (
+                <div className="mt-4 pt-3 border-t border-gray-100">
+                  <span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
+                    Solo lectura
+                  </span>
+                </div>
+              )}
             </div>
           ))
         )}
@@ -286,10 +352,26 @@ export function TareaList() {
       </div>
       {/* Paginación */}
       {totalPages > 1 && (
-        <div className="flex justify-center gap-2">
-          <Button variant="secondary" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1 || loading}>Anterior</Button>
-          <span className="flex items-center px-4 text-sm text-gray-600">Página {currentPage} de {totalPages}</span>
-          <Button variant="secondary" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || loading}>Siguiente</Button>
+        <div className="flex justify-center items-center gap-3 mt-8">
+          <button 
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
+            disabled={currentPage === 1 || loading}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Anterior
+          </button>
+          <span className="text-sm text-gray-600 font-medium">
+            Página {currentPage} de {totalPages}
+          </span>
+          <button 
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
+            disabled={currentPage === totalPages || loading}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Siguiente
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </button>
         </div>
       )}
       

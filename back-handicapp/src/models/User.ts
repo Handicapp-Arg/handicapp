@@ -8,6 +8,7 @@ export class User extends Model {
   declare email: string;
   declare hash_contrasena: string;
   declare rol_id: number;
+  declare establecimiento_id: CreationOptional<number | null>;
   declare verificado: CreationOptional<boolean>;
   declare estado_usuario: CreationOptional<EstadoUsuario>;
   declare nombre: string;

@@ -152,13 +152,24 @@ export class EstablecimientoController {
       const establecimientoId = parseInt(req.params['id'] || '0');
       const updateData = req.body;
       const usuarioId = req.user!.id;
+      const userRole = req.user!.rol?.clave;
+      const userEstablecimientoId = req.user!.establecimiento_id;
+
+      console.log('🔵 CONTROLLER - Datos recibidos:', JSON.stringify(updateData, null, 2));
+      console.log('🔵 CONTROLLER - Usuario:', { usuarioId, userRole, userEstablecimientoId });
 
       if (isNaN(establecimientoId)) {
         ResponseHelper.badRequest(res, 'ID de establecimiento inválido');
         return;
       }
 
-      const result = await EstablecimientoService.updateEstablecimiento(establecimientoId, updateData, usuarioId);
+      const result = await EstablecimientoService.updateEstablecimiento(
+        establecimientoId, 
+        updateData, 
+        usuarioId,
+        userRole,
+        userEstablecimientoId
+      );
 
       if (result.success && result.data) {
         ResponseHelper.success(res, result.data, 'Establecimiento actualizado exitosamente');

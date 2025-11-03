@@ -5,7 +5,7 @@ export interface Tarea {
   titulo: string;
   descripcion?: string;
   tipo: 'alimentacion' | 'limpieza' | 'entrenamiento' | 'mantenimiento' | 'veterinaria' | 'administrativa' | 'otro';
-  prioridad: 'baja' | 'media' | 'alta' | 'critica';
+  prioridad: 'baja' | 'media' | 'alta' | 'urgente';
   estado: 'pendiente' | 'en_progreso' | 'completada' | 'cancelada' | 'vencida';
   fecha_vencimiento?: string;
   tiempo_estimado_minutos?: number;
@@ -31,7 +31,7 @@ export interface CreateTareaData {
   titulo: string;
   descripcion?: string;
   tipo: 'alimentacion' | 'limpieza' | 'entrenamiento' | 'mantenimiento' | 'veterinaria' | 'administrativa' | 'otro';
-  prioridad: 'baja' | 'media' | 'alta' | 'critica';
+  prioridad: 'baja' | 'media' | 'alta' | 'urgente';
   fecha_vencimiento?: string;
   tiempo_estimado_minutos?: number;
   ubicacion?: string;
@@ -78,9 +78,23 @@ class TareaService {
   }
 
   async create(data: CreateTareaData): Promise<Tarea> {
+    // Transformar snake_case a camelCase para el backend
+    const backendData = {
+      titulo: data.titulo,
+      descripcion: data.descripcion,
+      tipo: data.tipo,
+      prioridad: data.prioridad,
+      fechaVencimiento: data.fecha_vencimiento,
+      tiempoEstimadoMinutos: data.tiempo_estimado_minutos,
+      ubicacion: data.ubicacion,
+      caballoId: data.caballo_id,
+      establecimientoId: data.establecimiento_id,
+      asignadoAUsuarioId: data.asignado_a_usuario_id
+    };
+
     const response = await ApiClient.makeRequest(this.baseUrl, {
       method: 'POST',
-      body: JSON.stringify(data)
+      body: JSON.stringify(backendData)
     }) as any;
     return response;
   }

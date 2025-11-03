@@ -7,9 +7,10 @@ import { UserIcon, CalendarIcon, XMarkIcon, PencilIcon, ClockIcon, ChartPieIcon 
 
 interface PropietariosListProps {
   caballoId: number;
+  readOnly?: boolean;
 }
 
-export default function PropietariosList({ caballoId }: PropietariosListProps) {
+export default function PropietariosList({ caballoId, readOnly = false }: PropietariosListProps) {
   const [propietarios, setPropietarios] = useState<Propietario[]>([]);
   const [showHistorial, setShowHistorial] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -110,14 +111,21 @@ export default function PropietariosList({ caballoId }: PropietariosListProps) {
               <UserIcon className="w-6 h-6 text-[#0f172a]" />
             </div>
             {showHistorial ? 'Historial de Propietarios' : 'Propietarios Actuales'}
+            {readOnly && (
+              <span className="ml-3 px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full border border-blue-200">
+                Solo lectura
+              </span>
+            )}
           </h3>
-          <button
-            onClick={() => setShowHistorial(!showHistorial)}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-200 hover:shadow"
-          >
-            <ClockIcon className="h-4 w-4" />
-            {showHistorial ? 'Ver Actuales' : 'Ver Historial'}
-          </button>
+          {!readOnly && (
+            <button
+              onClick={() => setShowHistorial(!showHistorial)}
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-200 hover:shadow"
+            >
+              <ClockIcon className="h-4 w-4" />
+              {showHistorial ? 'Ver Actuales' : 'Ver Historial'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -254,7 +262,7 @@ export default function PropietariosList({ caballoId }: PropietariosListProps) {
                 </div>
 
                 {/* Acciones - Solo para propietarios actuales */}
-                {prop.actual && editingId !== prop.propietario_usuario_id && (
+                {prop.actual && !readOnly && editingId !== prop.propietario_usuario_id && (
                   <div className="flex gap-2 ml-4">
                     <button
                       onClick={() => handleEdit(prop)}

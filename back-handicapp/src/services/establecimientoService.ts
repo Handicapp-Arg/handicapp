@@ -312,22 +312,42 @@ export class EstablecimientoService {
   static async updateEstablecimiento(
     establecimientoId: number,
     data: UpdateEstablecimientoData,
-    userId: number
+    userId: number,
+    userRole?: string,
+    userEstablecimientoId?: number
   ): Promise<ServiceResponse<Establecimiento>> {
     try {
-      // Verificar que el usuario tiene permisos para modificar este establecimiento
-      const membresia = await MembresiaUsuarioEstablecimiento.findOne({
-        where: {
-          usuario_id: userId,
-          establecimiento_id: establecimientoId,
-          estado_membresia: EstadoMembresia.active,
-          rol_en_establecimiento: {
-            [Op.in]: [RolEnEstablecimiento.capataz] // Solo capataces pueden modificar
+      console.log('🟢 SERVICE - updateEstablecimiento llamado');
+      console.log('🟢 SERVICE - Datos recibidos:', JSON.stringify(data, null, 2));
+      console.log('🟢 SERVICE - User info:', { userId, userRole, userEstablecimientoId });
+      
+      // Verificar permisos: Admin, usuario con rol "establecimiento" de ese establecimiento, o capataz
+      let tienePermiso = false;
+      
+      if (userRole === 'admin') {
+        tienePermiso = true;
+      } else if (userRole === 'establecimiento' && userEstablecimientoId === establecimientoId) {
+        // Usuario con rol establecimiento puede editar su propio establecimiento
+        tienePermiso = true;
+      } else {
+        // Verificar si es capataz del establecimiento
+        const membresia = await MembresiaUsuarioEstablecimiento.findOne({
+          where: {
+            usuario_id: userId,
+            establecimiento_id: establecimientoId,
+            estado_membresia: EstadoMembresia.active,
+            rol_en_establecimiento: {
+              [Op.in]: [RolEnEstablecimiento.capataz]
+            }
           }
+        });
+        
+        if (membresia) {
+          tienePermiso = true;
         }
-      });
+      }
 
-      if (!membresia) {
+      if (!tienePermiso) {
         return {
           success: false,
           error: 'Sin permisos para modificar este establecimiento',
@@ -380,7 +400,12 @@ export class EstablecimientoService {
       if (Object.prototype.hasOwnProperty.call(data, 'disciplina_principal')) {
         updatePayload.disciplina_principal = (data.disciplina_principal as Disciplina | undefined) ?? null;
       }
+      
+      console.log('🟢 SERVICE - updatePayload antes de update:', JSON.stringify(updatePayload, null, 2));
+      
       await establecimiento.update(updatePayload);
+
+      console.log('🟢 SERVICE - Establecimiento después de update:', JSON.stringify(establecimiento.toJSON(), null, 2));
 
       return {
         success: true,

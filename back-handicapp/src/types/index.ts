@@ -16,6 +16,7 @@ export interface User {
   apellido: string;
   telefono?: string | undefined;
   ubicacion?: string | undefined;
+  establecimiento_id?: number | undefined;
   verificado: boolean;
   activo: boolean;
   rol?: {

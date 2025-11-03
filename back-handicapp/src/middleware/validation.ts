@@ -238,7 +238,7 @@ export const establecimientoValidations = {
       .isLength({ min: 2, max: 200 })
       .withMessage('Nombre debe tener entre 2 y 200 caracteres'),
     
-    body('direccion')
+    body('direccion_calle')
       .optional()
       .isString()
       .trim()
@@ -556,6 +556,23 @@ export const tareaValidations = {
       .isIn(['pendiente', 'en_progreso', 'completada', 'cancelada', 'vencida'])
       .withMessage('Estado debe ser válido'),
     
+    body('tipo')
+      .optional()
+      .isString()
+      .trim()
+      .withMessage('Tipo debe ser válido'),
+    
+    body('tiempoEstimadoMinutos')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('Tiempo estimado debe ser un número positivo'),
+    
+    body('ubicacion')
+      .optional()
+      .isString()
+      .trim()
+      .withMessage('Ubicación debe ser válida'),
+    
     body('asignadoAUsuarioId')
       .optional()
       .isInt({ min: 1 })
@@ -590,11 +607,18 @@ export const tareaValidations = {
       .withMessage('Título debe tener entre 2 y 200 caracteres'),
     
     body('descripcion')
-      .optional()
+      .optional({ values: 'falsy' }) // Permite null, undefined, ''
       .isString()
       .trim()
-      .isLength({ min: 5, max: 1000 })
-      .withMessage('Descripción debe tener entre 5 y 1000 caracteres'),
+      .custom((value) => {
+        // Si tiene valor, debe tener entre 5 y 1000 caracteres
+        if (value && value.length > 0) {
+          if (value.length < 5 || value.length > 1000) {
+            throw new Error('Descripción debe tener entre 5 y 1000 caracteres');
+          }
+        }
+        return true;
+      }),
     
     commonValidations.fechaOpcional('fechaVencimiento'),
     

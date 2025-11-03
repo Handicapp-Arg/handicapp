@@ -20,18 +20,17 @@ export class UserController {
     const currentUser = req.user!;
     const currentUserRole = currentUser.rol?.clave;
 
-    // Si es establecimiento, filtrar solo empleados (roles 3, 4, 5)
+    // Si es establecimiento, filtrar solo empleados de su establecimiento
     // Si es admin, mostrar todos
     let result;
     if (currentUserRole === 'establecimiento') {
-      // TODO: En el futuro, filtrar por establecimiento_id para mostrar solo sus empleados
-      // Por ahora, filtrar por roles de empleados
       result = await UserService.getUsers({ 
         page, 
         limit, 
         sortBy, 
         sortOrder,
-        roleIds: [3, 4, 5] // Capataz, Veterinario, Empleado
+        roleIds: [3, 4, 5], // Capataz, Veterinario, Empleado
+        establecimiento_id: currentUser.establecimiento_id // Filtrar por su establecimiento
       });
     } else {
       result = await UserService.getUsers({ page, limit, sortBy, sortOrder });
@@ -187,6 +186,12 @@ export class UserController {
       const salt = await bcrypt.genSalt(config.security.bcryptRounds);
       const hashedPassword = await bcrypt.hash(password, salt);
 
+      // Si es establecimiento creando un empleado, asignar el establecimiento_id automáticamente
+      let establecimientoId = null;
+      if (currentUserRole === 'establecimiento' && [3, 4, 5].includes(rol_id)) {
+        establecimientoId = currentUser.establecimiento_id;
+      }
+
       // Crear usuario
       const newUser = await User.create({
         nombre,
@@ -197,7 +202,8 @@ export class UserController {
         telefono,
         documento,
         verificado: true,
-        estado_usuario: 'active'
+        estado_usuario: 'active',
+        establecimiento_id: establecimientoId
       });
 
       // Si es establecimiento creando empleado/capataz/veterinario, crear membresía

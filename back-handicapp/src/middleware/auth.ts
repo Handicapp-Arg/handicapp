@@ -83,6 +83,7 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
       ubicacion: user.ubicacion || undefined,
       verificado: user.verificado,
       activo: user.isActive,
+      establecimiento_id: user.establecimiento_id || undefined,
       rol: user.rol ? {
         id: Number(user.rol.id),
         clave: user.rol.clave,
@@ -193,6 +194,7 @@ export const optionalAuth = async (req: AuthenticatedRequest, _res: Response, ne
         ubicacion: user.ubicacion || undefined,
         verificado: user.verificado,
         activo: user.isActive,
+        establecimiento_id: user.establecimiento_id || undefined,
         rol: user.rol ? {
           id: Number(user.rol.id),
           clave: user.rol.clave,

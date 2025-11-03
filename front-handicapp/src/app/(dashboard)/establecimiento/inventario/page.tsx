@@ -279,17 +279,17 @@ export default function EstablecimientoInventarioPage() {
   return (
     <div className="space-y-6">
       {/* Hero Section */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8">
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 sm:p-6 md:p-8">
         <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,transparent,black)]" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-green-500/20 rounded-full blur-3xl" />
+        <div className="absolute top-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-emerald-500/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 sm:w-96 sm:h-96 bg-green-500/20 rounded-full blur-3xl" />
         
         <div className="relative">
-          <div className="flex items-center gap-3 mb-2">
-            <Package className="w-8 h-8 text-emerald-400" />
-            <h1 className="text-3xl font-bold text-white">Gestión de Inventario</h1>
+          <div className="flex items-center gap-2 sm:gap-3 mb-2">
+            <Package className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-400 flex-shrink-0" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-white truncate">Gestión de Inventario</h1>
           </div>
-          <p className="text-slate-300 text-lg">
+          <p className="text-slate-300 text-sm sm:text-base md:text-lg">
             Controla productos, stock y movimientos del establecimiento
           </p>
         </div>
@@ -377,68 +377,70 @@ export default function EstablecimientoInventarioPage() {
       {/* Content Card */}
       <Card className="rounded-2xl shadow-xl">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <CardDescription className="text-sm sm:text-base">
               Lista completa de productos en inventario
             </CardDescription>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Link
                 href="/establecimiento/inventario/movimientos"
-                className="px-3 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors flex items-center gap-2 text-sm"
+                className="px-2 sm:px-3 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
               >
-                <TrendingUp className="w-4 h-4" />
-                Movimientos
+                <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden xs:inline">Movimientos</span>
+                <span className="xs:hidden">Mov</span>
               </Link>
               <button
                 onClick={exportarAPDF}
-                className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors flex items-center gap-2 text-sm"
+                className="px-2 sm:px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
               >
-                <FileText className="w-4 h-4" />
-                PDF
+                <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">PDF</span>
               </button>
               <button
                 onClick={exportarAExcel}
-                className="px-3 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors flex items-center gap-2 text-sm"
+                className="px-2 sm:px-3 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
               >
-                <Download className="w-4 h-4" />
-                Excel
+                <Download className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Excel</span>
               </button>
               <button
                 onClick={handleNuevoProducto}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2"
+                className="px-3 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 active:bg-emerald-800 transition-colors flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
               >
-                <Plus className="w-4 h-4" />
-                Nuevo Producto
+                <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden xs:inline">Nuevo</span>
+                <span className="xs:hidden">+</span>
               </button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           {/* Filters */}
-          <div className="mb-6 flex flex-col md:flex-row gap-4">
+          <div className="mb-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
             <div className="flex-1 relative">
               <input
                 type="text"
                 placeholder="Buscar por nombre o código..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                className="w-full px-3 sm:px-4 py-2 pl-9 sm:pl-10 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               />
-              <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-2 sm:left-3 top-2.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
             </div>
-            <label className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg cursor-pointer">
+            <label className="flex items-center gap-2 px-3 sm:px-4 py-2 border border-gray-300 rounded-lg cursor-pointer whitespace-nowrap">
               <input
                 type="checkbox"
                 checked={filtroStockBajo}
                 onChange={(e) => setFiltroStockBajo(e.target.checked)}
                 className="rounded"
               />
-              <span className="text-sm">Solo stock bajo</span>
+              <span className="text-xs sm:text-sm">Solo stock bajo</span>
             </label>
           </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto">
+          {/* Desktop Table - Hidden on mobile */}
+          <div className="hidden md:block overflow-x-auto">
             <div className="min-w-full inline-block align-middle">
               <div className="overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -511,9 +513,90 @@ export default function EstablecimientoInventarioPage() {
             </div>
           </div>
 
+          {/* Mobile Cards - Hidden on desktop */}
+          <div className="md:hidden space-y-3">
+            {productosFiltrados.map((prod) => (
+              <div 
+                key={prod.id}
+                className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow bg-white"
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-900 text-sm truncate">{prod.nombre}</h3>
+                    <p className="text-xs text-gray-500 font-mono mt-0.5">{prod.codigo}</p>
+                  </div>
+                  <Badge 
+                    variant={prod.stock_actual < prod.stock_minimo ? 'destructive' : 'default'}
+                    className="ml-2 flex-shrink-0 text-xs"
+                  >
+                    {prod.stock_actual < prod.stock_minimo ? 'Bajo' : 'OK'}
+                  </Badge>
+                </div>
+
+                {/* Description */}
+                {prod.descripcion && (
+                  <p className="text-xs text-gray-600 mb-3 line-clamp-2">{prod.descripcion}</p>
+                )}
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <div className="bg-gray-50 rounded-lg p-2">
+                    <p className="text-[10px] text-gray-500 uppercase">Stock</p>
+                    <p className="text-sm font-semibold text-gray-900">{prod.stock_actual} {prod.unidad_medida}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-2">
+                    <p className="text-[10px] text-gray-500 uppercase">Mínimo</p>
+                    <p className="text-sm font-semibold text-gray-900">{prod.stock_minimo}</p>
+                  </div>
+                  <div className="bg-emerald-50 rounded-lg p-2">
+                    <p className="text-[10px] text-emerald-600 uppercase">Precio</p>
+                    <p className="text-sm font-semibold text-emerald-700">${prod.precio_unitario}</p>
+                  </div>
+                  <div className="bg-blue-50 rounded-lg p-2">
+                    <p className="text-[10px] text-blue-600 uppercase">Total</p>
+                    <p className="text-sm font-semibold text-blue-700">${(prod.stock_actual * prod.precio_unitario).toLocaleString()}</p>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-1.5">
+                  <Link
+                    href={`/establecimiento/inventario/${prod.id}`}
+                    className="flex-1 px-2 py-1.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 active:bg-purple-200 transition-colors flex items-center justify-center gap-1 text-xs"
+                  >
+                    <Eye className="h-3 w-3" />
+                    Ver
+                  </Link>
+                  <Link
+                    href={`/establecimiento/inventario/${prod.id}/movimientos`}
+                    className="flex-1 px-2 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 active:bg-amber-200 transition-colors flex items-center justify-center gap-1 text-xs"
+                  >
+                    <TrendingUp className="h-3 w-3" />
+                    Mov
+                  </Link>
+                  <button
+                    onClick={() => handleEditarProducto(prod)}
+                    className="flex-1 px-2 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 active:bg-blue-200 transition-colors flex items-center justify-center gap-1 text-xs"
+                  >
+                    <Edit className="h-3 w-3" />
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => handleEliminarProducto(prod)}
+                    className="px-2 py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 active:bg-red-200 transition-colors flex items-center justify-center"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
           {productosFiltrados.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-500">No se encontraron productos</p>
+              <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 text-sm sm:text-base">No se encontraron productos</p>
             </div>
           )}
         </CardContent>

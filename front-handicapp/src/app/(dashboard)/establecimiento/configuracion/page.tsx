@@ -11,8 +11,8 @@ import { Settings, Building2, MapPin, Phone, Mail } from 'lucide-react';
 interface Establecimiento {
   id: number;
   nombre: string;
-  direccion?: string;
-  capacidad?: number;
+  direccion_calle?: string;
+  cantidad_boxes?: number;
   telefono?: string;
   email?: string;
   superficie_hectareas?: number;
@@ -27,8 +27,8 @@ export default function EstablecimientoConfiguracionPage() {
   
   const [formData, setFormData] = useState({
     nombre: '',
-    direccion: '',
-    capacidad: '',
+    direccion_calle: '',
+    cantidad_boxes: '',
     telefono: '',
     email: '',
     superficie_hectareas: ''
@@ -45,20 +45,39 @@ export default function EstablecimientoConfiguracionPage() {
         method: 'GET'
       });
       
+      console.log('📥 Respuesta GET establecimientos:', response);
+      
+      let est = null;
+      
+      // Manejar diferentes estructuras de respuesta
       if (response?.data?.items && response.data.items.length > 0) {
-        const est = response.data.items[0];
+        est = response.data.items[0];
+      } else if (response?.data && !Array.isArray(response.data) && response.data.id) {
+        est = response.data;
+      } else if (response?.items && response.items.length > 0) {
+        est = response.items[0];
+      } else if (Array.isArray(response) && response.length > 0) {
+        est = response[0];
+      } else if (response?.id) {
+        est = response;
+      }
+      
+      if (est) {
+        console.log('✅ Establecimiento encontrado:', est);
         setEstablecimiento(est);
         setFormData({
           nombre: est.nombre || '',
-          direccion: est.direccion || '',
-          capacidad: est.capacidad?.toString() || '',
+          direccion_calle: est.direccion_calle || '',
+          cantidad_boxes: est.cantidad_boxes?.toString() || '',
           telefono: est.telefono || '',
           email: est.email || '',
           superficie_hectareas: est.superficie_hectareas?.toString() || ''
         });
+      } else {
+        console.warn('⚠️ No se encontró establecimiento en la respuesta');
       }
     } catch (error) {
-      console.error('Error fetching establecimiento:', error);
+      console.error('❌ Error fetching establecimiento:', error);
       setMessage({ type: 'error', text: 'Error al cargar los datos del establecimiento' });
     } finally {
       setLoading(false);
@@ -68,6 +87,20 @@ export default function EstablecimientoConfiguracionPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleCancel = () => {
+    if (establecimiento) {
+      setFormData({
+        nombre: establecimiento.nombre || '',
+        direccion_calle: establecimiento.direccion_calle || '',
+        cantidad_boxes: establecimiento.cantidad_boxes?.toString() || '',
+        telefono: establecimiento.telefono || '',
+        email: establecimiento.email || '',
+        superficie_hectareas: establecimiento.superficie_hectareas?.toString() || ''
+      });
+      setMessage(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,28 +115,34 @@ export default function EstablecimientoConfiguracionPage() {
       setSaving(true);
       setMessage(null);
 
-      // Construir objeto solo con campos que tienen valores
+      // Construir objeto solo con campos que tienen valores válidos
       const updateData: any = {
         nombre: formData.nombre,
       };
 
-      // Solo agregar campos opcionales si tienen valores válidos
-      if (formData.direccion && formData.direccion.trim().length >= 5) {
-        updateData.direccion = formData.direccion.trim();
+      // Dirección: solo enviar si tiene 5+ caracteres
+      if (formData.direccion_calle && formData.direccion_calle.trim().length >= 5) {
+        updateData.direccion_calle = formData.direccion_calle.trim();
       }
+      // Si está vacío o muy corto, simplemente no enviar el campo
       
-      if (formData.capacidad && parseInt(formData.capacidad) > 0) {
-        updateData.capacidad = parseInt(formData.capacidad);
+      // Cantidad de boxes: solo enviar si es un número válido > 0
+      if (formData.cantidad_boxes && parseInt(formData.cantidad_boxes) > 0) {
+        updateData.cantidad_boxes = parseInt(formData.cantidad_boxes);
       }
+      // Si está vacío, no enviar el campo
       
+      // Teléfono: solo enviar si tiene valor
       if (formData.telefono && formData.telefono.trim()) {
         updateData.telefono = formData.telefono.trim();
       }
       
+      // Email: solo enviar si tiene valor
       if (formData.email && formData.email.trim()) {
         updateData.email = formData.email.trim();
       }
       
+      // Superficie: solo enviar si es un número válido > 0
       if (formData.superficie_hectareas && parseFloat(formData.superficie_hectareas) > 0) {
         updateData.superficie_hectareas = parseFloat(formData.superficie_hectareas);
       }
@@ -116,14 +155,27 @@ export default function EstablecimientoConfiguracionPage() {
         body: JSON.stringify(updateData)
       });
 
-      console.log('✅ Respuesta recibida:', response);
+      console.log('✅ Respuesta del backend:', response);
+      console.log('✅ Respuesta completa:', JSON.stringify(response, null, 2));
+
+      // Actualizar el establecimiento con los datos que acabamos de guardar
+      if (establecimiento) {
+        const updatedEstablecimiento = {
+          ...establecimiento,
+          ...updateData
+        };
+        setEstablecimiento(updatedEstablecimiento);
+        
+        console.log('✅ Estado actualizado localmente:', updatedEstablecimiento);
+        console.log('✅ FormData actual:', formData);
+      }
 
       setMessage({ type: 'success', text: 'Configuración guardada exitosamente' });
-      await fetchEstablecimiento();
     } catch (error: any) {
       console.error('❌ Error completo:', error);
       console.error('❌ Error message:', error?.message);
       console.error('❌ Error details:', error?.details);
+      console.error('❌ Error stack:', error?.stack);
       
       let errorMessage = 'Error al guardar la configuración';
       
@@ -145,11 +197,11 @@ export default function EstablecimientoConfiguracionPage() {
   };
 
   const stats = useMemo(() => ({
-    capacidad: formData.capacidad || '0',
+    capacidad: formData.cantidad_boxes || '0',
     superficie: formData.superficie_hectareas || '0',
     contactos: [formData.telefono, formData.email].filter(Boolean).length,
     completado: Math.round(
-      ([formData.nombre, formData.direccion, formData.capacidad, formData.telefono, formData.email, formData.superficie_hectareas]
+      ([formData.nombre, formData.direccion_calle, formData.cantidad_boxes, formData.telefono, formData.email, formData.superficie_hectareas]
         .filter(Boolean).length / 6) * 100
     )
   }), [formData]);
@@ -334,14 +386,14 @@ export default function EstablecimientoConfiguracionPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="capacidad" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="cantidad_boxes" className="block text-sm font-medium text-gray-700 mb-2">
                     Capacidad (Caballos)
                   </label>
                   <input
                     type="number"
-                    id="capacidad"
-                    name="capacidad"
-                    value={formData.capacidad}
+                    id="cantidad_boxes"
+                    name="cantidad_boxes"
+                    value={formData.cantidad_boxes}
                     onChange={handleInputChange}
                     min="1"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
@@ -368,13 +420,13 @@ export default function EstablecimientoConfiguracionPage() {
               </div>
 
               <div>
-                <label htmlFor="direccion" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="direccion_calle" className="block text-sm font-medium text-gray-700 mb-2">
                   Dirección
                 </label>
                 <textarea
-                  id="direccion"
-                  name="direccion"
-                  value={formData.direccion}
+                  id="direccion_calle"
+                  name="direccion_calle"
+                  value={formData.direccion_calle}
                   onChange={handleInputChange}
                   rows={3}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
@@ -382,7 +434,7 @@ export default function EstablecimientoConfiguracionPage() {
                   minLength={5}
                   maxLength={500}
                 />
-                {formData.direccion && formData.direccion.length > 0 && formData.direccion.length < 5 && (
+                {formData.direccion_calle && formData.direccion_calle.length > 0 && formData.direccion_calle.length < 5 && (
                   <p className="mt-1 text-sm text-red-600">
                     La dirección debe tener al menos 5 caracteres
                   </p>
@@ -395,7 +447,7 @@ export default function EstablecimientoConfiguracionPage() {
               <div className="flex items-center justify-end gap-4 pt-4 border-t border-gray-200">
                 <button
                   type="button"
-                  onClick={fetchEstablecimiento}
+                  onClick={handleCancel}
                   disabled={saving}
                   className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >

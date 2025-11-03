@@ -94,23 +94,23 @@ export default function EmpleadoNotificacionesPage() {
     <SimpleRoleGuard roles={['empleado']}>
       <div className="space-y-6">
         {/* Hero Section */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8">
+        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 sm:p-6 md:p-8">
           <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,transparent,black)]" />
-          <div className="absolute top-0 right-0 w-96 h-96 bg-teal-500/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl" />
+          <div className="absolute top-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-teal-500/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 sm:w-96 sm:h-96 bg-cyan-500/20 rounded-full blur-3xl" />
           
           <div className="relative">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <Bell className="w-8 h-8 text-teal-400" />
-                  <h1 className="text-3xl font-bold text-white">Notificaciones</h1>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                  <Bell className="w-6 h-6 sm:w-8 sm:h-8 text-teal-400 flex-shrink-0" />
+                  <h1 className="text-2xl sm:text-3xl font-bold text-white truncate">Notificaciones</h1>
                 </div>
-                <p className="text-slate-300 text-lg">Mantente informado de las novedades</p>
+                <p className="text-slate-300 text-sm sm:text-base md:text-lg">Mantente informado de las novedades</p>
               </div>
               <button
                 onClick={handleMarkAllAsRead}
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all backdrop-blur-sm border border-white/10"
+                className="px-3 py-2 sm:px-4 text-xs sm:text-sm bg-white/10 hover:bg-white/20 active:bg-white/25 text-white rounded-lg transition-all backdrop-blur-sm border border-white/10 whitespace-nowrap flex-shrink-0"
               >
                 Marcar todas como leídas
               </button>

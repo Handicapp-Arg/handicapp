@@ -221,23 +221,24 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
 
             {/* Notifications Dropdown */}
             {isNotifDropdownOpen && (
-              <div className="absolute right-0 mt-3 w-96 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden">
+              <div className="fixed sm:absolute right-2 sm:right-0 left-2 sm:left-auto mt-3 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden">
                 {/* Header */}
-                <div className="px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-primary/5 to-primary/10">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Bell className="w-5 h-5 text-primary" />
-                      <h3 className="font-bold text-slate-800">Notificaciones</h3>
+                <div className="px-3 sm:px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-primary/5 to-primary/10">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+                      <h3 className="font-bold text-sm sm:text-base text-slate-800 truncate">Notificaciones</h3>
                     </div>
                     {stats?.no_leidas > 0 && (
                       <button
                         onClick={async () => {
                           await marcarTodasComoLeidas();
                         }}
-                        className="text-xs font-semibold text-primary hover:text-primary/80 flex items-center gap-1"
+                        className="text-xs font-semibold text-primary hover:text-primary/80 flex items-center gap-1 flex-shrink-0"
                       >
                         <Check className="w-3 h-3" />
-                        Marcar todas
+                        <span className="hidden xs:inline">Marcar todas</span>
+                        <span className="xs:hidden">Todas</span>
                       </button>
                     )}
                   </div>
@@ -249,7 +250,7 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                 </div>
 
                 {/* Notificaciones List */}
-                <div className="max-h-96 overflow-y-auto">
+                <div className="max-h-[50vh] sm:max-h-96 overflow-y-auto">
                   {notificaciones && notificaciones.length > 0 ? (
                     <>
                       {notificaciones.slice(0, 5).map((notif) => {
@@ -262,24 +263,24 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                                 await marcarComoLeida(notif.id);
                               }
                             }}
-                            className={`px-4 py-3 border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors ${
+                            className={`px-3 sm:px-4 py-2.5 sm:py-3 border-b border-slate-100 hover:bg-slate-50 active:bg-slate-100 cursor-pointer transition-colors ${
                               !notif.leida ? 'bg-blue-50/50' : ''
                             }`}
                           >
-                            <div className="flex gap-3">
-                              <div className={`w-10 h-10 rounded-lg ${getBgColorTipo(notif.tipo)} flex items-center justify-center flex-shrink-0`}>
-                                <Icono className={`w-5 h-5 ${getColorTipo(notif.tipo)}`} />
+                            <div className="flex gap-2 sm:gap-3">
+                              <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg ${getBgColorTipo(notif.tipo)} flex items-center justify-center flex-shrink-0`}>
+                                <Icono className={`w-4 h-4 sm:w-5 sm:h-5 ${getColorTipo(notif.tipo)}`} />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-start justify-between gap-2">
-                                  <p className={`text-sm ${!notif.leida ? 'font-semibold text-slate-900' : 'text-slate-700'} line-clamp-2`}>
+                                  <p className={`text-xs sm:text-sm ${!notif.leida ? 'font-semibold text-slate-900' : 'text-slate-700'} line-clamp-2 leading-relaxed`}>
                                     {notif.mensaje}
                                   </p>
                                   {!notif.leida && (
-                                    <Circle className="w-2 h-2 text-primary fill-primary flex-shrink-0 mt-1.5" />
+                                    <Circle className="w-2 h-2 text-primary fill-primary flex-shrink-0 mt-1" />
                                   )}
                                 </div>
-                                <p className="text-xs text-slate-500 mt-1">
+                                <p className="text-[10px] sm:text-xs text-slate-500 mt-1">
                                   {formatFecha(notif.creado_el)}
                                 </p>
                               </div>
@@ -289,8 +290,8 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                       })}
                     </>
                   ) : (
-                    <div className="py-12 text-center">
-                      <Bell className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                    <div className="py-8 sm:py-12 text-center px-4">
+                      <Bell className="w-10 h-10 sm:w-12 sm:h-12 text-slate-300 mx-auto mb-3" />
                       <p className="text-sm font-medium text-slate-600">No hay notificaciones</p>
                       <p className="text-xs text-slate-500 mt-1">Cuando recibas notificaciones aparecerán aquí</p>
                     </div>
@@ -299,17 +300,17 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
 
                 {/* Footer - Ver todas */}
                 {notificaciones && notificaciones.length > 0 && (
-                  <div className="px-4 py-3 border-t border-slate-100 bg-slate-50">
+                  <div className="px-3 sm:px-4 py-2.5 sm:py-3 border-t border-slate-100 bg-slate-50">
                     <button
                       onClick={() => {
                         setIsNotifDropdownOpen(false);
                         const roleKey = user?.rol?.clave || 'propietario';
                         router.push(`/${roleKey}/notificaciones`);
                       }}
-                      className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+                      className="w-full flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold text-primary hover:text-primary/80 active:text-primary/60 transition-colors py-1"
                     >
                       Ver todas las notificaciones
-                      <ArrowRight className="w-4 h-4" />
+                      <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
                     </button>
                   </div>
                 )}
