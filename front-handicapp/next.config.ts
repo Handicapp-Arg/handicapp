@@ -87,7 +87,8 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   // Silence workspace root inference warning when using a monorepo-like structure
-  outputFileTracingRoot: path.resolve(__dirname, ".."),
+  // Ajustado para Vercel - usar el directorio actual si hay problemas de path
+  outputFileTracingRoot: path.resolve(__dirname),
   
   // Performance optimizations
   compiler: {
@@ -175,8 +176,8 @@ const nextConfig: NextConfig = {
     // Optimize CSS
     optimizeCss: true,
     
-    // ⚡ FIX: Deshabilitar generación de archivos de referencia de cliente innecesarios
-    clientRouterFilter: false,
+    // ⚡ FIX: Habilitar client router filter para asegurar generación correcta de manifests
+    // clientRouterFilter: false, // Removido - Next.js debe generar los manifests correctamente
   },
   
   // 🚀 MEJORA: Modularize imports para tree-shaking agresivo
