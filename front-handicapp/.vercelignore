@@ -1,6 +1,7 @@
 # Archivos y carpetas que Vercel debe ignorar
 .next/cache/
 .next/server/pages-manifest.json
+.next/server/**/*client-reference-manifest.js
 node_modules/
 .env.local
 .env.*.local
