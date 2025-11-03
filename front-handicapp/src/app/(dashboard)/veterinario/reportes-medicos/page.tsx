@@ -68,12 +68,12 @@ export default function VeterinarioReportesMedicosPage() {
 
   const stats = useMemo(() => {
     if (!reporte) return { consultas: 0, tratamientos: 0, vacunas: 0, total: 0 };
-    
+    const historial = reporte.historial;
     return {
-      consultas: reporte.consultas?.length || 0,
-      tratamientos: reporte.tratamientos?.length || 0,
-      vacunas: reporte.vacunaciones?.length || 0,
-      total: (reporte.consultas?.length || 0) + (reporte.tratamientos?.length || 0) + (reporte.vacunaciones?.length || 0)
+      consultas: historial.consultas?.length || 0,
+      tratamientos: historial.tratamientos?.length || 0,
+      vacunas: historial.vacunaciones?.length || 0,
+      total: (historial.consultas?.length || 0) + (historial.tratamientos?.length || 0) + (historial.vacunaciones?.length || 0)
     };
   }, [reporte]);
 
@@ -267,14 +267,14 @@ export default function VeterinarioReportesMedicosPage() {
                   ) : (
                     <div className="space-y-6">
                       {/* Consultas */}
-                      {reporte.consultas && reporte.consultas.length > 0 && (
+                      {reporte.historial.consultas && reporte.historial.consultas.length > 0 && (
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
                             <Stethoscope className="w-5 h-5 text-purple-600" />
-                            Consultas ({reporte.consultas.length})
+                            Consultas ({reporte.historial.consultas.length})
                           </h3>
                           <div className="space-y-2">
-                            {reporte.consultas.slice(0, 5).map((consulta: any, idx: number) => (
+                            {reporte.historial.consultas.slice(0, 5).map((consulta: any, idx: number) => (
                               <div key={idx} className="border border-gray-200 rounded-lg p-3">
                                 <div className="flex items-start justify-between">
                                   <div>
@@ -292,18 +292,18 @@ export default function VeterinarioReportesMedicosPage() {
                       )}
 
                       {/* Tratamientos */}
-                      {reporte.tratamientos && reporte.tratamientos.length > 0 && (
+                      {reporte.historial.tratamientos && reporte.historial.tratamientos.length > 0 && (
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                            <Heart className="w-5 h-5 text-purple-600" />
-                            Tratamientos ({reporte.tratamientos.length})
+                            <Heart className="w-5 h-5 text-amber-600" />
+                            Tratamientos ({reporte.historial.tratamientos.length})
                           </h3>
                           <div className="space-y-2">
-                            {reporte.tratamientos.slice(0, 5).map((tratamiento: any, idx: number) => (
+                            {reporte.historial.tratamientos.slice(0, 5).map((tratamiento: any, idx: number) => (
                               <div key={idx} className="border border-gray-200 rounded-lg p-3">
                                 <div className="flex items-start justify-between">
                                   <div>
-                                    <p className="font-medium text-gray-900">{tratamiento.titulo}</p>
+                                    <p className="font-medium text-gray-900">{tratamiento.nombre || 'Tratamiento'}</p>
                                     <p className="text-sm text-gray-600 mt-1">{tratamiento.descripcion || 'Sin descripción'}</p>
                                     <Badge variant="outline" className="mt-2">{tratamiento.estado}</Badge>
                                   </div>
@@ -318,18 +318,18 @@ export default function VeterinarioReportesMedicosPage() {
                       )}
 
                       {/* Vacunaciones */}
-                      {reporte.vacunaciones && reporte.vacunaciones.length > 0 && (
+                      {reporte.historial.vacunaciones && reporte.historial.vacunaciones.length > 0 && (
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                            <TrendingUp className="w-5 h-5 text-purple-600" />
-                            Vacunaciones ({reporte.vacunaciones.length})
+                            <TrendingUp className="w-5 h-5 text-green-600" />
+                            Vacunaciones ({reporte.historial.vacunaciones.length})
                           </h3>
                           <div className="space-y-2">
-                            {reporte.vacunaciones.slice(0, 5).map((vacuna: any, idx: number) => (
+                            {reporte.historial.vacunaciones.slice(0, 5).map((vacuna: any, idx: number) => (
                               <div key={idx} className="border border-gray-200 rounded-lg p-3">
                                 <div className="flex items-start justify-between">
                                   <div>
-                                    <p className="font-medium text-gray-900">{vacuna.vacuna || 'Vacuna'}</p>
+                                    <p className="font-medium text-gray-900">{vacuna.vacuna || 'Vacunación'}</p>
                                     <p className="text-sm text-gray-600 mt-1">Lote: {vacuna.lote || 'N/A'}</p>
                                   </div>
                                   <span className="text-xs text-gray-500">

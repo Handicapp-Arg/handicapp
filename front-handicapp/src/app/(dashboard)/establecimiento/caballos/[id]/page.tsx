@@ -158,15 +158,11 @@ export default function CaballoDetallePage() {
       {/* Content */}
       <div className="space-y-6">
         {activeTab === "info" && (
-          <CaballoFicha caballo={caballo} pedigree={pedigree} />
+          <CaballoFicha caballo={caballo} pedigree={pedigree} origin="establecimiento" />
         )}
         
         {activeTab === "documentos" && (
-          <AdjuntosList
-            entidadTipo="caballo"
-            entidadId={caballo.id}
-            readOnly={true}
-          />
+          <AdjuntosList caballoId={caballo.id} />
         )}
         
         {activeTab === "propietarios" && (
