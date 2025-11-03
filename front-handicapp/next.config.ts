@@ -82,8 +82,12 @@ const nextConfig: NextConfig = {
     // Don't fail production builds on ESLint errors. We'll fix them progressively.
     ignoreDuringBuilds: true,
   },
+  typescript: {
+    // ⚠️ Permitir builds en producción con errores de TypeScript (solo temporalmente)
+    ignoreBuildErrors: false,
+  },
   // Silence workspace root inference warning when using a monorepo-like structure
-  outputFileTracingRoot: path.resolve(__dirname, ".."),
+  outputFileTracingRoot: path.resolve(__dirname, "..")
   
   // Performance optimizations
   compiler: {
@@ -136,6 +140,15 @@ const nextConfig: NextConfig = {
         compression: 'gzip',
       };
     }
+    
+    // ⚡ FIX: Prevenir errores de módulos faltantes en Vercel
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
+    };
+    
     return config;
   },
   
@@ -161,6 +174,9 @@ const nextConfig: NextConfig = {
     
     // Optimize CSS
     optimizeCss: true,
+    
+    // ⚡ FIX: Deshabilitar generación de archivos de referencia de cliente innecesarios
+    clientRouterFilter: false,
   },
   
   // 🚀 MEJORA: Modularize imports para tree-shaking agresivo
