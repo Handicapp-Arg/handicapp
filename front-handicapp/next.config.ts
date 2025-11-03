@@ -12,7 +12,7 @@ const withPWA = withPWAInit({
   sw: "service-worker.js",
   workboxOptions: {
     disableDevLogs: true,
-    skipWaiting: true, // Moved here
+    skipWaiting: true,
     runtimeCaching: [
       {
         urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
@@ -21,7 +21,7 @@ const withPWA = withPWAInit({
           cacheName: "google-fonts",
           expiration: {
             maxEntries: 4,
-            maxAgeSeconds: 365 * 24 * 60 * 60, // 1 year
+            maxAgeSeconds: 365 * 24 * 60 * 60,
           },
         },
       },
@@ -32,7 +32,7 @@ const withPWA = withPWAInit({
           cacheName: "images",
           expiration: {
             maxEntries: 64,
-            maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+            maxAgeSeconds: 30 * 24 * 60 * 60,
           },
         },
       },
@@ -44,7 +44,7 @@ const withPWA = withPWAInit({
           networkTimeoutSeconds: 10,
           expiration: {
             maxEntries: 32,
-            maxAgeSeconds: 24 * 60 * 60, // 1 day
+            maxAgeSeconds: 24 * 60 * 60,
           },
           cacheableResponse: {
             statuses: [0, 200],
@@ -58,7 +58,7 @@ const withPWA = withPWAInit({
           cacheName: "next-static",
           expiration: {
             maxEntries: 64,
-            maxAgeSeconds: 365 * 24 * 60 * 60, // 1 year
+            maxAgeSeconds: 365 * 24 * 60 * 60,
           },
         },
       },
@@ -69,7 +69,7 @@ const withPWA = withPWAInit({
           cacheName: "next-images",
           expiration: {
             maxEntries: 64,
-            maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+            maxAgeSeconds: 30 * 24 * 60 * 60,
           },
         },
       },
@@ -79,28 +79,18 @@ const withPWA = withPWAInit({
 
 const nextConfig: NextConfig = {
   eslint: {
-    // Don't fail production builds on ESLint errors. We'll fix them progressively.
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // ⚠️ Permitir builds en producción con errores de TypeScript (solo temporalmente)
     ignoreBuildErrors: false,
   },
-  // Silence workspace root inference warning when using a monorepo-like structure
-  outputFileTracingRoot: path.resolve(__dirname, ".."),
   
-  // Output standalone para optimizar Vercel
-  output: 'standalone',
-  
-  // Performance optimizations
   compiler: {
-    // Remove console logs in production
     removeConsole: process.env.NODE_ENV === "production" ? {
       exclude: ["error", "warn"],
     } : false,
   },
-  
-  // Optimize images
+
   images: {
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
@@ -125,45 +115,23 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  
-  // Webpack optimizations for faster dev builds
+
   webpack: (config, { dev, isServer }) => {
-    if (dev && !isServer) {
-      // 🚀 MEJORA: Reducir module resolution time
-      config.resolve.symlinks = false;
-      
-      // 🚀 MEJORA: Optimizar cache del filesystem
-      config.cache = {
-        type: 'filesystem',
-        buildDependencies: {
-          config: [__filename],
-        },
-        // 🆕 Aumentar memoria del cache
-        maxMemoryGenerations: 10,
-        compression: 'gzip',
+    // Fix para módulos que solo funcionan en servidor
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
       };
     }
-    
-    // ⚡ FIX: Prevenir errores de módulos faltantes en Vercel
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      fs: false,
-      net: false,
-      tls: false,
-    };
-    
     return config;
   },
-  
+
   experimental: {
-    // Activar server actions si se usan más adelante
     serverActions: { allowedOrigins: ["*"] },
-    
-    // ⚡ FIX VERCEL: Desactivar generación de manifiestos problemáticos
-    clientRouterFilter: false,
-    optimisticClientCache: false,
-    
-    // 🚀 MEJORA: Optimize package imports - TREE SHAKING + Barrel Exports
+    optimizeCss: true,
     optimizePackageImports: [
       "@tanstack/react-query",
       "lucide-react",
@@ -174,16 +142,9 @@ const nextConfig: NextConfig = {
       "@radix-ui/react-dropdown-menu",
       "@radix-ui/react-slot",
       "@radix-ui/react-tabs",
-      "@/lib/hooks",              // 🆕 Optimizar hooks (ahorra ~2s compilación)
-      "@/lib/services",           // 🆕 Optimizar services
-      "@/components/ui",          // 🆕 Optimizar UI components
     ],
-    
-    // Optimize CSS
-    optimizeCss: true,
   },
-  
-  // 🚀 MEJORA: Modularize imports para tree-shaking agresivo
+
   modularizeImports: {
     'lucide-react': {
       transform: 'lucide-react/dist/esm/icons/{{kebabCase member}}',
@@ -195,26 +156,13 @@ const nextConfig: NextConfig = {
       transform: 'lodash/{{member}}',
     },
   },
-  
-  // Turbopack configuration (nueva sintaxis)
-  turbopack: {
-    resolveAlias: {
-      // Reduce module resolution
-      underscore: 'lodash',
-    },
-  },
 };
 
 // Sentry configuration options
 const sentryWebpackPluginOptions = {
-  // For all available options, see:
-  // https://github.com/getsentry/sentry-webpack-plugin#options
-
-  // Suppresses source map uploading logs during build
   silent: true,
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
 };
 
-// Wrap Next.js config with PWA and Sentry
 export default withSentryConfig(withPWA(nextConfig), sentryWebpackPluginOptions);
