@@ -84,7 +84,7 @@ const nextConfig: NextConfig = {
   },
   // Silence workspace root inference warning when using a monorepo-like structure
   outputFileTracingRoot: path.resolve(__dirname, ".."),
-  
+
   // Performance optimizations
   compiler: {
     // Remove console logs in production
