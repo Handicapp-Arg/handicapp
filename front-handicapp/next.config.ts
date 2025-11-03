@@ -87,8 +87,10 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   // Silence workspace root inference warning when using a monorepo-like structure
-  // Ajustado para Vercel - usar el directorio actual si hay problemas de path
-  outputFileTracingRoot: path.resolve(__dirname),
+  outputFileTracingRoot: path.resolve(__dirname, ".."),
+  
+  // Output standalone para optimizar Vercel
+  output: 'standalone',
   
   // Performance optimizations
   compiler: {
@@ -157,6 +159,10 @@ const nextConfig: NextConfig = {
     // Activar server actions si se usan más adelante
     serverActions: { allowedOrigins: ["*"] },
     
+    // ⚡ FIX VERCEL: Desactivar generación de manifiestos problemáticos
+    clientRouterFilter: false,
+    optimisticClientCache: false,
+    
     // 🚀 MEJORA: Optimize package imports - TREE SHAKING + Barrel Exports
     optimizePackageImports: [
       "@tanstack/react-query",
@@ -175,9 +181,6 @@ const nextConfig: NextConfig = {
     
     // Optimize CSS
     optimizeCss: true,
-    
-    // ⚡ FIX: Habilitar client router filter para asegurar generación correcta de manifests
-    // clientRouterFilter: false, // Removido - Next.js debe generar los manifests correctamente
   },
   
   // 🚀 MEJORA: Modularize imports para tree-shaking agresivo
