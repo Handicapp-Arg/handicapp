@@ -19,10 +19,9 @@ const startServer = async (): Promise<void> => {
     websocketService.initialize(httpServer);
     logger.info('🔌 WebSocket server initialized');
     
-    // Use host 0.0.0.0 if in production, otherwise use config.host
-    const listenHost = process.env['NODE_ENV'] === 'production' ? '0.0.0.0' : config.host;
-    // Use Render's PORT env var if available, otherwise config.port
-    const listenPort = process.env['PORT'] ? Number(process.env['PORT']) : config.port;
+    // Use Render's PORT env var if available, otherwise fallback to 3000
+    const listenPort = process.env['PORT'] ? Number(process.env['PORT']) : 3000;
+    const listenHost = '0.0.0.0';
 
     // Start HTTP server
     httpServer.listen(listenPort, listenHost, () => {
