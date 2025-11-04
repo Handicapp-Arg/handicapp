@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { config } from '../config/config';
 import { logger } from '../utils/logger';
 import fs from 'fs';
@@ -61,8 +62,28 @@ function getTransporter() {
 }
 
 export async function sendEmail({ to, subject, html }: EmailParams) {
-  const tx = getTransporter();
   const from = `${config.email.from.name} <${config.email.from.email || 'no-reply@handicapp.local'}>`;
+  
+  // Priorizar Resend API si está configurada (evita bloqueos SMTP en Render)
+  if (config.email.smtp.user === 'resend' && config.email.smtp.pass) {
+    try {
+      const resend = new Resend(config.email.smtp.pass);
+      const result = await resend.emails.send({
+        from: config.email.from.email || 'onboarding@resend.dev',
+        to,
+        subject,
+        html,
+      });
+      logger.info(`Email enviado via Resend a ${to} - id: ${result.data?.id}`);
+      return { messageId: result.data?.id };
+    } catch (error) {
+      logger.error('Error enviando email via Resend:', error);
+      throw error;
+    }
+  }
+  
+  // Fallback a SMTP tradicional
+  const tx = getTransporter();
   if (!tx) {
     // No-op en desarrollo si SMTP no está configurado
     logger.info(`Email simulado a ${to} | ${subject}`);
