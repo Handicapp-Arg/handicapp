@@ -1,24 +1,10 @@
 {
   "buildCommand": "pnpm run build",
-  "outputDirectory": ".next",
   "installCommand": "pnpm install",
   "framework": "nextjs",
-  "regions": ["gru1"],
   "build": {
     "env": {
-      "NEXT_TELEMETRY_DISABLED": "1",
-      "NODE_OPTIONS": "--max-old-space-size=4096",
-      "SKIP_ENV_VALIDATION": "1"
+      "NEXT_TELEMETRY_DISABLED": "1"
     }
-  },
-  "functions": {
-    "app/**/*.tsx": {
-      "maxDuration": 30
-    },
-    "app/**/*.ts": {
-      "maxDuration": 30
-    }
-  },
-  "cleanUrls": true,
-  "trailingSlash": false
+  }
 }
