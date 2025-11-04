@@ -18,10 +18,24 @@ app.use(cookieParser()); // Parse cookies
 import cors from 'cors';
 
 app.use(cors({
-  origin: ['*'],
+  origin: (origin, callback) => {
+    // Permitir requests sin origin (como Postman) o desde localhost en desarrollo
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://handicapp.vercel.app',
+      'https://handicapp-git-main-handicapps-projects.vercel.app'
+    ];
+    
+    if (!origin || allowedOrigins.includes(origin) || config.nodeEnv === 'development') {
+      callback(null, true);
+    } else {
+      callback(null, true); // Permitir todos en desarrollo
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  credentials: true, // Importante: permite envío de cookies
+  credentials: true,
   optionsSuccessStatus: 200
 }));
 
