@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
+import { LOGOS } from "@/lib/constants/logos";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
@@ -15,7 +16,7 @@ export function Navbar() {
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
               <Image
-                src="/logos/logo-icon-brown.png"
+                src={LOGOS.ICON_BROWN}
                 alt="HandicApp"
                 width={32}
                 height={32}

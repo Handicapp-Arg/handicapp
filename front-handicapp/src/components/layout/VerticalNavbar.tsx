@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { LOGOS } from '@/lib/constants/logos';
 import { 
   Home,
   Users,
@@ -169,14 +170,14 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
               {!isCollapsed ? (
                 <div className="flex items-center gap-3">
                   <Image 
-                    src="/logos/logo-icon-white.png" 
+                    src={LOGOS.ICON_WHITE}
                     alt="HandicApp Icon" 
                     width={48} 
                     height={48}
                     className="object-contain flex-shrink-0"
                   />
                   <Image 
-                    src="/logos/logo-text-brown.png" 
+                    src={LOGOS.TEXT_BROWN}
                     alt="HandicApp" 
                     width={130} 
                     height={28}
@@ -185,7 +186,7 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
                 </div>
               ) : (
                 <Image 
-                  src="/logos/logo-icon-white.png" 
+                  src={LOGOS.ICON_WHITE}
                   alt="HandicApp" 
                   width={42} 
                   height={42}
@@ -254,14 +255,14 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
           <div className="flex items-center justify-between h-full px-4">
             <div className="flex items-center gap-3">
               <Image 
-                src="/logos/logo-icon-white.png" 
+                src={LOGOS.ICON_WHITE}
                 alt="HandicApp Icon" 
                 width={48} 
                 height={48}
                 className="object-contain flex-shrink-0"
               />
               <Image 
-                src="/logos/logo-text-brown.png" 
+                src={LOGOS.TEXT_BROWN}
                 alt="HandicApp" 
                 width={130} 
                 height={28}

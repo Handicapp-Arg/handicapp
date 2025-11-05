@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import ApiClient from '@/lib/services/apiClient';
+import { LOGOS } from '@/lib/constants/logos';
 
 /**
  * Componente de protección de rutas basado en roles
@@ -82,7 +83,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
             </div>
             <div className="relative bg-[#0f172a] w-24 h-24 rounded-2xl flex items-center justify-center mx-auto shadow-xl">
               <Image 
-                src="/logos/logo-icon-white.png" 
+                src={LOGOS.ICON_WHITE}
                 alt="HandicApp" 
                 width={64}
                 height={64}
@@ -111,7 +112,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
             </div>
             <div className="relative bg-[#0f172a] w-24 h-24 rounded-2xl flex items-center justify-center mx-auto shadow-xl">
               <Image 
-                src="/logos/logo-icon-white.png" 
+                src={LOGOS.ICON_WHITE}
                 alt="HandicApp" 
                 width={64}
                 height={64}

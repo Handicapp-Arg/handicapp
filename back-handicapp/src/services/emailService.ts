@@ -2,8 +2,6 @@ import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
 import { config } from '../config/config';
 import { logger } from '../utils/logger';
-import fs from 'fs';
-import path from 'path';
 
 type EmailParams = {
   to: string;
@@ -12,36 +10,9 @@ type EmailParams = {
 };
 
 let transporter: nodemailer.Transporter | null = null;
-let embeddedLogoDataUri: string | null = null;
 
-function loadEmbeddedLogo() {
-  if (embeddedLogoDataUri !== null) return embeddedLogoDataUri;
-  // Permite override por variable de entorno (futura) EMAIL_LOGO_PATH
-  const customPath = process.env['EMAIL_LOGO_PATH'];
-  const candidatePaths = [
-    customPath,
-    // Priorizar logo blanco para headers oscuros
-    path.resolve(process.cwd(), '..', 'front-handicapp', 'public', 'logos', 'logo-icon-white.png'),
-    path.resolve(process.cwd(), '..', 'front-handicapp', 'public', 'logos', 'logo-full-white.png'),
-    // Ruta relativa intentando llegar al front (monorepo) en desarrollo
-    path.resolve(process.cwd(), '..', 'front-handicapp', 'public', 'logos', 'logo-icon-brown.png'),
-    path.resolve(process.cwd(), 'public', 'logo-icon-brown.png'),
-  ].filter(Boolean) as string[];
-  for (const p of candidatePaths) {
-    try {
-      if (fs.existsSync(p)) {
-        const data = fs.readFileSync(p);
-        const b64 = data.toString('base64');
-        embeddedLogoDataUri = `data:image/png;base64,${b64}`;
-        break;
-      }
-    } catch (e) {
-      // Continuar con siguiente
-    }
-  }
-  if (!embeddedLogoDataUri) embeddedLogoDataUri = ''; // Evita reintentos
-  return embeddedLogoDataUri;
-}
+// URL del logo desde Cloudinary
+const LOGO_URL = 'https://res.cloudinary.com/dh2m9ychv/image/upload/v1762370535/logo-icon-white_fbeduu.png';
 
 function getTransporter() {
   if (transporter) return transporter;
@@ -124,10 +95,8 @@ export function renderBrandedEmail({ title, intro, actionText, actionUrl, footer
   const btnText = '#ffffff';       // blanco
   // const btnHover = '#0f172a';      // slate-900 (Removed unused variable)
 
-  const logo = loadEmbeddedLogo();
-  const logoTag = logo
-    ? `<img src="${logo}" alt="HandicApp" width="64" height="64" style="display:block;margin:0 auto;width:64px;height:64px;object-fit:contain;" />`
-    : `<div style="width:64px;height:64px;display:inline-flex;align-items:center;justify-content:center;border-radius:12px;background:rgba(255,255,255,0.1);color:${accent};font-weight:800;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:24px;">H</div>`;
+  // Usar logo de Cloudinary
+  const logoTag = `<img src="${LOGO_URL}" alt="HandicApp" width="64" height="64" style="display:block;margin:0 auto;width:64px;height:64px;object-fit:contain;" />`;
 
   // Template moderno con diseño limpio
   return `
