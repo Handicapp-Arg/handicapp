@@ -57,6 +57,10 @@ const envSchema = z.object({
   SMTP_PASS: z.string().optional(),
   SMTP_FROM_EMAIL: z.string().email().optional(),
   SMTP_FROM_NAME: z.string().optional(),
+  // Cloudinary (para almacenamiento de imágenes)
+  CLOUDINARY_CLOUD_NAME: z.string().optional(),
+  CLOUDINARY_API_KEY: z.string().optional(),
+  CLOUDINARY_API_SECRET: z.string().optional(),
   
   // API
   API_VERSION: z.string().default('v1'),
@@ -141,6 +145,12 @@ export const config = {
     from: {
       email: env.SMTP_FROM_EMAIL,
       name: env.SMTP_FROM_NAME || 'HandicApp',
-    }
-  }
+    },
+  },
+  
+  cloudinary: {
+    cloudName: env.CLOUDINARY_CLOUD_NAME,
+    apiKey: env.CLOUDINARY_API_KEY,
+    apiSecret: env.CLOUDINARY_API_SECRET,
+  },
 } as const;
