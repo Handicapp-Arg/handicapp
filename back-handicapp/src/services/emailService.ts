@@ -68,16 +68,31 @@ export async function sendEmail({ to, subject, html }: EmailParams) {
   if (config.email.smtp.user === 'resend' && config.email.smtp.pass) {
     try {
       const resend = new Resend(config.email.smtp.pass);
+      const fromEmail = config.email.from.email || 'onboarding@resend.dev';
+      
+      logger.info(`📧 Enviando email via Resend - From: ${fromEmail}, To: ${to}, Subject: ${subject}`);
+      
       const result = await resend.emails.send({
-        from: config.email.from.email || 'onboarding@resend.dev',
+        from: fromEmail,
         to,
         subject,
         html,
       });
-      logger.info(`Email enviado via Resend a ${to} - id: ${result.data?.id}`);
-      return { messageId: result.data?.id };
-    } catch (error) {
-      logger.error('Error enviando email via Resend:', error);
+      
+      // Resend devuelve { data: { id: 'xxx' }, error: null } o { data: null, error: {...} }
+      if (result.error) {
+        logger.error('❌ Error de Resend:', result.error);
+        throw new Error(`Resend error: ${result.error.message || JSON.stringify(result.error)}`);
+      }
+      
+      logger.info(`✅ Email enviado via Resend a ${to} - ID: ${result.data?.id || 'N/A'}`);
+      return { messageId: result.data?.id || 'resend-sent' };
+    } catch (error: any) {
+      logger.error('❌ Error enviando email via Resend:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+      });
       throw error;
     }
   }
