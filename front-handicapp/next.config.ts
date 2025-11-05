@@ -1,7 +1,8 @@
 ﻿import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
-  outputFileTracing: false,
+  outputFileTracingRoot: path.join(__dirname, "../../"),
   
   images: {
     remotePatterns: [
