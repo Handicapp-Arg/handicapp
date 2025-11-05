@@ -4,6 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useState, useMemo } from 'react';
 import ApiClient from '@/lib/services/apiClient';
 import { useToaster } from '@/components/ui/toaster';
+import { LOGOS } from '@/lib/constants/logos';
 
 export default function ResetPasswordPage() {
   const params = useSearchParams();
@@ -136,10 +137,10 @@ export default function ResetPasswordPage() {
             {/* Logo Icon */}
             <div className="mb-8">
               <img
-                src="/logos/logo-icon-white.png"
+                src={LOGOS.ICON_WHITE}
                 alt="HandicApp"
                 className="h-32 w-32 object-contain"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logos/logo-full-white.png'; }}
+                onError={(e) => { (e.currentTarget as HTMLImageElement).src = LOGOS.FULL_WHITE; }}
               />
             </div>
             

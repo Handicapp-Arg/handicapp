@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import ApiClient from '@/lib/services/apiClient';
 import { useToaster } from '@/components/ui/toaster';
+import { LOGOS } from '@/lib/constants/logos';
 
 export default function VerifyPage() {
   const params = useSearchParams();
@@ -36,7 +37,7 @@ export default function VerifyPage() {
     <div className="min-h-screen w-full bg-gradient-to-br from-[#3C2013] via-[#2A1609] to-[#1A0E06] flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md mx-auto text-center">
         <div className="inline-flex items-center justify-center w-24 h-24 bg-white/10 backdrop-blur-xl rounded-2xl mb-6">
-          <Image src="/logos/logo-icon-white.png" alt="HandicApp" width={80} height={80} />
+          <Image src={LOGOS.ICON_WHITE} alt="HandicApp" width={80} height={80} />
         </div>
         {status === 'pending' && <p className="text-white/80">Verificando tu cuenta...</p>}
         {status === 'ok' && <p className="text-emerald-200">¡Cuenta verificada!</p>}

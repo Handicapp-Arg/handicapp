@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import ApiClient from '@/lib/services/apiClient';
+import { LOGOS } from '@/lib/constants/logos';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -242,10 +243,10 @@ export default function RegisterPage() {
             {/* Logo Icon */}
             <div className="mb-8">
               <img
-                src="/logos/logo-icon-white.png"
+                src={LOGOS.ICON_WHITE}
                 alt="HandicApp"
                 className="h-32 w-32 object-contain"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logos/logo-full-white.png'; }}
+                onError={(e) => { (e.currentTarget as HTMLImageElement).src = LOGOS.FULL_WHITE; }}
               />
             </div>
             

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useToaster } from '@/components/ui/toaster';
 import ApiClient from '@/lib/services/apiClient';
+import { LOGOS } from '@/lib/constants/logos';
 
 export default function HomePage() {
   const router = useRouter();
@@ -160,7 +161,7 @@ export default function HomePage() {
                   <div className="text-center space-y-4 lg:space-y-6">
                     <div className="w-48 sm:w-56 lg:w-64 mx-auto">
                       <Image
-                        src="/logos/logo-full-white.png"
+                        src={LOGOS.FULL_WHITE}
                         alt="HandicApp Logo"
                         width={240}
                         height={120}

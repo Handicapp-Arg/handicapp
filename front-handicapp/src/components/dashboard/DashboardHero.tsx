@@ -7,6 +7,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronRight, LucideIcon } from 'lucide-react';
+import { LOGOS } from '@/lib/constants/logos';
 
 interface CTAButton {
   label: string;
@@ -158,7 +159,7 @@ export function DashboardHero({
                     <div className="relative">
                       <div className={`absolute inset-0 ${colors.orb1} rounded-full blur-3xl`}></div>
                       <Image 
-                        src="/logos/logo-icon-white.png" 
+                        src={LOGOS.ICON_WHITE}
                         alt="HandicApp Logo" 
                         width={180} 
                         height={180}
