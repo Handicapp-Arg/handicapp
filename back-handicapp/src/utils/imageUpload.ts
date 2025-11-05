@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import { config } from '../config/config';
 import { logger } from './logger';
-import sharp from 'sharp';
+import { optimizeImageToWebP, cleanupTempFile } from './imageOptimize';
 
 // Tipos
 export interface CloudinaryUploadResult {
@@ -52,65 +52,7 @@ function getCloudinaryConfig() {
 }
 
 /**
- * Optimiza y convierte una imagen a WebP usando Sharp
- * @param inputPath - Ruta del archivo de entrada
- * @param outputPath - Ruta donde guardar el archivo optimizado (opcional, si no se proporciona se crea temporal)
- * @returns Buffer optimizado y ruta del archivo temporal (si se creó)
- */
-async function optimizeImageToWebP(
-  inputPath: string,
-  outputPath?: string
-): Promise<{ buffer: Buffer; tempPath?: string }> {
-  try {
-    // Leer y optimizar la imagen
-    const buffer = await sharp(inputPath)
-      .webp({ 
-        quality: 85,        // Calidad WebP (0-100)
-        effort: 4,          // Esfuerzo de compresión (0-6, más alto = mejor compresión pero más lento)
-      })
-      .resize(1920, 1920, {  // Limitar tamaño máximo
-        fit: 'inside',
-        withoutEnlargement: true,
-      })
-      .toBuffer();
-
-    const result: { buffer: Buffer; tempPath?: string } = { buffer };
-
-    // Guardar archivo temporal si no se proporcionó outputPath
-    if (!outputPath) {
-      const tempPath = `${inputPath}.optimized.webp`;
-      await fs.writeFile(tempPath, buffer);
-      result.tempPath = tempPath;
-    }
-
-    const originalSize = (await fs.stat(inputPath)).size;
-    logger.info('Imagen optimizada', {
-      original: inputPath,
-      originalSize,
-      optimizedSize: buffer.length,
-      reduction: `${((1 - buffer.length / originalSize) * 100).toFixed(1)}%`,
-    });
-
-    return result;
-  } catch (error: any) {
-    logger.error('Error optimizando imagen', { error: error.message, inputPath });
-    throw error;
-  }
-}
-
-/**
- * Limpia archivos temporales
- */
-async function cleanupTempFile(filePath: string): Promise<void> {
-  try {
-    await fs.unlink(filePath);
-  } catch (error) {
-    // Ignorar errores al eliminar archivos temporales
-  }
-}
-
-/**
- * Sube una imagen a Cloudinary (optimizada a WebP)
+ * Sube una imagen a Cloudinary (optimizándola a WebP por defecto)
  */
 export async function uploadImageToCloudinary(
   filePath: string,
