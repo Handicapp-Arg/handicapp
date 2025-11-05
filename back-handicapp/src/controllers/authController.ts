@@ -61,8 +61,8 @@ export class AuthController {
         // Configurar access token como httpOnly cookie
         res.cookie('auth-token', result.data.accessToken, {
           httpOnly: true,
-          secure: config.nodeEnv === 'production',
-          sameSite: config.nodeEnv === 'production' ? 'strict' : 'lax',
+          secure: true, // Siempre true en producción
+          sameSite: 'none', // Necesario para cross-site (Vercel + Render)
           maxAge: 60 * 60 * 1000, // 1 hora
           path: '/'
         });
@@ -70,8 +70,8 @@ export class AuthController {
         // Configurar refresh token como httpOnly cookie
         res.cookie('refresh-token', result.data.refreshToken, {
           httpOnly: true,
-          secure: config.nodeEnv === 'production',
-          sameSite: config.nodeEnv === 'production' ? 'strict' : 'lax',
+          secure: true, // Siempre true en producción
+          sameSite: 'none', // Necesario para cross-site (Vercel + Render)
           maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
           path: '/'
         });
@@ -113,8 +113,8 @@ export class AuthController {
         // Configurar nuevo access token como httpOnly cookie
         res.cookie('auth-token', result.data.accessToken, {
           httpOnly: true,
-          secure: config.nodeEnv === 'production',
-          sameSite: config.nodeEnv === 'production' ? 'strict' : 'lax',
+          secure: true,
+          sameSite: 'none',
           maxAge: 60 * 60 * 1000, // 1 hora
           path: '/'
         });
@@ -122,8 +122,8 @@ export class AuthController {
         // Configurar nuevo refresh token como httpOnly cookie (rotación)
         res.cookie('refresh-token', result.data.refreshToken, {
           httpOnly: true,
-          secure: config.nodeEnv === 'production',
-          sameSite: config.nodeEnv === 'production' ? 'strict' : 'lax',
+          secure: true,
+          sameSite: 'none',
           maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
           path: '/'
         });

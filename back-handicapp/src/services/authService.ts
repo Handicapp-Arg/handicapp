@@ -67,8 +67,11 @@ export class AuthService {
       }
 
       // Crear usuario
+      const cleanEmail = email.trim().toLowerCase();
+      logger.info(`Registrando usuario con email: "${cleanEmail}"`);
+      
       const user = User.build({
-        email: email.trim().toLowerCase(),
+        email: cleanEmail,
         rol_id: role.id,
         nombre: nombre.trim(),
         apellido: apellido.trim(),
@@ -82,6 +85,8 @@ export class AuthService {
   const hash = await bcrypt.hash(String(password).trim(), salt);
   user.set('hash_contrasena', hash);
   await user.save();
+  
+  logger.info(`Usuario guardado en DB con email: "${user.email}"`);
 
       // Compose response user object (sin secretos)
       const safeUser = {
@@ -109,11 +114,14 @@ export class AuthService {
         footer: 'Equipo HandicApp',
       });
       try {
+        logger.info(`Intentando enviar email de verificación a: ${user.email}`);
         await sendEmail({ to: user.email, subject: 'Verifica tu cuenta - HandicApp', html });
+        logger.info(`Email de verificación enviado exitosamente a: ${user.email}`);
       } catch (err: any) {
-        logger.warn('Fallo enviando email de verificación (register)', {
+        logger.error('Fallo enviando email de verificación (register)', {
           email: user.email,
-          error: err?.message || String(err)
+          error: err?.message || String(err),
+          stack: err?.stack
         });
       }
 
