@@ -11,8 +11,8 @@ type EmailParams = {
 
 let transporter: nodemailer.Transporter | null = null;
 
-// URL del logo desde Cloudinary - Usando logo marrón porque se ve mejor en emails
-const LOGO_URL = 'https://res.cloudinary.com/dh2m9ychv/image/upload/v1762370535/logo-icon-brown_xjxzjl.png';
+// URL del logo desde Cloudinary - Logo blanco para header oscuro
+const LOGO_URL = 'https://res.cloudinary.com/dh2m9ychv/image/upload/v1762370535/logo-icon-white_fbeduu.png';
 
 function getTransporter() {
   if (transporter) return transporter;
@@ -88,15 +88,15 @@ export function renderBrandedEmail({ title, intro, actionText, actionUrl, footer
   const border = '#e2e8f0';        // slate-200 - bordes
   const text = '#1e293b';          // slate-800 - texto principal
   const muted = '#64748b';         // slate-500 - texto secundario
-  const headerBg = '#fef9f5';      // beige claro - header para logo marrón
-  const headerText = '#1e293b';    // texto oscuro para header claro
+  const headerBg = '#0f172a';      // slate-900 - header oscuro
+  const headerText = '#ffffff';    // blanco
   const accent = '#af936f';        // color dorado/bronceado de la marca
-  const btnBg = '#af936f';         // color marca - botón principal
+  const btnBg = '#1e293b';         // slate-800 - botón principal
   const btnText = '#ffffff';       // blanco
   // const btnHover = '#0f172a';      // slate-900 (Removed unused variable)
 
-  // Usar logo de Cloudinary
-  const logoTag = `<img src="${LOGO_URL}" alt="HandicApp" width="64" height="64" style="display:block;margin:0 auto;width:64px;height:64px;object-fit:contain;" />`;
+  // Usar logo de Cloudinary con Content-ID para mejor compatibilidad
+  const logoTag = `<img src="${LOGO_URL}" alt="HandicApp" width="64" height="64" style="display:block;margin:0 auto;width:64px;height:64px;object-fit:contain;border:0;" />`;
 
   // Template moderno con diseño limpio
   return `
