@@ -8,6 +8,7 @@ import { CaballoService } from '../services/caballoService';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '../utils/response';
 import { AuthenticatedRequest } from '../types';
+import { uploadImageBufferToCloudinary } from '../utils/imageUpload';
 
 export class CaballoController {
 
@@ -124,8 +125,30 @@ export class CaballoController {
         return;
       }
 
+      let payload = createResult.data;
+
+      // Si vino una imagen (multer memory), subir a Cloudinary y actualizar foto_url
+      const file = (req as any).file as Express.Multer.File | undefined;
+      if (file && file.buffer) {
+        const folder = `handicapp/caballos/${createResult.data.id}/main`;
+        const cloud = await uploadImageBufferToCloudinary(file.buffer, file.originalname || 'foto', {
+          folder,
+          publicId: 'main',
+          overwrite: true,
+        });
+        if (cloud.success && (cloud.secureUrl || cloud.url)) {
+          const fotoUrl = cloud.secureUrl || cloud.url || '';
+          const updated = await CaballoService.updateCaballo(createResult.data.id, { foto_url: fotoUrl }, usuarioId, req.user!.rol?.clave);
+          if (updated) {
+            payload = updated as any;
+          }
+        } else {
+          logger.warn('Subida de foto de caballo fallida, se crea el caballo sin foto_url', { id: createResult.data.id, error: cloud.error });
+        }
+      }
+
       logger.info(`Caballo creado: ${createResult.data.id} - ${createResult.data.nombre}`);
-      res.status(201).json(ApiResponse.success(createResult.data, 'Caballo creado exitosamente'));
+      res.status(201).json(ApiResponse.success(payload, 'Caballo creado exitosamente'));
 
     } catch (error: any) {
       logger.error('Error creando caballo', { error });

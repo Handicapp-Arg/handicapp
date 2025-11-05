@@ -44,6 +44,31 @@ export async function optimizeImageToWebP(
 }
 
 /**
+ * Optimiza un buffer de imagen a WebP usando Sharp
+ * @param inputBuffer - Buffer de la imagen
+ * @returns Buffer optimizado
+ */
+export async function optimizeImageBufferToWebP(inputBuffer: Buffer): Promise<Buffer> {
+  try {
+    const buffer = await sharp(inputBuffer)
+      .webp({ quality: 85, effort: 4 })
+      .resize(1920, 1920, { fit: 'inside', withoutEnlargement: true })
+      .toBuffer();
+
+    logger.info('Buffer de imagen optimizado', {
+      originalSize: inputBuffer.length,
+      optimizedSize: buffer.length,
+      reduction: `${((1 - buffer.length / inputBuffer.length) * 100).toFixed(1)}%`,
+    });
+
+    return buffer;
+  } catch (error: any) {
+    logger.error('Error optimizando buffer de imagen', { error: error.message });
+    throw error;
+  }
+}
+
+/**
  * Limpia archivos temporales (ignora errores)
  */
 export async function cleanupTempFile(filePath: string): Promise<void> {

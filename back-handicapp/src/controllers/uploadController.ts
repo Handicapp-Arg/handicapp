@@ -1,27 +1,11 @@
 import type { Request, Response } from 'express';
 import multer from 'multer';
-import fs from 'fs';
-import path from 'path';
 import { config } from '../config/config';
 import { logger } from '../utils/logger';
+import { uploadImageBufferToCloudinary } from '../utils/imageUpload';
 
-// Ensure upload directory exists
-const uploadDir = path.resolve(process.cwd(), config.upload.path);
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const base = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
-    const stamp = Date.now();
-    cb(null, `${base}_${stamp}${ext.toLowerCase()}`);
-  }
-});
+// Multer configuration for memory storage (no disk writes, direct to Cloudinary)
+const storage = multer.memoryStorage();
 
 const fileFilter: multer.Options['fileFilter'] = (_req, file, cb) => {
   const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -47,16 +31,25 @@ export class UploadController {
         return;
       }
 
-  // Build absolute public URL to access the file via static server
-  const baseUrl = `${req.protocol}://${req.get('host')}`;
-  const publicUrl = `${baseUrl}/uploads/${file.filename}`;
+      // Subir a Cloudinary desde el buffer
+      const folder = 'handicapp/uploads'; // Carpeta genérica para uploads
+      const cloud = await uploadImageBufferToCloudinary(file.buffer, file.originalname || 'image', {
+        folder,
+        overwrite: true,
+      });
 
-      logger.info('Imagen subida', { filename: file.filename, size: file.size });
+      if (!cloud.success) {
+        logger.error('Cloudinary upload failed', { error: cloud.error });
+        res.status(500).json({ success: false, message: cloud.error || 'Error al subir la imagen' });
+        return;
+      }
+
+      logger.info('Imagen subida a Cloudinary', { publicId: cloud.publicId });
 
       res.status(201).json({
         success: true,
         message: 'Imagen subida correctamente',
-        data: { url: publicUrl, filename: file.filename }
+        data: { url: cloud.secureUrl || cloud.url, publicId: cloud.publicId }
       });
     } catch (error: any) {
       logger.error('Error subiendo imagen', { error: error?.message });

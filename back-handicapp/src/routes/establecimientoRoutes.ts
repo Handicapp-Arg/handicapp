@@ -9,6 +9,7 @@ import { EstablecimientoController } from '../controllers/establecimientoControl
 import { requireAuth } from '../middleware/auth';
 import { requireRole, requirePermission, auditAccess } from '../middleware/authorization';
 import { establecimientoValidations, paramValidations, handleValidationErrors } from '../middleware/validation';
+import { uploader } from '../controllers/uploadController';
 
 const router: ExpressRouter = Router();
 
@@ -34,6 +35,7 @@ router.use(auditAccess());
 router.post(
   '/',
   requireRole('admin', 'establecimiento'),
+  uploader.single('logo'), // Aceptar logo opcional del establecimiento (campo 'logo')
   establecimientoValidations.create,
   EstablecimientoController.create
 );
@@ -69,6 +71,7 @@ router.put(
   '/:id',
   paramValidations.id,
   requirePermission('establishments:write'),
+  uploader.single('logo'), // Aceptar logo opcional del establecimiento (campo 'logo')
   establecimientoValidations.update,
   EstablecimientoController.update
 );

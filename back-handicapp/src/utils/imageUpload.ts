@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import { config } from '../config/config';
 import { logger } from './logger';
-import { optimizeImageToWebP, cleanupTempFile } from './imageOptimize';
+import { optimizeImageToWebP, optimizeImageBufferToWebP, cleanupTempFile } from './imageOptimize';
 
 // Tipos
 export interface CloudinaryUploadResult {
@@ -206,4 +206,92 @@ export async function uploadMultipleImagesToCloudinary(
     successful: uploaded.length,
     failedCount: failed.length,
   };
+}
+
+/**
+ * Sube una imagen desde un buffer a Cloudinary (optimizándola a WebP por defecto)
+ * Útil para archivos recibidos directamente en memoria (ej. desde Multer memoryStorage)
+ */
+export async function uploadImageBufferToCloudinary(
+  buffer: Buffer,
+  originalFilename: string,
+  options: {
+    folder?: string;
+    publicId?: string;
+    overwrite?: boolean;
+    optimize?: boolean; // Por defecto true
+  } = {}
+): Promise<CloudinaryUploadResult> {
+  const cloudinaryConfig = getCloudinaryConfig();
+  const shouldOptimize = options.optimize !== false;
+
+  if (!cloudinaryConfig) {
+    return {
+      success: false,
+      error: 'Cloudinary no está configurado. Verifica CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY y CLOUDINARY_API_SECRET',
+    };
+  }
+
+  let processedBuffer: Buffer = buffer;
+  let finalPublicId = options.publicId || originalFilename.replace(/\.[^/.]+$/, ""); // Remove extension for publicId
+
+  try {
+    if (shouldOptimize) {
+      // Optimizar el buffer directamente
+      processedBuffer = await optimizeImageBufferToWebP(buffer);
+      logger.info('Buffer de imagen optimizado', { originalSize: buffer.length, optimizedSize: processedBuffer.length });
+    }
+
+    // Configurar Cloudinary
+    const cloudinaryModule = await import('cloudinary');
+    const cloudinary = cloudinaryModule.v2;
+
+    cloudinary.config({
+      cloud_name: cloudinaryConfig.cloudName,
+      api_key: cloudinaryConfig.apiKey,
+      api_secret: cloudinaryConfig.apiSecret,
+    });
+
+    const uploadOptions: any = {
+      resource_type: 'image',
+      folder: options.folder || 'handicapp',
+      public_id: finalPublicId,
+      overwrite: options.overwrite ?? true,
+    };
+
+    const result = await new Promise<CloudinaryUploadResult>((resolve) => {
+      cloudinary.uploader.upload_stream(
+        uploadOptions,
+        (error: any, result: any) => {
+          if (error) {
+            logger.error('Error subiendo buffer a Cloudinary', { error: error.message, originalFilename });
+            resolve({
+              success: false,
+              error: error.message || 'Error desconocido al subir a Cloudinary',
+            });
+          } else {
+            logger.info('Buffer de imagen subido a Cloudinary', {
+              publicId: result.public_id,
+              url: result.secure_url,
+              optimized: shouldOptimize,
+            });
+            resolve({
+              success: true,
+              url: result.url,
+              secureUrl: result.secure_url,
+              publicId: result.public_id,
+            });
+          }
+        }
+      ).end(processedBuffer);
+    });
+
+    return result;
+  } catch (error: any) {
+    logger.error('Error en uploadImageBufferToCloudinary', { error: error.message, originalFilename });
+    return {
+      success: false,
+      error: error.message || 'Error desconocido',
+    };
+  }
 }

@@ -3,6 +3,7 @@ import { EstablecimientoService } from '../services/establecimientoService';
 import { logger } from '../utils/logger';
 import { ResponseHelper } from '../utils/response';
 import { AuthenticatedRequest } from '../types';
+import { uploadImageBufferToCloudinary } from '../utils/imageUpload';
 
 export class EstablecimientoController {
 
@@ -132,7 +133,35 @@ export class EstablecimientoController {
       }, usuarioId);
 
       if (result.success && result.data) {
-        ResponseHelper.created(res, result.data, 'Establecimiento creado exitosamente');
+        let finalData = result.data;
+
+        // Si vino un logo (multer memory), subir a Cloudinary y actualizar logo_url
+        const file = (req as any).file as Express.Multer.File | undefined;
+        if (file && file.buffer && result.data.id) {
+          const folder = `handicapp/establecimientos/${result.data.id}/logo`;
+          const cloud = await uploadImageBufferToCloudinary(file.buffer, file.originalname || 'logo', {
+            folder,
+            publicId: 'logo',
+            overwrite: true,
+          });
+          if (cloud.success && (cloud.secureUrl || cloud.url)) {
+            const logoUrl = cloud.secureUrl || cloud.url || '';
+            const updated = await EstablecimientoService.updateEstablecimiento(
+              result.data.id,
+              { logo_url: logoUrl },
+              usuarioId,
+              req.user!.rol?.clave,
+              req.user!.establecimiento_id
+            );
+            if (updated.success && updated.data) {
+              finalData = updated.data;
+            }
+          } else {
+            logger.warn('Subida de logo de establecimiento fallida', { id: result.data.id, error: cloud.error });
+          }
+        }
+
+        ResponseHelper.created(res, finalData, 'Establecimiento creado exitosamente');
       } else {
         ResponseHelper.badRequest(res, result.error || 'Error creando establecimiento');
       }
@@ -163,9 +192,27 @@ export class EstablecimientoController {
         return;
       }
 
+      let finalUpdateData = { ...updateData };
+
+      // Si vino un logo (multer memory), subir a Cloudinary y agregar logo_url
+      const file = (req as any).file as Express.Multer.File | undefined;
+      if (file && file.buffer) {
+        const folder = `handicapp/establecimientos/${establecimientoId}/logo`;
+        const cloud = await uploadImageBufferToCloudinary(file.buffer, file.originalname || 'logo', {
+          folder,
+          publicId: 'logo',
+          overwrite: true,
+        });
+        if (cloud.success && (cloud.secureUrl || cloud.url)) {
+          finalUpdateData.logo_url = cloud.secureUrl || cloud.url || '';
+        } else {
+          logger.warn('Subida de logo de establecimiento fallida', { id: establecimientoId, error: cloud.error });
+        }
+      }
+
       const result = await EstablecimientoService.updateEstablecimiento(
         establecimientoId, 
-        updateData, 
+        finalUpdateData, 
         usuarioId,
         userRole,
         userEstablecimientoId

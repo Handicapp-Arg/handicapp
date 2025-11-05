@@ -10,6 +10,7 @@ import { QRCodeController } from '../controllers/qrCodeController';
 import { requireAuth } from '../middleware/auth';
 import { requireRole, requirePermission, auditAccess } from '../middleware/authorization';
 import { caballoValidations, paramValidations } from '../middleware/validation';
+import { uploader } from '../controllers/uploadController';
 
 const router: ExpressRouter = Router();
 
@@ -35,6 +36,7 @@ router.use(auditAccess());
 router.post(
   '/',
   requireRole('admin', 'establecimiento', 'propietario', 'veterinario'),
+  uploader.single('foto'), // Aceptar imagen opcional del caballo (campo 'foto')
   caballoValidations.create,
   CaballoController.create
 );

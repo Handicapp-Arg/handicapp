@@ -311,11 +311,22 @@ export class UserController {
     }
 
     try {
-      // Build avatar URL
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
-      const avatarUrl = `${baseUrl}/uploads/${file.filename}`;
+      // Subir a Cloudinary en carpeta por usuario
+      const { uploadImageBufferToCloudinary } = await import('../utils/imageUpload');
+      const folder = `handicapp/users/${userId}/avatars`;
+      const cloud = await uploadImageBufferToCloudinary(file.buffer, file.originalname || 'avatar', {
+        folder,
+        publicId: 'avatar', // Siempre el mismo publicId para el avatar del usuario
+        overwrite: true,
+      });
 
-      // Update user with avatar URL
+      if (!cloud.success) {
+        return ResponseHelper.internalError(res, cloud.error || 'Error al subir avatar');
+      }
+
+      const avatarUrl = cloud.secureUrl || cloud.url || '';
+
+      // Update user with avatar URL de Cloudinary
       const result = await UserService.updateUser(userId.toString(), { 
         avatar_url: avatarUrl 
       } as any);
@@ -323,7 +334,7 @@ export class UserController {
       if (result.success) {
         return ResponseHelper.success(
           res, 
-          { avatar_url: avatarUrl, filename: file.filename }, 
+          { avatar_url: avatarUrl, publicId: cloud.publicId }, 
           'Avatar actualizado exitosamente'
         );
       }

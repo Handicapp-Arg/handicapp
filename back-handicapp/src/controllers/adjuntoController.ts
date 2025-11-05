@@ -3,6 +3,7 @@ import { AdjuntoService } from '../services/adjuntoService';
 import { logger } from '../utils/logger';
 import { CategoriaAdjunto } from '../models/enums';
 import fs from 'fs';
+import { uploadImageBufferToCloudinary } from '../utils/imageUpload';
 
 export class AdjuntoController {
   /**
@@ -153,32 +154,43 @@ export class AdjuntoController {
         return;
       }
 
-      // Crear adjunto en BD
+      // Subir imagen a Cloudinary en carpeta por usuario/adjuntos
+      const folder = `handicapp/users/${userId || 'unknown'}/adjuntos`;
+      const baseName = (file.originalname || 'adjunto').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const cloud = await uploadImageBufferToCloudinary(file.buffer, file.originalname || 'adjunto', {
+        folder,
+        publicId: baseName, // Usar el nombre original como base para el publicId
+        overwrite: true,
+      });
+
+      if (!cloud.success) {
+        res.status(500).json({ success: false, message: cloud.error || 'Error al subir adjunto' });
+        return;
+      }
+
+      // Crear adjunto en BD con URL de Cloudinary
       const adjunto = await AdjuntoService.createAdjunto({
         caballo_id: caballo_id ? parseInt(caballo_id) : undefined,
         evento_id: evento_id ? parseInt(evento_id) : undefined,
         subido_por_usuario_id: userId,
         rol_autor: userRole,
         categoria: categoria as CategoriaAdjunto,
-        nombre_archivo: file.filename,
-        tipo_mime: file.mimetype,
-        tamanio_bytes: BigInt(file.size),
-        ruta_almacenamiento: file.path,
+        nombre_archivo: `${baseName}.webp`, // Guardar con extensión .webp
+        tipo_mime: 'image/webp', // Tipo MIME optimizado
+        tamanio_bytes: BigInt(file.size), // Tamaño original, Cloudinary tiene el optimizado
+        ruta_almacenamiento: cloud.secureUrl || cloud.url || '', // URL de Cloudinary
       });
-
-      // Build public URL
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
-      const publicUrl = `${baseUrl}/api/v1/adjuntos/${adjunto.id}/download`;
 
       res.status(201).json({
         success: true,
         message: 'Adjunto subido correctamente',
         data: {
           id: adjunto.id,
-          url: publicUrl,
+          url: adjunto.ruta_almacenamiento,
           filename: adjunto.nombre_archivo,
           categoria: adjunto.categoria,
           tipo_mime: adjunto.tipo_mime,
+          publicId: cloud.publicId,
         },
       });
     } catch (error: any) {
