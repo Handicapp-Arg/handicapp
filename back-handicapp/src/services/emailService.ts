@@ -11,8 +11,8 @@ type EmailParams = {
 
 let transporter: nodemailer.Transporter | null = null;
 
-// URL del logo desde Cloudinary
-const LOGO_URL = 'https://res.cloudinary.com/dh2m9ychv/image/upload/v1762370535/logo-icon-white_fbeduu.png';
+// URL del logo desde Cloudinary - Usando logo marrón porque se ve mejor en emails
+const LOGO_URL = 'https://res.cloudinary.com/dh2m9ychv/image/upload/v1762370535/logo-icon-brown_xjxzjl.png';
 
 function getTransporter() {
   if (transporter) return transporter;
@@ -83,15 +83,15 @@ export async function sendEmail({ to, subject, html }: EmailParams) {
 
 export function renderBrandedEmail({ title, intro, actionText, actionUrl, footer }: { title: string; intro: string; actionText: string; actionUrl: string; footer?: string; }) {
   // Paleta moderna alineada con el diseño de la app
-  const bg = '#f8fafc';           // slate-50 - fondo general
-  const card = '#ffffff';          // blanco puro
-  const border = '#e2e8f0';        // slate-200
+  const bg = '#f8fafc';            // slate-50 - fondo general
+  const card = '#ffffff';          // blanco - card principal
+  const border = '#e2e8f0';        // slate-200 - bordes
   const text = '#1e293b';          // slate-800 - texto principal
   const muted = '#64748b';         // slate-500 - texto secundario
-  const headerBg = '#0f172a';      // slate-900 - header oscuro
-  const headerText = '#ffffff';    // blanco
+  const headerBg = '#fef9f5';      // beige claro - header para logo marrón
+  const headerText = '#1e293b';    // texto oscuro para header claro
   const accent = '#af936f';        // color dorado/bronceado de la marca
-  const btnBg = '#1e293b';         // slate-800 - botón principal
+  const btnBg = '#af936f';         // color marca - botón principal
   const btnText = '#ffffff';       // blanco
   // const btnHover = '#0f172a';      // slate-900 (Removed unused variable)
 
