@@ -27,7 +27,6 @@ export const metadata: Metadata = {
     shortcut: "/logos/logo-icon-brown.png",
     apple: "/logos/logo-icon-brown.png",
   },
-  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
