@@ -63,12 +63,37 @@ export function useStats() {
     try {
       setLoading(true);
       if (authLoading || !isAuthenticated) return;
-      
-      // Fetch caballos stats
-  const caballosResponse: any = await caballoService.getAll({ limit: 100 });
-  const caballos = caballosResponse?.data?.caballos || caballosResponse?.caballos || caballosResponse?.data || caballosResponse || [];
-  const caballosList = Array.isArray(caballos) ? caballos : [];
-      
+
+      const userRole = (user as any)?.role || (user as any)?.rol?.clave;
+      const shouldFetchEmpleados = ['admin', 'capataz', 'establecimiento'].includes(userRole);
+      const shouldFetchInventario = userRole === 'establecimiento';
+
+      const promises: Record<string, Promise<any>> = {
+        caballos: caballoService.getAll({ limit: 100 }),
+        eventos: eventoService.getAll(),
+        tareas: tareaService.getAll(),
+        empleados: shouldFetchEmpleados ? gestionPersonalService.getEmpleados() : Promise.resolve(null),
+        inventario: shouldFetchInventario ? inventarioService.getProductos() : Promise.resolve(null),
+      };
+
+      const entries = Object.entries(promises);
+      const settled = await Promise.allSettled(entries.map(([, promise]) => promise));
+
+      const resolved: Record<string, any> = {};
+      entries.forEach(([key], index) => {
+        const result = settled[index];
+        if (result.status === 'fulfilled') {
+          resolved[key] = result.value;
+        } else {
+          resolved[key] = null;
+          console.error(`Error fetching ${key} stats:`, result.reason);
+        }
+      });
+
+      const caballosResponse: any = resolved.caballos;
+      const caballos = caballosResponse?.data?.caballos || caballosResponse?.caballos || caballosResponse?.data || caballosResponse || [];
+      const caballosList = Array.isArray(caballos) ? caballos : [];
+
       const caballosStats = {
         total: caballosList.length,
         activos: caballosList.filter((c: any) => c.estado_global === 'activo').length,
@@ -80,10 +105,9 @@ export function useStats() {
         }).length
       };
 
-      // Fetch eventos stats
-  const eventosResponse: any = await eventoService.getAll();
-  const eventos = eventosResponse?.data || eventosResponse || [];
-      
+      const eventosResponse: any = resolved.eventos;
+      const eventos = eventosResponse?.data || eventosResponse || [];
+
       const eventosStats = {
         total: eventos.length,
         urgentes: eventos.filter((e: any) => e.prioridad === 'critica' || e.prioridad === 'alta').length,
@@ -91,10 +115,9 @@ export function useStats() {
         completados: eventos.filter((e: any) => e.estado === 'completado').length
       };
 
-      // Fetch tareas stats
-  const tareasResponse: any = await tareaService.getAll();
-  const tareas = tareasResponse?.data || tareasResponse || [];
-      
+      const tareasResponse: any = resolved.tareas;
+      const tareas = tareasResponse?.data || tareasResponse || [];
+
       const tareasStats = {
         total: tareas.length,
         pendientes: tareas.filter((t: any) => t.estado === 'pendiente').length,
@@ -102,58 +125,35 @@ export function useStats() {
         enProgreso: tareas.filter((t: any) => t.estado === 'en_progreso').length
       };
 
-      // Fetch empleados stats
       let empleadosStats = { total: 0, activos: 0, departamentos: 0, nuevos: 0 };
-      try {
-        const empleadosResponse: any = await gestionPersonalService.getEmpleados();
-        const empleados = empleadosResponse || [];
-        
-        // Contar departamentos únicos
+      if (shouldFetchEmpleados && Array.isArray(resolved.empleados)) {
+        const empleados = resolved.empleados || [];
         const deptosUnicos = new Set(empleados.map((e: any) => e.departamento).filter(Boolean));
-        
-        // Empleados nuevos (últimos 30 días)
         const treintaDias = new Date();
         treintaDias.setDate(treintaDias.getDate() - 30);
-        
+
         empleadosStats = {
           total: empleados.length,
           activos: empleados.filter((e: any) => e.estado === 'activo').length,
           departamentos: deptosUnicos.size,
-          nuevos: empleados.filter((e: any) => {
-            return e.fecha_ingreso && new Date(e.fecha_ingreso) > treintaDias;
-          }).length
+          nuevos: empleados.filter((e: any) => e.fecha_ingreso && new Date(e.fecha_ingreso) > treintaDias).length
         };
-      } catch (error) {
-        console.error('Error fetching empleados stats:', error);
       }
 
-      // Fetch inventario stats (solo para rol establecimiento)
       let inventarioStats = { total: 0, stockBajo: 0, categorias: 0, valorTotal: 0 };
-      
-      // Solo cargar inventario si el usuario es establecimiento
-      const userRole = (user as any)?.role || (user as any)?.rol?.clave;
-      if (userRole === 'establecimiento') {
-        try {
-          const productosResponse: any = await inventarioService.getProductos();
-          const productos = productosResponse || [];
-          
-          // Contar categorías únicas
-          const categoriasUnicas = new Set(productos.map((p: any) => p.categoria_id));
-          
-          // Calcular valor total
-          const valorTotal = productos.reduce((sum: number, p: any) => {
-            return sum + (p.stock_actual * p.precio_unitario);
-          }, 0);
-          
-          inventarioStats = {
-            total: productos.length,
-            stockBajo: productos.filter((p: any) => p.stock_actual < p.stock_minimo).length,
-            categorias: categoriasUnicas.size,
-            valorTotal: Math.round(valorTotal)
-          };
-        } catch (error) {
-          console.error('Error fetching inventario stats:', error);
-        }
+      if (shouldFetchInventario && Array.isArray(resolved.inventario)) {
+        const productos = resolved.inventario || [];
+        const categoriasUnicas = new Set(productos.map((p: any) => p.categoria_id));
+        const valorTotal = productos.reduce((sum: number, p: any) => {
+          return sum + (p.stock_actual * p.precio_unitario);
+        }, 0);
+
+        inventarioStats = {
+          total: productos.length,
+          stockBajo: productos.filter((p: any) => p.stock_actual < p.stock_minimo).length,
+          categorias: categoriasUnicas.size,
+          valorTotal: Math.round(valorTotal)
+        };
       }
 
       setStats({

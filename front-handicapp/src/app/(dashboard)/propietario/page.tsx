@@ -47,6 +47,12 @@ export default function PropietarioDashboard() {
     );
   }
 
+  const hasCaballos = (stats.caballos?.total || 0) > 0;
+  const saludLabel = hasCaballos ? 'Excelente' : 'Sin datos';
+  const saludBadges = hasCaballos
+    ? [{ label: 'Todos sanos', variant: 'outline' }]
+    : [{ label: 'Agregá tu primer caballo', variant: 'outline' }];
+
   // Stats principales
   const dashboardStats: StatCard[] = [
     {
@@ -72,10 +78,10 @@ export default function PropietarioDashboard() {
     },
     {
       label: 'Estado Salud',
-      value: 'Excelente',
+      value: saludLabel,
       icon: Heart,
       color: 'success',
-      badges: [{ label: 'Todos sanos', variant: 'outline' }],
+      badges: saludBadges,
     },
   ];
 
