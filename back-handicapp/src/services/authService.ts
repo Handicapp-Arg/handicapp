@@ -68,7 +68,6 @@ export class AuthService {
 
       // Crear usuario
       const cleanEmail = email.trim().toLowerCase();
-      logger.info(`Registrando usuario con email: "${cleanEmail}"`);
       
       const user = User.build({
         email: cleanEmail,
@@ -85,8 +84,6 @@ export class AuthService {
   const hash = await bcrypt.hash(String(password).trim(), salt);
   user.set('hash_contrasena', hash);
   await user.save();
-  
-  logger.info(`Usuario guardado en DB con email: "${user.email}"`);
 
       // Compose response user object (sin secretos)
       const safeUser = {

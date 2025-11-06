@@ -16,15 +16,7 @@ export class AuthController {
    * POST /api/v1/auth/register
    */
   static register = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-    // 🔍 DEBUG: Logging del body completo tal como llega
-    logger.info('🔍 req.body RAW:', JSON.stringify(req.body));
-    logger.info('🔍 req.body.email RAW:', req.body?.email);
-    logger.info('🔍 req.body.email tiene punto:', req.body?.email?.includes('.'));
-    
     const { nombre, apellido, email, password, telefono } = req.body || {};
-    
-    logger.info('🔍 email después de destructuring:', email);
-    logger.info('🔍 email después de destructuring tiene punto:', email?.includes('.'));
 
     if (!nombre || !apellido || !email || !password) {
       return ResponseHelper.badRequest(res, 'Faltan campos requeridos', [

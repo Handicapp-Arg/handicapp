@@ -19,14 +19,6 @@ export default function RegisterPage() {
     e.preventDefault();
     setError('');
     
-    console.log('🚀 SUBMIT - Estado completo:');
-    console.log('  firstName:', firstName);
-    console.log('  lastName:', lastName);
-    console.log('  email:', email);
-    console.log('  email contiene punto:', email.includes('.'));
-    console.log('  email.trim():', email.trim());
-    console.log('  email.trim() contiene punto:', email.trim().includes('.'));
-    
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
     
@@ -68,9 +60,6 @@ export default function RegisterPage() {
 
     try {
       setLoading(true);
-      
-      console.log('📧 Email antes de enviar:', email);
-      console.log('📧 Email después de trim:', email.trim());
       
       await ApiClient.register({
         nombre: firstName.trim(),
@@ -150,15 +139,7 @@ export default function RegisterPage() {
                 name="email"
                 autoComplete="email"
                 value={email}
-                onChange={(e) => {
-                  console.log('📝 Input onChange - e.target.value:', e.target.value);
-                  console.log('📝 Input onChange - contiene punto:', e.target.value.includes('.'));
-                  setEmail(e.target.value);
-                }}
-                onBlur={(e) => {
-                  console.log('👁️ Input onBlur - e.target.value:', e.target.value);
-                  console.log('👁️ Input onBlur - email state:', email);
-                }}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#af936f] focus:border-transparent transition-all"
                 placeholder="tu@email.com"
                 required
