@@ -220,6 +220,14 @@ function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoFormProps) 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (uploading) {
+      setErrors(prev => ({
+        ...prev,
+        foto_url: prev.foto_url || 'Esperá a que la imagen termine de subir antes de guardar.'
+      }));
+      return;
+    }
+
     if (!validateForm()) {
       return;
     }
@@ -606,6 +614,7 @@ function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoFormProps) 
                   file:cursor-pointer cursor-pointer" 
               />
               {errors.foto_url && <p className="text-sm text-red-600 mt-2">{errors.foto_url}</p>}
+              {uploading && <p className="text-sm text-blue-600 mt-2">Subiendo imagen, por favor esperá...</p>}
               <p className="text-xs text-gray-500 mt-2">Formatos: JPG, PNG, WEBP, GIF (máx. 5MB)</p>
             </div>
           </div>
@@ -616,7 +625,7 @@ function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoFormProps) 
           <Button type="button" variant="secondary" size="sm" onClick={handleClose} disabled={loading}>
             Cancelar
           </Button>
-          <Button type="submit" variant="brand" size="sm" isLoading={loading} disabled={loading}>
+          <Button type="submit" variant="brand" size="sm" isLoading={loading || uploading} disabled={loading || uploading}>
             {caballo ? 'Actualizar' : 'Registrar'}
           </Button>
         </div>
