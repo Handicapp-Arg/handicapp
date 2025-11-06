@@ -406,11 +406,10 @@ export default function EstablecimientoInventarioPage() {
               </button>
               <button
                 onClick={handleNuevoProducto}
-                className="px-3 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 active:bg-emerald-800 transition-colors flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
+                className="px-3 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium shadow-sm hover:shadow-md"
               >
                 <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="hidden xs:inline">Nuevo</span>
-                <span className="xs:hidden">+</span>
+                <span>Nuevo</span>
               </button>
             </div>
           </div>

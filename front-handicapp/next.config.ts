@@ -11,6 +11,17 @@ const nextConfig: NextConfig = {
         hostname: 'res.cloudinary.com',
         pathname: '/dh2m9ychv/**',
       },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3001',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'handicapp-back.onrender.com',
+        pathname: '/uploads/**',
+      },
     ],
   },
   
