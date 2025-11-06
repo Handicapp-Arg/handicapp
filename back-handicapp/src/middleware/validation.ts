@@ -72,7 +72,7 @@ export const commonValidations = {
   email: (field: string = 'email') => body(field)
     .optional()
     .isEmail()
-    .normalizeEmail()
+    .normalizeEmail({ gmail_remove_dots: false })
     .withMessage(`${field} debe ser un email válido`),
 
   telefono: (field: string = 'telefono') => body(field)
@@ -89,7 +89,7 @@ export const userValidations = {
   publicRegister: [
     body('email')
       .isEmail()
-      .normalizeEmail()
+      .normalizeEmail({ gmail_remove_dots: false })
       .withMessage('Email es requerido y debe ser válido'),
     body('password')
       .isLength({ min: 8, max: 128 })
@@ -112,7 +112,7 @@ export const userValidations = {
   create: [
     body('email')
       .isEmail()
-      .normalizeEmail()
+      .normalizeEmail({ gmail_remove_dots: false })
       .withMessage('Email es requerido y debe ser válido'),
     
     body('password')
@@ -149,7 +149,7 @@ export const userValidations = {
     body('email')
       .optional()
       .isEmail()
-      .normalizeEmail()
+      .normalizeEmail({ gmail_remove_dots: false })
       .withMessage('Email debe ser válido'),
     
     body('nombre')

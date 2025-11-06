@@ -101,9 +101,17 @@ export class ApiClient {
   }
 
   static async register(data: { nombre: string; apellido: string; email: string; password: string; telefono?: string }) {
+    console.log('🌐 apiClient.register - data recibida:', data);
+    console.log('🌐 apiClient.register - data.email:', data.email);
+    console.log('🌐 apiClient.register - data.email contiene punto:', data.email.includes('.'));
+    
+    const jsonString = JSON.stringify(data);
+    console.log('🌐 apiClient.register - JSON.stringify:', jsonString);
+    console.log('🌐 apiClient.register - JSON parseado de vuelta:', JSON.parse(jsonString));
+    
     return this.request('/auth/register', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: jsonString,
     });
   }
 
