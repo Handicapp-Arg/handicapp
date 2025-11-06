@@ -49,7 +49,7 @@ export default function PropietarioDashboard() {
 
   const hasCaballos = (stats.caballos?.total || 0) > 0;
   const saludLabel = hasCaballos ? 'Excelente' : 'Sin datos';
-  const saludBadges = hasCaballos
+  const saludBadges: { label: string; variant: 'default' | 'secondary' | 'outline' }[] = hasCaballos
     ? [{ label: 'Todos sanos', variant: 'outline' }]
     : [{ label: 'Agregá tu primer caballo', variant: 'outline' }];
 
