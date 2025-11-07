@@ -34,9 +34,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       if (width >= 1024) {
         setSidebarOpen(false);
       }
-      
-      // DEBUG: Ver si está en modo móvil
-      console.log('📱 Modo móvil:', width < 1024, 'Ancho:', width, 'Sidebar abierto:', sidebarOpen);
     };
 
     checkMobile();
