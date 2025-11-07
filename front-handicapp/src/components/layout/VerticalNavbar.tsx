@@ -98,7 +98,6 @@ const ROLE_MENUS = {
     { name: 'Reportes', href: '/propietario/reportes', icon: BarChart3 },
     { name: 'Tareas', href: '/propietario/tareas', icon: FileText },
     { name: 'Configuración', href: '/propietario/configuracion', icon: Settings },
-    { name: 'Mi Perfil', href: '/propietario/perfil', icon: User },
     { name: 'Suscripciones', href: '/propietario/suscripciones', icon: Users },
   ],
 };

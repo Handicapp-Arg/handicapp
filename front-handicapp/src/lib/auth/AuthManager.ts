@@ -14,6 +14,9 @@ export interface UserData {
   email: string;
   nombre: string;
   apellido: string;
+  telefono?: string | null;
+  avatar_url?: string | null;
+  ubicacion?: string | null;
   establecimiento_id?: number;
   ultimo_acceso_el?: string | null;
   rol: {
@@ -261,6 +264,50 @@ class AuthManager {
         isLoading: false,
         error: null,
       });
+    }
+  }
+
+  /**
+   * Refrescar datos del usuario desde el backend
+   */
+  async refreshUser(): Promise<void> {
+    try {
+      const token = this.currentState.token;
+      
+      if (!token) {
+        throw new Error('No hay sesión activa');
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), TIMEOUTS.REQUEST);
+
+      const response = await fetch(`${appConfig.apiBaseUrl}/auth/profile`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error('Error al obtener perfil');
+      }
+
+      const data = await response.json();
+      
+      if (data?.data?.user) {
+        const user = data.data.user;
+        this.saveAuthData(token, user);
+        this.updateState({ user });
+      }
+
+    } catch (error) {
+      console.warn('Error al refrescar usuario:', error);
+      throw error;
     }
   }
 

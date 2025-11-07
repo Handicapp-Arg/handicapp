@@ -2,17 +2,16 @@
 
 import React, { useState } from 'react';
 import { EstablecimientoList } from '@/components/dashboard/EstablecimientoList';
-import { EstablecimientoForm } from '@/components/dashboard/EstablecimientoForm';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Building2, MapPin, Users, TrendingUp, Plus } from 'lucide-react';
+import { Building2, MapPin, Users, TrendingUp } from 'lucide-react';
 import { type Establecimiento } from '@/lib/services/establecimientoService';
 import { useStats } from '@/lib/hooks/useStats';
 import { useEstablecimientos } from '@/lib/hooks/useEstablecimientosQuery';
 
 export default function PropietarioEstablecimientosPage() {
-  const [view, setView] = useState<'list' | 'create' | 'edit'>('list');
+  // Propietarios solo pueden VER establecimientos, no crear/editar
   const [selectedEstablecimiento, setSelectedEstablecimiento] = useState<Establecimiento | null>(null);
   const { stats } = useStats();
   const { data: establecimientosData, isLoading } = useEstablecimientos();
@@ -37,26 +36,6 @@ export default function PropietarioEstablecimientosPage() {
       .filter(Boolean)
   ).size;
 
-  const handleCreateNew = () => {
-    setSelectedEstablecimiento(null);
-    setView('create');
-  };
-
-  const handleEdit = (establecimiento: Establecimiento) => {
-    setSelectedEstablecimiento(establecimiento);
-    setView('edit');
-  };
-
-  const handleSave = (establecimiento: Establecimiento) => {
-    setView('list');
-    setSelectedEstablecimiento(null);
-  };
-
-  const handleCancel = () => {
-    setView('list');
-    setSelectedEstablecimiento(null);
-  };
-
   const handleSelect = (establecimiento: Establecimiento) => {
     setSelectedEstablecimiento(establecimiento);
   };
@@ -72,31 +51,31 @@ export default function PropietarioEstablecimientosPage() {
     );
   }
 
-  if (view === 'create') {
+  // Si el propietario no tiene caballos, mostrar mensaje para registrar el primero
+  const hasCaballos = (stats.caballos?.total || 0) > 0;
+  
+  if (!hasCaballos) {
     return (
       <SimpleRoleGuard roles={['propietario']}>
-        <div>
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8">
-            <EstablecimientoForm
-              onSave={handleSave}
-              onCancel={handleCancel}
-            />
-          </div>
-        </div>
-      </SimpleRoleGuard>
-    );
-  }
-
-  if (view === 'edit' && selectedEstablecimiento) {
-    return (
-      <SimpleRoleGuard roles={['propietario']}>
-        <div>
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8">
-            <EstablecimientoForm
-              establecimiento={selectedEstablecimiento}
-              onSave={handleSave}
-              onCancel={handleCancel}
-            />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center max-w-md px-6">
+            <div className="mb-6 flex justify-center">
+              <div className="p-4 bg-blue-50 rounded-full">
+                <Building2 className="w-12 h-12 text-blue-600" />
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">
+              No tienes caballos registrados
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Para ver establecimientos, primero debes registrar tu caballo en uno de ellos.
+            </p>
+            <a
+              href="/propietario/caballos"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            >
+              Registrar mi primer caballo
+            </a>
           </div>
         </div>
       </SimpleRoleGuard>
@@ -121,22 +100,15 @@ export default function PropietarioEstablecimientosPage() {
           {/* Content */}
           <div className="relative z-10 px-6 sm:px-8 lg:px-12 py-6">
             {/* Header */}
-            <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="mb-6">
               <div>
                 <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 leading-tight">
-                  Gestión de Establecimientos
+                  Mis Establecimientos
                 </h1>
                 <p className="text-sm sm:text-base text-white/70">
-                  Administra establecimientos ecuestres y sus configuraciones
+                  Establecimientos donde tienes caballos registrados
                 </p>
               </div>
-              <button
-                onClick={handleCreateNew}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-slate-900 rounded-xl font-semibold hover:bg-white/90 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-              >
-                <Plus className="w-5 h-5" />
-                Nuevo Establecimiento
-              </button>
             </div>
 
             {/* Stats Grid */}
@@ -224,10 +196,9 @@ export default function PropietarioEstablecimientosPage() {
           </div>
         </div>
 
-        {/* List Component */}
+        {/* List Component - Solo lectura para propietarios */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
           <EstablecimientoList
-            onEditEstablecimiento={handleEdit}
             onSelectEstablecimiento={handleSelect}
           />
         </div>

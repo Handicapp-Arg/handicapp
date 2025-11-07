@@ -31,10 +31,10 @@ export default function TareasPage() {
           <div className="relative z-10 px-6 sm:px-8 lg:px-12 py-6">
             <div className="mb-6">
               <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 leading-tight">
-                Gestión de Tareas
+                Cuidados Diarios
               </h1>
               <p className="text-sm sm:text-base text-white/70">
-                Asigna, supervisa y gestiona las tareas diarias del establecimiento
+                Seguimiento de alimentación, limpieza y cuidados de tus caballos
               </p>
             </div>
 

@@ -8,6 +8,7 @@ import { Tarea } from '../models/Tarea';
 import { User } from '../models/User';
 import { Establecimiento } from '../models/Establecimiento';
 import { Caballo } from '../models/Caballo';
+import { PropietarioCaballo } from '../models/PropietarioCaballo';
 import { ServiceResponse, PaginationQuery } from '../types';
 import { TipoTarea, EstadoTarea } from '../models/enums';
 
@@ -75,10 +76,31 @@ export class TareaService {
         if (fechaVencimientoFin) where.fecha_vencimiento[Op.lte] = new Date(fechaVencimientoFin);
       }
 
-      // Control de acceso: solo filtrar por usuario si NO tiene permiso tasks:view_all
-      // Admin, establecimiento y capataz pueden ver todas las tareas
+      // Control de acceso por rol
       const rolesConVistaCompleta = ['admin', 'establecimiento', 'capataz'];
-      if (userRole && !rolesConVistaCompleta.includes(userRole) && usuarioId) {
+      
+      if (userRole === 'propietario' && usuarioId) {
+        // PROPIETARIO: Solo ve tareas de SUS caballos
+        const caballosDelPropietario = await PropietarioCaballo.findAll({
+          where: { propietario_usuario_id: usuarioId },
+          attributes: ['caballo_id'],
+        });
+        
+        const caballoIds = caballosDelPropietario.map(p => p.caballo_id);
+        
+        if (caballoIds.length === 0) {
+          // Si no tiene caballos, no ve ninguna tarea
+          return {
+            success: true,
+            data: { tareas: [], total: 0, totalPages: 0 },
+          };
+        }
+        
+        // Solo tareas que tienen caballo_id y pertenecen al propietario
+        where.caballo_id = { [Op.in]: caballoIds };
+        
+      } else if (userRole && !rolesConVistaCompleta.includes(userRole) && usuarioId) {
+        // EMPLEADO/VETERINARIO: Ve tareas asignadas o creadas por él
         where[Op.or] = [
           { creado_por_usuario_id: usuarioId },
           { asignado_a_usuario_id: usuarioId },

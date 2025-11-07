@@ -15,6 +15,7 @@ export interface UseAuthReturn {
   // Acciones
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   clearError: () => void;
 }
 
@@ -46,6 +47,12 @@ export function useAuthNew(): UseAuthReturn {
     await authManager.logout();
   }, []);
 
+  // Método para refrescar usuario
+  const refreshUser = useCallback(async () => {
+    const authManager = AuthManager.getInstance();
+    await authManager.refreshUser();
+  }, []);
+
   // Limpiar error
   const clearError = useCallback(() => {
     // Esta funcionalidad se puede implementar en AuthManager si es necesaria
@@ -58,6 +65,7 @@ export function useAuthNew(): UseAuthReturn {
     error: authState.error,
     login,
     logout,
+    refreshUser,
     clearError,
   };
 }

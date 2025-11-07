@@ -1,382 +1,393 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
-import ApiClient from '@/lib/services/apiClient';
 import { useAuthNew } from '@/lib/hooks/useAuthNew';
-import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Settings, Building2, MapPin, Phone, Mail } from 'lucide-react';
-
-interface Establecimiento {
-  id: number;
-  nombre: string;
-  direccion?: string;
-  capacidad?: number;
-  telefono?: string;
-  email?: string;
-  superficie_hectareas?: number;
-}
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Settings, User, Lock, Bell } from 'lucide-react';
+import ApiClient from '@/lib/services/apiClient';
 
 export default function PropietarioConfiguracionPage() {
-  const { user } = useAuthNew();
-  const [establecimiento, setEstablecimiento] = useState<Establecimiento | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const { user, refreshUser } = useAuthNew();
+  const [activeTab, setActiveTab] = useState<'perfil' | 'seguridad' | 'notificaciones'>('perfil');
+  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  
-  const [formData, setFormData] = useState({
-    nombre: '',
-    direccion: '',
-    capacidad: '',
-    telefono: '',
-    email: '',
-    superficie_hectareas: ''
+
+  // Form states
+  const [perfilData, setPerfilData] = useState({
+    nombre: user?.nombre || '',
+    apellido: user?.apellido || '',
+    telefono: user?.telefono || '',
+    email: user?.email || '',
   });
 
-  useEffect(() => {
-    fetchEstablecimiento();
-  }, [user]);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
 
-  const fetchEstablecimiento = async () => {
+  const [notificacionesData, setNotificacionesData] = useState({
+    email_salud: true,
+    email_eventos: true,
+    email_tareas: false,
+    push_enabled: true,
+  });
+
+  // Handlers
+  const handleUpdatePerfil = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+
     try {
-      setLoading(true);
-      const response: any = await ApiClient.makeRequest('/establecimientos', {
-        method: 'GET'
+      await ApiClient.makeRequest('/users/profile', {
+        method: 'PUT',
+        body: JSON.stringify({
+          nombre: perfilData.nombre,
+          apellido: perfilData.apellido,
+          telefono: perfilData.telefono,
+        }),
       });
-      
-      if (response?.data?.items && response.data.items.length > 0) {
-        const est = response.data.items[0];
-        setEstablecimiento(est);
-        setFormData({
-          nombre: est.nombre || '',
-          direccion: est.direccion || '',
-          capacidad: est.capacidad?.toString() || '',
-          telefono: est.telefono || '',
-          email: est.email || '',
-          superficie_hectareas: est.superficie_hectareas?.toString() || ''
-        });
-      }
+
+      await refreshUser();
+      setMessage({ type: 'success', text: 'Perfil actualizado correctamente' });
     } catch (error) {
-      console.error('Error fetching establecimiento:', error);
-      setMessage({ type: 'error', text: 'Error al cargar los datos del establecimiento' });
+      const errorMessage = error instanceof Error ? error.message : 'Error al actualizar el perfil';
+      setMessage({ type: 'error', text: errorMessage });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!establecimiento?.id) {
-      setMessage({ type: 'error', text: 'No se encontró el establecimiento' });
+    setLoading(true);
+    setMessage(null);
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setMessage({ type: 'error', text: 'Las contraseñas no coinciden' });
+      setLoading(false);
+      return;
+    }
+
+    if (passwordData.newPassword.length < 8) {
+      setMessage({ type: 'error', text: 'La contraseña debe tener al menos 8 caracteres' });
+      setLoading(false);
       return;
     }
 
     try {
-      setSaving(true);
-      setMessage(null);
-
-      const updateData = {
-        nombre: formData.nombre,
-        direccion: formData.direccion,
-        capacidad: parseInt(formData.capacidad) || undefined,
-        telefono: formData.telefono,
-        email: formData.email,
-        superficie_hectareas: parseFloat(formData.superficie_hectareas) || undefined
-      };
-
-      await ApiClient.makeRequest(`/establecimientos/${establecimiento.id}`, {
-        method: 'PUT',
-        body: JSON.stringify(updateData)
+      await ApiClient.makeRequest('/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        }),
       });
 
-      setMessage({ type: 'success', text: 'Configuración guardada exitosamente' });
-      await fetchEstablecimiento();
-    } catch (error: any) {
-      console.error('Error saving configuration:', error);
-      setMessage({ 
-        type: 'error', 
-        text: error?.message || 'Error al guardar la configuración' 
-      });
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setMessage({ type: 'success', text: 'Contraseña actualizada correctamente' });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error al cambiar la contraseña';
+      setMessage({ type: 'error', text: errorMessage });
     } finally {
-      setSaving(false);
+      setLoading(false);
     }
   };
 
-  const stats = useMemo(() => ({
-    capacidad: formData.capacidad || '0',
-    superficie: formData.superficie_hectareas || '0',
-    contactos: [formData.telefono, formData.email].filter(Boolean).length,
-    completado: Math.round(
-      ([formData.nombre, formData.direccion, formData.capacidad, formData.telefono, formData.email, formData.superficie_hectareas]
-        .filter(Boolean).length / 6) * 100
-    )
-  }), [formData]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  const tabs = [
+    { id: 'perfil' as const, label: 'Información Personal', icon: User },
+    { id: 'seguridad' as const, label: 'Seguridad', icon: Lock },
+    { id: 'notificaciones' as const, label: 'Notificaciones', icon: Bell },
+  ];
 
   return (
     <SimpleRoleGuard roles={['propietario']}>
-      <div className="space-y-6">
+      <div>
         {/* Hero Section */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8">
-          <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,transparent,black)]" />
-          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl" />
+        <div className="relative overflow-hidden mb-8 rounded-2xl">
+          <div className="absolute inset-0 bg-[#0f172a]"></div>
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-60"></div>
+          <div className="absolute top-0 right-1/4 w-64 h-64 bg-blue-600/30 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-cyan-500/20 rounded-full blur-3xl"></div>
           
-          <div className="relative">
-            <div className="flex items-center gap-3 mb-2">
-              <Settings className="w-8 h-8 text-blue-400" />
-              <h1 className="text-3xl font-bold text-white">Configuración</h1>
+          <div className="relative z-10 px-6 sm:px-8 lg:px-12 py-6">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="p-3 bg-white/10 backdrop-blur-sm rounded-xl">
+                <Settings className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 leading-tight">
+                  Configuración Personal
+                </h1>
+                <p className="text-sm sm:text-base text-white/70">
+                  Gestiona tu información personal, seguridad y preferencias
+                </p>
+              </div>
             </div>
-            <p className="text-slate-300 text-lg">
-              Gestiona la información y configuración de tu establecimiento
-            </p>
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="shadow-lg hover:shadow-xl transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm font-medium">Capacidad</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">{stats.capacidad}</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                  <Building2 className="w-6 h-6 text-blue-600" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
-                  Caballos
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-lg hover:shadow-xl transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm font-medium">Superficie</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">{stats.superficie}</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
-                  <MapPin className="w-6 h-6 text-green-600" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
-                  Hectáreas
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-lg hover:shadow-xl transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm font-medium">Contactos</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">{stats.contactos}</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                  <Phone className="w-6 h-6 text-blue-600" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
-                  Datos
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-lg hover:shadow-xl transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm font-medium">Completado</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">{stats.completado}%</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
-                  <Settings className="w-6 h-6 text-purple-600" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-200">
-                  Perfil
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Tabs */}
+        <div className="mb-6">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`
+                      group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm
+                      ${activeTab === tab.id
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }
+                    `}
+                  >
+                    <Icon className={`
+                      -ml-0.5 mr-2 h-5 w-5
+                      ${activeTab === tab.id ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'}
+                    `} />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
         </div>
 
-        {/* Alert Message */}
+        {/* Message */}
         {message && (
-          <div className={`p-4 rounded-lg ${
+          <div className={`mb-6 p-4 rounded-xl ${
             message.type === 'success' 
-              ? 'bg-green-50 border border-green-200 text-green-800'
-              : 'bg-red-50 border border-red-200 text-red-800'
+              ? 'bg-green-50 text-green-800 border border-green-200' 
+              : 'bg-red-50 text-red-800 border border-red-200'
           }`}>
-            <p className="font-medium">{message.text}</p>
+            {message.text}
           </div>
         )}
 
-        {/* Configuration Form */}
-        <Card className="rounded-2xl shadow-xl">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <Building2 className="w-6 h-6 text-blue-600" />
-              <div>
-                <h3 className="font-semibold text-lg">Información General</h3>
-                <CardDescription>Actualiza los datos básicos de tu establecimiento</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Content */}
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8">
+          {/* Información Personal */}
+          {activeTab === 'perfil' && (
+            <form onSubmit={handleUpdatePerfil}>
+              <div className="space-y-6">
                 <div>
-                  <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-2">
-                    Nombre del Establecimiento *
-                  </label>
-                  <input
-                    type="text"
-                    id="nombre"
-                    name="nombre"
-                    value={formData.nombre}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Ej: Haras San Jorge"
-                  />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Información Personal
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-6">
+                    Actualiza tu información personal visible en la plataforma
+                  </p>
                 </div>
 
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                    Email de Contacto
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="contacto@establecimiento.com"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label htmlFor="nombre">Nombre *</Label>
+                    <Input
+                      id="nombre"
+                      value={perfilData.nombre}
+                      onChange={(e) => setPerfilData({ ...perfilData, nombre: e.target.value })}
+                      placeholder="Tu nombre"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="apellido">Apellido *</Label>
+                    <Input
+                      id="apellido"
+                      value={perfilData.apellido}
+                      onChange={(e) => setPerfilData({ ...perfilData, apellido: e.target.value })}
+                      placeholder="Tu apellido"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={perfilData.email}
+                      disabled
+                      className="bg-gray-50 cursor-not-allowed"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      El email no se puede modificar
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="telefono">Teléfono</Label>
+                    <Input
+                      id="telefono"
+                      type="tel"
+                      value={perfilData.telefono}
+                      onChange={(e) => setPerfilData({ ...perfilData, telefono: e.target.value })}
+                      placeholder="+54 11 1234-5678"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label htmlFor="telefono" className="block text-sm font-medium text-gray-700 mb-2">
-                    Teléfono
-                  </label>
-                  <input
-                    type="tel"
-                    id="telefono"
-                    name="telefono"
-                    value={formData.telefono}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="+54 11 1234-5678"
-                  />
+                <div className="flex justify-end gap-3 pt-6 border-t">
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {loading ? 'Guardando...' : 'Guardar Cambios'}
+                  </Button>
                 </div>
-
-                <div>
-                  <label htmlFor="capacidad" className="block text-sm font-medium text-gray-700 mb-2">
-                    Capacidad (Caballos)
-                  </label>
-                  <input
-                    type="number"
-                    id="capacidad"
-                    name="capacidad"
-                    value={formData.capacidad}
-                    onChange={handleInputChange}
-                    min="1"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="150"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="superficie_hectareas" className="block text-sm font-medium text-gray-700 mb-2">
-                    Superficie (Hectáreas)
-                  </label>
-                  <input
-                    type="number"
-                    id="superficie_hectareas"
-                    name="superficie_hectareas"
-                    value={formData.superficie_hectareas}
-                    onChange={handleInputChange}
-                    min="0"
-                    step="0.1"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="85.5"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="direccion" className="block text-sm font-medium text-gray-700 mb-2">
-                  Dirección
-                </label>
-                <textarea
-                  id="direccion"
-                  name="direccion"
-                  value={formData.direccion}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                  placeholder="Ruta 9, km 45, Buenos Aires"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-4 pt-4 border-t border-gray-200">
-                <button
-                  type="button"
-                  onClick={fetchEstablecimiento}
-                  disabled={saving}
-                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all disabled:opacity-50 flex items-center gap-2"
-                >
-                  {saving ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Guardando...
-                    </>
-                  ) : (
-                    <>
-                      <Settings className="w-4 h-4" />
-                      Guardar Cambios
-                    </>
-                  )}
-                </button>
               </div>
             </form>
-          </CardContent>
-        </Card>
+          )}
+
+          {/* Seguridad */}
+          {activeTab === 'seguridad' && (
+            <form onSubmit={handleChangePassword}>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Cambiar Contraseña
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-6">
+                    Actualiza tu contraseña para mantener tu cuenta segura
+                  </p>
+                </div>
+
+                <div className="space-y-4 max-w-md">
+                  <div>
+                    <Label htmlFor="currentPassword">Contraseña Actual *</Label>
+                    <Input
+                      id="currentPassword"
+                      type="password"
+                      value={passwordData.currentPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="newPassword">Nueva Contraseña *</Label>
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      value={passwordData.newPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                      placeholder="••••••••"
+                      required
+                      minLength={8}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Mínimo 8 caracteres
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="confirmPassword">Confirmar Nueva Contraseña *</Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-6 border-t">
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {loading ? 'Actualizando...' : 'Cambiar Contraseña'}
+                  </Button>
+                </div>
+              </div>
+            </form>
+          )}
+
+          {/* Notificaciones */}
+          {activeTab === 'notificaciones' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Preferencias de Notificaciones
+                </h3>
+                <p className="text-sm text-gray-600 mb-6">
+                  Configura cómo quieres recibir notificaciones sobre tus caballos
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">Alertas de Salud</p>
+                    <p className="text-sm text-gray-600">Recibe notificaciones sobre vacunas y consultas veterinarias</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={notificacionesData.email_salud}
+                      onChange={(e) => setNotificacionesData({ ...notificacionesData, email_salud: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">Eventos y Competencias</p>
+                    <p className="text-sm text-gray-600">Recibe recordatorios sobre próximas competencias</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={notificacionesData.email_eventos}
+                      onChange={(e) => setNotificacionesData({ ...notificacionesData, email_eventos: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">Cuidados Diarios</p>
+                    <p className="text-sm text-gray-600">Resumen diario de alimentación y cuidados</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={notificacionesData.email_tareas}
+                      onChange={(e) => setNotificacionesData({ ...notificacionesData, email_tareas: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t">
+                <p className="text-sm text-gray-600 flex items-center gap-2">
+                  <Bell className="w-4 h-4" />
+                  Las preferencias de notificaciones se guardarán automáticamente en una próxima actualización
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </SimpleRoleGuard>
   );

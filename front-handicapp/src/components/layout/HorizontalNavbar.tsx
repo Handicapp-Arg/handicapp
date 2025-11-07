@@ -132,36 +132,13 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
         path = '/empleado/perfil';
         break;
       case 'propietario':
-        path = '/propietario/perfil';
+        // Propietario va a Configuración (que incluye perfil en tabs)
+        path = '/propietario/configuracion';
         break;
       default:
         path = '/profile';
     }
     router.push(path);
-  };
-
-  const goToSettings = () => {
-    const roleKey = user?.rol?.clave;
-    let path: string | null = null;
-    switch (roleKey) {
-      case 'admin':
-        path = '/admin/settings';
-        break;
-      case 'establecimiento':
-        path = '/establecimiento/configuracion';
-        break;
-      case 'propietario':
-        // Para propietario, Configuración apunta a su perfil
-        path = '/propietario/perfil';
-        break;
-      case 'capataz':
-      case 'veterinario':
-      case 'empleado':
-      default:
-        // Fallback: dirigir a perfil si no hay sección de configuración propia
-        path = null;
-    }
-    router.push(path || '/propietario/perfil');
   };
 
   return (
@@ -364,17 +341,6 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                   >
                     <UserCircle className="h-5 w-5 mr-3 flex-shrink-0 text-slate-400" />
                     <span>Mi Perfil</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setIsDropdownOpen(false);
-                      goToSettings();
-                    }}
-                    className="flex items-center w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors touch-manipulation"
-                  >
-                    <Settings className="h-5 w-5 mr-3 flex-shrink-0 text-slate-400" />
-                    <span>Configuración</span>
                   </button>
                 </div>
 
