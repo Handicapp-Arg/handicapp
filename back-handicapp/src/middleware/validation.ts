@@ -27,7 +27,14 @@ export function handleValidationErrors(req: Request, res: Response, next: NextFu
       errors: formattedErrors,
     });
 
-    res.status(400).json(ApiResponse.error('Errores de validación', formattedErrors.map(e => `${e.field}: ${e.message}`)));
+    res
+      .status(400)
+      .json(
+        ApiResponse.error(
+          'Errores de validación',
+          formattedErrors.map(e => e.message),
+        ),
+      );
     return;
   }
   

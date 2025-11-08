@@ -104,6 +104,16 @@ export default function PropietarioConfiguracionPage() {
     { id: 'notificaciones' as const, label: 'Notificaciones', icon: Bell },
   ];
 
+  const isPasswordLengthValid = passwordData.newPassword.trim().length >= 8;
+  const passwordsMatch =
+    passwordData.confirmPassword === '' || passwordData.newPassword === passwordData.confirmPassword;
+  const isPasswordFormReady =
+    passwordData.currentPassword.trim().length > 0 &&
+    passwordData.newPassword.trim().length > 0 &&
+    passwordData.confirmPassword.trim().length > 0 &&
+    isPasswordLengthValid &&
+    passwordData.newPassword === passwordData.confirmPassword;
+
   return (
     <SimpleRoleGuard roles={['propietario']}>
       <div>
@@ -270,7 +280,6 @@ export default function PropietarioConfiguracionPage() {
                       type="password"
                       value={passwordData.currentPassword}
                       onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                      placeholder="••••••••"
                       required
                     />
                   </div>
@@ -282,13 +291,17 @@ export default function PropietarioConfiguracionPage() {
                       type="password"
                       value={passwordData.newPassword}
                       onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                      placeholder="••••••••"
                       required
                       minLength={8}
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       Mínimo 8 caracteres
                     </p>
+                    {passwordData.newPassword && !isPasswordLengthValid && (
+                      <p className="text-xs text-red-500 mt-1">
+                        La contraseña debe tener al menos 8 caracteres
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -298,17 +311,21 @@ export default function PropietarioConfiguracionPage() {
                       type="password"
                       value={passwordData.confirmPassword}
                       onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                      placeholder="••••••••"
                       required
                     />
+                    {passwordData.confirmPassword && !passwordsMatch && (
+                      <p className="text-xs text-red-500 mt-1">
+                        Las contraseñas no coinciden
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <div className="flex justify-end gap-3 pt-6 border-t">
                   <Button
                     type="submit"
-                    disabled={loading}
-                    className="bg-blue-600 hover:bg-blue-700"
+                    disabled={loading || !isPasswordFormReady}
+                    className={`bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-600 disabled:cursor-not-allowed`}
                   >
                     {loading ? 'Actualizando...' : 'Cambiar Contraseña'}
                   </Button>
