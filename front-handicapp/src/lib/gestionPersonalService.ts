@@ -184,6 +184,8 @@ class GestionPersonalService {
         creado_el?: string;
         actualizado_el?: string;
         puesto?: string;
+        created_at?: string;
+        updated_at?: string;
       }) => ({
         id: u.id,
         nombre: u.nombre,
@@ -200,8 +202,8 @@ class GestionPersonalService {
         salario: u.salario || null,
         creado_el: u.creado_el,
         actualizado_el: u.actualizado_el,
-        created_at: u.creado_el || new Date().toISOString(),
-        updated_at: u.actualizado_el || new Date().toISOString(),
+        created_at: u.created_at || u.creado_el || new Date().toISOString(),
+        updated_at: u.updated_at || u.actualizado_el || new Date().toISOString(),
       }));
       
       // Aplicar filtros
