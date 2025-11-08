@@ -1,0 +1,115 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: handicapp-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: handicapp
+      POSTGRES_USER: handicapp
+      POSTGRES_PASSWORD: handicapp
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - handicapp-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U handicapp -d handicapp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  backend:
+    build:
+      context: /home/guille/Documentos/trabajo/handicapp/back-handicapp
+      dockerfile: Dockerfile
+      args:
+        NODE_VERSION: 22.11.0
+    container_name: handicapp-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOST: 0.0.0.0
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: handicapp
+      DB_USER: handicapp
+      DB_PASSWORD: handicapp
+      DB_DIALECT: postgres
+      DB_LOGGING: "false"
+      DATABASE_URL: postgres://handicapp:handicapp@db:5432/handicapp
+      JWT_SECRET: "cambia-esta-clave-super-secreta-1234567890"
+      JWT_REFRESH_SECRET: "cambia-esta-clave-refresh-super-secreta-0987654321"
+      JWT_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      CORS_ORIGIN: http://localhost:3000
+      FRONTEND_URL: http://localhost:3000
+      APP_WEB_URL: http://localhost:3000
+      API_PREFIX: /api
+      API_VERSION: v1
+      LOG_LEVEL: info
+      RATE_LIMIT_WINDOW_MS: "900000"
+      RATE_LIMIT_MAX_REQUESTS: "100"
+    ports:
+      - "3001:3000"
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - handicapp-net
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - >
+          fetch('http://localhost:3000/api/v1/health')
+            .then(res => process.exit(res.ok ? 0 : 1))
+            .catch(() => process.exit(1));
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  frontend:
+    build:
+      context: /home/guille/Documentos/trabajo/handicapp/front-handicapp
+      dockerfile: Dockerfile
+      args:
+        NODE_VERSION: 22.11.0
+        NEXT_PUBLIC_APP_ENV: production
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:3001/api/v1
+        NEXT_PUBLIC_API_BASE: http://localhost:3001
+        NEXT_PUBLIC_API_URL: http://localhost:3001
+        NEXT_PUBLIC_REQUEST_TIMEOUT_MS: 30000
+        NEXT_PUBLIC_REQUEST_MAX_RETRIES: 1
+    container_name: handicapp-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_APP_ENV: production
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:3001/api/v1
+      NEXT_PUBLIC_API_BASE: http://localhost:3001
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      NEXT_PUBLIC_REQUEST_TIMEOUT_MS: "30000"
+      NEXT_PUBLIC_REQUEST_MAX_RETRIES: "1"
+    ports:
+      - "3000:3000"
+    networks:
+      - handicapp-net
+
+networks:
+  handicapp-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  uploads_data:
+
