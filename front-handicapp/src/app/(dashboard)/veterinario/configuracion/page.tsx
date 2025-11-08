@@ -1,224 +1,314 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useState } from 'react';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
-import { useEstablecimientos } from '@/lib/hooks';
-import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Settings, Building2, MapPin, Phone, Mail, AlertCircle } from 'lucide-react';
+import { useAuthNew } from '@/lib/hooks/useAuthNew';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Settings, User, Lock, Bell } from 'lucide-react';
+import ApiClient from '@/lib/services/apiClient';
 
 export default function VeterinarioConfiguracionPage() {
-  const { data: establecimientos = [], isLoading: loading } = useEstablecimientos();
-  
-  const establecimiento = (Array.isArray(establecimientos) && establecimientos.length > 0
-    ? establecimientos[0]
-    : (establecimientos as { data?: { items?: any[] } })?.data?.items?.[0] || null) as any;
+  const { user, refreshUser } = useAuthNew();
+  const [activeTab, setActiveTab] = useState<'perfil' | 'seguridad' | 'notificaciones'>('perfil');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const stats = useMemo(() => ({
-    capacidad: establecimiento?.capacidad || 0,
-    superficie: establecimiento?.superficie_hectareas || 0,
-    contactos: [establecimiento?.telefono, establecimiento?.email].filter(Boolean).length,
-    completado: Math.round(
-      ([establecimiento?.nombre, establecimiento?.direccion, establecimiento?.capacidad, establecimiento?.telefono, establecimiento?.email, establecimiento?.superficie_hectareas]
-        .filter(Boolean).length / 6) * 100
-    )
-  }), [establecimiento]);
+  const [perfilData, setPerfilData] = useState({
+    nombre: user?.nombre || '',
+    apellido: user?.apellido || '',
+    telefono: user?.telefono || '',
+    email: user?.email || '',
+  });
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-      </div>
-    );
-  }
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+
+  const [notificacionesData, setNotificacionesData] = useState({
+    email_consultas: true,
+    email_tratamientos: true,
+    email_emergencias: true,
+    push_enabled: true,
+  });
+
+  const handleUpdatePerfil = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      await ApiClient.makeRequest('/users/profile', {
+        method: 'PUT',
+        body: JSON.stringify({
+          nombre: perfilData.nombre,
+          apellido: perfilData.apellido,
+          telefono: perfilData.telefono,
+        }),
+      });
+
+      await refreshUser();
+      setMessage({ type: 'success', text: 'Perfil actualizado correctamente' });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error al actualizar el perfil';
+      setMessage({ type: 'error', text: errorMessage });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setMessage({ type: 'error', text: 'Las contraseñas no coinciden' });
+      setLoading(false);
+      return;
+    }
+
+    if (passwordData.newPassword.length < 8) {
+      setMessage({ type: 'error', text: 'La contraseña debe tener al menos 8 caracteres' });
+      setLoading(false);
+      return;
+    }
+
+    try {
+      await ApiClient.makeRequest('/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      });
+
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setMessage({ type: 'success', text: 'Contraseña actualizada correctamente' });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error al cambiar la contraseña';
+      setMessage({ type: 'error', text: errorMessage });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const tabs = [
+    { id: 'perfil' as const, label: 'Información Personal', icon: User },
+    { id: 'seguridad' as const, label: 'Seguridad', icon: Lock },
+    { id: 'notificaciones' as const, label: 'Notificaciones', icon: Bell },
+  ];
+
+  const isPasswordLengthValid = passwordData.newPassword.trim().length >= 8;
+  const passwordsMatch =
+    passwordData.confirmPassword === '' || passwordData.newPassword === passwordData.confirmPassword;
+  const isPasswordFormReady =
+    passwordData.currentPassword.trim().length > 0 &&
+    passwordData.newPassword.trim().length > 0 &&
+    passwordData.confirmPassword.trim().length > 0 &&
+    isPasswordLengthValid &&
+    passwordData.newPassword === passwordData.confirmPassword;
 
   return (
     <SimpleRoleGuard roles={['veterinario']}>
-      <div className="space-y-6">
-        {/* Hero Section */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8">
-          <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,transparent,black)]" />
-          <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl" />
+      <div>
+        <div className="relative overflow-hidden mb-8 rounded-2xl">
+          <div className="absolute inset-0 bg-[#0f172a]"></div>
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-60"></div>
+          <div className="absolute top-0 right-1/4 w-64 h-64 bg-purple-600/30 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-purple-500/20 rounded-full blur-3xl"></div>
           
-          <div className="relative">
-            <div className="flex items-center gap-3 mb-2">
-              <Settings className="w-8 h-8 text-purple-400" />
-              <h1 className="text-3xl font-bold text-white">Información del Establecimiento</h1>
-            </div>
-            <p className="text-slate-300 text-lg">
-              Visualiza la información del establecimiento (solo lectura)
-            </p>
-          </div>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="shadow-lg hover:shadow-xl transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm font-medium">Capacidad</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">{stats.capacidad}</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
-                  <Building2 className="w-6 h-6 text-purple-600" />
-                </div>
+          <div className="relative z-10 px-6 sm:px-8 lg:px-12 py-6">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="p-3 bg-white/10 backdrop-blur-sm rounded-xl">
+                <Settings className="w-8 h-8 text-white" />
               </div>
-              <div className="mt-4">
-                <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-200">
-                  Caballos
-                </Badge>
+              <div>
+                <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 leading-tight">
+                  Configuración Personal
+                </h1>
+                <p className="text-sm sm:text-base text-white/70">
+                  Gestiona tu información personal, seguridad y preferencias
+                </p>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-lg hover:shadow-xl transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm font-medium">Superficie</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">{stats.superficie}</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
-                  <MapPin className="w-6 h-6 text-green-600" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
-                  Hectáreas
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-lg hover:shadow-xl transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm font-medium">Contactos</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">{stats.contactos}</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                  <Phone className="w-6 h-6 text-blue-600" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
-                  Datos
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-lg hover:shadow-xl transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm font-medium">Completado</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">{stats.completado}%</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
-                  <Settings className="w-6 h-6 text-purple-600" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-200">
-                  Perfil
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Info Alert */}
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-purple-600 mt-0.5" />
-            <div>
-              <p className="font-medium text-purple-800">Solo Lectura</p>
-              <p className="text-sm text-purple-700 mt-1">
-                Como veterinario, puedes ver la información del establecimiento pero no modificarla. 
-                Contacta al propietario para realizar cambios.
-              </p>
             </div>
           </div>
         </div>
 
-        {/* Configuration Display */}
-        <Card className="rounded-2xl shadow-xl">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <Building2 className="w-6 h-6 text-purple-600" />
+        <div className="mb-6">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`
+                      group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm
+                      ${activeTab === tab.id
+                        ? 'border-purple-500 text-purple-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }
+                    `}
+                  >
+                    <Icon className={`
+                      -ml-0.5 mr-2 h-5 w-5
+                      ${activeTab === tab.id ? 'text-purple-500' : 'text-gray-400 group-hover:text-gray-500'}
+                    `} />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        </div>
+
+        {message && (
+          <div className={`mb-6 p-4 rounded-xl ${
+            message.type === 'success' 
+              ? 'bg-green-50 text-green-800 border border-green-200' 
+              : 'bg-red-50 text-red-800 border border-red-200'
+          }`}>
+            {message.text}
+          </div>
+        )}
+
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8">
+          {activeTab === 'perfil' && (
+            <form onSubmit={handleUpdatePerfil}>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Información Personal</h3>
+                  <p className="text-sm text-gray-600 mb-6">Actualiza tu información personal visible en la plataforma</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label htmlFor="nombre">Nombre *</Label>
+                    <Input id="nombre" value={perfilData.nombre} onChange={(e) => setPerfilData({ ...perfilData, nombre: e.target.value })} placeholder="Tu nombre" required />
+                  </div>
+                  <div>
+                    <Label htmlFor="apellido">Apellido *</Label>
+                    <Input id="apellido" value={perfilData.apellido} onChange={(e) => setPerfilData({ ...perfilData, apellido: e.target.value })} placeholder="Tu apellido" required />
+                  </div>
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" type="email" value={perfilData.email} disabled className="bg-gray-50 cursor-not-allowed" />
+                    <p className="text-xs text-gray-500 mt-1">El email no se puede modificar</p>
+                  </div>
+                  <div>
+                    <Label htmlFor="telefono">Teléfono</Label>
+                    <Input id="telefono" type="tel" value={perfilData.telefono} onChange={(e) => setPerfilData({ ...perfilData, telefono: e.target.value })} placeholder="+54 11 1234-5678" />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-6 border-t">
+                  <Button type="submit" disabled={loading} className="bg-purple-600 hover:bg-purple-700">
+                    {loading ? 'Guardando...' : 'Guardar Cambios'}
+                  </Button>
+                </div>
+              </div>
+            </form>
+          )}
+
+          {activeTab === 'seguridad' && (
+            <form onSubmit={handleChangePassword}>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Cambiar Contraseña</h3>
+                  <p className="text-sm text-gray-600 mb-6">Actualiza tu contraseña para mantener tu cuenta segura</p>
+                </div>
+
+                <div className="space-y-4 max-w-md">
+                  <div>
+                    <Label htmlFor="currentPassword">Contraseña Actual *</Label>
+                    <Input id="currentPassword" type="password" value={passwordData.currentPassword} onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })} required />
+                  </div>
+                  <div>
+                    <Label htmlFor="newPassword">Nueva Contraseña *</Label>
+                    <Input id="newPassword" type="password" value={passwordData.newPassword} onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })} required minLength={8} />
+                    <p className="text-xs text-gray-500 mt-1">Mínimo 8 caracteres</p>
+                    {passwordData.newPassword && !isPasswordLengthValid && (<p className="text-xs text-red-500 mt-1">La contraseña debe tener al menos 8 caracteres</p>)}
+                  </div>
+                  <div>
+                    <Label htmlFor="confirmPassword">Confirmar Nueva Contraseña *</Label>
+                    <Input id="confirmPassword" type="password" value={passwordData.confirmPassword} onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })} required />
+                    {passwordData.confirmPassword && !passwordsMatch && (<p className="text-xs text-red-500 mt-1">Las contraseñas no coinciden</p>)}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-6 border-t">
+                  <Button type="submit" disabled={loading || !isPasswordFormReady} className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 disabled:text-gray-600 disabled:cursor-not-allowed">
+                    {loading ? 'Actualizando...' : 'Cambiar Contraseña'}
+                  </Button>
+                </div>
+              </div>
+            </form>
+          )}
+
+          {activeTab === 'notificaciones' && (
+            <div className="space-y-6">
               <div>
-                <h3 className="font-semibold text-lg">Información General</h3>
-                <CardDescription>Datos del establecimiento</CardDescription>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Preferencias de Notificaciones</h3>
+                <p className="text-sm text-gray-600 mb-6">Configura cómo quieres recibir notificaciones sobre consultas y tratamientos</p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">Consultas Veterinarias</p>
+                    <p className="text-sm text-gray-600">Notificaciones sobre nuevas consultas asignadas</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" checked={notificacionesData.email_consultas} onChange={(e) => setNotificacionesData({ ...notificacionesData, email_consultas: e.target.checked })} className="sr-only peer" />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                  </label>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">Seguimiento de Tratamientos</p>
+                    <p className="text-sm text-gray-600">Recordatorios sobre tratamientos en curso</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" checked={notificacionesData.email_tratamientos} onChange={(e) => setNotificacionesData({ ...notificacionesData, email_tratamientos: e.target.checked })} className="sr-only peer" />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                  </label>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">Emergencias Médicas</p>
+                    <p className="text-sm text-gray-600">Alertas urgentes sobre casos de emergencia</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" checked={notificacionesData.email_emergencias} onChange={(e) => setNotificacionesData({ ...notificacionesData, email_emergencias: e.target.checked })} className="sr-only peer" />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                  </label>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">Notificaciones Push</p>
+                    <p className="text-sm text-gray-600">Activa notificaciones push en tu dispositivo</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" checked={notificacionesData.push_enabled} onChange={(e) => setNotificacionesData({ ...notificacionesData, push_enabled: e.target.checked })} className="sr-only peer" />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                  </label>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t">
+                <p className="text-sm text-gray-600 flex items-center gap-2">
+                  <Bell className="w-4 h-4" />
+                  Las preferencias de notificaciones se guardarán automáticamente en una próxima actualización
+                </p>
               </div>
             </div>
-          </CardHeader>
-
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre del Establecimiento
-                </label>
-                <div className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900">
-                  {establecimiento?.nombre || 'No especificado'}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email de Contacto
-                </label>
-                <div className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-gray-400" />
-                  {establecimiento?.email || 'No especificado'}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Teléfono
-                </label>
-                <div className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-gray-400" />
-                  {establecimiento?.telefono || 'No especificado'}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Capacidad (Caballos)
-                </label>
-                <div className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-gray-400" />
-                  {establecimiento?.capacidad ? `${establecimiento.capacidad} caballos` : 'No especificado'}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Superficie (Hectáreas)
-                </label>
-                <div className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-gray-400" />
-                  {establecimiento?.superficie_hectareas ? `${establecimiento.superficie_hectareas} ha` : 'No especificado'}
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Dirección
-              </label>
-              <div className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 min-h-[100px]">
-                {establecimiento?.direccion || 'No especificado'}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
       </div>
     </SimpleRoleGuard>
   );

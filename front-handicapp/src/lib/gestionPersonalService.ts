@@ -237,7 +237,7 @@ class GestionPersonalService {
   async getEmpleado(id: number): Promise<Empleado | null> {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const response = await apiClient.get(`/establecimiento/empleados/${id}`) as any;
+      const response = await apiClient.get(`/users/${id}`) as any;
       return response.data || response;
     } catch (error) {
       console.error('Error fetching empleado:', error);

@@ -139,7 +139,8 @@ class NotificacionService {
    */
   async obtenerEstadisticas(): Promise<NotificacionStats> {
     const response = await ApiClient.makeRequest(`${this.baseUrl}/stats`) as any;
-    return response;
+    // El backend retorna { success: true, data: {...} }
+    return response.data || response;
   }
 
   /**

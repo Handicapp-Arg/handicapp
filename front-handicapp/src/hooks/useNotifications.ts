@@ -56,7 +56,7 @@ export function useNotifications() {
       // Asegurar que notifs sea siempre un array
       const notificacionesArray = Array.isArray(notifs) ? notifs : [];
       setNotificaciones(notificacionesArray);
-      
+
       setStats({
         total: estadisticas.total,
         no_leidas: estadisticas.no_leidas,
@@ -67,7 +67,7 @@ export function useNotifications() {
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error al cargar notificaciones';
-      console.error('Error al cargar notificaciones:', error);
+      console.error('❌ [useNotifications] Error al cargar notificaciones:', error);
       setError(errorMessage);
       // En caso de error, establecer array vacío
       setNotificaciones([]);

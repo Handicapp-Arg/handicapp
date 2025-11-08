@@ -23,7 +23,7 @@ router.get('/stats', adminOnly, UserController.getUserStats);
 router.get('/search', adminOnly, paramValidations.pagination, UserController.searchUsers);
 
 // User management routes (admin + establecimiento con users:write)
-router.get('/:id', adminOnly, paramValidations.id, UserController.getUserById);
+router.get('/:id', requirePermission('users:read'), paramValidations.id, UserController.getUserById);
 router.put('/:id', requirePermission('users:write'), paramValidations.id, userValidations.update, UserController.updateUser); // ✅ Permite establecimiento editar usuarios
 router.delete('/:id', requirePermission('users:write'), paramValidations.id, UserController.deleteUser); // ✅ Permite establecimiento eliminar usuarios
 router.patch('/:id/toggle-status', requirePermission('users:write'), paramValidations.id, UserController.toggleUserStatus); // ✅ Permite establecimiento cambiar estado

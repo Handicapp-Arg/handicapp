@@ -12,8 +12,9 @@ interface Notificacion {
   tipo: 'info' | 'success' | 'warning' | 'error';
   titulo: string;
   mensaje: string;
-  leido: boolean;
+  leida: boolean;
   fecha_creacion: string;
+  creado_el: string;
 }
 
 export default function PropietarioNotificacionesPage() {
@@ -42,7 +43,7 @@ export default function PropietarioNotificacionesPage() {
   const handleMarkAsRead = async (id: number) => {
     try {
       await notificacionService.marcarComoLeida(id);
-      setNotificaciones(prev => prev.map(n => n.id === id ? { ...n, leido: true } : n));
+      setNotificaciones(prev => prev.map(n => n.id === id ? { ...n, leida: true } : n));
     } catch (error) {
       console.error('Error:', error);
     }
@@ -51,7 +52,7 @@ export default function PropietarioNotificacionesPage() {
   const handleMarkAllAsRead = async () => {
     try {
       await notificacionService.marcarTodasComoLeidas();
-      setNotificaciones(prev => prev.map(n => ({ ...n, leido: true })));
+      setNotificaciones(prev => prev.map(n => ({ ...n, leida: true })));
     } catch (error) {
       console.error('Error:', error);
     }
@@ -68,17 +69,17 @@ export default function PropietarioNotificacionesPage() {
 
   const stats = useMemo(() => ({
     total: notificaciones.length,
-    noLeidas: notificaciones.filter(n => !n.leido).length,
-    leidas: notificaciones.filter(n => n.leido).length,
+    noLeidas: notificaciones.filter(n => !n.leida).length,
+    leidas: notificaciones.filter(n => n.leida).length,
     hoy: notificaciones.filter(n => {
       const today = new Date().toDateString();
-      return new Date(n.fecha_creacion).toDateString() === today;
+      return new Date(n.fecha_creacion || n.creado_el).toDateString() === today;
     }).length,
   }), [notificaciones]);
 
   const filteredNotificaciones = notificaciones.filter(n => {
-    if (filter === 'no_leidas') return !n.leido;
-    if (filter === 'leidas') return n.leido;
+    if (filter === 'no_leidas') return !n.leida;
+    if (filter === 'leidas') return n.leida;
     return true;
   });
 
@@ -218,18 +219,18 @@ export default function PropietarioNotificacionesPage() {
               {filteredNotificaciones.map((notif) => (
                 <div
                   key={notif.id}
-                  className={`p-4 rounded-lg border ${notif.leido ? 'bg-gray-50 border-gray-200' : 'bg-blue-50 border-blue-200'}`}
+                  className={`p-4 rounded-lg border ${notif.leida ? 'bg-gray-50 border-gray-200' : 'bg-blue-50 border-blue-200'}`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="font-semibold text-gray-900">{notif.titulo}</h3>
                       <p className="text-sm text-gray-600 mt-1">{notif.mensaje}</p>
                       <p className="text-xs text-gray-400 mt-2">
-                        {new Date(notif.fecha_creacion).toLocaleString()}
+                        {new Date(notif.fecha_creacion || notif.creado_el).toLocaleString()}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 ml-4">
-                      {!notif.leido && (
+                      {!notif.leida && (
                         <button
                           onClick={() => handleMarkAsRead(notif.id)}
                           className="p-2 hover:bg-gray-100 rounded-lg"

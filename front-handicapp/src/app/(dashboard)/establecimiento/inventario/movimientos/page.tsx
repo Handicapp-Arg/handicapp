@@ -13,6 +13,8 @@ export default function MovimientosGeneralesPage() {
   const [loading, setLoading] = useState(true);
   const [filtroTipo, setFiltroTipo] = useState<string>('todos');
   const [busqueda, setBusqueda] = useState('');
+  const [fechaDesde, setFechaDesde] = useState('');
+  const [fechaHasta, setFechaHasta] = useState('');
 
   useEffect(() => {
     loadMovimientos();
@@ -39,7 +41,26 @@ export default function MovimientosGeneralesPage() {
     
     const matchesTipo = filtroTipo === 'todos' || mov.tipo === filtroTipo;
     
-    return matchesBusqueda && matchesTipo;
+    // Filtro por fecha
+    let matchesFecha = true;
+    if (fechaDesde || fechaHasta) {
+      const fechaMovimiento = new Date(mov.fecha);
+      fechaMovimiento.setHours(0, 0, 0, 0);
+      
+      if (fechaDesde) {
+        const desde = new Date(fechaDesde);
+        desde.setHours(0, 0, 0, 0);
+        matchesFecha = matchesFecha && fechaMovimiento >= desde;
+      }
+      
+      if (fechaHasta) {
+        const hasta = new Date(fechaHasta);
+        hasta.setHours(23, 59, 59, 999);
+        matchesFecha = matchesFecha && fechaMovimiento <= hasta;
+      }
+    }
+    
+    return matchesBusqueda && matchesTipo && matchesFecha;
   });
 
   const getIconoTipo = (tipo: string) => {
@@ -201,29 +222,75 @@ export default function MovimientosGeneralesPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                placeholder="Buscar por producto, código o motivo..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-              />
-              <Package className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+          <div className="space-y-4">
+            {/* Primera fila: Búsqueda y Tipo */}
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  placeholder="Buscar por producto, código o motivo..."
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                />
+                <Package className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+              </div>
+              <select
+                value={filtroTipo}
+                onChange={(e) => setFiltroTipo(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              >
+                <option value="todos">Todos los tipos</option>
+                <option value="entrada">Entradas</option>
+                <option value="salida">Salidas</option>
+                <option value="ajuste">Ajustes</option>
+                <option value="devolucion">Devoluciones</option>
+                <option value="merma">Mermas</option>
+              </select>
             </div>
-            <select
-              value={filtroTipo}
-              onChange={(e) => setFiltroTipo(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-            >
-              <option value="todos">Todos los tipos</option>
-              <option value="entrada">Entradas</option>
-              <option value="salida">Salidas</option>
-              <option value="ajuste">Ajustes</option>
-              <option value="devolucion">Devoluciones</option>
-              <option value="merma">Mermas</option>
-            </select>
+
+            {/* Segunda fila: Rango de fechas */}
+            <div className="flex flex-col md:flex-row gap-4 items-end">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Desde
+                </label>
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={fechaDesde}
+                    onChange={(e) => setFechaDesde(e.target.value)}
+                    className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  />
+                  <Calendar className="absolute left-3 top-3 h-5 w-5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Hasta
+                </label>
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={fechaHasta}
+                    onChange={(e) => setFechaHasta(e.target.value)}
+                    className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  />
+                  <Calendar className="absolute left-3 top-3 h-5 w-5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+              {(fechaDesde || fechaHasta) && (
+                <button
+                  onClick={() => {
+                    setFechaDesde('');
+                    setFechaHasta('');
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Limpiar fechas
+                </button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>

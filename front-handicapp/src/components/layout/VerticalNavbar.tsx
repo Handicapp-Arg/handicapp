@@ -36,7 +36,6 @@ const ROLE_MENUS = {
     { name: 'Tareas', href: '/admin/tareas', icon: FileText },
     { name: 'Auditoría', href: '/admin/auditoria', icon: FileText },
     { name: 'Configuración', href: '/admin/configuracion', icon: Settings },
-    { name: 'Mi Perfil', href: '/admin/perfil', icon: User },
   ],
   establecimiento: [
     { name: 'Dashboard', href: '/establecimiento', icon: Home },
@@ -59,7 +58,6 @@ const ROLE_MENUS = {
     { name: 'Personal', href: '/capataz/personal', icon: Users },
     { name: 'Reportes', href: '/capataz/reportes', icon: BarChart3 },
     { name: 'Configuración', href: '/capataz/configuracion', icon: Settings },
-    { name: 'Mi Perfil', href: '/capataz/perfil', icon: User },
   ],
   veterinario: [
     { name: 'Dashboard', href: '/veterinario', icon: Home },
@@ -74,17 +72,14 @@ const ROLE_MENUS = {
     { name: 'Tareas', href: '/veterinario/tareas', icon: FileText },
     { name: 'Reportes', href: '/veterinario/reportes', icon: BarChart3 },
     { name: 'Configuración', href: '/veterinario/configuracion', icon: Settings },
-    { name: 'Mi Perfil', href: '/veterinario/perfil', icon: User },
   ],
   empleado: [
     { name: 'Dashboard', href: '/empleado', icon: Home },
     { name: 'Notificaciones', href: '/empleado/notificaciones', icon: Bell },
-    { name: 'Establecimiento', href: '/empleado/establecimiento', icon: Building2 },
     { name: 'Caballos', href: '/empleado/caballos', icon: ClipboardList },
     { name: 'Eventos', href: '/empleado/eventos', icon: Calendar },
     { name: 'Mis Tareas', href: '/empleado/tareas', icon: FileText },
     { name: 'Configuración', href: '/empleado/configuracion', icon: Settings },
-    { name: 'Mi Perfil', href: '/empleado/perfil', icon: User },
   ],
   propietario: [
     { name: 'Dashboard', href: '/propietario', icon: Home },

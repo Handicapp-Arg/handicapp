@@ -179,20 +179,13 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
             <button 
               onClick={() => setIsNotifDropdownOpen(!isNotifDropdownOpen)}
               className="relative p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all duration-200 touch-manipulation"
-              title={isConnected ? 'Notificaciones (En tiempo real)' : 'Notificaciones (Desconectado)'}
+              title={contador > 0 ? `${contador} notificación${contador !== 1 ? 'es' : ''} sin leer` : 'Sin notificaciones'}
             >
               <Bell className="h-5 w-5" />
               {contador > 0 && (
-                <span className="absolute top-1 right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full ring-2 ring-white animate-pulse">
+                <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-red-500 text-white text-xs font-bold rounded-full shadow-lg">
                   {contador > 99 ? '99+' : contador}
                 </span>
-              )}
-              {/* Indicador de conexión WebSocket - solo si NO hay notificaciones */}
-              {contador === 0 && !isConnected && (
-                <span className="absolute bottom-1 right-1 h-2 w-2 bg-gray-400 rounded-full ring-2 ring-white" title="WebSocket desconectado"></span>
-              )}
-              {contador === 0 && isConnected && (
-                <span className="absolute bottom-1 right-1 h-2 w-2 bg-green-500 rounded-full ring-2 ring-white animate-pulse" title="WebSocket conectado"></span>
               )}
             </button>
 
@@ -230,7 +223,17 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                 <div className="max-h-[50vh] sm:max-h-96 overflow-y-auto">
                   {notificaciones && notificaciones.length > 0 ? (
                     <>
-                      {notificaciones.slice(0, 5).map((notif) => {
+                      {/* Mostrar primero las no leídas, luego las leídas - máximo 5 en total */}
+                      {[...notificaciones]
+                        .sort((a, b) => {
+                          // Primero las no leídas
+                          if (!a.leida && b.leida) return -1;
+                          if (a.leida && !b.leida) return 1;
+                          // Luego por fecha más reciente
+                          return new Date(b.creado_el).getTime() - new Date(a.creado_el).getTime();
+                        })
+                        .slice(0, 5)
+                        .map((notif) => {
                         const Icono = getIconoTipo(notif.tipo);
                         return (
                           <div

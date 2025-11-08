@@ -1,62 +1,14 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { useAuthNew } from '@/lib/hooks/useAuthNew';
-import ApiClient from '@/lib/services/apiClient';
-import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { User, Mail, Phone, Shield, Lock } from 'lucide-react';
+import { User, Mail, Shield } from 'lucide-react';
 
 export default function CapatazPerfilPage() {
   const { user } = useAuthNew();
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [passwords, setPasswords] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
-
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setPasswords(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmitPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (passwords.newPassword !== passwords.confirmPassword) {
-      setMessage({ type: 'error', text: 'Las contraseñas no coinciden' });
-      return;
-    }
-
-    if (passwords.newPassword.length < 6) {
-      setMessage({ type: 'error', text: 'La contraseña debe tener al menos 6 caracteres' });
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setMessage(null);
-
-      await ApiClient.makeRequest(`/users/${user?.id}/change-password`, {
-        method: 'POST',
-        body: JSON.stringify({
-          currentPassword: passwords.currentPassword,
-          newPassword: passwords.newPassword
-        })
-      });
-
-      setMessage({ type: 'success', text: 'Contraseña actualizada exitosamente' });
-      setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    } catch (error) {
-      console.error('Error:', error);
-      setMessage({ type: 'error', text: 'Error al cambiar la contraseña' });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const stats = useMemo(() => ({
     nombre: user?.nombre || 'Usuario',
@@ -80,7 +32,7 @@ export default function CapatazPerfilPage() {
               <h1 className="text-3xl font-bold text-white">Mi Perfil</h1>
             </div>
             <p className="text-slate-300 text-lg">
-              Gestiona tu información personal y seguridad
+              Información personal de tu cuenta
             </p>
           </div>
         </div>
@@ -163,78 +115,6 @@ export default function CapatazPerfilPage() {
             </CardContent>
           </Card>
         </div>
-
-        {/* Message */}
-        {message && (
-          <div className={`p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
-            {message.text}
-          </div>
-        )}
-
-        {/* Password Change Card */}
-        <Card className="rounded-2xl shadow-xl">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <Lock className="w-6 h-6 text-orange-600" />
-              <div>
-                <h3 className="font-semibold text-lg">Cambiar Contraseña</h3>
-                <CardDescription>Actualiza tu contraseña de acceso</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmitPassword} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Contraseña Actual
-                </label>
-                <input
-                  type="password"
-                  name="currentPassword"
-                  value={passwords.currentPassword}
-                  onChange={handlePasswordChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nueva Contraseña
-                </label>
-                <input
-                  type="password"
-                  name="newPassword"
-                  value={passwords.newPassword}
-                  onChange={handlePasswordChange}
-                  required
-                  minLength={6}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirmar Nueva Contraseña
-                </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={passwords.confirmPassword}
-                  onChange={handlePasswordChange}
-                  required
-                  minLength={6}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full px-6 py-3 bg-gradient-to-r from-orange-600 to-orange-700 text-white rounded-lg hover:from-orange-700 hover:to-orange-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                {loading ? 'Actualizando...' : 'Cambiar Contraseña'}
-              </button>
-            </form>
-          </CardContent>
-        </Card>
       </div>
     </SimpleRoleGuard>
   );

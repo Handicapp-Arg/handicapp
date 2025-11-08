@@ -262,8 +262,8 @@ export class NotificacionService {
           }
         }
         
-        // Mapear estado a leido (boolean) para compatibilidad frontend
-        notifJson.leido = notifJson.estado === 'read' || notifJson.estado === EstadoNotificacion.read;
+        // Mapear estado a leida (boolean) para compatibilidad frontend
+        notifJson.leida = notifJson.estado === 'read' || notifJson.estado === EstadoNotificacion.read;
         notifJson.fecha_creacion = notifJson.creado_el;
         
         return notifJson;
