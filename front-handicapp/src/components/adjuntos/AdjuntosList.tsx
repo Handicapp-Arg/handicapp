@@ -18,7 +18,7 @@ interface AdjuntosListProps {
   eventoId?: number;
   showActions?: boolean;
 }
-
+/* comentario */
 export default function AdjuntosList({ caballoId, eventoId, showActions = false }: AdjuntosListProps) {
   const [adjuntos, setAdjuntos] = useState<Adjunto[]>([]);
   const [loading, setLoading] = useState(true);
