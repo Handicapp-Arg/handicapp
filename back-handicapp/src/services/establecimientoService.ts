@@ -1079,4 +1079,342 @@ export class EstablecimientoService {
       };
     }
   }
+
+  // ============================================================================
+  // NUEVOS MÉTODOS: Geolocalización, Reseñas e Imágenes
+  // ============================================================================
+
+  /**
+   * Obtener establecimientos para mapa (solo los que tienen coordenadas)
+   */
+  static async getEstablecimientosForMap(filters: {
+    tipo?: string;
+    rating_minimo?: number;
+    verificado?: boolean;
+  }): Promise<ServiceResponse<any[]>> {
+    try {
+      const where: any = {
+        latitud: { [Op.ne]: null },
+        longitud: { [Op.ne]: null },
+        estado: 'activo',
+      };
+
+      if (filters.tipo) {
+        where.tipo_establecimiento = filters.tipo;
+      }
+
+      if (filters.rating_minimo) {
+        where.rating_promedio = { [Op.gte]: filters.rating_minimo };
+      }
+
+      if (filters.verificado !== undefined) {
+        where.verificado = filters.verificado;
+      }
+
+      const establecimientos = await Establecimiento.findAll({
+        where,
+        attributes: [
+          'id',
+          'nombre',
+          'latitud',
+          'longitud',
+          'rating_promedio',
+          'total_resenas',
+          'verificado',
+          'tipo_establecimiento',
+          'logo_url',
+          'ciudad',
+          'provincia',
+          'imagenes',
+        ],
+        limit: 500, // Limitar para no sobrecargar el mapa
+      });
+
+      return {
+        success: true,
+        data: establecimientos.map(e => e.toJSON()),
+      };
+    } catch (error: any) {
+      logger.error('Error obteniendo establecimientos para mapa', { error });
+      return {
+        success: false,
+        error: error?.message || 'Error obteniendo establecimientos',
+      };
+    }
+  }
+
+  /**
+   * Crear una reseña para un establecimiento
+   */
+  static async createResena(data: {
+    establecimiento_id: number;
+    usuario_id: number;
+    rating: number;
+    comentario: string | null;
+  }): Promise<ServiceResponse<any>> {
+    try {
+      const { EstablecimientoResena } = require('../models/EstablecimientoResena');
+
+      // Verificar que el establecimiento existe
+      const establecimiento = await Establecimiento.findByPk(data.establecimiento_id);
+      if (!establecimiento) {
+        return {
+          success: false,
+          error: 'Establecimiento no encontrado',
+        };
+      }
+
+      // Crear o actualizar la reseña
+      const [resena, created] = await EstablecimientoResena.upsert({
+        establecimiento_id: data.establecimiento_id,
+        usuario_id: data.usuario_id,
+        rating: data.rating,
+        comentario: data.comentario,
+        visible: true,
+        actualizado_el: new Date(),
+      }, {
+        returning: true,
+      });
+
+      return {
+        success: true,
+        data: resena.toJSON(),
+      };
+    } catch (error: any) {
+      logger.error('Error creando reseña', { error });
+      return {
+        success: false,
+        error: error?.message || 'Error creando reseña',
+      };
+    }
+  }
+
+  /**
+   * Obtener reseñas de un establecimiento
+   */
+  static async getResenas(
+    establecimientoId: number,
+    options: {
+      page?: number;
+      limit?: number;
+      rating?: number;
+    }
+  ): Promise<ServiceResponse<{ resenas: any[]; total: number; totalPages: number }>> {
+    try {
+      const { EstablecimientoResena } = require('../models/EstablecimientoResena');
+      const page = options.page || 1;
+      const limit = options.limit || 10;
+      const offset = (page - 1) * limit;
+
+      const where: any = {
+        establecimiento_id: establecimientoId,
+        visible: true,
+      };
+
+      if (options.rating) {
+        where.rating = options.rating;
+      }
+
+      const { count, rows } = await EstablecimientoResena.findAndCountAll({
+        where,
+        include: [
+          {
+            model: User,
+            as: 'usuario',
+            attributes: ['id', 'nombre', 'apellido', 'avatar_url'],
+          },
+          {
+            model: User,
+            as: 'respondido_por',
+            attributes: ['id', 'nombre', 'apellido'],
+            required: false,
+          },
+        ],
+        order: [['creado_el', 'DESC']],
+        limit,
+        offset,
+      });
+
+      return {
+        success: true,
+        data: {
+          resenas: rows.map((r: any) => r.toJSON()),
+          total: count,
+          totalPages: Math.ceil(count / limit),
+        },
+      };
+    } catch (error: any) {
+      logger.error('Error obteniendo reseñas', { error });
+      return {
+        success: false,
+        error: error?.message || 'Error obteniendo reseñas',
+      };
+    }
+  }
+
+  /**
+   * Responder a una reseña (solo roles del establecimiento)
+   */
+  static async responderResena(
+    resenaId: number,
+    establecimientoId: number,
+    usuarioId: number,
+    respuesta: string
+  ): Promise<ServiceResponse<any>> {
+    try {
+      const { EstablecimientoResena } = require('../models/EstablecimientoResena');
+
+      // Verificar que el usuario pertenece al establecimiento
+      const membresia = await MembresiaUsuarioEstablecimiento.findOne({
+        where: {
+          usuario_id: usuarioId,
+          establecimiento_id: establecimientoId,
+          estado: EstadoMembresia.activo,
+        },
+      });
+
+      if (!membresia) {
+        return {
+          success: false,
+          error: 'No tienes permisos para responder reseñas de este establecimiento',
+        };
+      }
+
+      const resena = await EstablecimientoResena.findOne({
+        where: {
+          id: resenaId,
+          establecimiento_id: establecimientoId,
+        },
+      });
+
+      if (!resena) {
+        return {
+          success: false,
+          error: 'Reseña no encontrada',
+        };
+      }
+
+      resena.respuesta_establecimiento = respuesta;
+      resena.respondido_por_usuario_id = usuarioId;
+      resena.respondido_el = new Date();
+      resena.actualizado_el = new Date();
+      await resena.save();
+
+      return {
+        success: true,
+        data: resena.toJSON(),
+      };
+    } catch (error: any) {
+      logger.error('Error respondiendo reseña', { error });
+      return {
+        success: false,
+        error: error?.message || 'Error respondiendo reseña',
+      };
+    }
+  }
+
+  /**
+   * Agregar imágenes al establecimiento
+   */
+  static async addImagenes(
+    establecimientoId: number,
+    usuarioId: number,
+    imageUrls: string[]
+  ): Promise<ServiceResponse<any>> {
+    try {
+      // Verificar permisos
+      const membresia = await MembresiaUsuarioEstablecimiento.findOne({
+        where: {
+          usuario_id: usuarioId,
+          establecimiento_id: establecimientoId,
+          estado: EstadoMembresia.activo,
+        },
+      });
+
+      if (!membresia) {
+        return {
+          success: false,
+          error: 'No tienes permisos para agregar imágenes a este establecimiento',
+        };
+      }
+
+      const establecimiento = await Establecimiento.findByPk(establecimientoId);
+      if (!establecimiento) {
+        return {
+          success: false,
+          error: 'Establecimiento no encontrado',
+        };
+      }
+
+      // Agregar nuevas imágenes al array existente
+      const imagenesActuales = establecimiento.imagenes || [];
+      establecimiento.imagenes = [...imagenesActuales, ...imageUrls];
+      establecimiento.actualizado_el = new Date();
+      await establecimiento.save();
+
+      return {
+        success: true,
+        data: establecimiento.toJSON(),
+      };
+    } catch (error: any) {
+      logger.error('Error agregando imágenes', { error });
+      return {
+        success: false,
+        error: error?.message || 'Error agregando imágenes',
+      };
+    }
+  }
+
+  /**
+   * Eliminar una imagen del establecimiento
+   */
+  static async deleteImagen(
+    establecimientoId: number,
+    usuarioId: number,
+    imagenUrl: string
+  ): Promise<ServiceResponse<any>> {
+    try {
+      // Verificar permisos
+      const membresia = await MembresiaUsuarioEstablecimiento.findOne({
+        where: {
+          usuario_id: usuarioId,
+          establecimiento_id: establecimientoId,
+          estado: EstadoMembresia.activo,
+        },
+      });
+
+      if (!membresia) {
+        return {
+          success: false,
+          error: 'No tienes permisos para eliminar imágenes de este establecimiento',
+        };
+      }
+
+      const establecimiento = await Establecimiento.findByPk(establecimientoId);
+      if (!establecimiento) {
+        return {
+          success: false,
+          error: 'Establecimiento no encontrado',
+        };
+      }
+
+      // Filtrar la imagen a eliminar
+      establecimiento.imagenes = (establecimiento.imagenes || []).filter(
+        (url: string) => url !== imagenUrl
+      );
+      establecimiento.actualizado_el = new Date();
+      await establecimiento.save();
+
+      return {
+        success: true,
+        data: establecimiento.toJSON(),
+      };
+    } catch (error: any) {
+      logger.error('Error eliminando imagen', { error });
+      return {
+        success: false,
+        error: error?.message || 'Error eliminando imagen',
+      };
+    }
+  }
 }

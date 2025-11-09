@@ -52,6 +52,16 @@ router.get(
 );
 
 /**
+ * @route   GET /api/v1/establecimientos/mapa
+ * @desc    Obtener establecimientos para mapa (con coordenadas)
+ * @access  Público/Autenticado
+ */
+router.get(
+  '/mapa',
+  EstablecimientoController.getForMap
+);
+
+/**
  * @route   GET /api/v1/establecimientos/:id
  * @desc    Obtener establecimiento por ID
  * @access  Usuarios con acceso al establecimiento
@@ -211,6 +221,75 @@ router.get(
   paramValidations.id,
   requirePermission('establishments:view_stats'),
   EstablecimientoController.getStats
+);
+
+// ====================================
+// RESEÑAS Y RATINGS
+// ====================================
+
+/**
+ * @route   POST /api/v1/establecimientos/:id/resenas
+ * @desc    Crear reseña para un establecimiento
+ * @access  Usuarios autenticados
+ */
+router.post(
+  '/:id/resenas',
+  paramValidations.id,
+  requireAuth,
+  EstablecimientoController.createResena
+);
+
+/**
+ * @route   GET /api/v1/establecimientos/:id/resenas
+ * @desc    Obtener reseñas de un establecimiento
+ * @access  Público/Autenticado
+ */
+router.get(
+  '/:id/resenas',
+  paramValidations.id,
+  requireAuth,
+  EstablecimientoController.getResenas
+);
+
+/**
+ * @route   POST /api/v1/establecimientos/:id/resenas/:resenaId/responder
+ * @desc    Responder a una reseña (solo establecimiento)
+ * @access  Miembros del establecimiento
+ */
+router.post(
+  '/:id/resenas/:resenaId/responder',
+  paramValidations.id,
+  requireAuth,
+  EstablecimientoController.responderResena
+);
+
+// ====================================
+// IMÁGENES DE ESTABLECIMIENTO
+// ====================================
+
+/**
+ * @route   POST /api/v1/establecimientos/:id/imagenes
+ * @desc    Agregar imágenes al establecimiento
+ * @access  Miembros del establecimiento
+ */
+router.post(
+  '/:id/imagenes',
+  paramValidations.id,
+  requireAuth,
+  uploader.array('imagenes', 10), // Hasta 10 imágenes
+  EstablecimientoController.addImagenes
+);
+
+/**
+ * @route   DELETE /api/v1/establecimientos/:id/imagenes
+ * @desc    Eliminar una imagen del establecimiento
+ * @access  Miembros del establecimiento
+ */
+router.delete(
+  '/:id/imagenes',
+  paramValidations.id,
+  requireAuth,
+  EstablecimientoController.deleteImagen
 );
 
 export { router as establecimientoRoutes };

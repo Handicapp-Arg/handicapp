@@ -24,6 +24,7 @@ import { Notificacion } from "./Notificacion";
 import { PushSubscription } from "./PushSubscription";
 import { EstadoUsuario } from "./enums";
 import { Producto, Categoria, Proveedor, Movimiento } from "./inventario";
+import { EstablecimientoResena } from "./EstablecimientoResena";
 
 // Función para inicializar modelos
 export function initializeModels(sequelize: Sequelize) {
@@ -406,9 +407,21 @@ export function initializeModels(sequelize: Sequelize) {
   Movimiento.belongsTo(User, { foreignKey: 'usuario_id', as: 'usuario' });
   User.hasMany(Movimiento, { foreignKey: 'usuario_id', as: 'movimientos_inventario' });
 
+  // 32. EstablecimientoResena ↔ Establecimiento (muchos a uno)
+  EstablecimientoResena.belongsTo(Establecimiento, { foreignKey: 'establecimiento_id', as: 'establecimiento' });
+  Establecimiento.hasMany(EstablecimientoResena, { foreignKey: 'establecimiento_id', as: 'resenas' });
+
+  // 33. EstablecimientoResena ↔ User (muchos a uno)
+  EstablecimientoResena.belongsTo(User, { foreignKey: 'usuario_id', as: 'usuario' });
+  User.hasMany(EstablecimientoResena, { foreignKey: 'usuario_id', as: 'resenas' });
+
+  // 34. EstablecimientoResena ↔ User (respondido_por)
+  EstablecimientoResena.belongsTo(User, { foreignKey: 'respondido_por_usuario_id', as: 'respondido_por' });
+  User.hasMany(EstablecimientoResena, { foreignKey: 'respondido_por_usuario_id', as: 'respuestas_resenas' });
+
   // Relaciones configuradas (solo en modo debug)
   if (process.env['NODE_ENV'] === 'development' && process.env['DEBUG_MODELS'] === 'true') {
-    logger.debug('Model relations initialized (31 associations)');
+    logger.debug('Model relations initialized (34 associations)');
   }
 }
 
@@ -446,6 +459,9 @@ const db = {
   Categoria,
   Proveedor,
   Movimiento,
+  
+  // Reseñas
+  EstablecimientoResena,
   
   // Enums para uso en servicios
   EstadoUsuario,

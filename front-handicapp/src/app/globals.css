@@ -1,3 +1,5 @@
+@import 'leaflet/dist/leaflet.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -231,4 +233,23 @@
   .scrollbar-thin {
     scroll-behavior: smooth;
   }
+}
+
+/* Leaflet Map Custom Styles */
+.leaflet-container {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.leaflet-popup-content {
+  margin: 0;
+  padding: 0;
+}
+
+.leaflet-popup-tip {
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.15);
 }

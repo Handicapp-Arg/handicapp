@@ -1,20 +1,19 @@
 'use client';
 
-import React, { useState } from 'react';
-import { EstablecimientoList } from '@/components/dashboard/EstablecimientoList';
+import React from 'react';
+import Link from 'next/link';
+import { EstablecimientoTabs } from '@/components/dashboard/EstablecimientoTabs';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Building2, MapPin, Users, TrendingUp } from 'lucide-react';
-import { type Establecimiento } from '@/lib/services/establecimientoService';
 import { useStats } from '@/lib/hooks/useStats';
 import { useEstablecimientos } from '@/lib/hooks/useEstablecimientosQuery';
 
 export default function PropietarioEstablecimientosPage() {
   // Propietarios solo pueden VER establecimientos, no crear/editar
-  const [selectedEstablecimiento, setSelectedEstablecimiento] = useState<Establecimiento | null>(null);
-  const { stats } = useStats();
-  const { data: establecimientosData, isLoading } = useEstablecimientos();
+  const { stats, loading: statsLoading } = useStats();
+  const { data: establecimientosData, isLoading: establecimientosLoading } = useEstablecimientos();
   
   // Asegurar que establecimientos sea siempre un array
   const establecimientos = Array.isArray(establecimientosData) ? establecimientosData : [];
@@ -36,11 +35,9 @@ export default function PropietarioEstablecimientosPage() {
       .filter(Boolean)
   ).size;
 
-  const handleSelect = (establecimiento: Establecimiento) => {
-    setSelectedEstablecimiento(establecimiento);
-  };
-
-  // Mostrar loading mientras carga
+  // Mostrar loading mientras carga - ESPERAR AMBAS CONSULTAS
+  const isLoading = statsLoading || establecimientosLoading;
+  
   if (isLoading) {
     return (
       <SimpleRoleGuard roles={['propietario']}>
@@ -51,10 +48,11 @@ export default function PropietarioEstablecimientosPage() {
     );
   }
 
-  // Si el propietario no tiene caballos, mostrar mensaje para registrar el primero
+  // SOLO mostrar mensaje si YA TERMINÓ de cargar Y no tiene caballos
   const hasCaballos = (stats.caballos?.total || 0) > 0;
   
-  if (!hasCaballos) {
+  // Si NO tiene caballos PERO tiene establecimientos, mostrar los establecimientos de todas formas
+  if (!hasCaballos && totalEstablecimientos === 0) {
     return (
       <SimpleRoleGuard roles={['propietario']}>
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -70,12 +68,12 @@ export default function PropietarioEstablecimientosPage() {
             <p className="text-gray-600 mb-6">
               Para ver establecimientos, primero debes registrar tu caballo en uno de ellos.
             </p>
-            <a
+            <Link
               href="/propietario/caballos"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               Registrar mi primer caballo
-            </a>
+            </Link>
           </div>
         </div>
       </SimpleRoleGuard>
@@ -196,11 +194,9 @@ export default function PropietarioEstablecimientosPage() {
           </div>
         </div>
 
-        {/* List Component - Solo lectura para propietarios */}
+        {/* List Component con Tabs integrados */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-          <EstablecimientoList
-            onSelectEstablecimiento={handleSelect}
-          />
+          <EstablecimientoTabs />
         </div>
       </div>
     </SimpleRoleGuard>

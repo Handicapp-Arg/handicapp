@@ -35,6 +35,18 @@ interface EstabAttrs {
   provincia: string | null;
   pais: string | null;
 
+  // Geolocation & Media
+  latitud: number | null;
+  longitud: number | null;
+  descripcion: string | null;
+  imagenes: string[];
+
+  // Ratings & Reviews
+  rating_promedio: number;
+  total_resenas: number;
+  verificado: boolean;
+  fecha_verificacion: Date | null;
+
   logo_url: string | null;
   disciplina_principal: Disciplina | null;
   
@@ -60,6 +72,14 @@ type EstabCreation = Optional<
   | "ciudad"
   | "provincia"
   | "pais"
+  | "latitud"
+  | "longitud"
+  | "descripcion"
+  | "imagenes"
+  | "rating_promedio"
+  | "total_resenas"
+  | "verificado"
+  | "fecha_verificacion"
   | "logo_url"
   | "disciplina_principal"
   | "tipo_establecimiento"
@@ -89,6 +109,18 @@ export class Establecimiento
   declare provincia: string | null;
   declare pais: string | null;
 
+  // Geolocation & Media
+  declare latitud: number | null;
+  declare longitud: number | null;
+  declare descripcion: string | null;
+  declare imagenes: string[];
+
+  // Ratings & Reviews
+  declare rating_promedio: number;
+  declare total_resenas: number;
+  declare verificado: boolean;
+  declare fecha_verificacion: Date | null;
+
   declare logo_url: string | null;
   declare disciplina_principal: Disciplina | null;
   
@@ -117,6 +149,37 @@ Establecimiento.init(
     ciudad: { type: DataTypes.STRING(100), allowNull: true },
     provincia: { type: DataTypes.STRING(100), allowNull: true },
     pais: { type: DataTypes.STRING(80), allowNull: true },
+
+    // Geolocation & Media
+    latitud: { type: DataTypes.DECIMAL(10, 8), allowNull: true },
+    longitud: { type: DataTypes.DECIMAL(11, 8), allowNull: true },
+    descripcion: { type: DataTypes.TEXT, allowNull: true },
+    imagenes: {
+      type: DataTypes.JSONB,
+      allowNull: false,
+      defaultValue: [],
+    },
+
+    // Ratings & Reviews
+    rating_promedio: {
+      type: DataTypes.DECIMAL(3, 2),
+      allowNull: false,
+      defaultValue: 0,
+    },
+    total_resenas: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    verificado: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    fecha_verificacion: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
 
     logo_url: { type: DataTypes.STRING(300), allowNull: true },
     disciplina_principal: {
@@ -163,6 +226,10 @@ Establecimiento.init(
       { name: "ix_establecimientos_ciudad", fields: ["ciudad"] },
       { name: "ix_establecimientos_tipo", fields: ["tipo_establecimiento"] },
       { name: "ix_establecimientos_estado", fields: ["estado"] },
+      { name: "ix_establecimientos_latitud", fields: ["latitud"] },
+      { name: "ix_establecimientos_longitud", fields: ["longitud"] },
+      { name: "ix_establecimientos_rating", fields: ["rating_promedio"] },
+      { name: "ix_establecimientos_verificado", fields: ["verificado"] },
     ],
   }
 );

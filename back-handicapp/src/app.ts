@@ -21,10 +21,8 @@ app.use(cors({
   origin: (origin, callback) => {
     // Permitir requests sin origin (como Postman) o desde localhost en desarrollo
     const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'https://handicapp.vercel.app',
-      'https://handicapp-git-main-handicapps-projects.vercel.app'
+      'https://handicapp.com.ar',
+      'https://www.handicapp.com.ar'
     ];
     
     if (!origin || allowedOrigins.includes(origin) || config.nodeEnv === 'development') {

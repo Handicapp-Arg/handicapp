@@ -436,10 +436,255 @@ export class EstablecimientoController {
         ResponseHelper.badRequest(res, result.error || 'Error al rechazar solicitud');
       }
 
+
     } catch (error) {
       logger.error('Error al rechazar solicitud', { error });
       ResponseHelper.internalError(res, 'Error interno del servidor');
     }
   }
 
+  /**
+   * Obtener establecimientos para mapa (solo con geolocalización)
+   * GET /api/v1/establecimientos/mapa
+   */
+  static async getForMap(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { tipo, rating_minimo, verificado } = req.query;
+      
+      const filters: any = {};
+      if (tipo) filters.tipo = tipo as string;
+      if (rating_minimo) filters.rating_minimo = parseFloat(rating_minimo as string);
+      if (verificado === 'true') filters.verificado = true;
+      
+      const result = await EstablecimientoService.getEstablecimientosForMap(filters);
+
+      if (result.success && result.data) {
+        ResponseHelper.success(res, result.data);
+      } else {
+        ResponseHelper.internalError(res, result.error || 'Error obteniendo establecimientos para mapa');
+      }
+
+    } catch (error) {
+      logger.error('Error obteniendo establecimientos para mapa', { error });
+      ResponseHelper.internalError(res, 'Error interno del servidor');
+    }
+  }
+
+  /**
+   * Crear reseña para un establecimiento
+   * POST /api/v1/establecimientos/:id/resenas
+   */
+  static async createResena(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const establecimientoId = parseInt(req.params['id'] || '0');
+      const usuarioId = req.user!.id;
+      const { rating, comentario } = req.body;
+
+      if (isNaN(establecimientoId)) {
+        ResponseHelper.badRequest(res, 'ID de establecimiento inválido');
+        return;
+      }
+
+      if (!rating || rating < 1 || rating > 5) {
+        ResponseHelper.badRequest(res, 'Rating debe ser entre 1 y 5');
+        return;
+      }
+
+      const result = await EstablecimientoService.createResena({
+        establecimiento_id: establecimientoId,
+        usuario_id: usuarioId,
+        rating,
+        comentario: comentario || null,
+      });
+
+      if (result.success && result.data) {
+        ResponseHelper.created(res, result.data, 'Reseña creada exitosamente');
+      } else {
+        ResponseHelper.badRequest(res, result.error || 'Error al crear reseña');
+      }
+
+    } catch (error) {
+      logger.error('Error al crear reseña', { error });
+      ResponseHelper.internalError(res, 'Error interno del servidor');
+    }
+  }
+
+  /**
+   * Obtener reseñas de un establecimiento
+   * GET /api/v1/establecimientos/:id/resenas
+   */
+  static async getResenas(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const establecimientoId = parseInt(req.params['id'] || '0');
+      const page = parseInt(req.query['page'] as string) || 1;
+      const limit = parseInt(req.query['limit'] as string) || 10;
+      const ratingQuery = req.query['rating'];
+
+      if (isNaN(establecimientoId)) {
+        ResponseHelper.badRequest(res, 'ID de establecimiento inválido');
+        return;
+      }
+
+      const options: any = { page, limit };
+      if (ratingQuery) {
+        options.rating = parseInt(ratingQuery as string);
+      }
+
+      const result = await EstablecimientoService.getResenas(establecimientoId, options);
+
+      if (result.success && result.data) {
+        ResponseHelper.success(res, {
+          items: result.data.resenas,
+          pagination: {
+            page,
+            limit,
+            total: result.data.total,
+            pages: result.data.totalPages
+          }
+        });
+      } else {
+        ResponseHelper.internalError(res, result.error || 'Error obteniendo reseñas');
+      }
+
+    } catch (error) {
+      logger.error('Error obteniendo reseñas', { error });
+      ResponseHelper.internalError(res, 'Error interno del servidor');
+    }
+  }
+
+  /**
+   * Responder a una reseña (solo establecimiento)
+   * POST /api/v1/establecimientos/:id/resenas/:resenaId/responder
+   */
+  static async responderResena(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const establecimientoId = parseInt(req.params['id'] || '0');
+      const resenaId = parseInt(req.params['resenaId'] || '0');
+      const usuarioId = req.user!.id;
+      const { respuesta } = req.body;
+
+      if (isNaN(establecimientoId) || isNaN(resenaId)) {
+        ResponseHelper.badRequest(res, 'IDs inválidos');
+        return;
+      }
+
+      if (!respuesta || respuesta.trim().length === 0) {
+        ResponseHelper.badRequest(res, 'La respuesta no puede estar vacía');
+        return;
+      }
+
+      const result = await EstablecimientoService.responderResena(
+        resenaId,
+        establecimientoId,
+        usuarioId,
+        respuesta
+      );
+
+      if (result.success && result.data) {
+        ResponseHelper.success(res, result.data, 'Respuesta agregada exitosamente');
+      } else {
+        ResponseHelper.badRequest(res, result.error || 'Error al responder reseña');
+      }
+
+    } catch (error) {
+      logger.error('Error al responder reseña', { error });
+      ResponseHelper.internalError(res, 'Error interno del servidor');
+    }
+  }
+
+  /**
+   * Agregar imágenes al establecimiento
+   * POST /api/v1/establecimientos/:id/imagenes
+   */
+  static async addImagenes(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const establecimientoId = parseInt(req.params['id'] || '0');
+      const usuarioId = req.user!.id;
+
+      if (isNaN(establecimientoId)) {
+        ResponseHelper.badRequest(res, 'ID de establecimiento inválido');
+        return;
+      }
+
+      if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+        ResponseHelper.badRequest(res, 'No se proporcionaron imágenes');
+        return;
+      }
+
+      // Upload images to Cloudinary
+      const imageUrls: string[] = [];
+      for (const file of req.files as Express.Multer.File[]) {
+        const uploadResult = await uploadImageBufferToCloudinary(
+          file.buffer,
+          'establecimientos'
+        );
+        if (uploadResult) {
+          // uploadImageBufferToCloudinary returns CloudinaryUploadResult, extract URL
+          const url = typeof uploadResult === 'string' ? uploadResult : uploadResult.secureUrl;
+          if (url) imageUrls.push(url);
+        }
+      }
+
+      if (imageUrls.length === 0) {
+        ResponseHelper.internalError(res, 'Error al subir imágenes');
+        return;
+      }
+
+      const result = await EstablecimientoService.addImagenes(
+        establecimientoId,
+        usuarioId,
+        imageUrls
+      );
+
+      if (result.success && result.data) {
+        ResponseHelper.success(res, result.data, 'Imágenes agregadas exitosamente');
+      } else {
+        ResponseHelper.badRequest(res, result.error || 'Error al agregar imágenes');
+      }
+
+    } catch (error) {
+      logger.error('Error al agregar imágenes', { error });
+      ResponseHelper.internalError(res, 'Error interno del servidor');
+    }
+  }
+
+  /**
+   * Eliminar imagen del establecimiento
+   * DELETE /api/v1/establecimientos/:id/imagenes
+   */
+  static async deleteImagen(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const establecimientoId = parseInt(req.params['id'] || '0');
+      const usuarioId = req.user!.id;
+      const { imagen_url } = req.body;
+
+      if (isNaN(establecimientoId)) {
+        ResponseHelper.badRequest(res, 'ID de establecimiento inválido');
+        return;
+      }
+
+      if (!imagen_url) {
+        ResponseHelper.badRequest(res, 'URL de imagen requerida');
+        return;
+      }
+
+      const result = await EstablecimientoService.deleteImagen(
+        establecimientoId,
+        usuarioId,
+        imagen_url
+      );
+
+      if (result.success && result.data) {
+        ResponseHelper.success(res, result.data, 'Imagen eliminada exitosamente');
+      } else {
+        ResponseHelper.badRequest(res, result.error || 'Error al eliminar imagen');
+      }
+
+    } catch (error) {
+      logger.error('Error al eliminar imagen', { error });
+      ResponseHelper.internalError(res, 'Error interno del servidor');
+    }
+  }
+
 }
+

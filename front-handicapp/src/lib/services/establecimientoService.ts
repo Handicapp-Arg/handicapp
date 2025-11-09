@@ -15,8 +15,26 @@ export interface Establecimiento {
   creado_el: string;
   actualizado_el: string;
   propietario_id: number;
+  // Nuevos campos
+  latitud?: number | null;
+  longitud?: number | null;
+  descripcion?: string | null;
+  imagenes?: string[];
+  rating_promedio?: number;
+  total_resenas?: number;
+  verificado?: boolean;
+  logo_url?: string | null;
+  ciudad?: string | null;
+  provincia?: string | null;
   usuarios?: any[];
   caballos?: any[];
+  // Campos para propietarios (backend los agrega)
+  mis_caballos?: Array<{
+    id: number;
+    nombre: string;
+    estado_global: string;
+  }>;
+  caballos_count?: number;
   _count?: {
     usuarios: number;
     caballos: number;
@@ -129,6 +147,44 @@ class EstablecimientoService {
   async rechazarAsociacion(establecimientoId: number, caballoId: number, motivo?: string): Promise<any> {
     const response = await apiClient.post(`${this.baseUrl}/${establecimientoId}/caballos/${caballoId}/rechazar`, {
       motivo
+    }) as any;
+    return response.data;
+  }
+
+  // ============================================================================
+  // NUEVOS MÉTODOS: Geolocalización, Reseñas e Imágenes
+  // ============================================================================
+
+  async getForMap(filters?: { tipo?: string; rating_minimo?: number; verificado?: boolean }): Promise<Establecimiento[]> {
+    const params = new URLSearchParams();
+    if (filters?.tipo) params.append('tipo', filters.tipo);
+    if (filters?.rating_minimo) params.append('rating_minimo', filters.rating_minimo.toString());
+    if (filters?.verificado !== undefined) params.append('verificado', filters.verificado.toString());
+
+    const url = `${this.baseUrl}/mapa${params.toString() ? '?' + params.toString() : ''}`;
+    const response = await apiClient.get(url) as any;
+    return response.data || response;
+  }
+
+  async createResena(establecimientoId: number, data: { rating: number; comentario?: string }): Promise<any> {
+    const response = await apiClient.post(`${this.baseUrl}/${establecimientoId}/resenas`, data) as any;
+    return response.data;
+  }
+
+  async getResenas(establecimientoId: number, options?: { page?: number; limit?: number; rating?: number }): Promise<any> {
+    const params = new URLSearchParams();
+    if (options?.page) params.append('page', options.page.toString());
+    if (options?.limit) params.append('limit', options.limit.toString());
+    if (options?.rating) params.append('rating', options.rating.toString());
+
+    const url = `${this.baseUrl}/${establecimientoId}/resenas${params.toString() ? '?' + params.toString() : ''}`;
+    const response = await apiClient.get(url) as any;
+    return response.data || response;
+  }
+
+  async responderResena(establecimientoId: number, resenaId: number, respuesta: string): Promise<any> {
+    const response = await apiClient.post(`${this.baseUrl}/${establecimientoId}/resenas/${resenaId}/responder`, {
+      respuesta
     }) as any;
     return response.data;
   }
