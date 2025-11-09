@@ -1,41 +1,47 @@
 import express, { type Express } from 'express';
 import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import path from 'path';
 import { config } from './config/config';
+import { config as appConfig } from './config/config';
 import { apiRoutes } from './routes';
 import { errorHandler, notFoundHandler } from './utils/errors';
 import { requestLogger } from './utils/logger';
-import path from 'path';
-import { config as appConfig } from './config/config';
 
 const app: Express = express();
+
+const allowedOrigins = [
+  'https://www.handicapp.com.ar',
+  'https://handicapp.com.ar',
+  'https://api.handicapp.com.ar',
+  'https://qa.handicapp.com.ar',
+  'https://api-qa.handicapp.com.ar',
+  'http://localhost:3000'
+];
 
 // Request parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser()); // Parse cookies
 
-// CORS configuration
-import cors from 'cors';
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // Permitir requests sin origin (como Postman) o desde localhost en desarrollo
-    const allowedOrigins = [
-      'https://handicapp.com.ar',
-      'https://www.handicapp.com.ar'
-    ];
-    
-    if (!origin || allowedOrigins.includes(origin) || config.nodeEnv === 'development') {
-      callback(null, true);
-    } else {
-      callback(null, true); // Permitir todos en desarrollo
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  credentials: true,
-  optionsSuccessStatus: 200
-}));
+      if (allowedOrigins.includes(origin) || config.nodeEnv === 'development') {
+        callback(null, true);
+      } else {
+        console.log('CORS bloqueado para origen:', origin);
+        callback(new Error('No autorizado por CORS'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    optionsSuccessStatus: 200
+  })
+);
 
 // Concise request logs (method, url, status, duration)
 app.use(requestLogger);
