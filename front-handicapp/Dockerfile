@@ -1,81 +1,29 @@
-# syntax=docker/dockerfile:1.7
-
-ARG NODE_VERSION=18.20.0
-ARG NEXT_PUBLIC_APP_ENV=production
-ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:3001/api/v1
-ARG NEXT_PUBLIC_API_URL=http://localhost:3001
-ARG NEXT_PUBLIC_API_BASE=http://localhost:3001
-ARG NEXT_PUBLIC_REQUEST_TIMEOUT_MS=30000
-ARG NEXT_PUBLIC_REQUEST_MAX_RETRIES=1
-
-FROM node:${NODE_VERSION}-bookworm-slim AS base
-
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-
-RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
+﻿FROM node:20-alpine AS base
+RUN apk add --no-cache libc6-compat && corepack enable && corepack prepare pnpm@9.12.3 --activate
+WORKDIR /app
 
 FROM base AS deps
-
-WORKDIR /app
-
 COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
-RUN pnpm install --frozen-lockfile --prod=false
-
-FROM deps AS builder
-
+FROM base AS builder
 WORKDIR /app
-
-ARG NEXT_PUBLIC_APP_ENV
-ARG NEXT_PUBLIC_API_BASE_URL
-ARG NEXT_PUBLIC_API_URL
-ARG NEXT_PUBLIC_API_BASE
-ARG NEXT_PUBLIC_REQUEST_TIMEOUT_MS
-ARG NEXT_PUBLIC_REQUEST_MAX_RETRIES
-
-ENV NEXT_PUBLIC_APP_ENV=${NEXT_PUBLIC_APP_ENV}
-ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-ENV NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE}
-ENV NEXT_PUBLIC_REQUEST_TIMEOUT_MS=${NEXT_PUBLIC_REQUEST_TIMEOUT_MS}
-ENV NEXT_PUBLIC_REQUEST_MAX_RETRIES=${NEXT_PUBLIC_REQUEST_MAX_RETRIES}
-
-# Copy source files
-COPY --link . .
-
-# Verify public directory exists
-RUN ls -la /app && ls -la /app/public || echo "Public directory not found"
-
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
 RUN pnpm build
 
-FROM node:${NODE_VERSION}-bookworm-slim AS runner
-
+FROM base AS runner
+WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV NEXT_PUBLIC_APP_ENV=${NEXT_PUBLIC_APP_ENV}
-ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-ENV NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE}
-ENV NEXT_PUBLIC_REQUEST_TIMEOUT_MS=${NEXT_PUBLIC_REQUEST_TIMEOUT_MS}
-ENV NEXT_PUBLIC_REQUEST_MAX_RETRIES=${NEXT_PUBLIC_REQUEST_MAX_RETRIES}
-
-WORKDIR /app
-
-RUN groupadd -r nextjs && useradd -r -g nextjs nextjs
-
-# Copy public folder
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-# Copy standalone output
+RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
+COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder /app/package.json ./package.json
-
 USER nextjs
-
 EXPOSE 3000
-
-CMD ["node", "handicapp/front-handicapp/server.js"]
-
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+CMD ["node", "server.js"]
