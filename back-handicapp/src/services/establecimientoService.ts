@@ -1165,7 +1165,7 @@ export class EstablecimientoService {
       }
 
       // Crear o actualizar la reseña
-      const [resena, created] = await EstablecimientoResena.upsert({
+      const [resena] = await EstablecimientoResena.upsert({
         establecimiento_id: data.establecimiento_id,
         usuario_id: data.usuario_id,
         rating: data.rating,
@@ -1269,7 +1269,7 @@ export class EstablecimientoService {
         where: {
           usuario_id: usuarioId,
           establecimiento_id: establecimientoId,
-          estado: EstadoMembresia.activo,
+          estado_membresia: EstadoMembresia.active,
         },
       });
 
@@ -1327,7 +1327,7 @@ export class EstablecimientoService {
         where: {
           usuario_id: usuarioId,
           establecimiento_id: establecimientoId,
-          estado: EstadoMembresia.activo,
+          estado_membresia: EstadoMembresia.active,
         },
       });
 
@@ -1379,7 +1379,7 @@ export class EstablecimientoService {
         where: {
           usuario_id: usuarioId,
           establecimiento_id: establecimientoId,
-          estado: EstadoMembresia.activo,
+          estado_membresia: EstadoMembresia.active,
         },
       });
 

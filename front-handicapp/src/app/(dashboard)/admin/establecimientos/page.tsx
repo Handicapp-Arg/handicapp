@@ -193,10 +193,7 @@ export default function AdminEstablecimientosPage() {
 
         {/* List Component */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-          <EstablecimientoList
-            onEditEstablecimiento={handleEdit}
-            onSelectEstablecimiento={handleSelect}
-          />
+          <EstablecimientoList />
         </div>
       </div>
     </SimpleAdminOnly>
