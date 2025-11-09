@@ -17,24 +17,41 @@ app.use(cookieParser()); // Parse cookies
 // CORS configuration
 import cors from 'cors';
 
+const allowedOrigins = [
+  'https://handicapp.com.ar',
+  'https://www.handicapp.com.ar',
+  'http://handicapp.com.ar',
+  'http://www.handicapp.com.ar',
+  'http://localhost:3000',
+  'http://localhost:3001'
+];
+
 app.use(cors({
   origin: (origin, callback) => {
-    // Permitir requests sin origin (como Postman) o desde localhost en desarrollo
-    const allowedOrigins = [
-      'https://handicapp.com.ar',
-      'https://www.handicapp.com.ar'
-    ];
-    
-    if (!origin || allowedOrigins.includes(origin) || config.nodeEnv === 'development') {
-      callback(null, true);
-    } else {
-      callback(null, true); // Permitir todos en desarrollo
+    // Permitir requests sin origin (mobile apps, Postman, etc.)
+    if (!origin) {
+      return callback(null, true);
     }
+    
+    // Permitir todos los orígenes en desarrollo
+    if (config.nodeEnv === 'development') {
+      return callback(null, true);
+    }
+    
+    // En producción, verificar lista de orígenes permitidos
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    console.log('❌ CORS blocked origin:', origin);
+    callback(new Error('Not allowed by CORS'));
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Content-Length', 'X-Request-Id'],
   credentials: true,
-  optionsSuccessStatus: 200
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 
 // Concise request logs (method, url, status, duration)
