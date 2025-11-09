@@ -16,37 +16,39 @@ const allowedOrigins = [
   'https://api.handicapp.com.ar',
   'https://qa.handicapp.com.ar',
   'https://api-qa.handicapp.com.ar',
-  'http://localhost:3000'
+  'http://localhost:3000',
 ];
 
-// Request parsing
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(cookieParser()); // Parse cookies
-
+// 🚀 CORS configurado antes de todo
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
+      if (!origin) return callback(null, true); // Permitir Postman o llamadas sin origin
 
       if (allowedOrigins.includes(origin) || config.nodeEnv === 'development') {
         callback(null, true);
       } else {
-        console.log('CORS bloqueado para origen:', origin);
+        console.warn('❌ CORS bloqueado para origen:', origin);
         callback(new Error('No autorizado por CORS'));
       }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    optionsSuccessStatus: 200
+    optionsSuccessStatus: 200,
   })
 );
 
-// Concise request logs (method, url, status, duration)
+// 💡 Esta línea es CRUCIAL para manejar preflight (OPTIONS)
+app.options('*', cors());
+
+// Request parsing
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
 app.use(requestLogger);
 
-// Static files for uploads (served at /uploads)
+// Static files
 app.use('/uploads', express.static(path.resolve(process.cwd(), appConfig.upload.path)));
 
 // API routes
@@ -66,7 +68,7 @@ app.get('/', (_req, res) => {
 // 404 handler
 app.use(notFoundHandler);
 
-// Error handler (must be last)
+// Error handler
 app.use(errorHandler);
 
 export { app };
