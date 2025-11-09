@@ -43,7 +43,11 @@ ENV NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE}
 ENV NEXT_PUBLIC_REQUEST_TIMEOUT_MS=${NEXT_PUBLIC_REQUEST_TIMEOUT_MS}
 ENV NEXT_PUBLIC_REQUEST_MAX_RETRIES=${NEXT_PUBLIC_REQUEST_MAX_RETRIES}
 
-COPY . .
+# Copy source files
+COPY --link . .
+
+# Verify public directory exists
+RUN ls -la /app && ls -la /app/public || echo "Public directory not found"
 
 RUN pnpm build
 
@@ -62,8 +66,8 @@ WORKDIR /app
 
 RUN groupadd -r nextjs && useradd -r -g nextjs nextjs
 
-# Copy public folder if it exists
-COPY --from=builder --chown=nextjs:nodejs /app/public* ./public/ || true
+# Copy public folder
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 # Copy standalone output
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
