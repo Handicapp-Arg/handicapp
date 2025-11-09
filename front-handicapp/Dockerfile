@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-ARG NODE_VERSION=22.11.0
+ARG NODE_VERSION=18.20.0
 ARG NEXT_PUBLIC_APP_ENV=production
 ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:3001/api/v1
 ARG NEXT_PUBLIC_API_URL=http://localhost:3001
@@ -15,7 +15,7 @@ ENV PATH="$PNPM_HOME:$PATH"
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN corepack enable pnpm
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
 
 FROM base AS deps
 
