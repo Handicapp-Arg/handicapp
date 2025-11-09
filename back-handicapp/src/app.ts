@@ -1,46 +1,54 @@
 import express, { type Express } from 'express';
 import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import path from 'path';
 import { config } from './config/config';
+import { config as appConfig } from './config/config';
 import { apiRoutes } from './routes';
 import { errorHandler, notFoundHandler } from './utils/errors';
 import { requestLogger } from './utils/logger';
-import path from 'path';
-import { config as appConfig } from './config/config';
 
 const app: Express = express();
+
+const allowedOrigins = [
+  'https://www.handicapp.com.ar',
+  'https://handicapp.com.ar',
+  'https://api.handicapp.com.ar',
+  'https://qa.handicapp.com.ar',
+  'https://api-qa.handicapp.com.ar',
+  'http://handicapp.com.ar',
+  'http://www.handicapp.com.ar',
+  'http://localhost:3000',
+  'http://localhost:3001',
+];
+
+// 🚀 CORS configurado antes de todo
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // Permitir Postman o llamadas sin origin
+
+      if (allowedOrigins.includes(origin) || config.nodeEnv === 'development') {
+        callback(null, true);
+      } else {
+        console.warn('❌ CORS bloqueado para origen:', origin);
+        callback(new Error('No autorizado por CORS'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    optionsSuccessStatus: 200,
+  })
+);
 
 // Request parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(cookieParser()); // Parse cookies
-
-// CORS configuration
-import cors from 'cors';
-
-app.use(cors({
-  origin: (origin, callback) => {
-    // Permitir requests sin origin (como Postman) o desde localhost en desarrollo
-    const allowedOrigins = [
-      'https://handicapp.com.ar',
-      'https://www.handicapp.com.ar'
-    ];
-    
-    if (!origin || allowedOrigins.includes(origin) || config.nodeEnv === 'development') {
-      callback(null, true);
-    } else {
-      callback(null, true); // Permitir todos en desarrollo
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  credentials: true,
-  optionsSuccessStatus: 200
-}));
-
-// Concise request logs (method, url, status, duration)
+app.use(cookieParser());
 app.use(requestLogger);
 
-// Static files for uploads (served at /uploads)
+// Static files
 app.use('/uploads', express.static(path.resolve(process.cwd(), appConfig.upload.path)));
 
 // API routes
@@ -60,7 +68,7 @@ app.get('/', (_req, res) => {
 // 404 handler
 app.use(notFoundHandler);
 
-// Error handler (must be last)
+// Error handler
 app.use(errorHandler);
 
 export { app };
