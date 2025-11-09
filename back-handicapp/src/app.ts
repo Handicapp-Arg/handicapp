@@ -18,7 +18,7 @@ app.use(cookieParser()); // Parse cookies
 import cors from 'cors';
 
 app.use(cors({
-  origin: ['*'],
+  origin: ['https://www.handicapp.com.ar'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true, // Importante: permite envío de cookies
