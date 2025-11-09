@@ -62,9 +62,11 @@ WORKDIR /app
 
 RUN groupadd -r nextjs && useradd -r -g nextjs nextjs
 
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+# Copy public folder if it exists
+COPY --from=builder --chown=nextjs:nodejs /app/public* ./public/ || true
+# Copy standalone output
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/package.json ./package.json
 
 USER nextjs
