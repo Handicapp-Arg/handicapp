@@ -39,10 +39,16 @@ export function EstablecimientoList() {
   useEffect(() => {
     // Asegurar que establecimientos es un array antes de filtrar
     if (Array.isArray(establecimientos)) {
-      const filtered = establecimientos.filter(est => {
+      // SOLO mostrar establecimientos donde el usuario tiene caballos
+      const misEstablecimientos = establecimientos.filter(est => 
+        est.mis_caballos && est.mis_caballos.length > 0
+      );
+      
+      const filtered = misEstablecimientos.filter(est => {
         const matchSearch = searchTerm === '' || 
           est.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          est.direccion.toLowerCase().includes(searchTerm.toLowerCase());
+          (est.ciudad && est.ciudad.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (est.provincia && est.provincia.toLowerCase().includes(searchTerm.toLowerCase()));
         
         const matchTipo = !filters.tipo_establecimiento || 
           est.tipo_establecimiento === filters.tipo_establecimiento;
@@ -53,17 +59,7 @@ export function EstablecimientoList() {
         return matchSearch && matchTipo && matchEstado;
       });
       
-      // Ordenar: primero los que tienen caballos del usuario
-      const sorted = filtered.sort((a, b) => {
-        const aHasCaballos = (a.mis_caballos?.length || 0) > 0;
-        const bHasCaballos = (b.mis_caballos?.length || 0) > 0;
-        
-        if (aHasCaballos && !bHasCaballos) return -1;
-        if (!aHasCaballos && bHasCaballos) return 1;
-        return 0;
-      });
-      
-      setFilteredEstablecimientos(sorted);
+      setFilteredEstablecimientos(filtered);
     } else {
       setFilteredEstablecimientos([]);
     }

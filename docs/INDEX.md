@@ -34,6 +34,9 @@
 - **[SENTRY_INTEGRATION.md](./frontend/SENTRY_INTEGRATION.md)** - Monitoreo
 
 ### ⚡ Performance
+- **[OPTIMIZATION_PLAN.md](./performance/OPTIMIZATION_PLAN.md)** - Plan completo de 4 fases
+- **[IMPLEMENTATION_GUIDE.md](./performance/IMPLEMENTATION_GUIDE.md)** - Guía paso a paso
+- **[EXECUTIVE_SUMMARY.md](./performance/EXECUTIVE_SUMMARY.md)** - Resumen ejecutivo
 - **[PERFORMANCE_ANALYSIS.md](./performance/PERFORMANCE_ANALYSIS.md)** - Análisis completo
 - **[IMPROVEMENTS_APPLIED.md](./performance/IMPROVEMENTS_APPLIED.md)** - Mejoras aplicadas
 

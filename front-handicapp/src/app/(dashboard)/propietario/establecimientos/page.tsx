@@ -2,38 +2,79 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { EstablecimientoTabs } from '@/components/dashboard/EstablecimientoTabs';
+import dynamic from 'next/dynamic';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Building2, MapPin, Users, TrendingUp } from 'lucide-react';
+import { Building2, MapPin, TrendingUp } from 'lucide-react';
 import { useStats } from '@/lib/hooks/useStats';
 import { useEstablecimientos } from '@/lib/hooks/useEstablecimientosQuery';
+import type { Establecimiento } from '@/lib/services/establecimientoService';
+import { MapLoadingSkeleton } from '@/components/shared/LoadingSkeletons';
+
+// Lazy load del componente de tabs (contiene el mapa pesado)
+const EstablecimientoTabs = dynamic(
+  () => import('@/components/dashboard/EstablecimientoTabs').then(mod => ({ default: mod.EstablecimientoTabs })),
+  {
+    loading: () => <MapLoadingSkeleton />,
+    ssr: false,
+  }
+);
 
 export default function PropietarioEstablecimientosPage() {
   // Propietarios solo pueden VER establecimientos, no crear/editar
   const { stats, loading: statsLoading } = useStats();
-  const { data: establecimientosData, isLoading: establecimientosLoading } = useEstablecimientos();
+  const { data: establecimientosResponse, isLoading: establecimientosLoading } = useEstablecimientos();
   
-  // Asegurar que establecimientos sea siempre un array
-  const establecimientos = Array.isArray(establecimientosData) ? establecimientosData : [];
+  // Extraer el array correctamente de la respuesta
+  let establecimientos: Establecimiento[] = [];
+  
+  if (establecimientosResponse) {
+    if (Array.isArray(establecimientosResponse)) {
+      establecimientos = establecimientosResponse;
+    } else if (typeof establecimientosResponse === 'object') {
+      // Intentar extraer de diferentes estructuras posibles
+      const resp = establecimientosResponse as Record<string, unknown>;
+      const data = resp.data as Record<string, unknown> | Establecimiento[] | undefined;
+      
+      if (Array.isArray(data)) {
+        establecimientos = data;
+      } else if (data && typeof data === 'object') {
+        establecimientos = (data.items as Establecimiento[]) || 
+                          (data.establecimientos as Establecimiento[]) || 
+                          [];
+      } else {
+        establecimientos = (resp.items as Establecimiento[]) || 
+                          (resp.establecimientos as Establecimiento[]) || 
+                          [];
+      }
+    }
+  }
 
-  // Calcular estadísticas reales de establecimientos
-  const establecimientosActivos = establecimientos.filter(e => e.activo).length;
-  const totalEstablecimientos = establecimientos.length;
+  // Calcular estadísticas útiles para PROPIETARIO
+  // 1. Mis caballos - total de caballos alojados
+  const totalCaballos = establecimientos.reduce((sum, est) => 
+    sum + (est.mis_caballos?.length || 0), 0
+  );
   
-  // Calcular provincias únicas
-  const provinciasUnicas = new Set(
-    establecimientos
-      .map(e => e.direccion)
-      .filter(Boolean)
-      .map((dir: string) => {
-        // Intentar extraer provincia de la dirección
-        const parts = dir?.split(',').map((p: string) => p.trim());
-        return parts && parts.length > 0 ? parts[parts.length - 1] : null;
-      })
-      .filter(Boolean)
-  ).size;
+  // 2. Establecimientos - cantidad donde tengo caballos
+  const establecimientosConCaballos = establecimientos.filter(
+    est => est.mis_caballos && est.mis_caballos.length > 0
+  ).length;
+  
+  // 3. Distancia promedio - por ahora no tenemos coordenadas del usuario
+  // Mostrar "-" hasta implementar geolocalización
+  const distanciaPromedio = 0;
+  
+  // 4. Rating promedio de mis establecimientos
+  const establecimientosConRating = establecimientos.filter(
+    est => est.mis_caballos?.length && est.rating_promedio && Number(est.rating_promedio) > 0
+  );
+  const ratingPromedio = establecimientosConRating.length > 0
+    ? (establecimientosConRating.reduce((sum, est) => 
+        sum + Number(est.rating_promedio || 0), 0
+      ) / establecimientosConRating.length).toFixed(1)
+    : '0.0';
 
   // Mostrar loading mientras carga - ESPERAR AMBAS CONSULTAS
   const isLoading = statsLoading || establecimientosLoading;
@@ -52,7 +93,7 @@ export default function PropietarioEstablecimientosPage() {
   const hasCaballos = (stats.caballos?.total || 0) > 0;
   
   // Si NO tiene caballos PERO tiene establecimientos, mostrar los establecimientos de todas formas
-  if (!hasCaballos && totalEstablecimientos === 0) {
+  if (!hasCaballos && establecimientosConCaballos === 0) {
     return (
       <SimpleRoleGuard roles={['propietario']}>
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -111,12 +152,12 @@ export default function PropietarioEstablecimientosPage() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              {/* Stat 1 - Total */}
+              {/* Stat 1 - Mis Caballos */}
               <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardDescription className="text-[10px] font-semibold text-slate-300 uppercase tracking-wider">
-                      Total
+                      Mis Caballos
                     </CardDescription>
                     <div className="p-1.5 rounded-lg bg-blue-500/20">
                       <Building2 className="w-3 h-3 text-slate-300" />
@@ -124,39 +165,39 @@ export default function PropietarioEstablecimientosPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pb-3">
-                  <p className="text-2xl font-bold text-white tabular-nums">{totalEstablecimientos}</p>
+                  <p className="text-2xl font-bold text-white tabular-nums">{totalCaballos}</p>
                   <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
-                    Registrados
+                    Alojados
                   </Badge>
                 </CardContent>
               </Card>
 
-              {/* Stat 2 - Activos */}
+              {/* Stat 2 - Establecimientos */}
               <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardDescription className="text-[10px] font-semibold text-green-300 uppercase tracking-wider">
-                      Activos
+                      Establecimientos
                     </CardDescription>
                     <div className="p-1.5 rounded-lg bg-green-500/20">
-                      <TrendingUp className="w-3 h-3 text-green-300" />
+                      <MapPin className="w-3 h-3 text-green-300" />
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="pb-3">
-                  <p className="text-2xl font-bold text-white tabular-nums">{establecimientosActivos}</p>
+                  <p className="text-2xl font-bold text-white tabular-nums">{establecimientosConCaballos}</p>
                   <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
-                    Operativos
+                    {establecimientosConCaballos === 1 ? 'Activo' : 'Activos'}
                   </Badge>
                 </CardContent>
               </Card>
 
-              {/* Stat 3 - Ubicaciones */}
+              {/* Stat 3 - Distancia Promedio */}
               <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardDescription className="text-[10px] font-semibold text-blue-300 uppercase tracking-wider">
-                      Ubicaciones
+                      Distancia Prom.
                     </CardDescription>
                     <div className="p-1.5 rounded-lg bg-blue-500/20">
                       <MapPin className="w-3 h-3 text-blue-300" />
@@ -164,29 +205,33 @@ export default function PropietarioEstablecimientosPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pb-3">
-                  <p className="text-2xl font-bold text-white tabular-nums">{provinciasUnicas || totalEstablecimientos}</p>
+                  <p className="text-2xl font-bold text-white tabular-nums">
+                    {distanciaPromedio > 0 ? `${distanciaPromedio} km` : '-'}
+                  </p>
                   <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
-                    {provinciasUnicas > 1 ? 'Provincias' : 'Provincia'}
+                    A tus lugares
                   </Badge>
                 </CardContent>
               </Card>
 
-              {/* Stat 4 - Personal */}
+              {/* Stat 4 - Rating Promedio */}
               <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardDescription className="text-[10px] font-semibold text-amber-300 uppercase tracking-wider">
-                      Personal
+                      Rating Prom.
                     </CardDescription>
                     <div className="p-1.5 rounded-lg bg-amber-500/20">
-                      <Users className="w-3 h-3 text-amber-300" />
+                      <TrendingUp className="w-3 h-3 text-amber-300" />
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="pb-3">
-                  <p className="text-2xl font-bold text-white tabular-nums">{stats.empleados?.total || 0}</p>
+                  <p className="text-2xl font-bold text-white tabular-nums">
+                    {Number(ratingPromedio) > 0 ? `${ratingPromedio}★` : '-'}
+                  </p>
                   <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
-                    Empleados
+                    Calidad
                   </Badge>
                 </CardContent>
               </Card>

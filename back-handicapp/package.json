@@ -11,6 +11,7 @@
     "init-models": "ts-node src/scripts/init-models.ts",
     "diagnose": "ts-node src/utils/diagnose.ts",
     "seed": "ts-node -r tsconfig-paths/register -e \"import('./src/services/seedService').then(m => m.seedDatabase())\"",
+    "seed:establecimientos": "ts-node -r tsconfig-paths/register scripts/seed-establecimientos-completos.ts",
     "sync": "ts-node scripts/maintenance/sync-safe.ts",
     "migrate": "node scripts/run-migration.js",
     "lint": "eslint src/**/*.ts",
@@ -56,6 +57,7 @@
     "zod": "^4.1.9"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.0.1",
     "@types/bcrypt": "^6.0.0",
     "@types/compression": "^1.8.1",
     "@types/cookie-parser": "^1.4.9",
