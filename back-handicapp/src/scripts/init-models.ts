@@ -25,12 +25,12 @@ async function initializeApp() {
     if (resetOnStart) {
       await sequelize.sync({ force: true });
       logger.warn('⚠️  Database reset (FORCE mode)');
-    } else {
+    } else if (process.env['NODE_ENV'] === 'development') {
       await sequelize.sync({ alter: true });
-      // Silencioso en producción - solo mostrar en desarrollo
-      if (process.env['NODE_ENV'] === 'development') {
-        logger.debug('Database synced');
-      }
+      logger.debug('Database synced');
+    } else {
+      // En producción, solo validar modelos sin modificar la BD
+      logger.info('⚠️  Skipping sync in production - use migrations instead');
     }
 
     // 4. Run seeds (silencioso si ya existen)
