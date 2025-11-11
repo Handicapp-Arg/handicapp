@@ -95,10 +95,13 @@ const dbConfig = {
       evict: 1000,
     },
     dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false,
-      },
+      // SSL solo si está configurado en las variables de entorno
+      ...(process.env.DB_SSL === 'true' && {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false,
+        },
+      }),
       connectTimeout: 60000,
       acquireTimeout: 60000,
       timeout: 60000,
