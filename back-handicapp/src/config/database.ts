@@ -96,7 +96,7 @@ const dbConfig = {
     },
     dialectOptions: {
       // SSL solo si está configurado en las variables de entorno
-      ...(process.env.DB_SSL === 'true' && {
+      ...(process.env['DB_SSL'] === 'true' && {
         ssl: {
           require: true,
           rejectUnauthorized: false,
