@@ -26,17 +26,15 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 
-# Copy standalone output (this should include server.js)
+# Copy all necessary files
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-
-# Copy static assets
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# Debug: List contents to see what was copied
-RUN ls -la /app/ && echo "=== Checking for server.js ===" && ls -la /app/*.js || echo "No server.js found in /app"
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
-CMD ["node", "server.js"]
+
+# Use the standalone server
+CMD ["node", "front-handicapp/server.js"]
