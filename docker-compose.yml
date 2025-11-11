@@ -7,7 +7,7 @@ services:
     container_name: handicapp-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DB_DATABASE:-handicapp_db}
+      POSTGRES_DB: ${DB_NAME:-handicapp_db}
       POSTGRES_USER: ${DB_USER:-handicapp_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-handicapp_password}
     volumes:
@@ -36,11 +36,12 @@ services:
       PORT: 3001
       DB_HOST: db
       DB_PORT: 5432
-      DB_DATABASE: ${DB_DATABASE:-handicapp_db}
+      DB_NAME: ${DB_NAME:-handicapp_db}
       DB_USER: ${DB_USER:-handicapp_user}
       DB_PASSWORD: ${DB_PASSWORD:-handicapp_password}
       JWT_SECRET: ${JWT_SECRET}
       FRONTEND_URL: ${FRONTEND_URL:-https://handicapp.com.ar}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://handicapp.com.ar}
     depends_on:
       db:
         condition: service_healthy
