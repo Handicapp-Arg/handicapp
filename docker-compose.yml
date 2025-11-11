@@ -25,6 +25,8 @@ services:
     build:
       context: ./back-handicapp
       dockerfile: Dockerfile
+      args:
+        NODE_ENV: production
     container_name: handicapp-backend
     restart: unless-stopped
     ports:
@@ -57,6 +59,9 @@ services:
     build:
       context: ./front-handicapp
       dockerfile: Dockerfile
+      args:
+        NODE_ENV: production
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.handicapp.com.ar}
     container_name: handicapp-frontend
     restart: unless-stopped
     ports:
