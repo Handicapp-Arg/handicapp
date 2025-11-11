@@ -29,13 +29,15 @@ RUN npm install -g pnpm
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
-# Install only production dependencies
-RUN pnpm install --prod --frozen-lockfile
+# Install only production dependencies (including tsconfig-paths)
+RUN pnpm install --prod --frozen-lockfile && \
+    pnpm add tsconfig-paths
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/scripts ./scripts
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
 
 # Create uploads directory
 RUN mkdir -p /app/uploads && chmod 777 /app/uploads
@@ -48,4 +50,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3001/ || exit 1
 
 # Start the server
-CMD ["node", "dist/index.js"]
+CMD ["node", "-r", "tsconfig-paths/register", "dist/index.js"]
