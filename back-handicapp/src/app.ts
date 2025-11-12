@@ -38,8 +38,8 @@ const allowedOrigins = [
 ];
 
 // Si existe FRONTEND_URL o CORS_ORIGIN en env, agregarlas dinámicamente
-if (config.frontend?.url) {
-  allowedOrigins.push(config.frontend.url);
+if (config.frontend_url) {
+  allowedOrigins.push(config.frontend_url);
 }
 if (process.env['CORS_ORIGIN']) {
   allowedOrigins.push(process.env['CORS_ORIGIN']);
