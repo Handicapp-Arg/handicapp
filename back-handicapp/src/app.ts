@@ -32,7 +32,18 @@ const allowedOrigins = [
   'http://www.handicapp.com.ar',
   'http://localhost:3000',
   'http://localhost:3001',
+  // Render URLs
+  'https://handicapp-backend.onrender.com',
+  'https://handicapp-frontend.onrender.com',
 ];
+
+// Si existe FRONTEND_URL o CORS_ORIGIN en env, agregarlas dinámicamente
+if (config.frontend?.url) {
+  allowedOrigins.push(config.frontend.url);
+}
+if (process.env['CORS_ORIGIN']) {
+  allowedOrigins.push(process.env['CORS_ORIGIN']);
+}
 
 // 🚀 CORS configurado antes de todo
 app.use(
@@ -105,6 +116,36 @@ app.get('/', (_req, res) => {
     environment: config.nodeEnv,
     timestamp: new Date().toISOString(),
   });
+});
+
+// Health check endpoint para Render
+app.get('/health', async (_req, res) => {
+  try {
+    const { sequelize } = await import('./config/database');
+    
+    // Test database connection
+    await sequelize.authenticate();
+    
+    res.status(200).json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: config.nodeEnv,
+      version: config.api.version,
+      database: 'connected',
+      memory: {
+        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + ' MB',
+        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + ' MB',
+      },
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      database: 'disconnected',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
 });
 
 // 404 handler
