@@ -10,12 +10,13 @@ const envSchema = z.object({
   PORT: z.string().transform(Number).default(3000),
   HOST: z.string().default('localhost'),
   
-  // Database
-  DB_HOST: z.string().default('localhost'),
-  DB_PORT: z.string().transform(Number).default(5432),
-  DB_NAME: z.string(),
-  DB_USER: z.string(),
-  DB_PASSWORD: z.string(),
+  // Database - Support both DATABASE_URL and individual vars
+  DATABASE_URL: z.string().optional(),
+  DB_HOST: z.string().optional(),
+  DB_PORT: z.string().transform(Number).optional(),
+  DB_NAME: z.string().optional(),
+  DB_USER: z.string().optional(),
+  DB_PASSWORD: z.string().optional(),
   DB_DIALECT: z.string().default('postgres'),
   DB_LOGGING: z.string().transform(val => val === 'true').default(false),
   
@@ -74,6 +75,33 @@ const envSchema = z.object({
 // Validate environment variables
 const env = envSchema.parse(process.env);
 
+// Parse DATABASE_URL if provided
+let dbConfig;
+
+if (env.DATABASE_URL) {
+  // Parse postgres://user:password@host:port/database
+  const url = new URL(env.DATABASE_URL);
+  dbConfig = {
+    host: url.hostname,
+    port: parseInt(url.port) || 5432,
+    name: url.pathname.slice(1), // Remove leading /
+    user: url.username,
+    password: url.password,
+    dialect: env.DB_DIALECT,
+    logging: env.DB_LOGGING,
+  };
+} else {
+  dbConfig = {
+    host: env.DB_HOST || 'localhost',
+    port: env.DB_PORT || 5432,
+    name: env.DB_NAME || 'handicapp',
+    user: env.DB_USER || 'postgres',
+    password: env.DB_PASSWORD || '',
+    dialect: env.DB_DIALECT,
+    logging: env.DB_LOGGING,
+  };
+}
+
 export const config = {
   nodeEnv: env.NODE_ENV,
   port: env.PORT,
@@ -81,15 +109,7 @@ export const config = {
   frontend_url: env.FRONTEND_URL,
   jwt_secret: env.JWT_SECRET,
   
-  database: {
-    host: env.DB_HOST,
-    port: env.DB_PORT,
-    name: env.DB_NAME,
-    user: env.DB_USER,
-    password: env.DB_PASSWORD,
-    dialect: env.DB_DIALECT,
-    logging: env.DB_LOGGING,
-  },
+  database: dbConfig,
   
   jwt: {
     secret: env.JWT_SECRET,
