@@ -85,5 +85,8 @@
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.2",
     "vitest": "^4.0.1"
-  }
+  },
+  "engines": {
+  "node": ">=25.0.0"
+}
 }
