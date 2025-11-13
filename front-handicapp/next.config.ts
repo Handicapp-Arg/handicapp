@@ -8,8 +8,6 @@ const withBundleAnalyzer = bundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
-  output: 'standalone', // ✅ Re-habilitado para producción
-  
   // Configuración de Turbopack (silenciar warning de workspace root)
   outputFileTracingRoot: path.join(__dirname, '../'),
   
