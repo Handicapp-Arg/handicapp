@@ -34,8 +34,18 @@ async function initializeApp() {
     }
 
     // 4. Run seeds (silencioso si ya existen)
-    await seedDatabase();
-    await TipoEventoSeedService.seedTiposEvento();
+    try {
+      await seedDatabase();
+      await TipoEventoSeedService.seedTiposEvento();
+      logger.info('✅ Seeds executed successfully');
+    } catch (seedError) {
+      logger.error('❌ Error during seed process', { error: seedError });
+      // En producción sin tablas, esto es esperado - no detener el servidor
+      if (process.env['NODE_ENV'] !== 'production') {
+        throw seedError;
+      }
+      logger.warn('⚠️  Continuing without seeds in production mode');
+    }
 
     return true;
 
