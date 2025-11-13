@@ -1,13 +1,23 @@
 /**
  * Servicio de Reportes
  * Genera reportes en PDF y Excel para el sistema
+ * NOTA: Las funciones cargan jsPDF y XLSX dinámicamente para mantener el bundle pequeño
  */
 
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
 import { type Caballo } from './caballoService';
 import { type Evento } from './eventoService';
+
+// Helper para cargar jsPDF dinámicamente
+async function loadJSPDF() {
+  const { jsPDF } = await import('jspdf');
+  const autoTable = (await import('jspdf-autotable')).default;
+  return { jsPDF, autoTable };
+}
+
+// Helper para cargar XLSX dinámicamente
+async function loadXLSX() {
+  return await import('xlsx');
+}
 
 // Configuración de colores de marca
 const BRAND_COLORS = {
@@ -43,6 +53,9 @@ export async function generarReporteCaballosPDF(
     fecha = new Date(),
     orientacion = 'portrait',
   } = options;
+
+  // Lazy load jsPDF
+  const { jsPDF, autoTable } = await loadJSPDF();
 
   // Crear documento PDF
   const doc = new jsPDF({
@@ -153,6 +166,9 @@ export async function generarReporteHistorialMedicoPDF(
     fecha = new Date(),
   } = options;
 
+  // Lazy load jsPDF
+  const { jsPDF, autoTable } = await loadJSPDF();
+
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -260,6 +276,9 @@ export async function generarReporteEventosPDF(
     orientacion = 'landscape',
   } = options;
 
+  // Lazy load jsPDF
+  const { jsPDF, autoTable } = await loadJSPDF();
+
   const doc = new jsPDF({
     orientation: orientacion,
     unit: 'mm',
@@ -335,7 +354,9 @@ export async function generarReporteEventosPDF(
 /**
  * Exporta caballos a Excel
  */
-export function exportarCaballosExcel(caballos: Caballo[]): void {
+export async function exportarCaballosExcel(caballos: Caballo[]): Promise<void> {
+  const XLSX = await loadXLSX();
+  
   // Preparar datos
   const data = caballos.map((caballo) => ({
     Nombre: caballo.nombre || '',
@@ -381,7 +402,9 @@ export function exportarCaballosExcel(caballos: Caballo[]): void {
 /**
  * Exporta eventos a Excel
  */
-export function exportarEventosExcel(eventos: Evento[]): void {
+export async function exportarEventosExcel(eventos: Evento[]): Promise<void> {
+  const XLSX = await loadXLSX();
+  
   const data = eventos.map((evento) => ({
     Fecha: new Date(evento.fecha_evento).toLocaleDateString('es-AR'),
     Hora: new Date(evento.fecha_evento).toLocaleTimeString('es-AR'),
@@ -417,10 +440,12 @@ export function exportarEventosExcel(eventos: Evento[]): void {
 /**
  * Exporta múltiples datos a Excel (múltiples hojas)
  */
-export function exportarDatosCompletosExcel(data: {
+export async function exportarDatosCompletosExcel(data: {
   caballos?: Caballo[];
   eventos?: Evento[];
-}): void {
+}): Promise<void> {
+  const XLSX = await loadXLSX();
+  
   const wb = XLSX.utils.book_new();
 
   // Hoja de caballos
@@ -463,7 +488,9 @@ export function exportarDatosCompletosExcel(data: {
 /**
  * Exporta inventario a Excel
  */
-export function exportarInventarioExcel(productos: any[]): void {
+export async function exportarInventarioExcel(productos: any[]): Promise<void> {
+  const XLSX = await loadXLSX();
+  
   const data = productos.map((producto) => ({
     Código: producto.codigo || '',
     Nombre: producto.nombre || '',
@@ -511,8 +538,7 @@ export async function generarReporteInventarioPDF(
   productos: any[],
   options: ReporteOptions = {}
 ): Promise<void> {
-  const { jsPDF } = await import('jspdf');
-  const autoTable = (await import('jspdf-autotable')).default;
+  const { jsPDF, autoTable } = await loadJSPDF();
 
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -620,8 +646,7 @@ export async function generarReporteConsolidadoPDF(
   },
   options: ReporteOptions = {}
 ): Promise<void> {
-  const { jsPDF } = await import('jspdf');
-  const autoTable = (await import('jspdf-autotable')).default;
+  const { jsPDF, autoTable } = await loadJSPDF();
 
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -769,7 +794,9 @@ export async function generarReporteConsolidadoPDF(
 /**
  * Exporta datos de personal a Excel
  */
-export function exportarPersonalExcel(usuarios: any[]): void {
+export async function exportarPersonalExcel(usuarios: any[]): Promise<void> {
+  const XLSX = await loadXLSX();
+  
   const data = usuarios.map((usuario) => ({
     Nombre: usuario.nombre || '',
     Apellido: usuario.apellido || '',
@@ -807,8 +834,7 @@ export async function generarReportePersonalPDF(
   usuarios: any[],
   options: ReporteOptions = {}
 ): Promise<void> {
-  const { jsPDF } = await import('jspdf');
-  const autoTable = (await import('jspdf-autotable')).default;
+  const { jsPDF, autoTable } = await loadJSPDF();
 
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();

@@ -3,7 +3,7 @@
  * Servicio para gestionar reportes veterinarios especializados
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api/v1';
 
 export interface HistorialClinico {
   caballo_id: number;
@@ -124,7 +124,7 @@ class ReportesMedicosService {
   async getHistorialClinico(caballoId: number): Promise<HistorialClinico> {
     try {
       // En producción, esto vendría de endpoints específicos
-      const response = await fetch(`${API_BASE}/api/v1/caballos/${caballoId}/historial-clinico`, {
+      const response = await fetch(`${API_BASE_URL}/caballos/${caballoId}/historial-clinico`, {
         credentials: 'include',
       });
 
@@ -146,7 +146,7 @@ class ReportesMedicosService {
   async getReporteMedicoCompleto(caballoId: number): Promise<ReporteMedicoCompleto> {
     try {
       const [caballoRes, historial] = await Promise.all([
-        fetch(`${API_BASE}/api/v1/caballos/${caballoId}`, { credentials: 'include' }),
+        fetch(`${API_BASE_URL}/caballos/${caballoId}`, { credentials: 'include' }),
         this.getHistorialClinico(caballoId),
       ]);
 
@@ -192,7 +192,7 @@ class ReportesMedicosService {
       if (filtros.tipo) params.append('tipo', filtros.tipo);
       if (filtros.veterinario_id) params.append('veterinario_id', filtros.veterinario_id.toString());
 
-      const url = `${API_BASE}/api/v1/reportes/medicos?${params.toString()}`;
+      const url = `${API_BASE_URL}/reportes/medicos?${params.toString()}`;
       const response = await fetch(url, { credentials: 'include' });
 
       if (!response.ok) {

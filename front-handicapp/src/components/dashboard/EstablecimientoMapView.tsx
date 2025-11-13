@@ -2,13 +2,15 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { establecimientoService, type Establecimiento } from '@/lib/services/establecimientoService';
-import { MapPin, Building2, Star, Grid3X3, Map as MapIconSolid, LayoutGrid, Phone, Mail, Home } from 'lucide-react';
+import { MapPin, Building2, Star, Map as MapIconSolid, LayoutGrid, Phone, Mail, Home } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import type L from 'leaflet';
 
-type ViewMode = 'map' | 'grid' | 'split';
+type ViewMode = 'map' | 'split';
 
 // Cargar Leaflet solo en el cliente
 const MapContainer = dynamic(
@@ -28,6 +30,45 @@ const Popup = dynamic(
   { ssr: false }
 );
 
+// Componente para manejar eventos del mapa (debe estar dentro de MapContainer)
+const MapEventsHandler = dynamic(
+  () => import('react-leaflet').then((mod) => {
+    const { useMapEvents } = mod;
+    return {
+      default: function MapController({ center, zoom, shouldAnimate, onAnimationComplete }: { 
+        center: [number, number]; 
+        zoom: number; 
+        shouldAnimate: boolean;
+        onAnimationComplete: () => void;
+      }) {
+        const map = useMapEvents({});
+        
+        React.useEffect(() => {
+          // Solo mover el mapa si shouldAnimate es true (evita movimientos en hover)
+          if (map && shouldAnimate && center && center[0] && center[1]) {
+            // Verificar si las coordenadas son válidas
+            const [lat, lng] = center;
+            if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+              map.setView(center, zoom, { 
+                animate: true, 
+                duration: 0.8,
+                easeLinearity: 0.5
+              });
+              // Resetear el flag después de iniciar la animación
+              setTimeout(() => {
+                onAnimationComplete();
+              }, 100);
+            }
+          }
+        }, [center, zoom, shouldAnimate, map, onAnimationComplete]);
+        
+        return null;
+      }
+    };
+  }),
+  { ssr: false }
+);
+
 export function EstablecimientoMapView() {
   const router = useRouter();
   const [establecimientos, setEstablecimientos] = useState<Establecimiento[]>([]);
@@ -36,7 +77,10 @@ export function EstablecimientoMapView() {
   const [leafletLoaded, setLeafletLoaded] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('split');
   const [selectedEstablecimiento, setSelectedEstablecimiento] = useState<Establecimiento | null>(null);
+  // Centro por defecto en Buenos Aires, Argentina
   const [mapCenter, setMapCenter] = useState<[number, number]>([-34.6037, -58.3816]);
+  const [mapZoom, setMapZoom] = useState(11);
+  const [shouldAnimateMap, setShouldAnimateMap] = useState(false);
 
   // Cargar Leaflet CSS solo en el cliente
   useEffect(() => {
@@ -47,15 +91,101 @@ export function EstablecimientoMapView() {
       link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
       document.head.appendChild(link);
 
+      // Agregar estilos personalizados para el mapa
+      const style = document.createElement('style');
+      style.textContent = `
+        .custom-marker {
+          background: transparent !important;
+          border: none !important;
+          cursor: pointer;
+          transition: transform 0.2s ease;
+        }
+        
+        .custom-marker:hover {
+          transform: translateY(-4px) scale(1.05);
+          z-index: 1000 !important;
+        }
+        
+        .leaflet-popup-content-wrapper {
+          border-radius: 12px !important;
+          padding: 0 !important;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
+        }
+        
+        .leaflet-popup-content {
+          margin: 0 !important;
+          border-radius: 12px !important;
+          overflow: hidden;
+        }
+        
+        .leaflet-popup-tip-container {
+          display: none !important;
+        }
+        
+        .custom-popup .leaflet-popup-close-button {
+          color: white !important;
+          font-size: 24px !important;
+          padding: 8px !important;
+          width: 32px !important;
+          height: 32px !important;
+          background: rgba(0,0,0,0.3) !important;
+          border-radius: 50% !important;
+          top: 8px !important;
+          right: 8px !important;
+          z-index: 10;
+        }
+        
+        .custom-popup .leaflet-popup-close-button:hover {
+          background: rgba(0,0,0,0.5) !important;
+        }
+      `;
+      document.head.appendChild(style);
+
       import('leaflet').then((L) => {
-        // Fix para los iconos de Leaflet
-        const DefaultIcon = L.Icon.Default.prototype;
-        delete (DefaultIcon as { _getIconUrl?: unknown })._getIconUrl;
-        L.Icon.Default.mergeOptions({
-          iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-        });
+        // Crear iconos personalizados por tipo de establecimiento
+        const createCustomIcon = (color: string) => {
+          return L.divIcon({
+            className: 'custom-marker',
+            html: `
+              <div style="position: relative;">
+                <div style="
+                  width: 32px;
+                  height: 32px;
+                  background: ${color};
+                  border: 3px solid white;
+                  border-radius: 50% 50% 50% 0;
+                  transform: rotate(-45deg);
+                  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+                ">
+                  <div style="
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%) rotate(45deg);
+                    color: white;
+                    font-size: 16px;
+                    font-weight: bold;
+                  ">🐴</div>
+                </div>
+              </div>
+            `,
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32],
+          });
+        };
+
+        // Iconos por tipo
+        (window as { customIcons?: Record<string, unknown> }).customIcons = {
+          haras: createCustomIcon('#10b981'),     // Verde
+          turf: createCustomIcon('#10b981'),      // Verde
+          polo: createCustomIcon('#3b82f6'),      // Azul
+          salto: createCustomIcon('#f59e0b'),     // Naranja
+          doma: createCustomIcon('#8b5cf6'),      // Púrpura
+          mixto: createCustomIcon('#6366f1'),     // Índigo
+          default: createCustomIcon('#6b7280'),   // Gris
+        };
+
         setLeafletLoaded(true);
       });
     }
@@ -98,12 +228,21 @@ export function EstablecimientoMapView() {
         est => est.latitud && est.longitud
       );
       
-      console.log('🗺️ Establecimientos con coordenadas:', conCoordenadas.length);
       setEstablecimientos(conCoordenadas);
       
-      // Centrar en el primer establecimiento si existe
-      if (conCoordenadas.length > 0 && conCoordenadas[0].latitud && conCoordenadas[0].longitud) {
-        setMapCenter([conCoordenadas[0].latitud, conCoordenadas[0].longitud]);
+      // Calcular centro promedio de todos los establecimientos
+      if (conCoordenadas.length > 0) {
+        const sumLat = conCoordenadas.reduce((sum, est) => sum + (est.latitud || 0), 0);
+        const sumLng = conCoordenadas.reduce((sum, est) => sum + (est.longitud || 0), 0);
+        const avgLat = sumLat / conCoordenadas.length;
+        const avgLng = sumLng / conCoordenadas.length;
+        
+        // Validar que las coordenadas promedio sean válidas
+        if (!isNaN(avgLat) && !isNaN(avgLng) && avgLat >= -90 && avgLat <= 90 && avgLng >= -180 && avgLng <= 180) {
+          setMapCenter([avgLat, avgLng]);
+          setMapZoom(11);
+          setShouldAnimateMap(true);
+        }
       }
     } catch (err) {
       console.error('❌ Error cargando establecimientos:', err);
@@ -209,15 +348,6 @@ export function EstablecimientoMapView() {
             <LayoutGrid className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Split</span>
           </Button>
-          <Button
-            variant={viewMode === 'grid' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('grid')}
-            className="h-9"
-          >
-            <Grid3X3 className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Grid</span>
-          </Button>
         </div>
       </div>
 
@@ -228,70 +358,117 @@ export function EstablecimientoMapView() {
           <div className={`${viewMode === 'split' ? 'flex-1' : ''} ${viewMode === 'map' ? 'h-[600px]' : 'h-[700px]'} relative`}>
             {leafletLoaded ? (
               <MapContainer
+                key={`map-${establecimientos.length}`}
                 center={mapCenter}
-                zoom={13}
+                zoom={mapZoom}
                 scrollWheelZoom={true}
                 style={{ height: '100%', width: '100%' }}
                 className={`${viewMode === 'map' ? 'rounded-b-2xl' : 'rounded-xl'}`}
               >
+                {/* Controlador para animar cambios de centro y zoom */}
+                <MapEventsHandler 
+                  center={mapCenter} 
+                  zoom={mapZoom} 
+                  shouldAnimate={shouldAnimateMap}
+                  onAnimationComplete={() => setShouldAnimateMap(false)}
+                />
+                
+                {/* Usar CartoDB Positron - estilo moderno y limpio tipo Airbnb */}
                 <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+                  url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+                  subdomains="abcd"
+                  maxZoom={20}
                 />
                 
                 {establecimientos.map((establecimiento) => {
                   if (!establecimiento.latitud || !establecimiento.longitud) return null;
                   
+                  // Obtener icono personalizado según tipo
+                  const customIcons = (window as { customIcons?: Record<string, unknown> }).customIcons;
+                  const icon = customIcons?.[establecimiento.tipo_establecimiento] || customIcons?.default;
+                  
                   return (
                     <Marker
                       key={establecimiento.id}
                       position={[establecimiento.latitud, establecimiento.longitud]}
+                      icon={icon as L.DivIcon}
                       eventHandlers={{
                         click: () => {
                           setSelectedEstablecimiento(establecimiento);
-                          if (establecimiento.latitud && establecimiento.longitud) {
+                          if (establecimiento.latitud && establecimiento.longitud &&
+                              !isNaN(establecimiento.latitud) && !isNaN(establecimiento.longitud)) {
                             setMapCenter([establecimiento.latitud, establecimiento.longitud]);
+                            setMapZoom(15);
+                            setShouldAnimateMap(true);
                           }
                         }
                       }}
                     >
-                      <Popup>
-                        <div className="p-2 min-w-[220px]">
-                          <h4 className="font-semibold text-sm mb-2 text-gray-900">{establecimiento.nombre}</h4>
-                          <div className="space-y-2 text-xs">
-                            <p className="flex items-center gap-1.5 text-gray-600">
-                              <MapPin className="h-3 w-3 text-gray-400" />
-                              <span className="line-clamp-2">{establecimiento.direccion}</span>
-                            </p>
-                            
-                            {/* Badges */}
-                            <div className="flex flex-wrap gap-1">
-                              <Badge variant="secondary" className="capitalize text-xs bg-gray-100 text-gray-700 border-0">
-                                {establecimiento.tipo_establecimiento}
-                              </Badge>
-                              {establecimiento.verificado && (
-                                <Badge className="text-xs bg-blue-100 text-blue-700 border-0">
-                                  Verificado
-                                </Badge>
-                              )}
+                      <Popup maxWidth={280} className="custom-popup">
+                        <div className="p-3 min-w-[260px]">
+                          {/* Header con imagen o gradiente */}
+                          {establecimiento.imagenes && establecimiento.imagenes.length > 0 ? (
+                            <div className="h-32 -mx-3 -mt-3 mb-3 rounded-t-lg overflow-hidden relative">
+                              <Image 
+                                src={establecimiento.imagenes[0]} 
+                                alt={establecimiento.nombre}
+                                fill
+                                sizes="280px"
+                                className="object-cover"
+                                loading="lazy"
+                              />
                             </div>
-
-                            {/* Rating con estrellas */}
-                            {establecimiento.rating_promedio && establecimiento.rating_promedio > 0 && (
-                              <div className="flex items-center gap-1.5 py-1.5 px-2 bg-amber-50 rounded-lg border border-amber-200">
-                                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                                <span className="font-semibold text-amber-700">{establecimiento.rating_promedio.toFixed(1)}</span>
-                                <span className="text-gray-500">({establecimiento.total_resenas || 0})</span>
+                          ) : (
+                            <div className="h-20 -mx-3 -mt-3 mb-3 rounded-t-lg bg-gradient-to-br from-blue-500 to-purple-600"></div>
+                          )}
+                          
+                          {/* Título */}
+                          <h4 className="font-bold text-base mb-2 text-gray-900 leading-tight">
+                            {establecimiento.nombre}
+                          </h4>
+                          
+                          {/* Ubicación */}
+                          <div className="flex items-start gap-2 mb-3">
+                            <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                            <span className="text-xs text-gray-600 line-clamp-2">
+                              {[establecimiento.ciudad, establecimiento.provincia].filter(Boolean).join(', ') || establecimiento.direccion}
+                            </span>
+                          </div>
+                          
+                          {/* Badges y Rating en una fila */}
+                          <div className="flex items-center justify-between mb-3 gap-2">
+                            <Badge variant="secondary" className="capitalize text-xs bg-gray-100 text-gray-700 border-0 flex-shrink-0">
+                              {establecimiento.tipo_establecimiento}
+                            </Badge>
+                            
+                            {establecimiento.rating_promedio && Number(establecimiento.rating_promedio) > 0 && (
+                              <div className="flex items-center gap-1 bg-amber-50 px-2 py-1 rounded-md">
+                                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                                <span className="text-xs font-semibold text-amber-700">
+                                  {Number(establecimiento.rating_promedio).toFixed(1)}
+                                </span>
                               </div>
                             )}
                           </div>
+                          
+                          {/* Servicios destacados (si hay) */}
+                          {establecimiento.servicios_disponibles && establecimiento.servicios_disponibles.length > 0 && (
+                            <div className="mb-3 text-xs text-gray-600">
+                              <span className="font-medium">Servicios: </span>
+                              {establecimiento.servicios_disponibles.slice(0, 3).join(' • ')}
+                              {establecimiento.servicios_disponibles.length > 3 && ' ...'}
+                            </div>
+                          )}
+                          
+                          {/* Botón de acción */}
                           <button
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
                               router.push(`/propietario/establecimientos/${establecimiento.id}`);
                             }}
-                            className="w-full mt-3 px-3 py-2 bg-gray-900 text-white rounded-lg text-xs hover:bg-gray-800 transition-colors font-medium"
+                            className="w-full mt-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-sm hover:from-blue-700 hover:to-purple-700 transition-all font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                           >
                             Ver Detalles
                           </button>
@@ -312,45 +489,26 @@ export function EstablecimientoMapView() {
           </div>
         )}
 
-        {/* Vista Grid/Split - Cards laterales */}
-        {(viewMode === 'grid' || viewMode === 'split') && (
-          <div className={`${viewMode === 'split' ? 'w-96 overflow-y-auto h-[700px] pr-2' : ''} space-y-3`}>
-            {viewMode === 'grid' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {establecimientos.map((establecimiento) => (
-                  <EstablecimientoCard 
-                    key={establecimiento.id} 
-                    establecimiento={establecimiento}
-                    onSelect={() => {
-                      setSelectedEstablecimiento(establecimiento);
-                      if (establecimiento.latitud && establecimiento.longitud) {
-                        setMapCenter([establecimiento.latitud, establecimiento.longitud]);
-                      }
-                    }}
-                    isSelected={selectedEstablecimiento?.id === establecimiento.id}
-                  />
-                ))}
-              </div>
-            )}
-
-            {viewMode === 'split' && (
-              <>
-                {establecimientos.map((establecimiento) => (
-                  <EstablecimientoCard 
-                    key={establecimiento.id} 
-                    establecimiento={establecimiento}
-                    onSelect={() => {
-                      setSelectedEstablecimiento(establecimiento);
-                      if (establecimiento.latitud && establecimiento.longitud) {
-                        setMapCenter([establecimiento.latitud, establecimiento.longitud]);
-                      }
-                    }}
-                    isSelected={selectedEstablecimiento?.id === establecimiento.id}
-                    compact
-                  />
-                ))}
-              </>
-            )}
+        {/* Vista Split - Cards laterales */}
+        {viewMode === 'split' && (
+          <div className="w-96 overflow-y-auto h-[700px] pr-2 space-y-3">
+            {establecimientos.map((establecimiento) => (
+              <EstablecimientoCard 
+                key={establecimiento.id} 
+                establecimiento={establecimiento}
+                onSelect={() => {
+                  setSelectedEstablecimiento(establecimiento);
+                  if (establecimiento.latitud && establecimiento.longitud && 
+                      !isNaN(establecimiento.latitud) && !isNaN(establecimiento.longitud)) {
+                    setMapCenter([establecimiento.latitud, establecimiento.longitud]);
+                    setMapZoom(15);
+                    setShouldAnimateMap(true);
+                  }
+                }}
+                isSelected={selectedEstablecimiento?.id === establecimiento.id}
+                compact
+              />
+            ))}
           </div>
         )}
       </div>
@@ -361,7 +519,7 @@ export function EstablecimientoMapView() {
 // Componente de Card reutilizable
 function EstablecimientoCard({ 
   establecimiento, 
-  onSelect, 
+  onSelect,
   isSelected,
   compact = false
 }: { 
@@ -374,8 +532,8 @@ function EstablecimientoCard({
 
   return (
     <div 
-      className={`group bg-white border border-gray-200 rounded-xl hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden ${
-        isSelected ? 'ring-2 ring-blue-500 shadow-lg' : ''
+      className={`group bg-white border rounded-xl hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden ${
+        isSelected ? 'ring-2 ring-blue-500 shadow-lg border-blue-500' : 'border-gray-200 hover:border-blue-300'
       }`}
       onClick={onSelect}
     >
@@ -413,7 +571,7 @@ function EstablecimientoCard({
           {establecimiento.rating_promedio && establecimiento.rating_promedio > 0 && (
             <Badge variant="outline" className="flex items-center gap-1 bg-amber-50 border-amber-200 text-xs">
               <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-              <span className="text-amber-700 font-semibold">{establecimiento.rating_promedio.toFixed(1)}</span>
+              <span className="text-amber-700 font-semibold">{Number(establecimiento.rating_promedio).toFixed(1)}</span>
               {!compact && establecimiento.total_resenas && establecimiento.total_resenas > 0 && (
                 <span className="text-gray-500">({establecimiento.total_resenas})</span>
               )}

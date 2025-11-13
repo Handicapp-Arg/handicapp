@@ -2,10 +2,10 @@
  * Error Logger Service
  * 
  * Servicio centralizado para logging de errores.
- * Integrado con Sentry para monitoring en producción.
+ * Integrado con Sentry para monitoring en producción (lazy loaded).
  */
 
-import * as Sentry from '@sentry/nextjs';
+import { captureError as sentryCaptureError, setContext as sentrySetContext, setTag as sentrySetTag } from './sentry-loader';
 
 interface ErrorContext {
   userId?: string;
@@ -53,9 +53,11 @@ class ErrorLoggerService {
       console.groupEnd();
     }
 
-    // TODO: Enviar a Sentry cuando esté configurado
+    // Enviar a Sentry (async, no bloquea)
     if (this.sentryEnabled) {
-      this.sendToSentry(error, enrichedContext, severity, tags);
+      this.sendToSentry(error, enrichedContext, severity, tags).catch((err) => {
+        console.warn('Failed to send error to Sentry:', err);
+      });
     }
 
     // Guardar en localStorage para debug (solo últimos 10)
@@ -180,15 +182,18 @@ class ErrorLoggerService {
   }
 
   /**
-   * Enviar error a Sentry
+   * Enviar error a Sentry (async, lazy loaded)
    */
-  private sendToSentry(
+  private async sendToSentry(
     error: Error,
     context: ErrorContext,
     severity: string,
     tags?: Record<string, string>
-  ): void {
+  ): Promise<void> {
     try {
+      // Lazy load Sentry
+      const Sentry = await import('@sentry/nextjs');
+      
       // Mapear severidad a formato Sentry
       const sentryLevel = this.mapSeverityToSentry(severity);
 

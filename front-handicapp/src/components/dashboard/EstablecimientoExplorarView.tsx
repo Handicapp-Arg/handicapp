@@ -147,7 +147,7 @@ export function EstablecimientoExplorarView() {
 
           <button
             onClick={handleSearch}
-            className="px-6 py-2.5 bg-[#1e40af] text-white rounded-lg hover:bg-[#1e3a8a] transition-colors font-medium whitespace-nowrap"
+            className="px-6 py-2.5 bg-[#0f172a] text-white rounded-lg hover:bg-[#0f172a]/90 transition-colors font-medium whitespace-nowrap"
           >
             Buscar
           </button>
@@ -184,7 +184,11 @@ export function EstablecimientoExplorarView() {
                       </h4>
                       <div className="flex items-center gap-1.5 text-xs text-gray-500">
                         <MapPin className="h-3.5 w-3.5" />
-                        <span className="line-clamp-1">{establecimiento.direccion}</span>
+                        <span className="line-clamp-1">
+                          {[establecimiento.ciudad, establecimiento.provincia]
+                            .filter(Boolean)
+                            .join(', ') || 'Sin ubicación'}
+                        </span>
                       </div>
                     </div>
                     {establecimiento.verificado && (
@@ -207,7 +211,7 @@ export function EstablecimientoExplorarView() {
                     {establecimiento.rating_promedio && establecimiento.rating_promedio > 0 && (
                       <Badge variant="outline" className="bg-amber-50 border-amber-200 flex items-center gap-1 text-xs">
                         <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                        <span className="text-amber-700 font-semibold">{establecimiento.rating_promedio.toFixed(1)}</span>
+                        <span className="text-amber-700 font-semibold">{Number(establecimiento.rating_promedio).toFixed(1)}</span>
                         {establecimiento.total_resenas && (
                           <span className="text-gray-500">({establecimiento.total_resenas})</span>
                         )}

@@ -7,6 +7,12 @@ const config: Config = {
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  // Optimización de CSS
+  safelist: [
+    // Clases dinámicas que Tailwind no puede detectar
+    'bg-green-100', 'bg-blue-100', 'bg-orange-100', 'bg-purple-100', 'bg-indigo-100',
+    'text-green-800', 'text-blue-800', 'text-orange-800', 'text-purple-800', 'text-indigo-800',
+  ],
   theme: {
     container: {
       center: true,

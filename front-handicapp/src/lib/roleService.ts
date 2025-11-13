@@ -3,7 +3,7 @@
  * Gestión completa de roles y permisos del sistema
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api/v1';
 
 export interface Role {
   id: number;
@@ -152,7 +152,7 @@ class RoleService {
     if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
 
     const queryString = params.toString();
-    const url = `${API_BASE}/api/v1/roles${queryString ? `?${queryString}` : ''}`;
+    const url = `${API_BASE_URL}/roles${queryString ? `?${queryString}` : ''}`;
 
     const response = await fetch(url, {
       headers: { 'Content-Type': 'application/json' },
@@ -172,7 +172,7 @@ class RoleService {
    * Obtener un rol por ID
    */
   async getRoleById(id: number): Promise<Role> {
-    const response = await fetch(`${API_BASE}/api/v1/roles/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/roles/${id}`, {
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
     });
@@ -190,7 +190,7 @@ class RoleService {
    * Crear un nuevo rol
    */
   async createRole(payload: RolePayload): Promise<Role> {
-    const response = await fetch(`${API_BASE}/api/v1/roles`, {
+    const response = await fetch(`${API_BASE_URL}/roles`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -210,7 +210,7 @@ class RoleService {
    * Actualizar un rol
    */
   async updateRole(id: number, payload: Partial<RolePayload>): Promise<Role> {
-    const response = await fetch(`${API_BASE}/api/v1/roles/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/roles/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -230,7 +230,7 @@ class RoleService {
    * Eliminar un rol
    */
   async deleteRole(id: number): Promise<void> {
-    const response = await fetch(`${API_BASE}/api/v1/roles/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/roles/${id}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
