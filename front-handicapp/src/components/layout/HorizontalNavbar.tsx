@@ -64,6 +64,25 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
     }
   };
 
+  const getNotificacionesPath = () => {
+    const roleKey = user?.rol?.clave;
+    const rolesDisponibles = new Set([
+      'propietario',
+      'veterinario',
+      'establecimiento',
+      'empleado',
+      'capataz',
+    ]);
+
+    if (!roleKey || !rolesDisponibles.has(roleKey)) {
+      return '/propietario/notificaciones';
+    }
+
+    return `/${roleKey}/notificaciones`;
+  };
+
+  const notificacionesPath = getNotificacionesPath();
+
   const getIconoTipo = (tipo: string) => {
     const iconos: Record<string, React.ElementType> = {
       evento: Calendar,
@@ -239,9 +258,11 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                           <div
                             key={notif.id}
                             onClick={async () => {
+                              setIsNotifDropdownOpen(false);
                               if (!notif.leida) {
                                 await marcarComoLeida(notif.id);
                               }
+                              router.push(`${notificacionesPath}?highlight=${notif.id}`);
                             }}
                             className={`px-3 sm:px-4 py-2.5 sm:py-3 border-b border-slate-100 hover:bg-slate-50 active:bg-slate-100 cursor-pointer transition-colors ${
                               !notif.leida ? 'bg-blue-50/50' : ''
@@ -284,8 +305,7 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                     <button
                       onClick={() => {
                         setIsNotifDropdownOpen(false);
-                        const roleKey = user?.rol?.clave || 'propietario';
-                        router.push(`/${roleKey}/notificaciones`);
+                        router.push(notificacionesPath);
                       }}
                       className="w-full flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold text-primary hover:text-primary/80 active:text-primary/60 transition-colors py-1"
                     >
