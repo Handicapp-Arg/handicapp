@@ -19,6 +19,7 @@ const envSchema = z.object({
   DB_PASSWORD: z.string().optional(),
   DB_DIALECT: z.string().default('postgres'),
   DB_LOGGING: z.string().transform(val => val === 'true').default(false),
+  DB_SSL: z.string().transform(val => val === 'true').default(false),
   
   // JWT
   JWT_SECRET: z.string().min(32),
@@ -89,6 +90,7 @@ if (env.DATABASE_URL) {
     password: url.password,
     dialect: env.DB_DIALECT,
     logging: env.DB_LOGGING,
+    ssl: env.DB_SSL,
   };
 } else {
   dbConfig = {
@@ -99,6 +101,7 @@ if (env.DATABASE_URL) {
     password: env.DB_PASSWORD || '',
     dialect: env.DB_DIALECT,
     logging: env.DB_LOGGING,
+    ssl: env.DB_SSL,
   };
 }
 

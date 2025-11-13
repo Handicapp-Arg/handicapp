@@ -20,6 +20,12 @@ const dbConfig = {
       evict: 1000,
     },
     dialectOptions: {
+      ...(config.database.ssl && {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false,
+        },
+      }),
       connectTimeout: 60000,
       acquireTimeout: 60000,
       timeout: 60000,
@@ -68,6 +74,12 @@ const dbConfig = {
       idle: 10000,
     },
     dialectOptions: {
+      ...(config.database.ssl && {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false,
+        },
+      }),
       connectTimeout: 30000,
       acquireTimeout: 30000,
       timeout: 30000,
@@ -95,8 +107,7 @@ const dbConfig = {
       evict: 1000,
     },
     dialectOptions: {
-      // SSL solo si está configurado en las variables de entorno
-      ...(process.env['DB_SSL'] === 'true' && {
+      ...(config.database.ssl && {
         ssl: {
           require: true,
           rejectUnauthorized: false,
