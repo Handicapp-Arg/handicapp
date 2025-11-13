@@ -93,7 +93,7 @@ export function usePushNotifications() {
       const registration = await navigator.serviceWorker.ready;
 
       // Obtener VAPID public key del backend
-      const vapidResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/push/vapid-public-key`, {
+      const vapidResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/push/vapid-public-key`, {
         credentials: 'include',
       });
       
@@ -173,7 +173,7 @@ export function usePushNotifications() {
 
     try {
       // Enviar solicitud al backend para que envíe la notificación push
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/push/test`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/push/test`, {
         method: 'POST',
         credentials: 'include',
       });
