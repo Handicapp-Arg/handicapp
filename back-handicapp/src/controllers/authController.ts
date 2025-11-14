@@ -203,7 +203,7 @@ export class AuthController {
     if (!token) return ResponseHelper.badRequest(res, 'Token requerido');
     const result = await AuthService.verifyEmail(token);
     if (!result.success) return ResponseHelper.badRequest(res, result.error || 'Token inválido');
-    return ResponseHelper.success(res, null, result.message || 'Cuenta verificada');
+    return ResponseHelper.success(res, result.data || {}, result.message || 'Cuenta verificada');
   });
 
   /**

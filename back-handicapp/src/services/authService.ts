@@ -5,7 +5,8 @@ import { config } from '../config/config';
 import { logger } from '../utils/logger';
 import { ServiceResponse } from '../types';
 import { EstadoUsuario } from '../models/enums';
-import { sendEmail, renderBrandedEmail } from './emailService';
+import { sendVerificationEmail } from '../emails/verificationEmail';
+import { sendPasswordResetEmail } from '../emails/passwordResetEmail';
 import bcrypt from 'bcrypt';
 
 interface LoginRequest {
@@ -102,18 +103,13 @@ export class AuthService {
         config.jwt.secret,
         { expiresIn: '24h' }
       );
-      const verifyUrl = `${config.app.webUrl}/verify?token=${encodeURIComponent(verifyToken)}`;
-      const html = renderBrandedEmail({
-        title: 'Verificá tu cuenta',
-        intro: `Hola ${user.nombre}, gracias por registrarte en HandicApp. Por favor verificá tu correo para activar tu cuenta.`,
-        actionText: 'Verificá mi cuenta',
-        actionUrl: verifyUrl,
-        footer: 'Equipo HandicApp',
-      });
+      
       try {
-        logger.info(`Intentando enviar email de verificación a: ${user.email}`);
-        await sendEmail({ to: user.email, subject: 'Verifica tu cuenta - HandicApp', html });
-        logger.info(`Email de verificación enviado exitosamente a: ${user.email}`);
+        await sendVerificationEmail({
+          nombre: user.nombre,
+          email: user.email,
+          verifyToken,
+        });
       } catch (err: any) {
         logger.error('Fallo enviando email de verificación (register)', {
           email: user.email,
@@ -146,16 +142,13 @@ export class AuthService {
         config.jwt.secret,
         { expiresIn: '1h' }
       );
-      const resetUrl = `${config.app.webUrl}/reset-password?token=${encodeURIComponent(resetToken)}`;
-      const html = renderBrandedEmail({
-        title: 'Restablecer contraseña',
-        intro: `Hola ${user.nombre}, recibimos una solicitud para restablecer tu contraseña.`,
-        actionText: 'Restablecer contraseña',
-        actionUrl: resetUrl,
-        footer: 'Si no fuiste vos, ignora este correo.',
-      });
+      
       try {
-        await sendEmail({ to: user.email, subject: 'Restablecer contraseña - HandicApp', html });
+        await sendPasswordResetEmail({
+          nombre: user.nombre,
+          email: user.email,
+          resetToken,
+        });
       } catch (err: any) {
         logger.warn('Fallo enviando email de reset password', {
           email: user.email,
@@ -170,16 +163,29 @@ export class AuthService {
   }
 
   /** Verificar email a partir de token */
-  static async verifyEmail(token: string): Promise<ServiceResponse<{}>> {
+  static async verifyEmail(token: string): Promise<ServiceResponse<{ email: string; roleKey: string }>> {
     try {
       const payload = (jwt as any).verify(token, config.jwt.secret);
       if (payload?.type !== 'verify' || !payload?.userId) return { success: false, error: 'Token inválido' };
-      const user = await User.findByPk(payload.userId);
+      const user = await User.findByPk(payload.userId, {
+        include: [{
+          model: Role,
+          as: 'rol',
+          attributes: ['id', 'nombre', 'clave']
+        }]
+      });
       if (!user) return { success: false, error: 'Usuario no encontrado' };
       user.verificado = true;
       user.estado_usuario = EstadoUsuario.active;
       await user.save();
-      return { success: true, data: {}, message: 'Cuenta verificada' };
+      return { 
+        success: true, 
+        data: { 
+          email: user.email,
+          roleKey: user.rol?.clave || 'propietario'
+        }, 
+        message: 'Cuenta verificada' 
+      };
     } catch (error) {
       logger.warn('Fallo verificación de email:', error);
       return { success: false, error: 'Token inválido o expirado' };
@@ -199,16 +205,13 @@ export class AuthService {
         config.jwt.secret,
         { expiresIn: '24h' }
       );
-      const verifyUrl = `${config.app.webUrl}/verify?token=${encodeURIComponent(verifyToken)}`;
-      const html = renderBrandedEmail({
-        title: 'Verificá tu cuenta',
-        intro: `Hola ${user.nombre || ''}, por favor verificá tu correo para activar tu cuenta.`,
-        actionText: 'Verificá mi cuenta',
-        actionUrl: verifyUrl,
-        footer: 'Equipo HandicApp',
-      });
+      
       try {
-        await sendEmail({ to: user.email, subject: 'Verifica tu cuenta - HandicApp', html });
+        await sendVerificationEmail({
+          nombre: user.nombre || '',
+          email: user.email,
+          verifyToken,
+        });
       } catch (err: any) {
         logger.warn('Fallo reenviando email de verificación', {
           email: user.email,

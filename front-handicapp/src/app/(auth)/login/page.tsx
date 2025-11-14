@@ -30,6 +30,8 @@ export default function LoginPage() {
   const params = useSearchParams();
   const checkEmail = useMemo(() => params.get('checkEmail') === '1', [params]);
   const emailParam = useMemo(() => params.get('email') || '', [params]);
+  const redirectTo = useMemo(() => params.get('redirectTo') || '', [params]);
+  const verified = useMemo(() => params.get('verified') === '1', [params]);
   const { toast } = useToaster();
   const [resending, setResending] = useState(false);
   const shownInfoRef = useRef(false);
@@ -39,12 +41,27 @@ export default function LoginPage() {
     setMounted(true);
   }, []);
 
+  // Prellenar email si viene en los parámetros
+  useEffect(() => {
+    if (emailParam && mounted) {
+      setEmail(emailParam);
+    }
+  }, [emailParam, mounted]);
+
   useEffect(() => {
     if (checkEmail && !shownInfoRef.current) {
       shownInfoRef.current = true;
       toast(`Te enviamos un correo a ${emailParam || 'tu casilla'} para verificar la cuenta.`, { type: 'info', duration: 5000 });
     }
   }, [checkEmail, emailParam, toast]);
+
+  // Mostrar mensaje de éxito si viene de verificación
+  useEffect(() => {
+    if (verified && !shownInfoRef.current && mounted) {
+      shownInfoRef.current = true;
+      toast('¡Cuenta verificada exitosamente! Ingresá tu contraseña para continuar.', { type: 'success', duration: 5000 });
+    }
+  }, [verified, mounted, toast]);
 
   const onResend = async () => {
     if (!emailParam) {
@@ -97,19 +114,23 @@ export default function LoginPage() {
       toast('Inicio de sesión exitoso', 'success');
       const state = AuthManager.getInstance().getState();
       const roleKey = state.user?.rol?.clave || 'user';
-      // Redirección por rol: admin -> /admin, propietario/u otros -> home
-      if (roleKey === 'admin') {
-        router.push('/admin');
+      
+      // Si hay un redirectTo en los parámetros, usarlo (viene de verificación)
+      if (redirectTo) {
+        router.push(redirectTo);
       } else {
-        router.push('/');
+        // Redirección por rol: admin -> /admin, propietario/u otros -> home
+        if (roleKey === 'admin') {
+          router.push('/admin');
+        } else {
+          router.push('/');
+        }
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error inesperado';
       const normalizedErrors = normalizeLoginError(errorMessage, email);
       setFieldErrors(normalizedErrors);
-      if (normalizedErrors.general) {
-        toast(normalizedErrors.general, { type: 'error', duration: 4000 });
-      }
+      // El error se muestra en el formulario, no en toast
     } finally {
       setIsLoading(false);
     }
