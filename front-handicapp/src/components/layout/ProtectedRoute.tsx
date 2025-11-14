@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import ApiClient from '@/lib/services/apiClient';
@@ -8,8 +8,8 @@ import { LOGOS } from '@/lib/constants/logos';
 
 /**
  * Componente de protección de rutas basado en roles
- * Verifica la autenticación del usuario haciendo request al backend
- * (las cookies httpOnly se envían automáticamente)
+ * OPTIMIZADO: Usa cache para evitar verificaciones repetidas en navegación rápida
+ * El middleware ya valida la cookie, este componente solo verifica rol y permisos
  */
 
 const DASHBOARD_ROUTES: Record<string, string> = {
@@ -21,20 +21,50 @@ const DASHBOARD_ROUTES: Record<string, string> = {
   propietario: '/propietario'
 };
 
+// Cache de verificación (válido por 30 segundos)
+let authCache: {
+  isValid: boolean;
+  userRole: string | null;
+  timestamp: number;
+} | null = null;
+
+const CACHE_DURATION = 30000; // 30 segundos
+
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const checkInProgress = useRef(false);
 
   useEffect(() => {
     const checkAccess = async () => {
+      // Evitar múltiples verificaciones simultáneas
+      if (checkInProgress.current) return;
+      
+      // Verificar cache primero
+      const now = Date.now();
+      if (authCache && (now - authCache.timestamp) < CACHE_DURATION) {
+        const userRole = authCache.userRole;
+        if (userRole && authCache.isValid) {
+          const allowedPath = DASHBOARD_ROUTES[userRole];
+          if (allowedPath && pathname.startsWith(allowedPath)) {
+            setIsAuthorized(true);
+            setIsLoading(false);
+            return;
+          }
+        }
+      }
+
       try {
+        checkInProgress.current = true;
+        
         // Verificar autenticación con el backend (las cookies httpOnly se envían automáticamente)
         const response: any = await ApiClient.verifyToken();
         
         // El backend devuelve: { success: true, data: { valid: true, user: { id, email, role } } }
         if (!response || !response.success || !response.data || !response.data.user || !response.data.valid) {
+          authCache = { isValid: false, userRole: null, timestamp: now };
           router.replace('/login');
           return;
         }
@@ -43,6 +73,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
         const userRole = user.role; // 'admin', 'establecimiento', 'capataz', 'veterinario', 'empleado', 'propietario'
         
         if (!userRole) {
+          authCache = { isValid: false, userRole: null, timestamp: now };
           router.replace('/login');
           return;
         }
@@ -50,6 +81,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
         const allowedPath = DASHBOARD_ROUTES[userRole];
         
         if (!allowedPath) {
+          authCache = { isValid: false, userRole: null, timestamp: now };
           router.replace('/login');
           return;
         }
@@ -60,12 +92,17 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
           return;
         }
 
+        // Actualizar cache
+        authCache = { isValid: true, userRole, timestamp: now };
         setIsAuthorized(true);
         setIsLoading(false);
       } catch (error) {
         console.error('Error verificando autenticación:', error);
+        authCache = { isValid: false, userRole: null, timestamp: Date.now() };
         setIsLoading(false);
         router.replace('/login');
+      } finally {
+        checkInProgress.current = false;
       }
     };
 

@@ -210,9 +210,9 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
 
             {/* Notifications Dropdown */}
             {isNotifDropdownOpen && (
-              <div className="fixed sm:absolute right-2 sm:right-0 left-2 sm:left-auto mt-3 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden">
+              <div className="fixed sm:absolute right-2 sm:right-0 left-2 sm:left-auto mt-3 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden flex flex-col max-h-[85vh]">
                 {/* Header */}
-                <div className="px-3 sm:px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-primary/5 to-primary/10">
+                <div className="px-3 sm:px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-primary/5 to-primary/10 flex-shrink-0">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
@@ -238,11 +238,11 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                   )}
                 </div>
 
-                {/* Notificaciones List */}
-                <div className="max-h-[50vh] sm:max-h-96 overflow-y-auto">
+                {/* Notificaciones List - Con scroll */}
+                <div className="overflow-y-auto flex-1 min-h-0 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
                   {notificaciones && notificaciones.length > 0 ? (
                     <>
-                      {/* Mostrar primero las no leídas, luego las leídas - máximo 5 en total */}
+                      {/* Mostrar todas las notificaciones ordenadas: primero no leídas, luego leídas */}
                       {[...notificaciones]
                         .sort((a, b) => {
                           // Primero las no leídas
@@ -251,7 +251,6 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                           // Luego por fecha más reciente
                           return new Date(b.creado_el).getTime() - new Date(a.creado_el).getTime();
                         })
-                        .slice(0, 5)
                         .map((notif) => {
                         const Icono = getIconoTipo(notif.tipo);
                         return (
@@ -301,7 +300,7 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
 
                 {/* Footer - Ver todas */}
                 {notificaciones && notificaciones.length > 0 && (
-                  <div className="px-3 sm:px-4 py-2.5 sm:py-3 border-t border-slate-100 bg-slate-50">
+                  <div className="px-3 sm:px-4 py-2.5 sm:py-3 border-t border-slate-100 bg-slate-50 flex-shrink-0">
                     <button
                       onClick={() => {
                         setIsNotifDropdownOpen(false);

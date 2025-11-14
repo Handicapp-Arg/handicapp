@@ -1,14 +1,28 @@
 'use client';
 
-import { useStats } from '@/lib/hooks/useStats';
-import { TareaList } from '@/components/dashboard/TareaList';
+import { useMemo } from 'react';
+import { TareaKanban } from '@/components/dashboard/TareaKanban';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
+import { useTareas } from '@/lib/hooks';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ClipboardList, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { ClipboardList, Clock, CheckCircle2, PlayCircle } from 'lucide-react';
 
 export default function TareasPage() {
-  const { stats, loading } = useStats();
+  const { data: tareas = [], isLoading: loading } = useTareas({ page: 1, limit: 500 });
+
+  // Calcular estadísticas basadas en los estados reales del backend
+  const stats = useMemo(() => {
+    const tareasArray = Array.isArray(tareas) ? tareas : (tareas as any)?.data || [];
+    
+    return {
+      total: tareasArray.length,
+      open: tareasArray.filter((t: any) => t.estado === 'open' || t.estado === 'pendiente').length,
+      inProgress: tareasArray.filter((t: any) => t.estado === 'in_progress' || t.estado === 'en_progreso').length,
+      done: tareasArray.filter((t: any) => t.estado === 'done' || t.estado === 'completada').length,
+      cancelled: tareasArray.filter((t: any) => t.estado === 'cancelled' || t.estado === 'cancelada').length,
+    };
+  }, [tareas]);
 
   if (loading) {
     return (
@@ -51,7 +65,7 @@ export default function TareasPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pb-3">
-                  <p className="text-2xl font-bold text-white tabular-nums">{stats.tareas?.total || 0}</p>
+                  <p className="text-2xl font-bold text-white tabular-nums">{stats.total}</p>
                   <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
                     Todas
                   </Badge>
@@ -62,7 +76,7 @@ export default function TareasPage() {
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardDescription className="text-[10px] font-semibold text-amber-300 uppercase tracking-wider">
-                      Pendientes
+                      Abiertas
                     </CardDescription>
                     <div className="p-1.5 rounded-lg bg-amber-500/20">
                       <Clock className="w-3 h-3 text-amber-300" />
@@ -70,9 +84,28 @@ export default function TareasPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pb-3">
-                  <p className="text-2xl font-bold text-white tabular-nums">{stats.tareas?.pendientes || 0}</p>
+                  <p className="text-2xl font-bold text-white tabular-nums">{stats.open}</p>
                   <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
                     Por realizar
+                  </Badge>
+                </CardContent>
+              </Card>
+
+              <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardDescription className="text-[10px] font-semibold text-blue-300 uppercase tracking-wider">
+                      En Progreso
+                    </CardDescription>
+                    <div className="p-1.5 rounded-lg bg-blue-500/20">
+                      <PlayCircle className="w-3 h-3 text-blue-300" />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pb-3">
+                  <p className="text-2xl font-bold text-white tabular-nums">{stats.inProgress}</p>
+                  <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
+                    Trabajando
                   </Badge>
                 </CardContent>
               </Card>
@@ -89,28 +122,9 @@ export default function TareasPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pb-3">
-                  <p className="text-2xl font-bold text-white tabular-nums">{stats.tareas?.completadas || 0}</p>
+                  <p className="text-2xl font-bold text-white tabular-nums">{stats.done}</p>
                   <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
                     Finalizadas
-                  </Badge>
-                </CardContent>
-              </Card>
-
-              <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardDescription className="text-[10px] font-semibold text-red-300 uppercase tracking-wider">
-                      En Progreso
-                    </CardDescription>
-                    <div className="p-1.5 rounded-lg bg-red-500/20">
-                      <AlertTriangle className="w-3 h-3 text-red-300" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pb-3">
-                  <p className="text-2xl font-bold text-white tabular-nums">{stats.tareas?.enProgreso || 0}</p>
-                  <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
-                    Trabajando
                   </Badge>
                 </CardContent>
               </Card>
@@ -118,8 +132,9 @@ export default function TareasPage() {
           </div>
         </div>
 
+        {/* Vista Kanban */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-          <TareaList />
+          <TareaKanban tareas={tareas} />
         </div>
       </div>
     </SimpleRoleGuard>
