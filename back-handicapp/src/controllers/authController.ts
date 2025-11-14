@@ -203,6 +203,28 @@ export class AuthController {
     if (!token) return ResponseHelper.badRequest(res, 'Token requerido');
     const result = await AuthService.verifyEmail(token);
     if (!result.success) return ResponseHelper.badRequest(res, result.error || 'Token inválido');
+    
+    // Si hay tokens en la respuesta, establecer cookies httpOnly (login automático)
+    if (result.data?.accessToken && result.data?.refreshToken) {
+      // Configurar access token como httpOnly cookie
+      res.cookie('auth-token', result.data.accessToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        maxAge: 60 * 60 * 1000, // 1 hora
+        path: '/'
+      });
+
+      // Configurar refresh token como httpOnly cookie
+      res.cookie('refresh-token', result.data.refreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
+        path: '/'
+      });
+    }
+    
     return ResponseHelper.success(res, result.data || {}, result.message || 'Cuenta verificada');
   });
 

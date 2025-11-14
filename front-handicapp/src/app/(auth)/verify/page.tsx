@@ -7,6 +7,7 @@ import { useToaster } from '@/components/ui/toaster';
 import { LOGOS } from '@/lib/constants/logos';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { ROLE_DASHBOARD_ROUTES } from '@/lib/utils/roleUtils';
+import AuthManager from '@/lib/auth/AuthManager';
 
 export default function VerifyPage() {
   const params = useSearchParams();
@@ -26,19 +27,39 @@ export default function VerifyPage() {
           setStatus('ok');
           toast('Cuenta verificada exitosamente', 'success');
           
-          // Obtener el rol del usuario desde la respuesta
+          // Obtener datos del usuario desde la respuesta
           const roleKey = response?.data?.roleKey || 'propietario';
           const email = response?.data?.email || '';
+          const accessToken = response?.data?.accessToken;
+          const refreshToken = response?.data?.refreshToken;
+          const user = response?.data?.user;
           
           setUserData({ email, roleKey });
           
-          // Redirigir al dashboard correspondiente
-          const dashboardRoute = ROLE_DASHBOARD_ROUTES[roleKey as keyof typeof ROLE_DASHBOARD_ROUTES] || '/propietario';
-          
-          // Redirigir al login con el email prellenado y parámetro para redirigir al dashboard
-          setTimeout(() => {
+          // Si hay tokens, autenticar automáticamente al usuario y redirigir al dashboard
+          if (accessToken && refreshToken && user) {
+            try {
+              // Guardar tokens en AuthManager
+              await AuthManager.getInstance().setAuthTokens({
+                accessToken,
+                refreshToken,
+                user
+              });
+              
+              // Redirigir directamente al dashboard (sin timeout para que sea inmediato)
+              const dashboardRoute = ROLE_DASHBOARD_ROUTES[roleKey as keyof typeof ROLE_DASHBOARD_ROUTES] || '/propietario';
+              router.push(dashboardRoute);
+            } catch (authError) {
+              console.error('Error autenticando usuario:', authError);
+              // Si falla la autenticación, redirigir al login
+              const dashboardRoute = ROLE_DASHBOARD_ROUTES[roleKey as keyof typeof ROLE_DASHBOARD_ROUTES] || '/propietario';
+              router.push(`/login?email=${encodeURIComponent(email)}&redirectTo=${encodeURIComponent(dashboardRoute)}&verified=1`);
+            }
+          } else {
+            // Si no hay tokens, redirigir al login
+            const dashboardRoute = ROLE_DASHBOARD_ROUTES[roleKey as keyof typeof ROLE_DASHBOARD_ROUTES] || '/propietario';
             router.push(`/login?email=${encodeURIComponent(email)}&redirectTo=${encodeURIComponent(dashboardRoute)}&verified=1`);
-          }, 2000);
+          }
         }
       } catch (e) {
         if (!cancelled) setStatus('error');
@@ -109,9 +130,25 @@ export default function VerifyPage() {
           {/* Action Buttons */}
           {status === 'ok' && userData && (
             <button
-              onClick={() => {
-                const dashboardRoute = ROLE_DASHBOARD_ROUTES[userData.roleKey as keyof typeof ROLE_DASHBOARD_ROUTES] || '/propietario';
-                router.push(`/login?email=${encodeURIComponent(userData.email)}&redirectTo=${encodeURIComponent(dashboardRoute)}&verified=1`);
+              onClick={async () => {
+                try {
+                  // Re-autenticar si es necesario
+                  const authManager = AuthManager.getInstance();
+                  const state = authManager.getState();
+                  
+                  if (state.isAuthenticated) {
+                    // Si ya está autenticado, ir directo al dashboard
+                    const dashboardRoute = ROLE_DASHBOARD_ROUTES[userData.roleKey as keyof typeof ROLE_DASHBOARD_ROUTES] || '/propietario';
+                    router.push(dashboardRoute);
+                  } else {
+                    // Si no está autenticado, ir al login
+                    const dashboardRoute = ROLE_DASHBOARD_ROUTES[userData.roleKey as keyof typeof ROLE_DASHBOARD_ROUTES] || '/propietario';
+                    router.push(`/login?email=${encodeURIComponent(userData.email)}&redirectTo=${encodeURIComponent(dashboardRoute)}&verified=1`);
+                  }
+                } catch (e) {
+                  const dashboardRoute = ROLE_DASHBOARD_ROUTES[userData.roleKey as keyof typeof ROLE_DASHBOARD_ROUTES] || '/propietario';
+                  router.push(`/login?email=${encodeURIComponent(userData.email)}&redirectTo=${encodeURIComponent(dashboardRoute)}&verified=1`);
+                }
               }}
               className="w-full bg-[#1e293b] text-white font-semibold py-3.5 rounded-xl hover:bg-[#0f172a] hover:shadow-lg transition-all duration-200"
             >

@@ -163,7 +163,7 @@ export class AuthService {
   }
 
   /** Verificar email a partir de token */
-  static async verifyEmail(token: string): Promise<ServiceResponse<{ email: string; roleKey: string }>> {
+  static async verifyEmail(token: string): Promise<ServiceResponse<{ email: string; roleKey: string; accessToken: string; refreshToken: string; user: any }>> {
     try {
       const payload = (jwt as any).verify(token, config.jwt.secret);
       if (payload?.type !== 'verify' || !payload?.userId) return { success: false, error: 'Token inválido' };
@@ -178,11 +178,34 @@ export class AuthService {
       user.verificado = true;
       user.estado_usuario = EstadoUsuario.active;
       await user.save();
+
+      // Generar tokens de autenticación automática después de verificar
+      const accessToken = this.generateAccessToken(user);
+      const refreshToken = this.generateRefreshToken(user.id);
+
+      // Preparar datos del usuario
+      const userData = {
+        id: user.id,
+        email: user.email,
+        nombre: user.nombre,
+        apellido: user.apellido,
+        rol: {
+          id: user.rol?.id || 0,
+          nombre: user.rol?.nombre || 'Usuario',
+          clave: user.rol?.clave || 'propietario'
+        },
+        verificado: user.verificado,
+        estado_usuario: String(user.estado_usuario)
+      };
+
       return { 
         success: true, 
         data: { 
           email: user.email,
-          roleKey: user.rol?.clave || 'propietario'
+          roleKey: user.rol?.clave || 'propietario',
+          accessToken,
+          refreshToken,
+          user: userData
         }, 
         message: 'Cuenta verificada' 
       };

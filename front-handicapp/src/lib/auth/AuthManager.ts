@@ -339,6 +339,28 @@ class AuthManager {
   }
 
   /**
+   * Establecer tokens de autenticación (para verificación de email)
+   */
+  async setAuthTokens({ accessToken, refreshToken, user }: { accessToken: string; refreshToken: string; user: UserData }): Promise<void> {
+    try {
+      // Guardar tokens en cookies httpOnly (el backend lo hace automáticamente, pero también guardamos localmente)
+      this.saveAuthData(accessToken, user);
+      
+      // Actualizar estado
+      this.updateState({
+        isAuthenticated: true,
+        user,
+        token: accessToken,
+        isLoading: false,
+        error: null,
+      });
+    } catch (error) {
+      console.error('Error estableciendo tokens:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Guardar datos de autenticación
    */
   private saveAuthData(token: string, user: UserData): void {
