@@ -177,16 +177,12 @@ export const connectDatabase = async (): Promise<void> => {
 // Función para sincronizar modelos
 export const syncDatabase = async (): Promise<void> => {
   try {
-    // NOTA: No usamos sync() porque manejamos las migraciones manualmente
-    // Si descomentas esto, Sequelize intentará alterar las tablas automáticamente
-    // if (config.nodeEnv === 'development') {
-    //   await sequelize.sync({ force: true });
-    // } else {
-    //   await sequelize.sync({ alter: true });
-    // }
+    if (config.nodeEnv === 'development') {
+      await sequelize.sync({ force: true });
+    } else {
+      await sequelize.sync({ alter: true });
+    }
     
-    // Solo validamos que la conexión funciona
-    await sequelize.authenticate();
     logger.info('✅ Database models validated');
   } catch (error) {
     logger.error('❌ Database sync failed', { error: error instanceof Error ? error.message : String(error) });

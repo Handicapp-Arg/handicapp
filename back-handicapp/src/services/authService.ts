@@ -134,8 +134,13 @@ export class AuthService {
   /** Crear token de restablecimiento y mandar email */
   static async sendPasswordReset(email: string): Promise<ServiceResponse<{}>> {
     try {
-      const user = await User.scope('withSecret').findOne({ where: { email: email.trim().toLowerCase() } });
-      if (!user) return { success: true, data: {}, message: 'Si el email existe, enviaremos instrucciones.' };
+      const cleanEmail = email.trim().toLowerCase();
+      const user = await User.scope('withSecret').findOne({ where: { email: cleanEmail } });
+
+      if (!user) {
+        return { success: false, error: 'No encontramos una cuenta registrada con ese correo.' };
+      }
+
       const resetToken = (jwt as any).sign(
         { type: 'reset', userId: user.id },
         config.jwt.secret,
@@ -157,7 +162,7 @@ export class AuthService {
           error: err?.message || String(err)
         });
       }
-      return { success: true, data: {}, message: 'Si el email existe, enviaremos instrucciones.' };
+      return { success: true, data: {}, message: 'Te enviamos instrucciones para restablecer tu contraseña.' };
     } catch (error) {
       logger.error('Error enviando reset password:', error);
       return { success: false, error: 'Error interno del servidor' };

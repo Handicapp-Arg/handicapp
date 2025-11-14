@@ -214,8 +214,10 @@ export class AuthController {
     const { email } = req.body || {};
     if (!email) return ResponseHelper.badRequest(res, 'Email requerido');
     const result = await AuthService.sendPasswordReset(email);
-    if (!result.success) return ResponseHelper.internalError(res, result.error || 'Error enviando email');
-    return ResponseHelper.success(res, null, result.message || 'Si el email existe, enviaremos instrucciones.');
+    if (!result.success) {
+      return ResponseHelper.badRequest(res, result.error || 'No pudimos enviar instrucciones a ese correo.');
+    }
+    return ResponseHelper.success(res, null, result.message || 'Te enviamos instrucciones para restablecer tu contraseña.');
   });
 
   /**

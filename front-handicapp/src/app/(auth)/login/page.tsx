@@ -10,11 +10,18 @@ import AuthManager from '@/lib/auth/AuthManager';
 import { LOGOS } from '@/lib/constants/logos';
 import { Eye, EyeOff } from 'lucide-react';
 
+type FieldErrors = {
+  email?: string;
+  password?: string;
+  general?: string;
+  verification?: string;
+};
+
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
   
@@ -57,10 +64,29 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setFieldErrors({});
     
     if (!email || !password) {
-      setError('Por favor, complete todos los campos');
+      setFieldErrors({
+        email: !email ? 'Ingresá tu correo electrónico' : undefined,
+        password: !password ? 'Ingresá tu contraseña' : undefined,
+        general: 'Por favor, completá los campos requeridos',
+      });
+      return;
+    }
+
+    const newFieldErrors: FieldErrors = {};
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      newFieldErrors.email = 'El formato del correo no es válido';
+    }
+    if (password.length < 6) {
+      newFieldErrors.password = 'La contraseña debe tener al menos 6 caracteres';
+    }
+    if (Object.keys(newFieldErrors).length > 0) {
+      setFieldErrors({
+        ...newFieldErrors,
+        general: 'Revisá los datos ingresados antes de continuar',
+      });
       return;
     }
 
@@ -79,7 +105,11 @@ export default function LoginPage() {
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error inesperado';
-      setError(errorMessage);
+      const normalizedErrors = normalizeLoginError(errorMessage, email);
+      setFieldErrors(normalizedErrors);
+      if (normalizedErrors.general) {
+        toast(normalizedErrors.general, { type: 'error', duration: 4000 });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -106,11 +136,21 @@ export default function LoginPage() {
                 name="email"
                 autoComplete="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#af936f] focus:border-transparent transition-all"
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (fieldErrors.email || fieldErrors.general) {
+                    setFieldErrors((prev) => ({ ...prev, email: undefined, general: undefined }));
+                  }
+                }}
+                className={`w-full px-4 py-3 bg-white border rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                  fieldErrors.email ? 'border-red-400 focus:ring-red-300' : 'border-slate-200 focus:ring-[#af936f]'
+                }`}
                 placeholder="tu@email.com"
                 required
               />
+              {fieldErrors.email && (
+                <p className="mt-2 text-sm text-red-600">{fieldErrors.email}</p>
+              )}
             </div>
 
             <div>
@@ -123,8 +163,15 @@ export default function LoginPage() {
                   name="password"
                   autoComplete="current-password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 pr-12 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#af936f] focus:border-transparent transition-all"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (fieldErrors.password || fieldErrors.general) {
+                      setFieldErrors((prev) => ({ ...prev, password: undefined, general: undefined }));
+                    }
+                  }}
+                  className={`w-full px-4 py-3 pr-12 bg-white border rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                    fieldErrors.password ? 'border-red-400 focus:ring-red-300' : 'border-slate-200 focus:ring-[#af936f]'
+                  }`}
                   placeholder="••••••••"
                   required
                 />
@@ -141,6 +188,9 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
+              {fieldErrors.password && (
+                <p className="mt-2 text-sm text-red-600">{fieldErrors.password}</p>
+              )}
             </div>
 
             {/* Recordarme */}
@@ -161,9 +211,21 @@ export default function LoginPage() {
               </button>
             </div>
 
-            {(error || authError) && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-3">
-                <p className="text-red-600 text-sm">{error || authError}</p>
+            {(fieldErrors.general || authError || fieldErrors.verification) && (
+              <div className={`rounded-xl p-3 border ${fieldErrors.verification ? 'bg-blue-50 border-blue-200' : 'bg-red-50 border-red-200'}`}>
+                <p className={`${fieldErrors.verification ? 'text-blue-700' : 'text-red-600'} text-sm`}>
+                  {fieldErrors.verification || fieldErrors.general || authError}
+                </p>
+                {fieldErrors.verification && (
+                  <button
+                    type="button"
+                    onClick={onResend}
+                    disabled={resending}
+                    className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-700 hover:text-blue-600"
+                  >
+                    {resending ? 'Reenviando correo…' : 'Reenviar enlace de verificación'}
+                  </button>
+                )}
               </div>
             )}
 
@@ -244,4 +306,43 @@ export default function LoginPage() {
       </div>
     </div>
   );
+}
+
+function normalizeLoginError(message: string, email: string): FieldErrors {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes('credenciales inválidas')) {
+    return {
+      general: message || 'Credenciales inválidas. Revisá los datos e intentá nuevamente.',
+      password: 'La contraseña no coincide con nuestros registros.',
+    };
+  }
+
+  if (normalized.includes('no verificada')) {
+    return {
+      verification: `Tu cuenta todavía no está verificada. Revisá tu correo (${email || 'ingresado'}) o reenviá el enlace.`,
+    };
+  }
+
+  if (normalized.includes('inactivo')) {
+    return {
+      general: 'Tu usuario está inactivo. Contactá a un administrador para reactivarlo.',
+    };
+  }
+
+  if (normalized.includes('timeout') || normalized.includes('network')) {
+    return {
+      general: 'No pudimos conectarnos con el servidor. Verificá tu conexión y volvé a intentar.',
+    };
+  }
+
+  if (normalized.includes('requeridos')) {
+    return {
+      general: 'Ingresá tu correo y contraseña para continuar.',
+    };
+  }
+
+  return {
+    general: message || 'Ocurrió un error al iniciar sesión. Probá nuevamente en unos segundos.',
+  };
 }

@@ -33,24 +33,27 @@ function getTransporter() {
 }
 
 export async function sendEmail({ to, subject, html }: EmailParams) {
-  const from = `${config.email.from.name} <${config.email.from.email || 'no-reply@handicapp.local'}>`;
+  const defaultFromEmail = config.email.from.email || config.email.resend.fromEmail || 'no-reply@handicapp.local';
+  const defaultFromName = config.email.from.name || config.email.resend.fromName || 'HandicApp';
+  const from = `${defaultFromName} <${defaultFromEmail}>`;
   
   // Priorizar Resend API si está configurada (evita bloqueos SMTP en Render)
-  if (config.email.smtp.user === 'resend' && config.email.smtp.pass) {
+  if (config.email.resend.apiKey) {
     try {
-      const resend = new Resend(config.email.smtp.pass);
-      const fromEmail = config.email.from.email || 'onboarding@resend.dev';
+      const resend = new Resend(config.email.resend.apiKey);
+      const fromEmail = config.email.resend.fromEmail || config.email.from.email || 'notifications@handicapp.app';
+      const fromName = config.email.resend.fromName || config.email.from.name || 'HandicApp';
+      const resendFrom = `${fromName} <${fromEmail}>`;
       
-      logger.info(`📧 Enviando email via Resend - From: ${fromEmail}, To: ${to}, Subject: ${subject}`);
+      logger.info(`📧 Enviando email via Resend - From: ${resendFrom}, To: ${to}, Subject: ${subject}`);
       
       const result = await resend.emails.send({
-        from: fromEmail,
+        from: resendFrom,
         to,
         subject,
         html,
       });
       
-      // Resend devuelve { data: { id: 'xxx' }, error: null } o { data: null, error: {...} }
       if (result.error) {
         logger.error('❌ Error de Resend:', result.error);
         throw new Error(`Resend error: ${result.error.message || JSON.stringify(result.error)}`);
@@ -71,7 +74,6 @@ export async function sendEmail({ to, subject, html }: EmailParams) {
   // Fallback a SMTP tradicional
   const tx = getTransporter();
   if (!tx) {
-    // No-op en desarrollo si SMTP no está configurado
     logger.info(`Email simulado a ${to} | ${subject}`);
     logger.debug(html);
     return { simulated: true } as const;
