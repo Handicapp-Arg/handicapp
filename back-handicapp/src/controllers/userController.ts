@@ -144,8 +144,38 @@ export class UserController {
     
     const result = await UserService.updateUser(userId.toString(), updateData);
     
-    if (result.success) {
-      return ResponseHelper.success(res, result.data, 'Profile updated successfully');
+    if (result.success && result.data) {
+      // Recargar el usuario con todas las relaciones para asegurar datos frescos
+      const updatedUser = await User.findByPk(userId, {
+        attributes: { exclude: ['hash_contrasena'] },
+        include: [{
+          model: Role,
+          as: 'rol',
+          attributes: ['id', 'nombre', 'clave']
+        }]
+      });
+
+      if (!updatedUser) {
+        return ResponseHelper.notFound(res, 'Usuario no encontrado');
+      }
+
+      const userData = {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        nombre: updatedUser.nombre,
+        apellido: updatedUser.apellido,
+        telefono: updatedUser.telefono,
+        ubicacion: updatedUser.ubicacion,
+        avatar_url: updatedUser.avatar_url,
+        verificado: updatedUser.verificado,
+        estado_usuario: updatedUser.estado_usuario,
+        establecimiento_id: updatedUser.establecimiento_id,
+        rol: updatedUser.rol,
+        creado_el: updatedUser.creado_el,
+        actualizado_el: updatedUser.actualizado_el
+      };
+
+      return ResponseHelper.success(res, userData, 'Profile updated successfully');
     }
     
     return ResponseHelper.badRequest(res, result.error || 'Failed to update profile');

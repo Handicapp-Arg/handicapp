@@ -51,10 +51,9 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       setState(prev => ({ ...prev, isConnecting: true, error: null }));
 
       // Obtener token JWT de las cookies
-      const token = Cookies.get('token');
+      const token = Cookies.get('auth-token');
       
       if (!token) {
-        console.log('No hay token de autenticación disponible, omitiendo conexión WebSocket');
         setState(prev => ({
           ...prev,
           isConnected: false,

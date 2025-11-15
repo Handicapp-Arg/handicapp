@@ -46,7 +46,7 @@ export function ToasterProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToasterContext.Provider value={value}>
       {children}
-      <div className="fixed top-4 right-4 z-[60] flex w-full max-w-md flex-col gap-2">
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 sm:left-auto sm:right-4 sm:translate-x-0 z-[60] flex w-[calc(100%-2rem)] sm:w-full sm:max-w-md flex-col gap-2">
         {toasts.map(t => (
           <ToastItem key={t.id} toast={t} onClose={() => remove(t.id)} />
         ))}

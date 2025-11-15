@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { LOGOS } from '@/lib/constants/logos';
-import { 
+import {
   Home,
   Users,
   Settings,
@@ -20,7 +20,8 @@ import {
   Bell,
   Trophy,
   Activity,
-  Package
+  Package,
+  CreditCard
 } from 'lucide-react';
 
 // Definir los menús por rol con estructura clara
@@ -93,7 +94,7 @@ const ROLE_MENUS = {
     { name: 'Reportes', href: '/propietario/reportes', icon: BarChart3 },
     { name: 'Tareas', href: '/propietario/tareas', icon: FileText },
     { name: 'Configuración', href: '/propietario/configuracion', icon: Settings },
-    { name: 'Suscripciones', href: '/propietario/suscripciones', icon: Users },
+  { name: 'Suscripciones', href: '/propietario/suscripciones', icon: CreditCard },
   ],
 };
 

@@ -1,6 +1,6 @@
-'use client';
+  'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { useAuthNew } from '@/lib/hooks/useAuthNew';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { Settings, User, Lock, Bell } from 'lucide-react';
 import ApiClient from '@/lib/services/apiClient';
 
 export default function PropietarioConfiguracionPage() {
-  const { user, refreshUser } = useAuthNew();
+  const { user, updateUser } = useAuthNew();
   const [activeTab, setActiveTab] = useState<'perfil' | 'seguridad' | 'notificaciones'>('perfil');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -22,6 +22,18 @@ export default function PropietarioConfiguracionPage() {
     telefono: user?.telefono || '',
     email: user?.email || '',
   });
+
+  // Sincronizar perfilData con user cuando cambie
+  useEffect(() => {
+    if (user) {
+      setPerfilData({
+        nombre: user.nombre || '',
+        apellido: user.apellido || '',
+        telefono: user.telefono || '',
+        email: user.email || '',
+      });
+    }
+  }, [user]);
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -43,16 +55,20 @@ export default function PropietarioConfiguracionPage() {
     setMessage(null);
 
     try {
-      await ApiClient.makeRequest('/users/profile', {
+      const response = await ApiClient.makeRequest('/users/profile', {
         method: 'PUT',
         body: JSON.stringify({
           nombre: perfilData.nombre,
           apellido: perfilData.apellido,
           telefono: perfilData.telefono,
         }),
-      });
+      }) as { data?: Partial<typeof user> };
 
-      await refreshUser();
+      // Actualizar el usuario en el estado global directamente con los datos de la respuesta
+      if (response.data) {
+        updateUser(response.data);
+      }
+      
       setMessage({ type: 'success', text: 'Perfil actualizado correctamente' });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error al actualizar el perfil';

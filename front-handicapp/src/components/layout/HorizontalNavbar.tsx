@@ -34,6 +34,18 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
   const { user, logout, isLoading } = useAuthNew();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotifDropdownOpen, setIsNotifDropdownOpen] = useState(false);
+
+  // Cerrar notificaciones al hacer scroll en móvil
+  useEffect(() => {
+    if (!isNotifDropdownOpen) return;
+    const handleScroll = () => {
+      setIsNotifDropdownOpen(false);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [isNotifDropdownOpen]);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   

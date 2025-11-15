@@ -93,18 +93,18 @@ const colorClasses = {
 
 export function StatsGrid({ stats, columns = 4, loading = false }: StatsGridProps) {
   const gridCols = {
-    2: 'grid-cols-1 md:grid-cols-2',
-    3: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
-    4: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4',
+    2: 'grid-cols-1 sm:grid-cols-2',
+    3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
+    4: 'grid-cols-2 lg:grid-cols-4',
   };
 
   if (loading) {
     return (
-      <div className={`grid ${gridCols[columns]} gap-4 sm:gap-6`}>
+      <div className={`grid ${gridCols[columns]} gap-3 sm:gap-4`}>
         {Array.from({ length: columns }).map((_, i) => (
-          <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse">
-            <div className="h-12 bg-gray-200 rounded mb-4"></div>
-            <div className="h-8 bg-gray-200 rounded w-1/2 mb-2"></div>
+          <div key={i} className="bg-white rounded-xl border border-gray-200 p-4 animate-pulse">
+            <div className="h-10 bg-gray-200 rounded mb-3"></div>
+            <div className="h-6 bg-gray-200 rounded w-1/2 mb-2"></div>
             <div className="h-4 bg-gray-200 rounded w-3/4"></div>
           </div>
         ))}
@@ -113,7 +113,7 @@ export function StatsGrid({ stats, columns = 4, loading = false }: StatsGridProp
   }
 
   return (
-    <div className={`grid ${gridCols[columns]} gap-4 sm:gap-6`}>
+    <div className={`grid ${gridCols[columns]} gap-3 sm:gap-4`}>
       {stats.map((stat, index) => {
         const color = stat.color || 'primary';
         const colors = colorClasses[color];
@@ -122,63 +122,61 @@ export function StatsGrid({ stats, columns = 4, loading = false }: StatsGridProp
         return (
           <div
             key={index}
-            className="relative overflow-hidden border bg-white shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl"
+            className="group relative overflow-hidden bg-white border border-gray-200 hover:border-gray-300 rounded-xl transition-all duration-200 hover:shadow-md"
           >
-            {/* Decorative orbs */}
-            <div className={`absolute top-0 right-0 w-32 h-32 ${colors.orb} rounded-full blur-3xl`}></div>
-            <div className={`absolute -bottom-8 -left-8 w-24 h-24 ${colors.orb} rounded-full blur-2xl`}></div>
-
             {/* Content */}
-            <div className="relative z-10 p-6">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-4">
-                <p className={`text-xs font-semibold ${colors.text} uppercase tracking-wider`}>
-                  {stat.label}
-                </p>
-                <div className={`p-2.5 rounded-xl ${colors.icon} shadow-md`}>
+            <div className="relative p-4 sm:p-5">
+              {/* Icon + Label */}
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                    {stat.label}
+                  </p>
+                  <p className={`text-2xl sm:text-3xl font-bold ${colors.text} tabular-nums`}>
+                    {stat.value}
+                  </p>
+                </div>
+                <div className={`flex-shrink-0 p-2 sm:p-2.5 rounded-lg ${colors.icon} shadow-sm group-hover:scale-110 transition-transform duration-200`}>
                   {Icon ? (
-                    <Icon className="w-5 h-5 text-white" />
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   ) : (
-                    <span className="text-xl">{typeof stat.icon === 'string' ? stat.icon : ''}</span>
+                    <span className="text-lg">{typeof stat.icon === 'string' ? stat.icon : ''}</span>
                   )}
                 </div>
               </div>
 
-              {/* Value */}
-              <div className="space-y-3">
-                <p className={`text-5xl font-bold ${colors.text} tabular-nums tracking-tight`}>
-                  {stat.value}
-                </p>
-
-                {/* Badges */}
+              {/* Badges & Trend */}
+              <div className="flex items-center gap-2 flex-wrap">
                 {stat.badges && stat.badges.length > 0 && (
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <>
                     {stat.badges.map((badge, i) => (
                       <Badge
                         key={i}
                         variant={badge.variant || 'secondary'}
-                        className="text-xs font-medium shadow-sm"
+                        className="text-[10px] sm:text-xs px-2 py-0.5 font-medium"
                       >
                         {badge.label}
                       </Badge>
                     ))}
-                  </div>
+                  </>
                 )}
 
-                {/* Trend */}
                 {stat.trend && (
-                  <div className="flex items-center gap-1 text-sm">
+                  <div className="flex items-center gap-1 text-xs text-gray-600">
                     {stat.trend.direction === 'up' && (
-                      <span className="text-green-600">↗</span>
+                      <span className="text-green-600 font-semibold">↗</span>
                     )}
                     {stat.trend.direction === 'down' && (
-                      <span className="text-red-600">↘</span>
+                      <span className="text-red-600 font-semibold">↘</span>
                     )}
-                    <span className="text-gray-600">{stat.trend.value}</span>
+                    <span className="truncate">{stat.trend.value}</span>
                   </div>
                 )}
               </div>
             </div>
+
+            {/* Subtle gradient overlay on hover */}
+            <div className={`absolute inset-0 ${colors.bg} opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none`}></div>
           </div>
         );
       })}

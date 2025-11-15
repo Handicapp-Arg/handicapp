@@ -10,7 +10,7 @@ import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import { useStats } from '@/lib/hooks/useStats';
 import { useEventosProximos } from '@/lib/hooks/useEventosProximos';
 import { 
-  Circle,
+  Sparkles,
   Trophy, 
   Stethoscope, 
   Heart, 
@@ -58,7 +58,7 @@ export default function PropietarioDashboard() {
     {
       label: 'Mis Caballos',
       value: stats.caballos?.total || 0,
-      icon: Circle,
+      icon: Sparkles,
       color: 'primary',
       trend: { value: `${stats.caballos?.activos || 0} activos`, direction: 'up' },
     },
@@ -91,7 +91,7 @@ export default function PropietarioDashboard() {
       title: 'Mis Caballos',
       description: 'Ver y administrar tus caballos',
       href: '/propietario/caballos',
-      icon: Circle,
+      icon: Sparkles,
       colorScheme: 'blue',
       count: stats.caballos?.total || 0,
     },
