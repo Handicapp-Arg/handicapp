@@ -9,8 +9,9 @@ interface PaginationQuery {
   limit?: number;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
-  roleIds?: number[]; // ✅ Nuevo filtro para roles
+  roleIds?: number[]; // ✅ Filtro para roles
   establecimiento_id?: number; // ✅ Filtro por establecimiento
+  estado_usuario?: string; // ✅ Filtro por estado (active, inactive, etc.)
 }
 
 export class UserService {
@@ -26,6 +27,7 @@ export class UserService {
         sortOrder = 'DESC',
         roleIds,
         establecimiento_id,
+        estado_usuario,
       } = pagination;
 
       const offset = (page - 1) * limit;
@@ -37,6 +39,9 @@ export class UserService {
       }
       if (establecimiento_id) {
         whereConditions.establecimiento_id = establecimiento_id;
+      }
+      if (estado_usuario) {
+        whereConditions.estado_usuario = estado_usuario;
       }
 
       const { count, rows } = await User.findAndCountAll({

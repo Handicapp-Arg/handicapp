@@ -12,7 +12,17 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 
-export function EstablecimientoList() {
+interface EstablecimientoListProps {
+  showAll?: boolean; // Si es true, muestra todos los establecimientos sin filtrar por mis_caballos
+  onViewDetails?: (establecimiento: Establecimiento) => void; // Callback opcional para manejar el click en "Ver Detalles"
+  detailUrlPrefix?: string; // Prefijo de URL para el detalle (por defecto '/propietario/establecimientos')
+}
+
+export function EstablecimientoList({ 
+  showAll = false, 
+  onViewDetails,
+  detailUrlPrefix = '/propietario/establecimientos'
+}: EstablecimientoListProps) {
   const [establecimientos, setEstablecimientos] = useState<Establecimiento[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,12 +49,15 @@ export function EstablecimientoList() {
   useEffect(() => {
     // Asegurar que establecimientos es un array antes de filtrar
     if (Array.isArray(establecimientos)) {
-      // SOLO mostrar establecimientos donde el usuario tiene caballos
-      const misEstablecimientos = establecimientos.filter(est => 
-        est.mis_caballos && est.mis_caballos.length > 0
-      );
+      // Si showAll es true (página de admin), mostrar todos los establecimientos
+      // Si showAll es false (página de propietario), solo mostrar donde el usuario tiene caballos
+      const establecimientosParaFiltrar = showAll 
+        ? establecimientos 
+        : establecimientos.filter(est => 
+            est.mis_caballos && est.mis_caballos.length > 0
+          );
       
-      const filtered = misEstablecimientos.filter(est => {
+      const filtered = establecimientosParaFiltrar.filter(est => {
         const matchSearch = searchTerm === '' || 
           est.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
           (est.ciudad && est.ciudad.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -63,7 +76,7 @@ export function EstablecimientoList() {
     } else {
       setFilteredEstablecimientos([]);
     }
-  }, [searchTerm, establecimientos, filters.tipo_establecimiento, filters.estado]);
+  }, [searchTerm, establecimientos, filters.tipo_establecimiento, filters.estado, showAll]);
 
   const loadEstablecimientos = async () => {
     try {
@@ -78,21 +91,28 @@ export function EstablecimientoList() {
       });
       
       // Manejar diferentes estructuras de respuesta
+      // El servicio ya extrae response.data, así que response es { items: [...], pagination: {...} }
       let establecimientosArray: Establecimiento[] = [];
       
       if (Array.isArray(response)) {
         establecimientosArray = response;
       } else if (response && typeof response === 'object') {
-        const r = response as { data?: unknown; items?: unknown; [key: string]: unknown };
-        const dataItems = (r.data as { items?: unknown; establecimientos?: unknown; [key: string]: unknown });
-        establecimientosArray = (dataItems?.items || 
-                                dataItems?.establecimientos || 
-                                r.items || 
-                                r.data || 
+        const r = response as { data?: unknown; items?: unknown; establecimientos?: unknown; [key: string]: unknown };
+        // El servicio devuelve response.data que es { items: [...], pagination: {...} }
+        // Entonces buscamos directamente items o establecimientos
+        establecimientosArray = (r.items || 
+                                r.establecimientos || 
+                                (r.data as { items?: unknown; establecimientos?: unknown })?.items ||
+                                (r.data as { items?: unknown; establecimientos?: unknown })?.establecimientos ||
+                                (Array.isArray(r.data) ? r.data : []) || 
                                 []) as Establecimiento[];
       }
       
-      console.log('📦 Establecimientos cargados:', establecimientosArray);
+      console.log('📦 Establecimientos cargados:', {
+        count: establecimientosArray.length,
+        establecimientos: establecimientosArray,
+        response: response
+      });
       setEstablecimientos(Array.isArray(establecimientosArray) ? establecimientosArray : []);
     } catch (err) {
       console.error('❌ Error cargando establecimientos:', err);
@@ -298,8 +318,21 @@ export function EstablecimientoList() {
 
                 {/* Botón */}
                 <button
-                  onClick={() => {
-                    window.location.href = `/propietario/establecimientos/${establecimiento.id}`;
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('🔍 Click en Ver Detalles:', { 
+                      tieneCallback: !!onViewDetails, 
+                      establecimientoId: establecimiento.id,
+                      detailUrlPrefix 
+                    });
+                    if (onViewDetails) {
+                      console.log('✅ Usando callback onViewDetails');
+                      onViewDetails(establecimiento);
+                    } else {
+                      console.log('⚠️ No hay callback, redirigiendo a:', `${detailUrlPrefix}/${establecimiento.id}`);
+                      window.location.href = `${detailUrlPrefix}/${establecimiento.id}`;
+                    }
                   }}
                   className="w-full mt-2 px-4 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium text-sm"
                 >

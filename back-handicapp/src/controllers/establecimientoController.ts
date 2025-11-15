@@ -24,11 +24,10 @@ export class EstablecimientoController {
       let result;
       
       if (userRole === 'admin') {
-        // Admin ve solo sus establecimientos (con membresía)
-        result = await EstablecimientoService.searchEstablecimientos(
-          search || '',
-          usuarioId,
-          { page, limit }
+        // Admin ve TODOS los establecimientos (sin filtrar por membresía)
+        result = await EstablecimientoService.getAllPublicEstablecimientos(
+          { page, limit, search },
+          undefined // No pasar usuarioId para que no filtre por caballos
         );
       } else if (userRole === 'propietario') {
         // Propietarios ven TODOS los establecimientos activos + sus caballos en cada uno

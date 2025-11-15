@@ -6,10 +6,40 @@ import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/
 import { Badge } from '@/components/ui/badge';
 import { Users, UserPlus, UserCheck, Shield, UserCog } from 'lucide-react';
 import Link from 'next/link';
-import { useStats } from '@/lib/hooks/useStats';
+import { useState, useEffect } from 'react';
+import ApiClient from '@/lib/services/apiClient';
+
+interface UserStats {
+  totalUsers: number;
+  activeUsers: number;
+  inactiveUsers: number;
+  verifiedUsers: number;
+  recentUsers: number;
+  roleDistribution: Record<string, number>;
+}
 
 export default function UsersPage() {
-  const { stats } = useStats();
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      try {
+        setLoading(true);
+        const response = await ApiClient.getUserStats();
+        const statsData = (response as any).data;
+        if (statsData) {
+          setUserStats(statsData);
+        }
+      } catch (error) {
+        console.error('Error fetching user stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserStats();
+  }, []);
 
   return (
     <SimpleAdminOnly>
@@ -62,7 +92,9 @@ export default function UsersPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pb-3">
-                  <p className="text-2xl font-bold text-white tabular-nums">{(stats as any).usuarios?.total || 247}</p>
+                  <p className="text-2xl font-bold text-white tabular-nums">
+                    {loading ? '...' : (userStats?.totalUsers || 0)}
+                  </p>
                   <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
                     Registrados
                   </Badge>
@@ -82,9 +114,11 @@ export default function UsersPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pb-3">
-                  <p className="text-2xl font-bold text-white tabular-nums">{(stats as any).usuarios?.activos || 231}</p>
+                  <p className="text-2xl font-bold text-white tabular-nums">
+                    {loading ? '...' : (userStats?.activeUsers || 0)}
+                  </p>
                   <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
-                    Conectados
+                    Verificados: {loading ? '...' : (userStats?.verifiedUsers || 0)}
                   </Badge>
                 </CardContent>
               </Card>
@@ -122,9 +156,11 @@ export default function UsersPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pb-3">
-                  <p className="text-2xl font-bold text-white tabular-nums">{(stats as any).usuarios?.nuevos || 12}</p>
+                  <p className="text-2xl font-bold text-white tabular-nums">
+                    {loading ? '...' : (userStats?.recentUsers || 0)}
+                  </p>
                   <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
-                    Este mes
+                    Últimos 7 días
                   </Badge>
                 </CardContent>
               </Card>
