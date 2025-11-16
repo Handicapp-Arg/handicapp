@@ -173,20 +173,21 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
   };
 
   return (
-    <header className="bg-white sticky top-0 z-30 transition-all shadow-sm rounded-tl-2xl">
-      <div className="flex items-center justify-between h-20 px-6 lg:px-8">
+    <header className="sticky top-0 z-30 px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4 lg:pt-6">
+      <div className="bg-white rounded-2xl shadow-lg backdrop-blur-sm bg-white/95 border border-slate-100">
+        <div className="flex items-center justify-between h-16 sm:h-18 lg:h-20 px-4 sm:px-6 lg:px-8">
         {/* Left Side - Menu Button, Collapse Button & Breadcrumb */}
-        <div className="flex items-center gap-4 min-w-0 flex-1">
-          {/* Mobile Menu Button - Más grande */}
+        <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 min-w-0 flex-1">
+          {/* Mobile Menu Button */}
           <button
             onClick={onMenuClick}
-            className="lg:hidden p-3 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all duration-200 touch-manipulation flex-shrink-0"
+            className="lg:hidden p-2 sm:p-2.5 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all duration-200 touch-manipulation flex-shrink-0"
             aria-label="Abrir menú"
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
 
-          {/* Desktop Collapse Button - Más grande */}
+          {/* Desktop Collapse Button */}
           <button
             onClick={onToggleCollapse}
             className="hidden lg:flex items-center p-2.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all duration-200 group flex-shrink-0"
@@ -199,8 +200,10 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
             )}
           </button>
 
-          {/* Breadcrumb - Solo Desktop */}
-          <Breadcrumb />
+          {/* Breadcrumb - Siempre visible pero más compacto en móvil */}
+          <div className="min-w-0 flex-1">
+            <Breadcrumb />
+          </div>
         </div>
 
         {/* Right Side - Notifications & User Menu */}
@@ -333,10 +336,10 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-3 rounded-xl p-2 pr-3 hover:bg-slate-100 transition-all duration-200 touch-manipulation"
+              className="flex items-center gap-2 sm:gap-3 rounded-xl p-1.5 sm:p-2 pr-2 sm:pr-3 hover:bg-slate-100 transition-all duration-200 touch-manipulation"
             >
-              <Avatar className="h-9 w-9 ring-2 ring-slate-200">
-                <AvatarFallback className="bg-[#1e293b] text-white text-sm font-medium">
+              <Avatar className="h-8 w-8 sm:h-9 sm:w-9 ring-2 ring-slate-200">
+                <AvatarFallback className="bg-[#1e293b] text-white text-xs sm:text-sm font-medium">
                   {user?.nombre?.[0]}{user?.apellido?.[0]}
                 </AvatarFallback>
               </Avatar>
@@ -392,6 +395,7 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
             )}
           </div>
         </div>
+      </div>
       </div>
 
       {/* Overlay para cerrar dropdown - COMENTADO porque bloquea todos los clicks en la página */}

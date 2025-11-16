@@ -98,41 +98,43 @@ export function Breadcrumb() {
     return items;
   }, [pathname]);
 
-  // Obtener el título de la página actual (último breadcrumb)
-  const currentPageTitle = breadcrumbs[breadcrumbs.length - 1]?.label || 'Dashboard';
-
   // No renderizar si no hay breadcrumbs
   if (breadcrumbs.length === 0) {
     return null;
   }
 
   return (
-    <div className="hidden lg:flex flex-col gap-2">
-      {/* Breadcrumb Navigation - Iconos y texto más grandes */}
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm">
-        <span className="flex items-center gap-2 px-2.5 py-1.5 text-slate-600">
+    <div className="flex flex-col gap-1 sm:gap-2 min-w-0">
+      {/* Breadcrumb Navigation - Responsive */}
+      <nav aria-label="Breadcrumb" className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm min-w-0">
+        {/* Home icon - solo desktop */}
+        <span className="hidden lg:flex items-center gap-2 px-2.5 py-1.5 text-slate-600 flex-shrink-0">
           <Home className="w-4 h-4" />
           <span className="font-medium">Páginas</span>
         </span>
 
         {breadcrumbs.map((item, index) => {
-          const isLast = index === breadcrumbs.length - 1;
-
-          return (
-            <div key={item.href} className="flex items-center gap-1.5">
-              <span className="text-slate-400">/</span>
-              {isLast ? (
-                <span className="px-2.5 py-1.5 text-slate-800 font-semibold truncate max-w-[200px]">
-                  {item.label}
-                </span>
-              ) : (
+          // En móvil, solo mostrar el último item (página actual)
+          if (index < breadcrumbs.length - 1) {
+            return (
+              <div key={item.href} className="hidden lg:flex items-center gap-1.5 flex-shrink-0">
+                <span className="text-slate-400">/</span>
                 <Link
                   href={item.href}
                   className="px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-800 hover:bg-slate-100 transition-all duration-200 truncate max-w-[200px] font-medium"
                 >
                   {item.label}
                 </Link>
-              )}
+              </div>
+            );
+          }
+
+          return (
+            <div key={item.href} className="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1">
+              <span className="text-slate-400 hidden lg:inline">/</span>
+              <span className="px-1.5 sm:px-2.5 py-1 sm:py-1.5 text-slate-800 font-semibold truncate">
+                {item.label}
+              </span>
             </div>
           );
         })}
