@@ -49,6 +49,7 @@ export interface CreateEstablecimientoData {
   direccion_calle?: string;
   telefono?: string;
   email?: string;
+  estado?: 'activo' | 'inactivo' | 'mantenimiento';
 }
 
 export interface EstablecimientoFilters {

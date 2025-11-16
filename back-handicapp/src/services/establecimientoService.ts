@@ -56,18 +56,38 @@ export class EstablecimientoService {
 
       const offset = (page - 1) * limit;
 
-      const whereClause: any = {
-        estado: 'activo' // Solo establecimientos activos
-      };
+      const whereConditions: any[] = [];
+      
+      // Si hay usuarioId (propietario), solo mostrar activos
+      // Si no hay usuarioId (admin), mostrar todos los estados
+      if (usuarioId) {
+        whereConditions.push({ estado: 'activo' }); // Solo establecimientos activos para propietarios
+      }
+      // Si no hay usuarioId, no filtrar por estado (admin ve todos)
 
       // Si hay búsqueda, filtrar por nombre, ciudad o provincia
       if (search) {
-        whereClause[Op.or] = [
-          { nombre: { [Op.iLike]: `%${search}%` } },
-          { ciudad: { [Op.iLike]: `%${search}%` } },
-          { provincia: { [Op.iLike]: `%${search}%` } }
-        ];
+        whereConditions.push({
+          [Op.or]: [
+            { nombre: { [Op.iLike]: `%${search}%` } },
+            { ciudad: { [Op.iLike]: `%${search}%` } },
+            { provincia: { [Op.iLike]: `%${search}%` } }
+          ]
+        });
       }
+
+      const whereClause = whereConditions.length > 0 
+        ? { [Op.and]: whereConditions }
+        : {};
+
+      logger.info('🔍 getAllPublicEstablecimientos query', { 
+        usuarioId, 
+        whereConditions: whereConditions.length, 
+        whereClause,
+        page, 
+        limit, 
+        search 
+      });
 
       const { count, rows } = await Establecimiento.findAndCountAll({
         where: whereClause,
@@ -76,8 +96,18 @@ export class EstablecimientoService {
         order: [[sortBy, sortOrder]],
       });
 
+      logger.info('📊 getAllPublicEstablecimientos result', { count, rowsCount: rows.length });
+
       // Si es propietario, agregar info de sus caballos en cada establecimiento
+      // Si es admin (sin usuarioId), devolver todos los establecimientos sin info de caballos
       let establecimientosConInfo = rows.map(e => e.toJSON());
+      
+      // Inicializar mis_caballos como array vacío para todos los establecimientos
+      establecimientosConInfo = establecimientosConInfo.map((est: any) => ({
+        ...est,
+        mis_caballos: [],
+        caballos_count: 0
+      }));
       
       if (usuarioId) {
         // Obtener IDs de caballos del propietario

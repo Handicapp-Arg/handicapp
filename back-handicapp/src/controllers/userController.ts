@@ -16,6 +16,10 @@ export class UserController {
     const limit = Number((req.query['limit'] as string) || 10);
     const sortBy = (req.query['sortBy'] as string) || 'creado_el';
     const sortOrder = (req.query['sortOrder'] as string) === 'ASC' ? 'ASC' : 'DESC';
+    
+    // Filtros opcionales
+    const roleId = req.query['roleId'] ? Number(req.query['roleId']) : undefined;
+    const estadoUsuario = req.query['estado'] as string | undefined;
 
     const currentUser = req.user!;
     const currentUserRole = currentUser.rol?.clave;
@@ -28,9 +32,19 @@ export class UserController {
       if (typeof currentUser.establecimiento_id === 'number') {
         query.establecimiento_id = currentUser.establecimiento_id;
       }
+      if (estadoUsuario) {
+        query.estado_usuario = estadoUsuario;
+      }
       result = await UserService.getUsers(query);
     } else {
-      result = await UserService.getUsers({ page, limit, sortBy, sortOrder });
+      const query: any = { page, limit, sortBy, sortOrder };
+      if (roleId) {
+        query.roleIds = [roleId];
+      }
+      if (estadoUsuario) {
+        query.estado_usuario = estadoUsuario;
+      }
+      result = await UserService.getUsers(query);
     }
 
     return ResponseHelper.success(res, result.data, 'Users retrieved successfully');
