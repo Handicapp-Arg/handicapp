@@ -102,14 +102,24 @@ export class EstablecimientoController {
       const { 
         nombre, 
         cuit, 
-        direccion_calle, 
+        direccion_calle,
+        direccion_numero,
+        direccion_complemento,
+        codigo_postal,
+        ciudad,
+        provincia,
+        pais,
+        latitud,
+        longitud,
+        descripcion,
         telefono, 
         email,
         tipo_establecimiento,
         estado,
         superficie_hectareas,
         cantidad_boxes,
-        servicios
+        servicios,
+        disciplina_principal
       } = req.body;
       const usuarioId = req.user!.id;
 
@@ -122,13 +132,23 @@ export class EstablecimientoController {
         nombre,
         cuit,
         direccion_calle,
+        direccion_numero,
+        direccion_complemento,
+        codigo_postal,
+        ciudad,
+        provincia,
+        pais,
+        latitud,
+        longitud,
+        descripcion,
         telefono,
         email,
         tipo_establecimiento,
         estado,
         superficie_hectareas,
         cantidad_boxes,
-        servicios
+        servicios,
+        disciplina_principal
       }, usuarioId);
 
       if (result.success && result.data) {

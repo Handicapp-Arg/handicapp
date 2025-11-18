@@ -175,12 +175,20 @@ export const connectDatabase = async (): Promise<void> => {
 };
 
 // Función para sincronizar modelos
-export const syncDatabase = async (): Promise<void> => {
+export const syncDatabase = async (force: boolean = false): Promise<void> => {
   try {
-    if (config.nodeEnv === 'development') {
+    if (force) {
+      // force: true elimina TODAS las tablas y las recrea (pierde todos los datos)
       await sequelize.sync({ force: true });
-    } else {
+      logger.warn('⚠️  Database reset with force: true - ALL DATA DELETED');
+    } else if (config.nodeEnv === 'development') {
+      // En desarrollo, usar alter para modificar tablas sin perder datos
       await sequelize.sync({ alter: true });
+      logger.info('✅ Database models synced (alter mode)');
+    } else {
+      // En producción, solo validar sin modificar
+      await sequelize.sync({ alter: false });
+      logger.info('✅ Database models validated');
     }
     
     logger.info('✅ Database models validated');

@@ -27,6 +27,9 @@ interface CreateEstablecimientoData {
   ciudad?: string;
   provincia?: string;
   pais?: string;
+  latitud?: number;
+  longitud?: number;
+  descripcion?: string;
   logo_url?: string;
   disciplina_principal?: string;
   tipo_establecimiento?: string;
@@ -308,6 +311,9 @@ export class EstablecimientoService {
         ciudad: data.ciudad || null,
         provincia: data.provincia || null,
         pais: data.pais || null,
+        latitud: data.latitud || null,
+        longitud: data.longitud || null,
+        descripcion: data.descripcion || null,
         logo_url: data.logo_url || null,
         disciplina_principal: (data.disciplina_principal as Disciplina | undefined) ?? null,
         tipo_establecimiento: (data as any).tipo_establecimiento || 'mixto',

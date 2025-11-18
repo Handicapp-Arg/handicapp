@@ -4,8 +4,10 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { establecimientoService, type Establecimiento } from '@/lib/services/establecimientoService';
 import { Modal } from '@/components/ui/modal';
+import { LeafletAddressPicker } from './LeafletAddressPicker';
 
 interface EstablecimientoFormProps {
   establecimiento?: Establecimiento;
@@ -22,19 +24,46 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     nombre: establecimiento?.nombre || '',
-    cuit: '',
-    direccion_calle: establecimiento?.direccion || '',
+    cuit: establecimiento?.cuit || '',
+    direccion_calle: establecimiento?.direccion || (establecimiento as any)?.direccion_calle || '',
+    direccion_numero: (establecimiento as any)?.direccion_numero || '',
+    direccion_complemento: (establecimiento as any)?.direccion_complemento || '',
+    codigo_postal: (establecimiento as any)?.codigo_postal || '',
+    ciudad: (establecimiento as any)?.ciudad || '',
+    provincia: (establecimiento as any)?.provincia || '',
+    pais: (establecimiento as any)?.pais || '',
+    latitud: (establecimiento as any)?.latitud || undefined,
+    longitud: (establecimiento as any)?.longitud || undefined,
+    descripcion: (establecimiento as any)?.descripcion || '',
     telefono: establecimiento?.telefono || '',
     email: establecimiento?.email || '',
     tipo_establecimiento: (establecimiento as any)?.tipo_establecimiento || 'mixto',
     estado: (establecimiento as any)?.estado || 'activo',
     superficie_hectareas: (establecimiento as any)?.superficie_hectareas || '',
     cantidad_boxes: (establecimiento as any)?.cantidad_boxes || '',
-    servicios: (establecimiento as any)?.servicios || []
+    servicios: (establecimiento as any)?.servicios || [],
+    disciplina_principal: (establecimiento as any)?.disciplina_principal || ''
   });
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleAddressChange = (addressData: {
+    direccion_calle: string;
+    direccion_numero?: string;
+    direccion_complemento?: string;
+    codigo_postal?: string;
+    ciudad?: string;
+    provincia?: string;
+    pais?: string;
+    latitud?: number;
+    longitud?: number;
+  }) => {
+    setFormData(prev => ({
+      ...prev,
+      ...addressData
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,12 +72,43 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
     setError(null);
 
     try {
+      // Limpiar datos: convertir strings vacíos a undefined y números a números
+      const cleanData: any = {
+        nombre: formData.nombre || undefined,
+        cuit: formData.cuit || undefined,
+        direccion_calle: formData.direccion_calle || undefined,
+        direccion_numero: formData.direccion_numero || undefined,
+        direccion_complemento: formData.direccion_complemento || undefined,
+        codigo_postal: formData.codigo_postal || undefined,
+        ciudad: formData.ciudad || undefined,
+        provincia: formData.provincia || undefined,
+        pais: formData.pais || undefined,
+        latitud: formData.latitud !== undefined && formData.latitud !== null ? Number(formData.latitud) : undefined,
+        longitud: formData.longitud !== undefined && formData.longitud !== null ? Number(formData.longitud) : undefined,
+        descripcion: formData.descripcion || undefined,
+        telefono: formData.telefono || undefined,
+        email: formData.email || undefined,
+        tipo_establecimiento: formData.tipo_establecimiento || undefined,
+        estado: formData.estado || undefined,
+        superficie_hectareas: formData.superficie_hectareas ? Number(formData.superficie_hectareas) : undefined,
+        cantidad_boxes: formData.cantidad_boxes ? Number(formData.cantidad_boxes) : undefined,
+        servicios: Array.isArray(formData.servicios) && formData.servicios.length > 0 ? formData.servicios : undefined,
+        disciplina_principal: formData.disciplina_principal || undefined,
+      };
+
+      // Eliminar campos undefined
+      Object.keys(cleanData).forEach(key => {
+        if (cleanData[key] === undefined || cleanData[key] === '') {
+          delete cleanData[key];
+        }
+      });
+
       let result: Establecimiento;
       
       if (establecimiento?.id) {
-        result = await establecimientoService.update(establecimiento.id, formData);
+        result = await establecimientoService.update(establecimiento.id, cleanData);
       } else {
-        result = await establecimientoService.create(formData as any);
+        result = await establecimientoService.create(cleanData);
       }
 
       onSave?.(result);
@@ -56,13 +116,29 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
       // Extraer el mensaje de error más específico
       let errorMessage = 'Error al guardar el establecimiento';
       
+      console.log('Error completo:', err);
+      console.log('Error data:', err.data);
+      
       if (err.data) {
         const data = err.data;
+        // El backend envía: { success: false, message: "...", errors: ["error1", "error2"] }
         if (data.errors && Array.isArray(data.errors)) {
-          // Errores de validación de express-validator
-          errorMessage = data.errors.map((e: any) => `${e.path}: ${e.msg}`).join(', ');
+          // Si errors es un array de strings (formato del backend)
+          if (typeof data.errors[0] === 'string') {
+            errorMessage = data.errors.join(', ');
+          } else {
+            // Si errors es un array de objetos (formato alternativo)
+            errorMessage = data.errors.map((e: any) => {
+              if (typeof e === 'string') return e;
+              return e.path ? `${e.path}: ${e.msg || e.message}` : e.msg || e.message;
+            }).join(', ');
+          }
         } else if (data.message) {
           errorMessage = data.message;
+          // Si hay errors además del message, agregarlos
+          if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+            errorMessage += ': ' + data.errors.join(', ');
+          }
         } else if (data.error) {
           errorMessage = data.error;
         }
@@ -123,15 +199,40 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
                     <p className="mt-1 text-xs text-gray-500">Formato: XX-XXXXXXXX-X (11-13 caracteres)</p>
                   </div>
 
+                </div>
+              </div>
+
+              {/* Dirección con OpenStreetMap */}
+              <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Ubicación</h3>
+                <LeafletAddressPicker
+                  value={{
+                    direccion_calle: formData.direccion_calle,
+                    direccion_numero: formData.direccion_numero,
+                    direccion_complemento: formData.direccion_complemento,
+                    codigo_postal: formData.codigo_postal,
+                    ciudad: formData.ciudad,
+                    provincia: formData.provincia,
+                    pais: formData.pais,
+                    latitud: formData.latitud,
+                    longitud: formData.longitud
+                  }}
+                  onChange={handleAddressChange}
+                />
+              </div>
+
+              {/* Campos adicionales de dirección */}
+              <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Detalles de dirección</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="direccion_calle" className="text-sm font-medium text-gray-700">Dirección *</Label>
+                    <Label htmlFor="direccion_complemento" className="text-sm font-medium text-gray-700">Complemento</Label>
                     <Input
-                      id="direccion_calle"
-                      value={formData.direccion_calle}
-                      onChange={(e) => handleInputChange('direccion_calle', e.target.value)}
-                      placeholder="Dirección completa"
+                      id="direccion_complemento"
+                      value={formData.direccion_complemento}
+                      onChange={(e) => handleInputChange('direccion_complemento', e.target.value)}
+                      placeholder="Depto, piso, etc."
                       className="mt-1 focus:ring-blue-500 focus:border-blue-500"
-                      required
                     />
                   </div>
                 </div>
@@ -200,6 +301,37 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
                       className="mt-1 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
+
+                  <div>
+                    <Label htmlFor="disciplina_principal" className="text-sm font-medium text-gray-700">Disciplina principal</Label>
+                    <select
+                      id="disciplina_principal"
+                      value={formData.disciplina_principal}
+                      onChange={(e) => handleInputChange('disciplina_principal', e.target.value)}
+                      className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                    >
+                      <option value="">Seleccionar...</option>
+                      <option value="polo">Polo</option>
+                      <option value="equitacion">Equitación</option>
+                      <option value="turf">Turf</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Descripción */}
+              <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Descripción</h3>
+                <div>
+                  <Label htmlFor="descripcion" className="text-sm font-medium text-gray-700">Descripción del establecimiento</Label>
+                  <Textarea
+                    id="descripcion"
+                    value={formData.descripcion}
+                    onChange={(e) => handleInputChange('descripcion', e.target.value)}
+                    placeholder="Describe las características, servicios y detalles del establecimiento..."
+                    className="mt-1 focus:ring-blue-500 focus:border-blue-500 min-h-[100px]"
+                    rows={4}
+                  />
                 </div>
               </div>
 
