@@ -13,6 +13,7 @@ import {
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { historialMedicoService, RegistroMedico } from '@/lib/services/historialMedicoService';
 import { toast } from 'react-hot-toast';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 export default function ValidacionEventosPage() {
   const [eventos, setEventos] = useState<RegistroMedico[]>([]);
@@ -78,11 +79,7 @@ export default function ValidacionEventosPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-      </div>
-    );
+    return <LoadingSpinnerFullPage label="Cargando..." variant="warning" />;
   }
 
   return (

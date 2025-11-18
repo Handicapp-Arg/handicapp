@@ -8,6 +8,7 @@ import { establecimientoService, type Establecimiento } from '@/lib/services/est
 import { MapPin, Building2, Star, Map as MapIconSolid, LayoutGrid, Phone, Mail, Home } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { LoadingSpinnerCard } from '@/components/ui/loading-spinner';
 import type L from 'leaflet';
 
 type ViewMode = 'map' | 'split';
@@ -263,10 +264,7 @@ export function EstablecimientoMapView() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-sm">Cargando mapa...</p>
-        </div>
+        <LoadingSpinnerCard label="Cargando mapa..." />
       </div>
     );
   }
@@ -480,10 +478,7 @@ export function EstablecimientoMapView() {
               </MapContainer>
             ) : (
               <div className="flex items-center justify-center h-full bg-gray-100 rounded-xl">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                  <p className="text-sm text-gray-600">Cargando mapa...</p>
-                </div>
+                <LoadingSpinnerCard label="Cargando mapa..." />
               </div>
             )}
           </div>

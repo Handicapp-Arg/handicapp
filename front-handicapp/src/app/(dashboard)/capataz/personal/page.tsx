@@ -6,6 +6,7 @@ import ApiClient from '@/lib/services/apiClient';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Users, UserCheck, UserCog, Shield, Search } from 'lucide-react';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 interface PersonalMember {
   id: number;
@@ -89,7 +90,7 @@ export default function CapatazPersonalPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+        <LoadingSpinnerFullPage label="Cargando..." variant="warning" />
       </div>
     );
   }

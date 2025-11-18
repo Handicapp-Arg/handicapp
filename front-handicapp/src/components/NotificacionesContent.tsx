@@ -13,11 +13,11 @@ import {
   Circle,
   Trash2,
   Filter,
-  Loader2,
   Check
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { useNotificationContext } from '@/components/providers/NotificationProvider';
+import { LoadingSpinnerCard } from '@/components/ui/loading-spinner';
 
 type FiltroEstado = 'todas' | 'no-leidas' | 'leidas';
 type FiltroTipo = 'todas' | 'evento' | 'tarea' | 'caballo' | 'sistema' | 'recordatorio';
@@ -107,7 +107,7 @@ export default function NotificacionesContent() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-12 h-12 text-brand-gold animate-spin" />
+        <LoadingSpinnerCard label="Cargando notificaciones..." />
       </div>
     );
   }

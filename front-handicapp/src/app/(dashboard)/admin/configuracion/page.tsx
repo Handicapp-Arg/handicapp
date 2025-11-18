@@ -7,6 +7,7 @@ import { useAuthNew } from '@/lib/hooks/useAuthNew';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Settings, Building2, MapPin, Phone, Mail } from 'lucide-react';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 interface Establecimiento {
   id: number;
@@ -120,11 +121,7 @@ export default function AdminConfiguracionPage() {
   }), [formData]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600"></div>
-      </div>
-    );
+    return <LoadingSpinnerFullPage label="Cargando..." variant="primary" />;
   }
 
   return (

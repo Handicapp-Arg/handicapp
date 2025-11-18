@@ -7,6 +7,7 @@ import { useTareas } from '@/lib/hooks';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ClipboardList, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 export default function EmpleadoTareasPage() {
   const { data, isLoading } = useTareas({ page: 1, limit: 500 });
@@ -32,7 +33,7 @@ export default function EmpleadoTareasPage() {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+        <LoadingSpinnerFullPage label="Cargando..." variant="warning" />
       </div>
     );
   }

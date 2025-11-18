@@ -11,6 +11,7 @@ import { toast } from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 export default function EstablecimientoInventarioPage() {
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -271,7 +272,7 @@ export default function EstablecimientoInventarioPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+        <LoadingSpinnerFullPage label="Cargando..." variant="success" />
       </div>
     );
   }

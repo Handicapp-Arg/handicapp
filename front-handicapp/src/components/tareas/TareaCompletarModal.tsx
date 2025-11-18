@@ -5,9 +5,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, CheckCircle2, Loader2, Clock, FileText } from 'lucide-react';
+import { X, CheckCircle2, Clock, FileText } from 'lucide-react';
 import { tareaService, Tarea } from '@/lib/services/tareaService';
 import { toast } from 'react-hot-toast';
+import { LoadingSpinnerInline } from '@/components/ui/loading-spinner';
 
 interface TareaCompletarModalProps {
   tarea: Tarea;
@@ -161,7 +162,7 @@ export function TareaCompletarModal({ tarea, isOpen, onClose, onSuccess }: Tarea
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <LoadingSpinnerInline />
                   Completando...
                 </>
               ) : (

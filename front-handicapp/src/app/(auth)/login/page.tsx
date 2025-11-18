@@ -21,6 +21,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -39,6 +40,13 @@ export default function LoginPage() {
   useEffect(() => {
     // Garantiza que el primer render (SSR y primer render del cliente) sea estable
     setMounted(true);
+    
+    // Cargar email guardado si existe
+    const savedEmail = localStorage.getItem('rememberedEmail');
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
   }, []);
 
   // Prellenar email si viene en los parámetros
@@ -110,6 +118,14 @@ export default function LoginPage() {
     try {
       setIsLoading(true);
       await login(email, password);
+      
+      // Guardar o eliminar email según "Recordarme"
+      if (rememberMe) {
+        localStorage.setItem('rememberedEmail', email);
+      } else {
+        localStorage.removeItem('rememberedEmail');
+      }
+      
       // Si llegamos aquí, el login fue exitoso
       toast('Inicio de sesión exitoso', 'success');
       const state = AuthManager.getInstance().getState();
@@ -219,7 +235,9 @@ export default function LoginPage() {
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 rounded border-slate-300 text-[#1e293b] focus:ring-[#af936f] focus:ring-offset-0"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-300 text-[#1e293b] focus:ring-[#af936f] focus:ring-offset-0 cursor-pointer"
                 />
                 <span className="text-sm text-slate-600">Recordarme</span>
               </label>

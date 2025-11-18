@@ -116,14 +116,43 @@ function CaballoCard({ caballo, onEdit, onView, onDelete }: Props) {
             <button
               type="button"
               onClick={() => onView && onView(caballo)}
-              className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center group/placeholder"
+              className="w-full h-full bg-gradient-to-br from-slate-100 via-slate-50 to-slate-100 flex flex-col items-center justify-center gap-3 group/placeholder relative overflow-hidden"
             >
-              <div className="w-24 h-24 rounded-xl bg-white shadow-sm flex items-center justify-center group-hover/placeholder:scale-110 transition-transform duration-300">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden className="text-gray-300">
-                  <path d="M3 21c0-4 4-7 8-7s6 1 8 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M5 10c1-2 3-4 6-4 2.5 0 4 1 5 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                  <circle cx="16" cy="7" r="1" fill="currentColor" />
-                </svg>
+              {/* Pattern de fondo sutil */}
+              <div className="absolute inset-0 opacity-[0.03]" style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+              }}></div>
+              
+              {/* Ícono simple de imagen con trofeo */}
+              <div className="relative">
+                <div className="w-20 h-20 rounded-2xl bg-white shadow-lg flex items-center justify-center group-hover/placeholder:scale-110 group-hover/placeholder:shadow-xl transition-all duration-300">
+                  <svg 
+                    width="40" 
+                    height="40" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className="text-slate-300 group-hover/placeholder:text-slate-400 transition-colors"
+                    strokeWidth="1.5"
+                  >
+                    {/* Marco de imagen */}
+                    <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/>
+                    {/* Montañas/Paisaje simple */}
+                    <path d="M3 17l4-4 3 3 5-5 6 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/>
+                    {/* Sol/círculo */}
+                    <circle cx="8" cy="8" r="1.5" fill="currentColor"/>
+                  </svg>
+                </div>
+              </div>
+              
+              {/* Texto descriptivo */}
+              <div className="text-center">
+                <p className="text-sm font-medium text-slate-400 group-hover/placeholder:text-slate-500 transition-colors">
+                  Sin imagen
+                </p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Click para ver detalles
+                </p>
               </div>
             </button>
           )}

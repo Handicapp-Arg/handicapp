@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, TrendingUp, TrendingDown, RefreshCw, Package, Calendar, User, Filter } from 'lucide-react';
 import { inventarioService, type Movimiento } from '@/lib/inventarioService';
 import { toast } from 'react-hot-toast';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 export default function MovimientosGeneralesPage() {
   const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
@@ -103,7 +104,7 @@ export default function MovimientosGeneralesPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+        <LoadingSpinnerFullPage label="Cargando..." variant="success" />
       </div>
     );
   }

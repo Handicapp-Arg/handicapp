@@ -173,7 +173,7 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
   };
 
   return (
-    <header className="sticky top-0 z-30 px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4 lg:pt-6">
+    <header className="sticky top-0 z-30 px-3 sm:px-4 lg:px-6 pt-4">
       <div className="bg-white rounded-2xl shadow-lg backdrop-blur-sm bg-white/95 border border-slate-100">
         <div className="flex items-center justify-between h-16 sm:h-18 lg:h-20 px-4 sm:px-6 lg:px-8">
         {/* Left Side - Menu Button, Collapse Button & Breadcrumb */}

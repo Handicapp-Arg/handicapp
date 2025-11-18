@@ -139,7 +139,7 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
         isCollapsed ? 'lg:w-20' : 'lg:w-72'
       }`}>
         <div className="flex flex-col flex-grow bg-card border-r border-border">
-          <div className="flex items-center justify-center h-14 sm:h-16 px-4">
+          <div className="flex items-center justify-center h-16 sm:h-18 lg:h-20 px-4">
             <div className="animate-pulse h-8 w-32 bg-muted rounded"></div>
           </div>
         </div>
@@ -160,22 +160,22 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), inset 0 0 0 1px rgba(255, 255, 255, 0.05)'
              }}>
           {/* Logo/Header */}
-          <div className="relative h-14 sm:h-16 border-b border-white/10 flex-shrink-0">
+          <div className="relative h-16 sm:h-18 lg:h-20 border-b border-white/10 flex-shrink-0">
             <div className="flex items-center justify-center h-full px-4">
               {!isCollapsed ? (
                 <div className="flex items-center gap-3">
                   <Image 
                     src={LOGOS.ICON_WHITE}
                     alt="HandicApp Icon" 
-                    width={48} 
-                    height={48}
+                    width={40} 
+                    height={40}
                     className="object-contain flex-shrink-0"
                   />
                   <Image 
                     src={LOGOS.TEXT_BROWN}
                     alt="HandicApp" 
-                    width={130} 
-                    height={28}
+                    width={120} 
+                    height={24}
                     className="object-contain flex-shrink-0 brightness-0 invert"
                   />
                 </div>
@@ -183,8 +183,8 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
                 <Image 
                   src={LOGOS.ICON_WHITE}
                   alt="HandicApp" 
-                  width={42} 
-                  height={42}
+                  width={36} 
+                  height={36}
                   className="object-contain"
                 />
               )}
@@ -246,21 +246,21 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         {/* Mobile Header */}
-        <div className="relative h-14 sm:h-16 border-b border-white/10">
+        <div className="relative h-16 sm:h-18 lg:h-20 border-b border-white/10">
           <div className="flex items-center justify-between h-full px-4">
             <div className="flex items-center gap-3">
               <Image 
                 src={LOGOS.ICON_WHITE}
                 alt="HandicApp Icon" 
-                width={48} 
-                height={48}
+                width={40} 
+                height={40}
                 className="object-contain flex-shrink-0"
               />
               <Image 
                 src={LOGOS.TEXT_BROWN}
                 alt="HandicApp" 
-                width={130} 
-                height={28}
+                width={120} 
+                height={24}
                 className="object-contain flex-shrink-0 brightness-0 invert"
               />
             </div>

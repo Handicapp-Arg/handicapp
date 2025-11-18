@@ -11,6 +11,7 @@ import { useStats } from '@/lib/hooks/useStats';
 import { useEstablecimientos } from '@/lib/hooks/useEstablecimientosQuery';
 import type { Establecimiento } from '@/lib/services/establecimientoService';
 import { MapLoadingSkeleton } from '@/components/shared/LoadingSkeletons';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 // Lazy load del componente de tabs (contiene el mapa pesado)
 const EstablecimientoTabs = dynamic(
@@ -82,9 +83,11 @@ export default function PropietarioEstablecimientosPage() {
   if (isLoading) {
     return (
       <SimpleRoleGuard roles={['propietario']}>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <LoadingSpinnerFullPage 
+          label="Cargando establecimientos..." 
+          description="Buscando tus ubicaciones"
+          variant="success"
+        />
       </SimpleRoleGuard>
     );
   }

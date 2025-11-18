@@ -5,10 +5,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, User, Save, Loader2 } from 'lucide-react';
+import { X, User, Save } from 'lucide-react';
 import { tareaService, Tarea } from '@/lib/services/tareaService';
 import { userService } from '@/lib/services/userService';
 import { toast } from 'react-hot-toast';
+import { LoadingSpinnerCard, LoadingSpinnerInline } from '@/components/ui/loading-spinner';
 
 interface TareaAsignarModalProps {
   tarea: Tarea;
@@ -96,7 +97,7 @@ export function TareaAsignarModal({ tarea, isOpen, onClose, onSuccess }: TareaAs
         <form onSubmit={handleSubmit} className="p-6">
           {loadingUsuarios ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-8 h-8 text-brand-gold animate-spin" />
+              <LoadingSpinnerCard label="Cargando usuarios..." />
             </div>
           ) : (
             <div className="space-y-4">
@@ -148,7 +149,7 @@ export function TareaAsignarModal({ tarea, isOpen, onClose, onSuccess }: TareaAs
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <LoadingSpinnerInline />
                   Asignando...
                 </>
               ) : (

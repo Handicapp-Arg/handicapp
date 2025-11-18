@@ -10,6 +10,7 @@ import { useStats } from '@/lib/hooks/useStats';
 import { useEventosProximos } from '@/lib/hooks/useEventosProximos';
 import { getRoleInfo } from '@/lib/design-tokens';
 import { Users, Building2, Activity, Settings, BarChart3, Circle } from 'lucide-react';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 export default function AdminDashboard() {
   const { stats, loading } = useStats();
@@ -17,11 +18,7 @@ export default function AdminDashboard() {
   const roleInfo = getRoleInfo('admin');
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600"></div>
-      </div>
-    );
+    return <LoadingSpinnerFullPage label="Cargando..." variant="primary" />;
   }
 
   // Stats principales

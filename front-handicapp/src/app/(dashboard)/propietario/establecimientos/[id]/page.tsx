@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Phone, Mail, Home, Building2, MapPin } from 'lucide-react';
 import { establecimientoService, type Establecimiento } from '@/lib/services/establecimientoService';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 export default function PropietarioEstablecimientoDetailPage() {
   const params = useParams();
@@ -40,7 +41,7 @@ export default function PropietarioEstablecimientoDetailPage() {
     return (
       <SimpleRoleGuard roles={['propietario']}>
         <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <LoadingSpinnerFullPage label="Cargando..." variant="success" />
         </div>
       </SimpleRoleGuard>
     );

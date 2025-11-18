@@ -5,7 +5,6 @@ import { useRouter, useParams } from 'next/navigation';
 import { 
   ArrowLeft,
   Save,
-  Loader2,
   Calendar,
   Pill,
   FileText,
@@ -16,6 +15,7 @@ import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { eventoService } from '@/lib/services/eventoService';
 import { caballoService } from '@/lib/services/caballoService';
 import { toast } from 'react-hot-toast';
+import { LoadingSpinnerFullPage, LoadingSpinnerInline } from '@/components/ui/loading-spinner';
 
 interface FormData {
   caballo_id: string;
@@ -138,11 +138,7 @@ export default function EditarTratamientoPage() {
   };
 
   if (loadingData) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-12 h-12 text-purple-600 animate-spin" />
-      </div>
-    );
+    return <LoadingSpinnerFullPage label="Cargando tratamiento..." variant="warning" />;
   }
 
   return (
@@ -392,7 +388,7 @@ export default function EditarTratamientoPage() {
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <LoadingSpinnerInline />
                   Guardando...
                 </>
               ) : (

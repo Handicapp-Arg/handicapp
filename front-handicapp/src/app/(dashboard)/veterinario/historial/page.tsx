@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/
 import { Badge } from '@/components/ui/badge';
 import { FileText, Activity, Calendar, TrendingUp } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 export default function VeterinarioHistorialPage() {
   const { data: caballosData = [], isLoading: loading } = useCaballos({ page: 1, limit: 100 });
@@ -55,11 +56,7 @@ export default function VeterinarioHistorialPage() {
   const selectedCaballoData = caballos.find((c: Caballo) => c.id === selectedCaballo);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-      </div>
-    );
+    return <LoadingSpinnerFullPage label="Cargando..." variant="warning" />;
   }
 
   return (
@@ -242,7 +239,7 @@ export default function VeterinarioHistorialPage() {
                 <CardContent className="p-6">
                   {loadingHistorial ? (
                     <div className="flex items-center justify-center py-12">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                      <LoadingSpinnerFullPage label="Cargando..." variant="warning" />
                     </div>
                   ) : historial.length === 0 ? (
                     <div className="text-center py-12">

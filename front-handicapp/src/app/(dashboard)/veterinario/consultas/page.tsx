@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/
 import { Badge } from '@/components/ui/badge';
 import { Stethoscope, Clock, CheckCircle2, AlertCircle, Search, Calendar } from 'lucide-react';
 import { Evento } from '@/lib/types';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 export default function VeterinarioConsultasPage() {
   const { data: eventos = [], isLoading: loading } = useEventos({ page: 1, limit: 500 });
@@ -49,7 +50,7 @@ export default function VeterinarioConsultasPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        <LoadingSpinnerFullPage label="Cargando..." variant="warning" />
       </div>
     );
   }
