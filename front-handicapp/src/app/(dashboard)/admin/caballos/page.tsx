@@ -21,7 +21,7 @@ export default function CaballosPage() {
 
   return (
     <SimpleAdminOnly>
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto">
         {/* Hero Section */}
         <div className="relative overflow-hidden mb-8 rounded-2xl">
           <div className="absolute inset-0 bg-[#0f172a]"></div>

@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import dynamic from 'next/dynamic';
-import { Icon, LatLngExpression } from 'leaflet';
+import { Icon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 // Cargar componentes de Leaflet solo en el cliente
@@ -49,13 +49,30 @@ const MapController = dynamic(
       const map = useMap();
       
       useEffect(() => {
-        if (center && center[0] && center[1] && !isNaN(center[0]) && !isNaN(center[1])) {
-          map.setView(center, zoom, {
-            animate: true,
-            duration: 0.8
-          });
-        }
-      }, [center, zoom, map]);
+        if (!map || !center || !center[0] || !center[1]) return;
+        
+        // Validar que las coordenadas son números válidos
+        const lat = Number(center[0]);
+        const lng = Number(center[1]);
+        
+        if (isNaN(lat) || isNaN(lng)) return;
+        
+        // Usar setTimeout para asegurar que el mapa está completamente inicializado
+        const timer = setTimeout(() => {
+          try {
+            // Invalidar el tamaño del mapa antes de moverlo
+            map.invalidateSize();
+            map.setView([lat, lng], zoom, {
+              animate: true,
+              duration: 0.5
+            });
+          } catch (error) {
+            console.warn('Error updating map view:', error);
+          }
+        }, 100);
+        
+        return () => clearTimeout(timer);
+      }, [center[0], center[1], zoom, map]);
       
       return null;
     };
@@ -131,12 +148,33 @@ export const LeafletAddressPicker: React.FC<LeafletAddressPickerProps> = ({
   const [hasSelectedAddress, setHasSelectedAddress] = useState(
     !!(value?.ciudad || value?.provincia || value?.pais)
   );
-  const [mapCenter, setMapCenter] = useState<LatLngExpression>(
-    value?.latitud && value?.longitud 
-      ? [value.latitud, value.longitud]
-      : [-34.6037, -58.3816] // Buenos Aires por defecto
-  );
+  
+  // Inicializar centro del mapa de forma segura
+  const getInitialCenter = useCallback((): [number, number] => {
+    if (value?.latitud && value?.longitud) {
+      const lat = Number(value.latitud);
+      const lng = Number(value.longitud);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        return [lat, lng];
+      }
+    }
+    return [-34.6037, -58.3816]; // Buenos Aires por defecto
+  }, [value?.latitud, value?.longitud]);
+  
+  const [mapCenter, setMapCenter] = useState<[number, number]>(getInitialCenter);
   const [mapZoom, setMapZoom] = useState(value?.latitud && value?.longitud ? 15 : 10);
+
+  // Posición del marcador con useMemo
+  const markerPosition: [number, number] | null = useMemo(() => {
+    if (value?.latitud && value?.longitud) {
+      const lat = Number(value.latitud);
+      const lng = Number(value.longitud);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        return [lat, lng];
+      }
+    }
+    return null;
+  }, [value?.latitud, value?.longitud]);
 
   // Crear el icono de marcador
   const defaultIcon = useMemo(() => {
@@ -229,6 +267,11 @@ export const LeafletAddressPicker: React.FC<LeafletAddressPickerProps> = ({
   const handleSelectResult = useCallback((result: any) => {
     const lat = parseFloat(result.lat);
     const lng = parseFloat(result.lon);
+    
+    if (isNaN(lat) || isNaN(lng)) {
+      console.warn('Invalid coordinates from search result');
+      return;
+    }
     
     const addr = result.address || {};
     // Solo extraer ciudad, provincia y país - calle y número se dejan para que el usuario complete
@@ -376,11 +419,6 @@ export const LeafletAddressPicker: React.FC<LeafletAddressPickerProps> = ({
     );
   }
 
-  const markerPosition: [number, number] | null = 
-    value?.latitud && value?.longitud 
-      ? [value.latitud, value.longitud]
-      : null;
-
   return (
     <div className="space-y-4">
       <div>
@@ -516,7 +554,7 @@ export const LeafletAddressPicker: React.FC<LeafletAddressPickerProps> = ({
             <Label className="text-xs text-gray-600">Coordenadas</Label>
             <Input
               value={value?.latitud && value?.longitud 
-                ? `${value.latitud.toFixed(6)}, ${value.longitud.toFixed(6)}`
+                ? `${Number(value.latitud).toFixed(6)}, ${Number(value.longitud).toFixed(6)}`
                 : ''
               }
               readOnly
@@ -534,13 +572,13 @@ export const LeafletAddressPicker: React.FC<LeafletAddressPickerProps> = ({
             zoom={mapZoom}
             style={{ height: '100%', width: '100%' }}
             className="z-0"
-            key={`${mapCenter[0]}-${mapCenter[1]}`}
+            scrollWheelZoom={true}
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            <MapController center={mapCenter as [number, number]} zoom={mapZoom} />
+            <MapController center={mapCenter} zoom={mapZoom} />
             <MapClickHandler onMapClick={handleMapClick} />
             {markerPosition && defaultIcon && (
               <DraggableMarker

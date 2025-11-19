@@ -148,7 +148,7 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
     let path = '/profile';
     switch (roleKey) {
       case 'admin':
-        path = '/admin/profile';
+        path = '/admin/configuracion';
         break;
       case 'establecimiento':
         path = '/establecimiento/perfil';

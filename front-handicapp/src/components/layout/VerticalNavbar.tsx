@@ -212,7 +212,7 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
                   <Link
                     href={item.href}
                     className={`
-                      flex items-center py-2.5 rounded-lg transition-smooth
+                      flex items-center py-2 rounded-lg transition-smooth
                       ${isCollapsed ? 'px-2 justify-center' : 'px-3 gap-3'}
                       ${isActive
                         ? 'bg-[#af936f] text-white shadow-md shadow-[#af936f]/20'
@@ -295,7 +295,7 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
                 href={item.href}
                 onClick={onClose}
                 className={`
-                  flex items-center px-3 py-3 gap-3 rounded-lg transition-smooth touch-manipulation
+                  flex items-center px-3 py-2.5 gap-3 rounded-lg transition-smooth touch-manipulation
                   ${isActive
                     ? 'bg-[#af936f] text-white shadow-md shadow-[#af936f]/20'
                     : 'text-white/70 hover:text-white hover:bg-white/10'
