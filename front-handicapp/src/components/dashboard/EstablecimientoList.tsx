@@ -212,7 +212,7 @@ export function EstablecimientoList({
           {filteredEstablecimientos.map((establecimiento) => (
             <div 
               key={establecimiento.id}
-              className="group bg-white border border-gray-200 rounded-xl hover:shadow-lg transition-all duration-200 overflow-hidden"
+              className="group bg-white border border-gray-200 rounded-xl hover:shadow-lg transition-all duration-200 overflow-hidden flex flex-col h-full"
             >
               {/* Header más sutil */}
               <div className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 p-4">
@@ -235,86 +235,88 @@ export function EstablecimientoList({
               </div>
 
               {/* Contenido */}
-              <div className="p-4 space-y-3">
-                {/* Caballos del usuario - más profesional */}
-                {establecimiento.mis_caballos && establecimiento.mis_caballos.length > 0 && (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="h-5 w-5 rounded-full bg-emerald-500 flex items-center justify-center">
-                        <CheckCircle2 className="h-3 w-3 text-white" />
-                      </div>
-                      <span className="text-xs font-medium text-emerald-900">
-                        Tus caballos aquí ({establecimiento.mis_caballos.length})
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {establecimiento.mis_caballos.map((caballo) => (
-                        <Badge key={caballo.id} variant="outline" className="bg-white border-emerald-300 text-emerald-700 text-xs">
-                          {caballo.nombre}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Badges */}
-                <div className="flex flex-wrap gap-1.5">
-                  <Badge variant="secondary" className="capitalize text-xs bg-gray-100 text-gray-700 border-0">
-                    {establecimiento.tipo_establecimiento}
-                  </Badge>
-                  <Badge 
-                    className={`text-xs border-0 ${
-                      establecimiento.estado === 'activo' 
-                        ? 'bg-green-100 text-green-700' 
-                        : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {establecimiento.estado}
-                  </Badge>
-                </div>
-
-                {/* Stats - sin emojis */}
-                {(establecimiento.superficie_hectareas || establecimiento.cantidad_boxes) && (
-                  <div className="flex gap-4 text-xs text-gray-600 py-2">
-                    {establecimiento.superficie_hectareas && (
-                      <div className="flex items-center gap-1.5">
-                        <Home className="h-3.5 w-3.5 text-gray-400" />
-                        <span className="font-medium">{establecimiento.superficie_hectareas}</span>
-                        <span className="text-gray-500">ha</span>
-                      </div>
-                    )}
-                    {establecimiento.cantidad_boxes && (
-                      <div className="flex items-center gap-1.5">
-                        <div className="h-3.5 w-3.5 text-gray-400">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="3" y="11" width="18" height="10" rx="2" />
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                          </svg>
+              <div className="p-4 flex flex-col h-full">
+                <div className="space-y-3 flex-1">
+                  {/* Caballos del usuario - más profesional */}
+                  {establecimiento.mis_caballos && establecimiento.mis_caballos.length > 0 && (
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="h-5 w-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                          <CheckCircle2 className="h-3 w-3 text-white" />
                         </div>
-                        <span className="font-medium">{establecimiento.cantidad_boxes}</span>
-                        <span className="text-gray-500">boxes</span>
+                        <span className="text-xs font-medium text-emerald-900">
+                          Tus caballos aquí ({establecimiento.mis_caballos.length})
+                        </span>
                       </div>
-                    )}
-                  </div>
-                )}
+                      <div className="flex flex-wrap gap-1.5">
+                        {establecimiento.mis_caballos.map((caballo) => (
+                          <Badge key={caballo.id} variant="outline" className="bg-white border-emerald-300 text-emerald-700 text-xs">
+                            {caballo.nombre}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-                {/* Contacto */}
-                {(establecimiento.telefono || establecimiento.email) && (
-                  <div className="space-y-1.5 text-xs text-gray-600 pt-2 border-t border-gray-100">
-                    {establecimiento.telefono && (
-                      <div className="flex items-center gap-1.5">
-                        <Phone className="h-3.5 w-3.5 text-gray-400" />
-                        <span>{establecimiento.telefono}</span>
-                      </div>
-                    )}
-                    {establecimiento.email && (
-                      <div className="flex items-center gap-1.5">
-                        <Mail className="h-3.5 w-3.5 text-gray-400" />
-                        <span className="truncate">{establecimiento.email}</span>
-                      </div>
-                    )}
+                  {/* Badges */}
+                  <div className="flex flex-wrap gap-1.5">
+                    <Badge variant="secondary" className="capitalize text-xs bg-gray-100 text-gray-700 border-0">
+                      {establecimiento.tipo_establecimiento}
+                    </Badge>
+                    <Badge 
+                      className={`text-xs border-0 ${
+                        establecimiento.estado === 'activo' 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {establecimiento.estado}
+                    </Badge>
                   </div>
-                )}
+
+                  {/* Stats - sin emojis */}
+                  {(establecimiento.superficie_hectareas || establecimiento.cantidad_boxes) && (
+                    <div className="flex gap-4 text-xs text-gray-600 py-2">
+                      {establecimiento.superficie_hectareas && (
+                        <div className="flex items-center gap-1.5">
+                          <Home className="h-3.5 w-3.5 text-gray-400" />
+                          <span className="font-medium">{establecimiento.superficie_hectareas}</span>
+                          <span className="text-gray-500">ha</span>
+                        </div>
+                      )}
+                      {establecimiento.cantidad_boxes && (
+                        <div className="flex items-center gap-1.5">
+                          <div className="h-3.5 w-3.5 text-gray-400">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="3" y="11" width="18" height="10" rx="2" />
+                              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                          </div>
+                          <span className="font-medium">{establecimiento.cantidad_boxes}</span>
+                          <span className="text-gray-500">boxes</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Contacto */}
+                  {(establecimiento.telefono || establecimiento.email) && (
+                    <div className="space-y-1.5 text-xs text-gray-600 pt-2 border-t border-gray-100">
+                      {establecimiento.telefono && (
+                        <div className="flex items-center gap-1.5">
+                          <Phone className="h-3.5 w-3.5 text-gray-400" />
+                          <span>{establecimiento.telefono}</span>
+                        </div>
+                      )}
+                      {establecimiento.email && (
+                        <div className="flex items-center gap-1.5">
+                          <Mail className="h-3.5 w-3.5 text-gray-400" />
+                          <span className="truncate">{establecimiento.email}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 {/* Botón */}
                 <button
@@ -334,7 +336,7 @@ export function EstablecimientoList({
                       window.location.href = `${detailUrlPrefix}/${establecimiento.id}`;
                     }
                   }}
-                  className="w-full mt-2 px-4 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium text-sm"
+                  className="w-full mt-4 px-4 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium text-sm"
                 >
                   Ver Detalles
                 </button>
