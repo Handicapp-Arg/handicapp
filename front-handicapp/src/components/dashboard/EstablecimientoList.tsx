@@ -351,11 +351,7 @@ export function EstablecimientoList({
                       window.location.href = `${detailUrlPrefix}/${establecimiento.id}`;
                     }
                   }}
-<<<<<<< HEAD
                   className="w-full mt-2 px-4 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors font-medium text-sm"
-=======
-                  className="w-full mt-4 px-4 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium text-sm"
->>>>>>> 6c039e0719c6c03c5e80cdae7fe0a6bea580794f
                 >
                   Ver Detalles
                 </button>
