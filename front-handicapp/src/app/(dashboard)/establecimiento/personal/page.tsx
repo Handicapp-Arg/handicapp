@@ -1,20 +1,21 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import Link from 'next/link';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Users, UserCheck, Shield, UserCog, Search, Eye, Edit, UserX, UserPlus, Plus } from 'lucide-react';
+import { Users, UserCheck, Shield, UserCog, Search, UserX, UserPlus } from 'lucide-react';
 import {
   gestionPersonalService,
   Empleado,
   EstadisticasPersonal,
-  CrearEmpleadoDTO,
 } from '@/lib/gestionPersonalService';
 import { toast } from 'react-hot-toast';
 import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { CreateEmpleadoModal, EditEmpleadoModal } from '@/components/common/EmpleadoModal';
+import { UserTable } from '@/components/common/UserTable';
+import type { BaseUser } from '@/components/common/UserTable';
 
 export default function EstablecimientoPersonalPage() {
   const [empleados, setEmpleados] = useState<Empleado[]>([]);
@@ -28,17 +29,11 @@ export default function EstablecimientoPersonalPage() {
   const [empleadoActual, setEmpleadoActual] = useState<Empleado | null>(null);
   const [empleadoAToggle, setEmpleadoAToggle] = useState<Empleado | null>(null);
 
-  const [formData, setFormData] = useState<CrearEmpleadoDTO>({
-    nombre: '',
-    apellido: '',
-    email: '',
-    telefono: '',
-    documento: '',
-    rol_id: 5, // Empleado por defecto
-    fecha_ingreso: new Date().toISOString().split('T')[0],
-    departamento: 'Operaciones',
-    puesto: 'Auxiliar',
-  });
+  const roles = [
+    { id: 3, nombre: 'Capataz' },
+    { id: 4, nombre: 'Veterinario' },
+    { id: 5, nombre: 'Empleado' },
+  ];
 
   const loadData = async () => {
     try {
@@ -65,69 +60,39 @@ export default function EstablecimientoPersonalPage() {
 
   // Handlers para botones (solo acciones que no navegan)
   const handleNuevoEmpleado = () => {
-    setFormData({
-      nombre: '',
-      apellido: '',
-      email: '',
-      telefono: '',
-      documento: '',
-      rol_id: 5,
-      fecha_ingreso: new Date().toISOString().split('T')[0],
-      departamento: 'Operaciones',
-      puesto: 'Auxiliar',
-    });
     setEmpleadoActual(null);
     setModalNuevo(true);
   };
 
-  const handleGuardarEmpleado = async () => {
-    try {
-      if (empleadoActual) {
-        // Editar
-        const success = await gestionPersonalService.actualizarEmpleado(empleadoActual.id, formData);
-        if (success) {
-          toast.success('Empleado actualizado correctamente');
-          setModalEditar(false);
-          loadData();
-        } else {
-          toast.error('Error al actualizar empleado');
-        }
-      } else {
-        // Crear nuevo
-        const result = await gestionPersonalService.crearEmpleado(formData);
-        if (result) {
-          toast.success(`Empleado creado. Contraseña temporal: ${result.passwordTemporal}`);
-          setModalNuevo(false);
-          loadData();
-        } else {
-          toast.error('Error al crear empleado');
-        }
-      }
-    } catch (error) {
-      console.error('Error guardando empleado:', error);
-      toast.error('Error al guardar empleado');
-    }
+  const handleEmpleadoCreated = () => {
+    setModalNuevo(false);
+    loadData();
+  };
+
+  const handleEmpleadoUpdated = () => {
+    setModalEditar(false);
+    setEmpleadoActual(null);
+    loadData();
   };
 
   const handleEditarEmpleado = (empleado: Empleado) => {
-    setFormData({
-      nombre: empleado.nombre,
-      apellido: empleado.apellido,
-      email: empleado.email,
-      telefono: empleado.telefono || '',
-      documento: empleado.documento || '',
-      rol_id: empleado.rol_id,
-      fecha_ingreso: empleado.fecha_ingreso,
-      departamento: empleado.departamento || 'Operaciones',
-      puesto: empleado.puesto || 'Auxiliar',
-    });
     setEmpleadoActual(empleado);
     setModalEditar(true);
+  };
+
+  const updateEmpleadoWrapper = async (empleadoId: number, data: any) => {
+    const result = await gestionPersonalService.actualizarEmpleado(empleadoId, data);
+    return result !== null;
   };
 
   const handleToggleEstado = (empleado: Empleado) => {
     setEmpleadoAToggle(empleado);
     setModalConfirm(true);
+  };
+
+  const handleViewEmpleado = (empleadoId: number) => {
+    // Navegar al perfil del empleado
+    window.location.href = `/establecimiento/personal/${empleadoId}`;
   };
 
   const confirmarToggleEstado = async () => {
@@ -176,6 +141,21 @@ export default function EstablecimientoPersonalPage() {
     
     return filtered;
   }, [empleados, busqueda, filtroEstado]);
+
+  // Transform empleados to BaseUser format for UserTable
+  const empleadosAsBaseUsers: BaseUser[] = useMemo(() => {
+    return empleadosFiltrados.map(emp => ({
+      id: emp.id,
+      nombre: emp.nombre,
+      apellido: emp.apellido,
+      email: emp.email,
+      telefono: emp.telefono,
+      estado: emp.estado === 'activo' ? 'activo' : 'inactivo',
+      rol: emp.rol_nombre,
+      puesto: emp.puesto,
+      departamento: emp.departamento,
+    }));
+  }, [empleadosFiltrados]);
 
   if (loading) {
     return (
@@ -336,323 +316,46 @@ export default function EstablecimientoPersonalPage() {
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto rounded-lg sm:rounded-xl border border-gray-100 -mx-3 sm:mx-0">
-              <table className="w-full text-xs sm:text-sm min-w-[640px]">
-                <thead className="bg-gray-50 border-b">
-                  <tr>
-                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase">Nombre</th>
-                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase">Email</th>
-                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase">Puesto</th>
-                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase">Departamento</th>
-                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase">Estado</th>
-                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-center text-[10px] sm:text-xs font-medium text-gray-500 uppercase">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {empleadosFiltrados.map((emp) => (
-                    <tr key={emp.id} className="hover:bg-gray-50 active:bg-gray-100 transition-colors">
-                      <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap">
-                        <div className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-[120px] sm:max-w-none">{emp.nombre} {emp.apellido}</div>
-                      </td>
-                      <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap">
-                        <div className="text-xs sm:text-sm text-gray-500 truncate max-w-[120px] sm:max-w-[180px] md:max-w-none">{emp.email}</div>
-                      </td>
-                      <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap">
-                        <div className="text-xs sm:text-sm text-gray-500 truncate max-w-[80px] sm:max-w-none">{emp.puesto}</div>
-                      </td>
-                      <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap">
-                        <div className="text-xs sm:text-sm text-gray-500 truncate max-w-[80px] sm:max-w-none">{emp.departamento}</div>
-                      </td>
-                      <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap">
-                        <Badge 
-                          className={`text-[10px] sm:text-xs px-1.5 sm:px-2 ${emp.estado === 'activo' 
-                            ? 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200' 
-                            : 'bg-red-100 text-red-800 border-red-300 hover:bg-red-200'
-                          }`}
-                        >
-                          {emp.estado === 'activo' ? '● Activo' : '● Inactivo'}
-                        </Badge>
-                      </td>
-                      <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1 sm:gap-2">
-                          <Link
-                            href={`/establecimiento/personal/${emp.id}`}
-                            className="p-1.5 sm:p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-purple-600 hover:text-white active:bg-purple-700 transition-all duration-200 hover:scale-110 inline-flex items-center justify-center"
-                            title="Ver perfil"
-                          >
-                            <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
-                          </Link>
-                          <button
-                            onClick={() => handleEditarEmpleado(emp)}
-                            type="button"
-                            className="p-1.5 sm:p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-blue-600 hover:text-white active:bg-blue-700 transition-all duration-200 hover:scale-110"
-                            title="Editar"
-                          >
-                            <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleToggleEstado(emp)}
-                            type="button"
-                            className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 hover:scale-110 ${
-                              emp.estado === 'activo' 
-                                ? 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 active:bg-red-200' 
-                                : 'bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 active:bg-green-200'
-                            }`}
-                            title={emp.estado === 'activo' ? 'Desactivar' : 'Activar'}
-                          >
-                            {emp.estado === 'activo' ? <UserX className="h-3 w-3 sm:h-4 sm:w-4" /> : <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {empleadosFiltrados.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-gray-500">No se encontraron empleados</p>
-              </div>
-            )}
+            <UserTable
+              users={empleadosAsBaseUsers}
+              loading={false}
+              onEdit={(baseUser) => {
+                const empleado = empleados.find(e => e.id === baseUser.id);
+                if (empleado) handleEditarEmpleado(empleado);
+              }}
+              onToggleStatus={(userId) => {
+                const empleado = empleados.find(e => e.id === userId);
+                if (empleado) handleToggleEstado(empleado);
+              }}
+              onView={handleViewEmpleado}
+              showActions={true}
+              emptyMessage="No se encontraron empleados con los criterios especificados"
+            />
           </CardContent>
         </Card>
 
-        {/* Modal Nuevo Empleado */}
-        <Dialog open={modalNuevo} onOpenChange={setModalNuevo}>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-                <Plus className="w-6 h-6 text-emerald-600" />
-                Nuevo Empleado
-              </DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Nombre</label>
-                  <input
-                    type="text"
-                    value={formData.nombre}
-                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                    className="w-full mt-1 px-3 py-2 border rounded-lg"
-                    placeholder="Juan"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Apellido</label>
-                  <input
-                    type="text"
-                    value={formData.apellido}
-                    onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
-                    className="w-full mt-1 px-3 py-2 border rounded-lg"
-                    placeholder="Pérez"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Email</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full mt-1 px-3 py-2 border rounded-lg"
-                  placeholder="juan.perez@email.com"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Teléfono</label>
-                  <input
-                    type="text"
-                    value={formData.telefono}
-                    onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                    className="w-full mt-1 px-3 py-2 border rounded-lg"
-                    placeholder="+54 9 11 1234-5678"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Documento</label>
-                  <input
-                    type="text"
-                    value={formData.documento}
-                    onChange={(e) => setFormData({ ...formData, documento: e.target.value })}
-                    className="w-full mt-1 px-3 py-2 border rounded-lg"
-                    placeholder="12345678"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Rol</label>
-                  <select
-                    value={formData.rol_id}
-                    onChange={(e) => setFormData({ ...formData, rol_id: Number(e.target.value) })}
-                    className="w-full mt-1 px-3 py-2 border rounded-lg"
-                  >
-                    <option value={3}>Capataz</option>
-                    <option value={4}>Veterinario</option>
-                    <option value={5}>Empleado</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Fecha de ingreso</label>
-                  <input
-                    type="date"
-                    value={formData.fecha_ingreso}
-                    onChange={(e) => setFormData({ ...formData, fecha_ingreso: e.target.value })}
-                    className="w-full mt-1 px-3 py-2 border rounded-lg"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Departamento</label>
-                  <input
-                    type="text"
-                    value={formData.departamento}
-                    onChange={(e) => setFormData({ ...formData, departamento: e.target.value })}
-                    className="w-full mt-1 px-3 py-2 border rounded-lg"
-                    placeholder="Operaciones"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Puesto</label>
-                  <input
-                    type="text"
-                    value={formData.puesto}
-                    onChange={(e) => setFormData({ ...formData, puesto: e.target.value })}
-                    className="w-full mt-1 px-3 py-2 border rounded-lg"
-                    placeholder="Auxiliar"
-                  />
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <button
-                onClick={() => setModalNuevo(false)}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleGuardarEmpleado}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
-              >
-                Crear Empleado
-              </button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* Modals */}
+        <CreateEmpleadoModal
+          isOpen={modalNuevo}
+          onClose={() => setModalNuevo(false)}
+          onEmpleadoCreated={handleEmpleadoCreated}
+          roles={roles}
+          createEmpleadoFn={gestionPersonalService.crearEmpleado}
+          primaryColor="#059669"
+        />
 
-        {/* Modal Editar Empleado */}
-        <Dialog open={modalEditar} onOpenChange={setModalEditar}>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-                <Edit className="w-6 h-6 text-blue-600" />
-                Editar Empleado
-              </DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Nombre</label>
-                  <input
-                    type="text"
-                    value={formData.nombre}
-                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                    className="w-full mt-1 px-3 py-2 border rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Apellido</label>
-                  <input
-                    type="text"
-                    value={formData.apellido}
-                    onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
-                    className="w-full mt-1 px-3 py-2 border rounded-lg"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Email</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full mt-1 px-3 py-2 border rounded-lg"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Teléfono</label>
-                  <input
-                    type="text"
-                    value={formData.telefono}
-                    onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                    className="w-full mt-1 px-3 py-2 border rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Documento</label>
-                  <input
-                    type="text"
-                    value={formData.documento}
-                    onChange={(e) => setFormData({ ...formData, documento: e.target.value })}
-                    className="w-full mt-1 px-3 py-2 border rounded-lg"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Departamento</label>
-                  <input
-                    type="text"
-                    value={formData.departamento}
-                    onChange={(e) => setFormData({ ...formData, departamento: e.target.value })}
-                    className="w-full mt-1 px-3 py-2 border rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Puesto</label>
-                  <input
-                    type="text"
-                    value={formData.puesto}
-                    onChange={(e) => setFormData({ ...formData, puesto: e.target.value })}
-                    className="w-full mt-1 px-3 py-2 border rounded-lg"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Rol</label>
-                <select
-                  value={formData.rol_id}
-                  onChange={(e) => setFormData({ ...formData, rol_id: Number(e.target.value) })}
-                  className="w-full mt-1 px-3 py-2 border rounded-lg"
-                >
-                  <option value={3}>Capataz</option>
-                  <option value={4}>Veterinario</option>
-                  <option value={5}>Empleado</option>
-                </select>
-              </div>
-            </div>
-            <DialogFooter>
-              <button
-                onClick={() => setModalEditar(false)}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleGuardarEmpleado}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Guardar Cambios
-              </button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <EditEmpleadoModal
+          isOpen={modalEditar && empleadoActual !== null}
+          onClose={() => {
+            setModalEditar(false);
+            setEmpleadoActual(null);
+          }}
+          onEmpleadoUpdated={handleEmpleadoUpdated}
+          empleado={empleadoActual}
+          roles={roles}
+          updateEmpleadoFn={updateEmpleadoWrapper}
+          primaryColor="#2563eb"
+        />
 
         {/* Modal de Confirmación para Activar/Desactivar */}
         <Dialog open={modalConfirm} onOpenChange={setModalConfirm}>

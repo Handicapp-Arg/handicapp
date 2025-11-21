@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { UserTable } from './UserTable';
-import { CreateUserModal } from './CreateUserModal';
-import { EditUserModal } from './EditUserModal';
+import { CreateUserModal, EditUserModal } from '@/components/common/UserModal';
 import ApiClient from '@/lib/services/apiClient';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { logger } from '@/lib/utils/logger';
+import { UserPlus, UserX, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { toast } from 'react-hot-toast';
 
 
 export interface User {
@@ -38,7 +39,11 @@ export function UserManagement() {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [userToToggle, setUserToToggle] = useState<User | null>(null);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('');
   const [selectedEstado, setSelectedEstado] = useState<string>('');
@@ -115,29 +120,76 @@ export function UserManagement() {
     setShowEditModal(true);
   };
 
-  const handleDelete = async (userId: number) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
-      return;
-    }
-
-    try {
-      await ApiClient.deleteUser(userId);
-      const roleId = selectedRole ? Number(selectedRole) : undefined;
-      const estado = selectedEstado || undefined;
-      fetchUsers(currentPage, searchTerm, roleId, estado);
-    } catch (error: any) {
-      alert(error.message || 'Error al eliminar usuario');
+  const handleDelete = (userId: number) => {
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      setUserToDelete(user);
+      setShowDeleteModal(true);
     }
   };
 
-  const handleToggleStatus = async (userId: number) => {
+  const confirmarEliminar = async () => {
+    if (!userToDelete) return;
+
     try {
-      await ApiClient.toggleUserStatus(userId);
+      await ApiClient.deleteUser(userToDelete.id);
+      toast.success('Usuario eliminado correctamente');
+      
       const roleId = selectedRole ? Number(selectedRole) : undefined;
       const estado = selectedEstado || undefined;
       fetchUsers(currentPage, searchTerm, roleId, estado);
     } catch (error: any) {
-      alert(error.message || 'Error al cambiar estado del usuario');
+      toast.error(error.message || 'Error al eliminar usuario');
+    } finally {
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+    }
+  };
+
+  const handleToggleStatus = (userId: number) => {
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      setUserToToggle(user);
+      setShowConfirmModal(true);
+    }
+  };
+
+  const confirmarToggleEstado = async () => {
+    if (!userToToggle) return;
+
+    try {
+      const response = await ApiClient.toggleUserStatus(userToToggle.id);
+      
+      // Extraer el estado actualizado de la respuesta del backend
+      const updatedUser = (response as any)?.data;
+      
+      if (updatedUser) {
+        // Actualizar el usuario específico en el estado local inmediatamente
+        setUsers(prevUsers => 
+          prevUsers.map(user => 
+            user.id === userToToggle.id 
+              ? { 
+                  ...user, 
+                  estado_usuario: updatedUser.estado_usuario === 'active' ? 'active' : 'inactive',
+                  actualizado_el: updatedUser.actualizado_el || new Date().toISOString()
+                }
+              : user
+          )
+        );
+      }
+      
+      const nuevoEstado = userToToggle.estado_usuario === 'active' ? 'inactivo' : 'activo';
+      toast.success(`Usuario ${nuevoEstado === 'activo' ? 'activado' : 'desactivado'} correctamente`);
+    } catch (error: any) {
+      toast.error(error.message || 'Error al cambiar estado del usuario');
+      
+      // En caso de error, recargar para asegurar consistencia
+      const roleId = selectedRole ? Number(selectedRole) : undefined;
+      const estado = selectedEstado || undefined;
+      fetchUsers(currentPage, searchTerm, roleId, estado);
+    } finally {
+      setShowConfirmModal(false);
+      setUserToToggle(null);
     }
   };
 
@@ -154,6 +206,16 @@ export function UserManagement() {
     const roleId = selectedRole ? Number(selectedRole) : undefined;
     const estado = selectedEstado || undefined;
     fetchUsers(currentPage, searchTerm, roleId, estado);
+  };
+
+  // Wrapper para updateUser para mantener el contexto de ApiClient
+  const updateUserWrapper = async (userId: number, userData: any) => {
+    return await ApiClient.updateUser(userId, userData);
+  };
+
+  // Wrapper para createUser para mantener el contexto de ApiClient
+  const createUserWrapper = async (userData: any) => {
+    return await ApiClient.createUser(userData);
   };
 
   // Nota: mantenemos el loader en la tabla para unificar experiencia, pero mostramos un skeleton simple aquí
@@ -177,9 +239,9 @@ export function UserManagement() {
             </div>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center justify-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm text-sm font-medium"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#0f172a] text-white rounded-xl font-semibold hover:bg-[#0f172a]/90 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
-              <span className="mr-2">➕</span>
+              <UserPlus className="w-5 h-5" />
               Crear Usuario
             </button>
           </div>
@@ -236,41 +298,160 @@ export function UserManagement() {
       </div>
 
       {/* Table */}
-      <UserTable
-        users={users}
-        loading={loading}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onToggleStatus={handleToggleStatus}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={(page) => {
-          const roleId = selectedRole ? Number(selectedRole) : undefined;
-          const estado = selectedEstado || undefined;
-          fetchUsers(page, searchTerm, roleId, estado);
-        }}
-      />
+      <div className="p-4 sm:p-6">
+        <UserTable
+          users={users}
+          loading={loading}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onToggleStatus={handleToggleStatus}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={(page) => {
+            const roleId = selectedRole ? Number(selectedRole) : undefined;
+            const estado = selectedEstado || undefined;
+            fetchUsers(page, searchTerm, roleId, estado);
+          }}
+        />
+      </div>
 
       {/* Modals */}
-      {showCreateModal && (
-        <CreateUserModal
-          roles={roles}
-          onClose={() => setShowCreateModal(false)}
-          onUserCreated={handleUserCreated}
-        />
-      )}
+      <CreateUserModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onUserCreated={handleUserCreated}
+        roles={roles}
+        createUserFn={createUserWrapper}
+        primaryColor="#0f172a"
+      />
 
-      {showEditModal && selectedUser && (
-        <EditUserModal
-          user={selectedUser}
-          roles={roles}
-          onClose={() => {
-            setShowEditModal(false);
-            setSelectedUser(null);
-          }}
-          onUserUpdated={handleUserUpdated}
-        />
-      )}
+      <EditUserModal
+        isOpen={showEditModal && selectedUser !== null}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedUser(null);
+        }}
+        onUserUpdated={handleUserUpdated}
+        user={selectedUser}
+        roles={roles}
+        updateUserFn={updateUserWrapper}
+        primaryColor="#0f172a"
+      />
+
+      {/* Modal de Confirmación para Activar/Desactivar */}
+      <Dialog 
+        open={showConfirmModal} 
+        onOpenChange={(open) => {
+          setShowConfirmModal(open);
+          if (!open) setUserToToggle(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              {userToToggle?.estado_usuario === 'active' ? (
+                <UserX className="w-6 h-6 text-red-600" />
+              ) : (
+                <UserPlus className="w-6 h-6 text-green-600" />
+              )}
+              Confirmar Acción
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-gray-700">
+              ¿Estás seguro de {userToToggle?.estado_usuario === 'active' ? 'desactivar' : 'activar'} a{' '}
+              <span className="font-bold">
+                {userToToggle?.nombre} {userToToggle?.apellido}
+              </span>
+              ?
+            </p>
+            {userToToggle?.estado_usuario === 'active' ? (
+              <p className="text-sm text-gray-500 mt-2">
+                Al desactivar, el usuario no podrá acceder al sistema hasta que sea reactivado.
+              </p>
+            ) : (
+              <p className="text-sm text-gray-500 mt-2">
+                Al activar, el usuario podrá acceder nuevamente al sistema.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => {
+                setShowConfirmModal(false);
+                setUserToToggle(null);
+              }}
+              className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={confirmarToggleEstado}
+              className={`px-4 py-2 rounded-lg text-white ${
+                userToToggle?.estado_usuario === 'active'
+                  ? 'bg-red-600 hover:bg-red-700'
+                  : 'bg-green-600 hover:bg-green-700'
+              }`}
+            >
+              {userToToggle?.estado_usuario === 'active' ? 'Desactivar' : 'Activar'}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Confirmación para Eliminar */}
+      <Dialog 
+        open={showDeleteModal} 
+        onOpenChange={(open) => {
+          setShowDeleteModal(open);
+          if (!open) setUserToDelete(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <Trash2 className="w-6 h-6 text-red-600" />
+              Eliminar Usuario
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-gray-700">
+              ¿Estás seguro de eliminar a{' '}
+              <span className="font-bold">
+                {userToDelete?.nombre} {userToDelete?.apellido}
+              </span>
+              ?
+            </p>
+            <p className="text-sm text-red-600 mt-2 font-medium">
+              ⚠️ Esta acción es permanente y no se puede deshacer.
+            </p>
+            <p className="text-sm text-gray-500 mt-1">
+              Se eliminarán todos los datos asociados al usuario.
+            </p>
+          </div>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => {
+                setShowDeleteModal(false);
+                setUserToDelete(null);
+              }}
+              className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={confirmarEliminar}
+              className="px-4 py-2 rounded-lg text-white bg-red-600 hover:bg-red-700"
+            >
+              Eliminar
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
