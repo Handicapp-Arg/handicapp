@@ -197,9 +197,10 @@ export class UserService {
         throw new NotFoundError('User not found');
       }
 
-      // Toggle between 'active' and 'disabled' (not 'inactive')
+      // Toggle between 'active' and 'disabled'
       const newStatus = user.estado_usuario === 'active' ? 'disabled' : 'active';
       await user.update({ estado_usuario: newStatus });
+      await user.reload();
 
       return {
         success: true,
