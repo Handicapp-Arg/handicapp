@@ -16,9 +16,11 @@ export interface User {
   apellido: string;
   email: string;
   telefono?: string;
-  estado_usuario: 'active' | 'inactive';
+  estado_usuario: 'pending' | 'invited' | 'active' | 'suspended' | 'disabled' | 'deleted';
   verificado: boolean;
   fecha_creacion: string;
+  establecimiento_id?: number | null;
+  ubicacion?: string;
   rol: {
     id: number;
     nombre: string;
@@ -32,9 +34,15 @@ export interface Role {
   clave: string;
 }
 
+export interface Establecimiento {
+  id: number;
+  nombre: string;
+}
+
 export function UserManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
+  const [establecimientos, setEstablecimientos] = useState<Establecimiento[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -64,7 +72,7 @@ export function UserManagement() {
       const mappedUsers = usersArray.map((user: any) => ({
         ...user,
         fecha_creacion: user.creado_el || user.fecha_creacion || new Date().toISOString(),
-        estado_usuario: user.estado_usuario === 'active' ? 'active' : 'inactive',
+        estado_usuario: user.estado_usuario || 'pending',
       }));
       
       setUsers(mappedUsers);
@@ -88,8 +96,20 @@ export function UserManagement() {
     }
   };
 
+  const fetchEstablecimientos = async () => {
+    try {
+      const data = await ApiClient.getEstablecimientos(1, 1000);
+      const estArray = (data as any).data?.establecimientos || (data as any).data || [];
+      setEstablecimientos(estArray);
+    } catch (error: any) {
+      console.error('Error fetching establecimientos:', error);
+      setEstablecimientos([]);
+    }
+  };
+
   useEffect(() => {
     fetchRoles();
+    fetchEstablecimientos();
   }, []);
 
   // Búsqueda reactiva y cambios de página
@@ -170,7 +190,7 @@ export function UserManagement() {
             user.id === userToToggle.id 
               ? { 
                   ...user, 
-                  estado_usuario: updatedUser.estado_usuario === 'active' ? 'active' : 'inactive',
+                  estado_usuario: updatedUser.estado_usuario || 'pending',
                   actualizado_el: updatedUser.actualizado_el || new Date().toISOString()
                 }
               : user
@@ -273,10 +293,11 @@ export function UserManagement() {
               >
                 <option value="">Todos los estados</option>
                 <option value="active">Activo</option>
-                <option value="inactive">Inactivo</option>
                 <option value="pending">Pendiente</option>
+                <option value="invited">Invitado</option>
                 <option value="suspended">Suspendido</option>
                 <option value="disabled">Deshabilitado</option>
+                <option value="deleted">Eliminado</option>
               </select>
             </div>
             
@@ -334,6 +355,7 @@ export function UserManagement() {
         onUserUpdated={handleUserUpdated}
         user={selectedUser}
         roles={roles}
+        establecimientos={establecimientos}
         updateUserFn={updateUserWrapper}
         primaryColor="#0f172a"
       />
