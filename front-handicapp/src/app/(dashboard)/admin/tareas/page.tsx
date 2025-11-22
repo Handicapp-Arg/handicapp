@@ -1,17 +1,39 @@
 'use client';
 
 import { useStats } from '@/lib/hooks/useStats';
-import { TareaList } from '@/components/dashboard/TareaList';
+import { TareaKanban } from '@/components/dashboard/TareaKanban';
 import { SimpleAdminOnly } from '@/components/common/SimplePermissionGuard';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ClipboardList, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { useEffect, useState } from 'react';
+import { tareaService, type Tarea } from '@/lib/services/tareaService';
 
 export default function TareasPage() {
   const { stats, loading } = useStats();
+  const [tareas, setTareas] = useState<Tarea[]>([]);
+  const [loadingTareas, setLoadingTareas] = useState(true);
 
-  if (loading) {
+  useEffect(() => {
+    const fetchTareas = async () => {
+      try {
+        setLoadingTareas(true);
+        const response: any = await tareaService.getAll({ page: 1, limit: 500 });
+        const tareasData = response?.data?.tareas || response?.tareas || response?.data || response || [];
+        setTareas(Array.isArray(tareasData) ? tareasData : []);
+      } catch (error) {
+        console.error('Error loading tareas:', error);
+        setTareas([]);
+      } finally {
+        setLoadingTareas(false);
+      }
+    };
+
+    fetchTareas();
+  }, []);
+
+  if (loading || loadingTareas) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <LoadingSpinnerFullPage label="Cargando..." variant="primary" />
@@ -119,7 +141,7 @@ export default function TareasPage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-          <TareaList />
+          <TareaKanban tareas={tareas} />
         </div>
       </div>
     </SimpleAdminOnly>

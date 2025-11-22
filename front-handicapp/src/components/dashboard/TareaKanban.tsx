@@ -45,6 +45,10 @@ const normalizeEstado = (estado: string | undefined): 'open' | 'in_progress' | '
 
 // Mapear estados de UI a estados del backend
 const denormalizeEstado = (estado: 'open' | 'in_progress' | 'done' | 'cancelled'): string => {
+  if (estado === 'open') return 'pendiente';
+  if (estado === 'in_progress') return 'en_progreso';
+  if (estado === 'done') return 'completada';
+  if (estado === 'cancelled') return 'cancelada';
   return estado;
 };
 
@@ -126,20 +130,10 @@ export function TareaKanban({ tareas: tareasProp }: TareaKanbanProps) {
   const handleChangeEstado = async (tarea: Tarea, nuevoEstado: 'open' | 'in_progress' | 'done') => {
     try {
       const estadoBackend = denormalizeEstado(nuevoEstado);
-      const updateData = {
-        titulo: tarea.titulo,
-        descripcion: tarea.descripcion || '',
-        tipo: tarea.tipo as any,
-        prioridad: tarea.prioridad as any,
-        fecha_vencimiento: tarea.fecha_vencimiento || '',
-        estado: estadoBackend as any,
-        caballo_id: tarea.caballo_id,
-        asignado_a_usuario_id: tarea.asignado_a_usuario_id,
-        establecimiento_id: tarea.establecimiento_id,
-        tiempo_estimado_minutos: tarea.tiempo_estimado_minutos,
-        ubicacion: tarea.ubicacion
-      };
-      await tareaService.update(tarea.id, updateData);
+      
+      // Usar el endpoint específico para cambiar estado
+      await tareaService.changeEstado(tarea.id, estadoBackend);
+      
       // Actualizar estado local sin recargar
       setLocalTareas(prev => prev.map(t => 
         t.id === tarea.id ? { ...t, estado: estadoBackend as any } : t
@@ -273,6 +267,12 @@ export function TareaKanban({ tareas: tareasProp }: TareaKanbanProps) {
             <div className="flex items-center gap-1.5">
               <Calendar className="h-3 w-3" />
               <span>{formatDate(tarea.fecha_vencimiento)}</span>
+            </div>
+          )}
+          {tarea.establecimiento && (
+            <div className="flex items-center gap-1.5">
+              <MapPin className="h-3 w-3" />
+              <span className="truncate">{tarea.establecimiento.nombre}</span>
             </div>
           )}
           {tarea.asignado_a && (

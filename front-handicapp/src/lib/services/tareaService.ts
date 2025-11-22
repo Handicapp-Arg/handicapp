@@ -114,6 +114,14 @@ class TareaService {
     return response;
   }
 
+  async changeEstado(id: number, nuevoEstado: string): Promise<Tarea> {
+    const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}/estado`, {
+      method: 'PUT',
+      body: JSON.stringify({ nuevoEstado })
+    }) as any;
+    return response;
+  }
+
   async assign(id: number, usuarioId: number): Promise<Tarea> {
     const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}/assign`, {
       method: 'PATCH',
