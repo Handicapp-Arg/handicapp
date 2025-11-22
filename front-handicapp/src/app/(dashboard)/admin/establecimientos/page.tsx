@@ -184,25 +184,67 @@ export default function AdminEstablecimientosPage() {
                 >
                   {est.estado}
                 </Badge>
+                {est.verificado && (
+                  <Badge className="bg-blue-100 text-blue-700">
+                    ✓ Verificado
+                  </Badge>
+                )}
               </div>
 
-              {/* Información de contacto */}
-              {(est.telefono || est.email) && (
+              {/* Descripción */}
+              {est.descripcion && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Contacto</CardTitle>
+                    <CardTitle className="text-lg">Descripción</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-700 whitespace-pre-wrap">{est.descripcion}</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Información de contacto */}
+              {(est.telefono || est.email || est.direccion) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Contacto y Ubicación</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
+                    {est.direccion && (
+                      <div className="flex items-start gap-2 text-gray-700">
+                        <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <span className="block">{est.direccion}</span>
+                          {(est.ciudad || est.provincia) && (
+                            <span className="text-sm text-gray-500">
+                              {[est.ciudad, est.provincia].filter(Boolean).join(', ')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
                     {est.telefono && (
                       <div className="flex items-center gap-2 text-gray-700">
                         <Phone className="w-4 h-4 text-gray-400" />
-                        <span>{est.telefono}</span>
+                        <a href={`tel:${est.telefono}`} className="hover:text-blue-600 transition-colors">
+                          {est.telefono}
+                        </a>
                       </div>
                     )}
                     {est.email && (
                       <div className="flex items-center gap-2 text-gray-700">
                         <Mail className="w-4 h-4 text-gray-400" />
-                        <span>{est.email}</span>
+                        <a href={`mailto:${est.email}`} className="hover:text-blue-600 transition-colors truncate">
+                          {est.email}
+                        </a>
+                      </div>
+                    )}
+                    {(est.latitud && est.longitud) && (
+                      <div className="flex items-center gap-2 text-gray-700 text-sm pt-2 border-t">
+                        <MapPin className="w-4 h-4 text-gray-400" />
+                        <span className="text-gray-500">
+                          Coordenadas: {typeof est.latitud === 'number' ? est.latitud.toFixed(6) : est.latitud}, {typeof est.longitud === 'number' ? est.longitud.toFixed(6) : est.longitud}
+                        </span>
                       </div>
                     )}
                   </CardContent>
@@ -211,24 +253,37 @@ export default function AdminEstablecimientosPage() {
 
               {/* Información adicional */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {(est.superficie_hectareas || est.cantidad_boxes) && (
+                {(est.superficie_hectareas || est.cantidad_boxes || est.cantidad_paddocks) && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-lg">Instalaciones</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {est.superficie_hectareas && (
-                        <div className="flex items-center gap-2 text-gray-700">
-                          <Home className="w-4 h-4 text-gray-400" />
-                          <span className="font-medium">{est.superficie_hectareas}</span>
-                          <span className="text-gray-500">hectáreas</span>
+                        <div className="flex items-center justify-between text-gray-700">
+                          <div className="flex items-center gap-2">
+                            <Home className="w-4 h-4 text-gray-400" />
+                            <span>Superficie</span>
+                          </div>
+                          <span className="font-medium">{est.superficie_hectareas} ha</span>
                         </div>
                       )}
                       {est.cantidad_boxes && (
-                        <div className="flex items-center gap-2 text-gray-700">
-                          <Building2 className="w-4 h-4 text-gray-400" />
+                        <div className="flex items-center justify-between text-gray-700">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="w-4 h-4 text-gray-400" />
+                            <span>Boxes</span>
+                          </div>
                           <span className="font-medium">{est.cantidad_boxes}</span>
-                          <span className="text-gray-500">boxes</span>
+                        </div>
+                      )}
+                      {est.cantidad_paddocks && (
+                        <div className="flex items-center justify-between text-gray-700">
+                          <div className="flex items-center gap-2">
+                            <Home className="w-4 h-4 text-gray-400" />
+                            <span>Paddocks</span>
+                          </div>
+                          <span className="font-medium">{est.cantidad_paddocks}</span>
                         </div>
                       )}
                     </CardContent>
@@ -268,6 +323,114 @@ export default function AdminEstablecimientosPage() {
                     </CardContent>
                   </Card>
                 )}
+              </div>
+
+              {/* Servicios Disponibles */}
+              {est.servicios_disponibles && est.servicios_disponibles.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Servicios Disponibles</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {est.servicios_disponibles.map((servicio, index) => (
+                        <Badge key={index} variant="outline" className="bg-gray-50">
+                          {servicio}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Mapa */}
+              {(est.latitud && est.longitud) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <MapPin className="w-5 h-5 text-gray-600" />
+                      Ubicación en el Mapa
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="w-full h-[400px] rounded-b-lg overflow-hidden">
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        frameBorder="0"
+                        style={{ border: 0 }}
+                        src={`https://maps.google.com/maps?q=${est.latitud},${est.longitud}&z=15&output=embed`}
+                        allowFullScreen
+                        title={`Mapa de ${est.nombre}`}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Información Adicional del Sistema */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Rating y Reseñas */}
+                {(est.rating_promedio !== undefined || est.total_resenas !== undefined) && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Valoraciones</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {est.rating_promedio !== undefined && typeof est.rating_promedio === 'number' && (
+                        <div className="flex justify-between text-gray-700">
+                          <span>Rating Promedio:</span>
+                          <span className="font-medium">
+                            {'⭐'.repeat(Math.round(est.rating_promedio))} ({est.rating_promedio.toFixed(1)})
+                          </span>
+                        </div>
+                      )}
+                      {est.total_resenas !== undefined && (
+                        <div className="flex justify-between text-gray-700">
+                          <span>Total de Reseñas:</span>
+                          <span className="font-medium">{est.total_resenas}</span>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Información del Sistema */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Información del Sistema</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
+                    <div className="flex justify-between text-gray-700">
+                      <span>ID:</span>
+                      <span className="font-medium font-mono">#{est.id}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-700">
+                      <span>Propietario ID:</span>
+                      <span className="font-medium font-mono">#{est.propietario_id}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-700">
+                      <span>Creado:</span>
+                      <span className="font-medium">
+                        {new Date(est.creado_el).toLocaleDateString('es-ES', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-gray-700">
+                      <span>Última Actualización:</span>
+                      <span className="font-medium">
+                        {new Date(est.actualizado_el).toLocaleDateString('es-ES', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </div>
