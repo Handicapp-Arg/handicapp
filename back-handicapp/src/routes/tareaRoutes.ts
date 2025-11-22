@@ -124,7 +124,7 @@ router.put(
 /**
  * @route   PUT /api/v1/tareas/:id/asignar
  * @desc    Asignar tarea a usuario
- * @access  Admin, Creador de la tarea, Capataz
+ * @access  Admin (todas), Creador de la tarea (solo las que creó)
  */
 router.put(
   '/:id/asignar',

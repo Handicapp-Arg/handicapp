@@ -368,7 +368,7 @@ export class TareaController {
   /**
    * Asignar tarea a usuario
    * PUT /api/v1/tareas/:id/asignar
-   * Roles: admin, creador de la tarea, capataz
+   * Roles: admin (todas), creador de la tarea (solo las que creó)
    */
   static async asignar(_req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
