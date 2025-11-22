@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Users, UserCheck, Shield, UserCog, Search, UserX, UserPlus } from 'lucide-react';
+import { Users, UserCheck, Shield, UserCog, Search, Eye, Edit, UserX, UserPlus, Plus, Trash2 } from 'lucide-react';
 import {
   gestionPersonalService,
   Empleado,
@@ -26,8 +27,10 @@ export default function EstablecimientoPersonalPage() {
   const [modalNuevo, setModalNuevo] = useState(false);
   const [modalEditar, setModalEditar] = useState(false);
   const [modalConfirm, setModalConfirm] = useState(false);
+  const [modalEliminar, setModalEliminar] = useState(false);
   const [empleadoActual, setEmpleadoActual] = useState<Empleado | null>(null);
   const [empleadoAToggle, setEmpleadoAToggle] = useState<Empleado | null>(null);
+  const [empleadoAEliminar, setEmpleadoAEliminar] = useState<Empleado | null>(null);
 
   const roles = [
     { id: 3, nombre: 'Capataz' },
@@ -111,6 +114,26 @@ export default function EstablecimientoPersonalPage() {
     
     setModalConfirm(false);
     setEmpleadoAToggle(null);
+  };
+
+  const handleEliminarEmpleado = (empleado: Empleado) => {
+    setEmpleadoAEliminar(empleado);
+    setModalEliminar(true);
+  };
+
+  const confirmarEliminarEmpleado = async () => {
+    if (!empleadoAEliminar) return;
+
+    const success = await gestionPersonalService.eliminarEmpleado(empleadoAEliminar.id);
+    if (success) {
+      toast.success('Empleado eliminado correctamente');
+      loadData();
+    } else {
+      toast.error('Error al eliminar empleado');
+    }
+    
+    setModalEliminar(false);
+    setEmpleadoAEliminar(null);
   };
 
   const stats = useMemo(() => {
@@ -316,21 +339,97 @@ export default function EstablecimientoPersonalPage() {
             </div>
 
             {/* Table */}
-            <UserTable
-              users={empleadosAsBaseUsers}
-              loading={false}
-              onEdit={(baseUser) => {
-                const empleado = empleados.find(e => e.id === baseUser.id);
-                if (empleado) handleEditarEmpleado(empleado);
-              }}
-              onToggleStatus={(userId) => {
-                const empleado = empleados.find(e => e.id === userId);
-                if (empleado) handleToggleEstado(empleado);
-              }}
-              onView={handleViewEmpleado}
-              showActions={true}
-              emptyMessage="No se encontraron empleados con los criterios especificados"
-            />
+            <div className="overflow-x-auto rounded-lg sm:rounded-xl border border-gray-100 -mx-3 sm:mx-0">
+              <table className="w-full text-xs sm:text-sm min-w-[640px]">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase">Nombre</th>
+                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase">Email</th>
+                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase">Puesto</th>
+                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase">Departamento</th>
+                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase">Estado</th>
+                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-center text-[10px] sm:text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {empleadosFiltrados.map((emp) => (
+                    <tr key={emp.id} className="hover:bg-gray-50 active:bg-gray-100 transition-colors">
+                      <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap">
+                        <div className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-[120px] sm:max-w-none">{emp.nombre} {emp.apellido}</div>
+                      </td>
+                      <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap">
+                        <div className="text-xs sm:text-sm text-gray-500 truncate max-w-[120px] sm:max-w-[180px] md:max-w-none">{emp.email}</div>
+                      </td>
+                      <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap">
+                        <div className="text-xs sm:text-sm text-gray-500 truncate max-w-[80px] sm:max-w-none">{emp.puesto}</div>
+                      </td>
+                      <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap">
+                        <div className="text-xs sm:text-sm text-gray-500 truncate max-w-[80px] sm:max-w-none">{emp.departamento}</div>
+                      </td>
+                      <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap">
+                        <Badge 
+                          className={`text-[10px] sm:text-xs px-1.5 sm:px-2 ${emp.estado === 'activo' 
+                            ? 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200' 
+                            : 'bg-red-100 text-red-800 border-red-300 hover:bg-red-200'
+                          }`}
+                        >
+                          {emp.estado === 'activo' ? '● Activo' : '● Inactivo'}
+                        </Badge>
+                      </td>
+                      <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-1 sm:gap-2">
+                          <Link
+                            href={`/establecimiento/personal/${emp.id}`}
+                            className="p-1.5 sm:p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-purple-600 hover:text-white active:bg-purple-700 transition-all duration-200 hover:scale-110 inline-flex items-center justify-center"
+                            title="Ver perfil"
+                          >
+                            <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </Link>
+                          <button
+                            onClick={() => handleEditarEmpleado(emp)}
+                            type="button"
+                            className="p-1.5 sm:p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-blue-600 hover:text-white active:bg-blue-700 transition-all duration-200 hover:scale-110"
+                            title="Editar"
+                          >
+                            <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleToggleEstado(emp)}
+                            type="button"
+                            className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 hover:scale-110 ${
+                              emp.estado === 'activo' 
+                                ? 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 active:bg-red-200' 
+                                : 'bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 active:bg-green-200'
+                            }`}
+                            title={emp.estado === 'activo' ? 'Desactivar' : 'Activar'}
+                          >
+                            {emp.estado === 'activo' ? (
+                              <UserX className="h-3 w-3 sm:h-4 sm:w-4" />
+                            ) : (
+                              <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleEliminarEmpleado(emp)}
+                            type="button"
+                            className="p-1.5 sm:p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-red-600 hover:text-white active:bg-red-700 transition-all duration-200 hover:scale-110"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {empleadosFiltrados.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-gray-500">No se encontraron empleados</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -407,6 +506,52 @@ export default function EstablecimientoPersonalPage() {
                 }`}
               >
                 {empleadoAToggle?.estado === 'activo' ? 'Desactivar' : 'Activar'}
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de Confirmación para Eliminar */}
+        <Dialog open={modalEliminar} onOpenChange={setModalEliminar}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold flex items-center gap-2 text-red-600">
+                <Trash2 className="w-6 h-6" />
+                Confirmar Eliminación
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p className="text-gray-700 font-medium">
+                ¿Estás seguro de eliminar a{' '}
+                <span className="font-bold text-red-600">
+                  {empleadoAEliminar?.nombre} {empleadoAEliminar?.apellido}
+                </span>
+                ?
+              </p>
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-800 font-medium flex items-start gap-2">
+                  <span className="text-lg">⚠️</span>
+                  <span>
+                    Esta acción es permanente y no se puede deshacer. Se eliminarán todos los datos asociados al empleado.
+                  </span>
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <button
+                onClick={() => {
+                  setModalEliminar(false);
+                  setEmpleadoAEliminar(null);
+                }}
+                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarEliminarEmpleado}
+                className="px-4 py-2 rounded-lg text-white bg-red-600 hover:bg-red-700"
+              >
+                Eliminar Permanentemente
               </button>
             </DialogFooter>
           </DialogContent>

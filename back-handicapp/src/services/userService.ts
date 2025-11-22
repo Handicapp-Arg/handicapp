@@ -168,11 +168,37 @@ export class UserService {
   }
 
   // Delete user (soft delete)
-  static async deleteUser(userId: string): Promise<ServiceResponse<null>> {
+  static async deleteUser(userId: string, currentUser?: { id: number; rol?: { clave: string }; establecimiento_id?: number | null }): Promise<ServiceResponse<null>> {
     try {
-      const user = await User.findByPk(userId);
+      const user = await User.findByPk(userId, {
+        include: [{
+          model: Role,
+          as: 'rol',
+          attributes: ['id', 'nombre', 'clave']
+        }]
+      });
+      
       if (!user) {
         throw new NotFoundError('User not found');
+      }
+
+      // Si el usuario que ejecuta la acción es un establecimiento, validar que solo pueda eliminar a sus empleados
+      if (currentUser && currentUser.rol?.clave === 'establecimiento') {
+        // No puede eliminarse a sí mismo
+        if (user.id === currentUser.id) {
+          throw new Error('No puedes eliminar tu propio usuario');
+        }
+
+        // Verificar que el usuario a eliminar sea un empleado (capataz, veterinario, empleado)
+        const empleadoRoles = ['capataz', 'veterinario', 'empleado'];
+        if (!user.rol || !empleadoRoles.includes(user.rol.clave)) {
+          throw new Error('Solo puedes eliminar usuarios de tipo capataz, veterinario o empleado');
+        }
+
+        // Verificar que el empleado pertenezca al mismo establecimiento
+        if (user.establecimiento_id !== currentUser.establecimiento_id) {
+          throw new Error('No tienes permisos para eliminar este usuario. Solo puedes eliminar empleados de tu establecimiento');
+        }
       }
 
       await user.destroy();
@@ -184,6 +210,10 @@ export class UserService {
     } catch (error) {
       if (error instanceof NotFoundError) {
         throw error;
+      }
+      // Propagar el error con el mensaje específico
+      if (error instanceof Error) {
+        throw new Error(error.message);
       }
       throw new Error('Failed to delete user');
     }

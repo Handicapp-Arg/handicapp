@@ -1,16 +1,22 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { TareaList } from '@/components/dashboard';
 import { useTareas } from '@/lib/hooks';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ClipboardList, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { ClipboardList, Clock, CheckCircle2, AlertTriangle, Filter, X } from 'lucide-react';
 import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 export default function EstablecimientoTareasPage() {
   const { data: tareas = [], isLoading: loading } = useTareas({ page: 1, limit: 500 });
+  
+  // Estados para filtros
+  const [filtroEstado, setFiltroEstado] = useState<string>('todos');
+  const [filtroPrioridad, setFiltroPrioridad] = useState<string>('todas');
+  const [filtroTipo, setFiltroTipo] = useState<string>('todos');
+  const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
   const tareasStats = useMemo(() => {
     const tareasArray = Array.isArray(tareas) ? tareas : (tareas as any)?.data || [];
@@ -27,6 +33,37 @@ export default function EstablecimientoTareasPage() {
 
     return { total, pendientes, completadas, vencidas };
   }, [tareas]);
+
+  // Función para aplicar filtros
+  const tareasFiltradas = useMemo(() => {
+    let tareasArray = Array.isArray(tareas) ? tareas : (tareas as any)?.data || [];
+    
+    // Filtrar por estado
+    if (filtroEstado !== 'todos') {
+      tareasArray = tareasArray.filter((t: any) => t.estado === filtroEstado);
+    }
+    
+    // Filtrar por prioridad
+    if (filtroPrioridad !== 'todas') {
+      tareasArray = tareasArray.filter((t: any) => t.prioridad === filtroPrioridad);
+    }
+    
+    // Filtrar por tipo
+    if (filtroTipo !== 'todos') {
+      tareasArray = tareasArray.filter((t: any) => t.tipo === filtroTipo);
+    }
+    
+    return tareasArray;
+  }, [tareas, filtroEstado, filtroPrioridad, filtroTipo]);
+
+  const limpiarFiltros = () => {
+    setFiltroEstado('todos');
+    setFiltroPrioridad('todas');
+    setFiltroTipo('todos');
+  };
+
+  const hayFiltrosActivos = filtroEstado !== 'todos' || filtroPrioridad !== 'todas' || 
+                           filtroTipo !== 'todos';
 
   if (loading) {
     return (
@@ -147,15 +184,124 @@ export default function EstablecimientoTareasPage() {
             </div>
           </div>
 
+          {/* Sección de Filtros */}
+          <Card className="rounded-2xl shadow-xl border-slate-200 mb-6">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Filter className="w-5 h-5 text-slate-600" />
+                  <h2 className="text-lg font-semibold text-slate-900">Filtros</h2>
+                  {hayFiltrosActivos && (
+                    <Badge variant="secondary" className="ml-2 bg-emerald-100 text-emerald-800">
+                      Activos
+                    </Badge>
+                  )}
+                </div>
+                <button
+                  onClick={() => setMostrarFiltros(!mostrarFiltros)}
+                  className="text-sm text-slate-600 hover:text-slate-900 font-medium"
+                >
+                  {mostrarFiltros ? 'Ocultar' : 'Mostrar'}
+                </button>
+              </div>
+            </CardHeader>
+            {mostrarFiltros && (
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                  {/* Filtro Estado */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Estado
+                    </label>
+                    <select
+                      value={filtroEstado}
+                      onChange={(e) => setFiltroEstado(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
+                    >
+                      <option value="todos">Todos</option>
+                      <option value="pendiente">Pendiente</option>
+                      <option value="en_progreso">En Progreso</option>
+                      <option value="completada">Completada</option>
+                      <option value="cancelada">Cancelada</option>
+                    </select>
+                  </div>
+
+                  {/* Filtro Prioridad */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Prioridad
+                    </label>
+                    <select
+                      value={filtroPrioridad}
+                      onChange={(e) => setFiltroPrioridad(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
+                    >
+                      <option value="todas">Todas</option>
+                      <option value="baja">Baja</option>
+                      <option value="media">Media</option>
+                      <option value="alta">Alta</option>
+                      <option value="urgente">Urgente</option>
+                    </select>
+                  </div>
+
+                  {/* Filtro Tipo */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Tipo
+                    </label>
+                    <select
+                      value={filtroTipo}
+                      onChange={(e) => setFiltroTipo(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
+                    >
+                      <option value="todos">Todos</option>
+                      <option value="alimentacion">Alimentación</option>
+                      <option value="limpieza">Limpieza</option>
+                      <option value="entrenamiento">Entrenamiento</option>
+                      <option value="veterinaria">Veterinaria</option>
+                      <option value="herreria">Herrería</option>
+                      <option value="mantenimiento">Mantenimiento</option>
+                      <option value="administrativa">Administrativa</option>
+                      <option value="otra">Otra</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Botón Limpiar Filtros */}
+                {hayFiltrosActivos && (
+                  <div className="flex justify-end">
+                    <button
+                      onClick={limpiarFiltros}
+                      className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                      Limpiar Filtros
+                    </button>
+                  </div>
+                )}
+
+                {/* Indicador de resultados */}
+                <div className="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <p className="text-sm text-slate-600">
+                    Mostrando <span className="font-semibold text-slate-900">{tareasFiltradas.length}</span> de{' '}
+                    <span className="font-semibold text-slate-900">{tareasStats.total}</span> tareas
+                  </p>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+
           {/* Tareas List */}
           <Card className="rounded-2xl shadow-xl border-slate-200">
             <CardHeader>
               <CardDescription>
-                Lista completa de tareas del establecimiento
+                {hayFiltrosActivos 
+                  ? `Mostrando ${tareasFiltradas.length} tareas filtradas` 
+                  : 'Lista completa de tareas del establecimiento'}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <TareaList />
+              <TareaList tareasProp={tareasFiltradas} />
             </CardContent>
           </Card>
         </div>

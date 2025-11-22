@@ -56,7 +56,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   
   establecimiento: [
     // Gestión de su establecimiento
-    'users:read', 'users:write',  // ✅ Puede crear y gestionar usuarios de su establecimiento
+    'users:read', 'users:write', 'users:delete',  // ✅ Puede crear, gestionar y eliminar usuarios de su establecimiento
     'establishments:read', 'establishments:write',
     'establishments:manage_users', 'establishments:view_stats',
     'horses:read', 'horses:write',

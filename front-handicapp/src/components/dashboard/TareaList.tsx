@@ -27,7 +27,11 @@ import {
 } from 'lucide-react';
 import { logger } from '@/lib/utils/logger';
 
-export function TareaList() {
+interface TareaListProps {
+  tareasProp?: Tarea[];
+}
+
+export function TareaList({ tareasProp }: TareaListProps) {
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,13 +43,17 @@ export function TareaList() {
   const { canCreateTasks, canDeleteTasks, hasPermission, getUserRole } = usePermissions();
 
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
+    // Si se pasan tareas como prop, usar esas
+    if (tareasProp) {
+      setTareas(tareasProp);
+      setLoading(false);
+    } else if (!authLoading && isAuthenticated) {
       fetchTareas();
     }
-  }, [currentPage, searchTerm, authLoading, isAuthenticated]);
+  }, [currentPage, searchTerm, authLoading, isAuthenticated, tareasProp]);
 
   const fetchTareas = async () => {
-    if (authLoading || !isAuthenticated) return;
+    if (authLoading || !isAuthenticated || tareasProp) return; // No fetch si hay tareasProp
     try {
       setLoading(true);
       const response: any = await tareaService.getAll({ page: currentPage, limit: 10, search: searchTerm });
@@ -110,13 +118,18 @@ export function TareaList() {
   };
 
   const handleFormSuccess = async () => {
-    await fetchTareas();
+    if (!tareasProp) {
+      await fetchTareas();
+    }
   };
 
-  const filteredTareas = tareas.filter(tarea =>
-    tarea.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (tarea.descripcion && tarea.descripcion.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Aplicar búsqueda solo si no se usan filtros externos (tareasProp)
+  const filteredTareas = !tareasProp 
+    ? tareas.filter(tarea =>
+        tarea.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (tarea.descripcion && tarea.descripcion.toLowerCase().includes(searchTerm.toLowerCase()))
+      )
+    : tareas; // Si hay tareasProp, ya vienen filtradas
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
@@ -169,19 +182,34 @@ export function TareaList() {
 
   return (
     <div className="p-6">
-      {/* Buscador + Acción */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-8">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-          <input
-            type="text"
-            placeholder="Buscar por título o descripción..."
-            value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+      {/* Buscador + Acción - Solo mostrar si no hay tareasProp (filtros externos) */}
+      {!tareasProp && (
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-8">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <input
+              type="text"
+              placeholder="Buscar por título o descripción..."
+              value={searchTerm}
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+          {canCreateTasks() && (
+            <button 
+              onClick={handleCreateTarea}
+              className="inline-flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm text-sm font-semibold whitespace-nowrap"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Nueva Tarea
+            </button>
+          )}
         </div>
-        {canCreateTasks() && (
+      )}
+
+      {/* Botón crear tarea cuando hay filtros externos */}
+      {tareasProp && canCreateTasks() && (
+        <div className="flex justify-end mb-6">
           <button 
             onClick={handleCreateTarea}
             className="inline-flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm text-sm font-semibold whitespace-nowrap"
@@ -189,8 +217,8 @@ export function TareaList() {
             <Plus className="h-5 w-5 mr-2" />
             Nueva Tarea
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="max-w-7xl">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

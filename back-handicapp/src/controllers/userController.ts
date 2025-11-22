@@ -89,12 +89,28 @@ export class UserController {
   // Delete user
   static deleteUser = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
     const { id } = req.params;
+    const authReq = req as AuthenticatedRequest;
+    const currentUser = authReq.user;
     
     if (!id) {
       return ResponseHelper.badRequest(res, 'User ID is required');
     }
     
-    const result = await UserService.deleteUser(id);
+    // Mapear currentUser al formato esperado por el servicio
+    let userContext: { id: number; rol?: { clave: string }; establecimiento_id?: number | null } | undefined;
+    
+    if (currentUser) {
+      userContext = {
+        id: currentUser.id,
+        establecimiento_id: currentUser.establecimiento_id ?? null
+      };
+      
+      if (currentUser.rol) {
+        userContext.rol = { clave: currentUser.rol.clave };
+      }
+    }
+    
+    const result = await UserService.deleteUser(id, userContext);
     
     if (result.success) {
       return ResponseHelper.success(res, null, 'User deleted successfully');
