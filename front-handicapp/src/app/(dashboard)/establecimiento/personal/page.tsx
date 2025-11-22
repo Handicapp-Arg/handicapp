@@ -24,6 +24,8 @@ export default function EstablecimientoPersonalPage() {
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<string>('todos');
+  const [filtroPuesto, setFiltroPuesto] = useState<string>('todos');
+  const [filtroDepartamento, setFiltroDepartamento] = useState<string>('todos');
   const [modalNuevo, setModalNuevo] = useState(false);
   const [modalEditar, setModalEditar] = useState(false);
   const [modalConfirm, setModalConfirm] = useState(false);
@@ -145,6 +147,17 @@ export default function EstablecimientoPersonalPage() {
     };
   }, [estadisticas]);
 
+  // Obtener listas únicas de puestos y departamentos
+  const puestosUnicos = useMemo(() => {
+    const puestos = empleados.map(emp => emp.puesto).filter(Boolean);
+    return Array.from(new Set(puestos)).sort();
+  }, [empleados]);
+
+  const departamentosUnicos = useMemo(() => {
+    const departamentos = empleados.map(emp => emp.departamento).filter(Boolean);
+    return Array.from(new Set(departamentos)).sort();
+  }, [empleados]);
+
   const empleadosFiltrados = useMemo(() => {
     let filtered = empleados;
     
@@ -162,8 +175,18 @@ export default function EstablecimientoPersonalPage() {
       filtered = filtered.filter(emp => emp.estado === filtroEstado);
     }
     
+    // Filtro por puesto
+    if (filtroPuesto !== 'todos') {
+      filtered = filtered.filter(emp => emp.puesto === filtroPuesto);
+    }
+    
+    // Filtro por departamento
+    if (filtroDepartamento !== 'todos') {
+      filtered = filtered.filter(emp => emp.departamento === filtroDepartamento);
+    }
+    
     return filtered;
-  }, [empleados, busqueda, filtroEstado]);
+  }, [empleados, busqueda, filtroEstado, filtroPuesto, filtroDepartamento]);
 
   // Transform empleados to BaseUser format for UserTable
   const empleadosAsBaseUsers: BaseUser[] = useMemo(() => {
@@ -315,8 +338,8 @@ export default function EstablecimientoPersonalPage() {
           </CardHeader>
           <CardContent className="px-3 sm:px-4 md:px-6">
             {/* Filters */}
-            <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-2 sm:gap-4">
-              <div className="flex-1 relative">
+            <div className="mb-4 sm:mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+              <div className="sm:col-span-2 lg:col-span-1 relative">
                 <input
                   type="text"
                   placeholder="Buscar por nombre, apellido o email..."
@@ -326,6 +349,7 @@ export default function EstablecimientoPersonalPage() {
                 />
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
               </div>
+              
               <select
                 value={filtroEstado}
                 onChange={(e) => setFiltroEstado(e.target.value)}
@@ -335,6 +359,28 @@ export default function EstablecimientoPersonalPage() {
                 <option value="activo">Activos</option>
                 <option value="inactivo">Inactivos</option>
                 <option value="ausente">Ausentes</option>
+              </select>
+
+              <select
+                value={filtroPuesto}
+                onChange={(e) => setFiltroPuesto(e.target.value)}
+                className="px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-xs sm:text-sm"
+              >
+                <option value="todos">Todos los puestos</option>
+                {puestosUnicos.map(puesto => (
+                  <option key={puesto} value={puesto}>{puesto}</option>
+                ))}
+              </select>
+
+              <select
+                value={filtroDepartamento}
+                onChange={(e) => setFiltroDepartamento(e.target.value)}
+                className="px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-xs sm:text-sm"
+              >
+                <option value="todos">Todos los departamentos</option>
+                {departamentosUnicos.map(depto => (
+                  <option key={depto} value={depto}>{depto}</option>
+                ))}
               </select>
             </div>
 
