@@ -31,7 +31,14 @@ export class EventoController {
         caballo_id,
         establecimiento_id,
         costo_monto,
-        costo_moneda
+        costo_moneda,
+        hora_inicio,
+        hora_fin,
+        ubicacion,
+        estado,
+        prioridad,
+        es_publico,
+        requiere_validacion
       } = req.body;
       
       const usuarioId = req.user!.id;
@@ -50,7 +57,14 @@ export class EventoController {
         caballo_id,
         establecimiento_id,
         costo_monto,
-        costo_moneda
+        costo_moneda,
+        hora_inicio,
+        hora_fin,
+        ubicacion,
+        estado,
+        prioridad,
+        es_publico,
+        requiere_validacion
       } as any;
 
       const eventoResult = await EventoService.createEvento(createData, usuarioId, req.user!.rol?.clave);
