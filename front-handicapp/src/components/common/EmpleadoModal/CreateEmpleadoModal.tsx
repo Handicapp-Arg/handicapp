@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import toast from 'react-hot-toast';
+import { useToaster } from '@/components/ui/toaster';
 import type { CrearEmpleadoDTO } from '@/lib/gestionPersonalService';
 
 interface Role {
@@ -22,7 +22,7 @@ interface CreateEmpleadoModalProps {
   onClose: () => void;
   onEmpleadoCreated: () => void;
   roles: Role[];
-  createEmpleadoFn: (data: CrearEmpleadoDTO) => Promise<{ passwordTemporal: string } | null>;
+  createEmpleadoFn: (data: CrearEmpleadoDTO) => Promise<{ passwordTemporal: string }>;
   primaryColor?: string;
 }
 
@@ -34,6 +34,8 @@ export function CreateEmpleadoModal({
   createEmpleadoFn,
   primaryColor = '#059669', // emerald-600
 }: CreateEmpleadoModalProps) {
+  const { toast } = useToaster();
+  
   const [formData, setFormData] = useState<CrearEmpleadoDTO>({
     nombre: '',
     apellido: '',
@@ -48,14 +50,50 @@ export function CreateEmpleadoModal({
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
+    console.log('🔍 handleSubmit llamado, formData:', formData);
+    
     // Validations
-    if (!formData.nombre || !formData.apellido || !formData.email || !formData.documento) {
-      toast.error('Por favor completa todos los campos obligatorios');
+    if (!formData.nombre?.trim()) {
+      console.log('❌ Validación falló: nombre vacío');
+      toast('El nombre es obligatorio', 'error');
+      return;
+    }
+
+    if (!formData.apellido?.trim()) {
+      console.log('❌ Validación falló: apellido vacío');
+      toast('El apellido es obligatorio', 'error');
+      return;
+    }
+
+    if (!formData.email?.trim()) {
+      console.log('❌ Validación falló: email vacío');
+      toast('El email es obligatorio', 'error');
+      return;
+    }
+
+    if (!formData.documento?.trim()) {
+      console.log('❌ Validación falló: documento vacío');
+      toast('El documento es obligatorio', 'error');
+      return;
+    }
+
+    if (formData.nombre.trim().length < 2) {
+      toast('El nombre debe tener al menos 2 caracteres', 'error');
+      return;
+    }
+
+    if (formData.apellido.trim().length < 2) {
+      toast('El apellido debe tener al menos 2 caracteres', 'error');
       return;
     }
 
     if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      toast.error('Por favor ingresa un email válido');
+      toast('Por favor ingresa un email válido', 'error');
+      return;
+    }
+
+    if (!formData.rol_id || formData.rol_id < 1) {
+      toast('Debes seleccionar un rol', 'error');
       return;
     }
 
@@ -65,7 +103,7 @@ export function CreateEmpleadoModal({
       const result = await createEmpleadoFn(formData);
       
       if (result) {
-        toast.success(`Empleado creado. Contraseña temporal: ${result.passwordTemporal}`);
+        toast(`Empleado creado. Contraseña temporal: ${result.passwordTemporal}`, 'success');
         onEmpleadoCreated();
         onClose();
         
@@ -81,13 +119,28 @@ export function CreateEmpleadoModal({
           departamento: 'Operaciones',
           puesto: 'Auxiliar',
         });
-      } else {
-        toast.error('Error al crear empleado');
       }
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('Error creating empleado:', error);
-      const message = error instanceof Error ? error.message : 'Error al crear empleado';
-      toast.error(message);
+      
+      // HttpError del backend: error.data contiene { success, message, errors? }
+      let errorMessage = 'Error al crear empleado';
+      
+      if (error?.data) {
+        // Respuesta del backend
+        if (error.data.message) {
+          errorMessage = error.data.message;
+        }
+        
+        // Si hay errores de validación adicionales, agregarlos
+        if (error.data.errors && Array.isArray(error.data.errors) && error.data.errors.length > 0) {
+          errorMessage += ': ' + error.data.errors.join(', ');
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      toast(errorMessage, 'error');
     } finally {
       setLoading(false);
     }
@@ -111,8 +164,11 @@ export function CreateEmpleadoModal({
                 value={formData.nombre}
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                 className="w-full mt-1 px-3 py-2 border rounded-lg"
-                placeholder="Juan"
+                placeholder="Ej: Juan"
+                minLength={2}
+                maxLength={100}
               />
+              <p className="text-xs text-gray-500 mt-1">Mínimo 2 caracteres</p>
             </div>
             <div>
               <label className="text-sm font-medium">Apellido *</label>
@@ -121,8 +177,11 @@ export function CreateEmpleadoModal({
                 value={formData.apellido}
                 onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
                 className="w-full mt-1 px-3 py-2 border rounded-lg"
-                placeholder="Pérez"
+                placeholder="Ej: Pérez"
+                minLength={2}
+                maxLength={100}
               />
+              <p className="text-xs text-gray-500 mt-1">Mínimo 2 caracteres</p>
             </div>
           </div>
           <div>

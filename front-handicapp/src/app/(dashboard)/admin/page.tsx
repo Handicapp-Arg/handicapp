@@ -32,7 +32,7 @@ export default function AdminDashboard() {
     },
     {
       label: 'Establecimientos',
-      value: 0, // DashboardStats does not have establecimientos
+      value: stats.establecimientos?.total || 0,
       icon: Building2,
       color: 'success',
       badges: [{ label: 'Registrados', variant: 'secondary' }],
@@ -69,7 +69,7 @@ export default function AdminDashboard() {
       href: '/admin/establecimientos',
       icon: Building2,
       colorScheme: 'green',
-      count: 0, // No establecimientos in DashboardStats
+      count: stats.establecimientos?.total || 0,
     },
     {
       title: 'Reportes',

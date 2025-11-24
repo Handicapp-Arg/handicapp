@@ -6,7 +6,7 @@ import { EstablecimientoForm } from '@/components/dashboard/EstablecimientoForm'
 import { SimpleAdminOnly } from '@/components/common/SimplePermissionGuard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Building2, MapPin, Phone, Mail, Home, Power, PowerOff, Plus, ArrowLeft } from 'lucide-react';
+import { Building2, MapPin, Phone, Mail, Home, Power, PowerOff, Plus, ArrowLeft, Users } from 'lucide-react';
 import { type Establecimiento, establecimientoService } from '@/lib/services/establecimientoService';
 
 export default function AdminEstablecimientosPage() {
@@ -250,6 +250,97 @@ export default function AdminEstablecimientosPage() {
                   </CardContent>
                 </Card>
               )}
+
+              {/* Administrador del establecimiento */}
+              {est.usuarios && est.usuarios.length > 0 && (() => {
+                const adminUser = est.usuarios.find((u: any) => u.rol?.clave === 'establecimiento');
+                return adminUser ? (
+                  <Card className="border-2 border-blue-200 bg-blue-50/50">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2 text-blue-900">
+                        <Users className="w-5 h-5" />
+                        Administrador del Establecimiento
+                      </CardTitle>
+                      <CardDescription className="text-blue-700">
+                        Usuario principal con permisos de administración
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-blue-200">
+                        <div className="flex items-center gap-4">
+                          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+                            <span className="text-white font-bold text-lg">
+                              {adminUser.nombre?.[0]}{adminUser.apellido?.[0]}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900 text-lg">
+                              {adminUser.nombre} {adminUser.apellido}
+                            </p>
+                            <p className="text-sm text-gray-600 flex items-center gap-1.5 mt-1">
+                              <Mail className="w-4 h-4" />
+                              {adminUser.email}
+                            </p>
+                            {adminUser.creado_el && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                Creado: {new Date(adminUser.creado_el).toLocaleDateString('es-AR')}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <Badge className="bg-blue-600 text-white px-3 py-1">
+                          👑 Administrador
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : null;
+              })()}
+
+              {/* Otros usuarios del establecimiento */}
+              {est.usuarios && est.usuarios.length > 0 && (() => {
+                const otherUsers = est.usuarios.filter((u: any) => u.rol?.clave !== 'establecimiento');
+                return otherUsers.length > 0 ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Users className="w-5 h-5" />
+                        Personal del Establecimiento
+                      </CardTitle>
+                      <CardDescription>
+                        Otros usuarios con acceso a este establecimiento
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {otherUsers.map((usuario: any) => (
+                          <div 
+                            key={usuario.id} 
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                <span className="text-gray-600 font-semibold">
+                                  {usuario.nombre?.[0]}{usuario.apellido?.[0]}
+                                </span>
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-900">
+                                  {usuario.nombre} {usuario.apellido}
+                                </p>
+                                <p className="text-sm text-gray-500">{usuario.email}</p>
+                              </div>
+                            </div>
+                            <Badge variant="secondary" className="capitalize">
+                              {usuario.rol?.nombre || usuario.rol?.clave || 'Usuario'}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : null;
+              })()}
 
               {/* Información adicional */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

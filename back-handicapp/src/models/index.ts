@@ -219,16 +219,28 @@ export function initializeModels(sequelize: Sequelize) {
   Role.hasMany(User, { foreignKey: "rol_id", as: "usuarios" });
 
   // 2. Usuario ↔ Establecimiento (muchos a muchos via MembresiaUsuarioEstablecimiento)
-  User.belongsToMany(Establecimiento, {
-    through: MembresiaUsuarioEstablecimiento,
-    foreignKey: "usuario_id",
-    otherKey: "establecimiento_id",
-    as: "establecimientos"
+  // NOTA: Comentado temporalmente - se usará para sistema de membresías en producción
+  // User.belongsToMany(Establecimiento, {
+  //   through: MembresiaUsuarioEstablecimiento,
+  //   foreignKey: "usuario_id",
+  //   otherKey: "establecimiento_id",
+  //   as: "establecimientos"
+  // });
+  // Establecimiento.belongsToMany(User, {
+  //   through: MembresiaUsuarioEstablecimiento,
+  //   foreignKey: "establecimiento_id", 
+  //   otherKey: "usuario_id",
+  //   as: "usuarios_membresia"
+  // });
+
+  // Relación directa Usuario -> Establecimiento (establecimiento_id en usuarios)
+  // Esta es la relación activa actualmente
+  User.belongsTo(Establecimiento, {
+    foreignKey: "establecimiento_id",
+    as: "establecimiento"
   });
-  Establecimiento.belongsToMany(User, {
-    through: MembresiaUsuarioEstablecimiento,
-    foreignKey: "establecimiento_id", 
-    otherKey: "usuario_id",
+  Establecimiento.hasMany(User, {
+    foreignKey: "establecimiento_id",
     as: "usuarios"
   });
 

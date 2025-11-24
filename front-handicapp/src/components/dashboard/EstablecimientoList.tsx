@@ -331,6 +331,30 @@ export function EstablecimientoList({
                       </div>
                     )}
                   </div>
+
+                  {/* Administrador del establecimiento - solo para admin */}
+                  {establecimiento.usuarios && establecimiento.usuarios.length > 0 && (() => {
+                    const admin = establecimiento.usuarios.find((u: any) => u.rol?.clave === 'establecimiento');
+                    return admin ? (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <div className="h-6 w-6 rounded-full bg-blue-500 flex items-center justify-center">
+                            <span className="text-white font-bold text-xs">
+                              {admin.nombre?.[0]}{admin.apellido?.[0]}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold text-blue-900 truncate">
+                              {admin.nombre} {admin.apellido}
+                            </p>
+                            <p className="text-xs text-blue-700 truncate">
+                              👑 Administrador
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
 
                 {/* Botón */}

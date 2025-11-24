@@ -1,69 +1,44 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import { TareaKanban } from '@/components/dashboard/TareaKanban';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
-import { TareaList } from '@/components/dashboard';
-import { useTareas } from '@/lib/hooks';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ClipboardList, Clock, CheckCircle2, AlertTriangle, Filter, X } from 'lucide-react';
+import { ClipboardList, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { useEffect, useState, useMemo } from 'react';
+import { tareaService, type Tarea } from '@/lib/services/tareaService';
 
 export default function EstablecimientoTareasPage() {
-  const { data: tareas = [], isLoading: loading } = useTareas({ page: 1, limit: 500 });
-  
-  // Estados para filtros
-  const [filtroEstado, setFiltroEstado] = useState<string>('todos');
-  const [filtroPrioridad, setFiltroPrioridad] = useState<string>('todas');
-  const [filtroTipo, setFiltroTipo] = useState<string>('todos');
-  const [mostrarFiltros, setMostrarFiltros] = useState(false);
+  const [tareas, setTareas] = useState<Tarea[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const tareasStats = useMemo(() => {
-    const tareasArray = Array.isArray(tareas) ? tareas : (tareas as any)?.data || [];
-    const now = new Date();
-    
-    const total = tareasArray.length;
-    const pendientes = tareasArray.filter((t: any) => t.estado === 'pendiente').length;
-    const completadas = tareasArray.filter((t: any) => t.estado === 'completada').length;
-    const vencidas = tareasArray.filter((t: any) => {
-      if (t.estado === 'completada') return false;
-      const fechaVencimiento = new Date(t.fecha_vencimiento);
-      return fechaVencimiento < now;
-    }).length;
+  useEffect(() => {
+    const fetchTareas = async () => {
+      try {
+        setLoading(true);
+        const response: any = await tareaService.getAll({ page: 1, limit: 500 });
+        const tareasData = response?.data?.tareas || response?.tareas || response?.data || response || [];
+        setTareas(Array.isArray(tareasData) ? tareasData : []);
+      } catch (error) {
+        console.error('Error loading tareas:', error);
+        setTareas([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    return { total, pendientes, completadas, vencidas };
+    fetchTareas();
+  }, []);
+
+  const stats = useMemo(() => {
+    const total = tareas.length;
+    const pendientes = tareas.filter((t: any) => t.estado === 'pendiente').length;
+    const completadas = tareas.filter((t: any) => t.estado === 'completada').length;
+    const enProgreso = tareas.filter((t: any) => t.estado === 'en_progreso').length;
+
+    return { total, pendientes, completadas, enProgreso };
   }, [tareas]);
-
-  // Función para aplicar filtros
-  const tareasFiltradas = useMemo(() => {
-    let tareasArray = Array.isArray(tareas) ? tareas : (tareas as any)?.data || [];
-    
-    // Filtrar por estado
-    if (filtroEstado !== 'todos') {
-      tareasArray = tareasArray.filter((t: any) => t.estado === filtroEstado);
-    }
-    
-    // Filtrar por prioridad
-    if (filtroPrioridad !== 'todas') {
-      tareasArray = tareasArray.filter((t: any) => t.prioridad === filtroPrioridad);
-    }
-    
-    // Filtrar por tipo
-    if (filtroTipo !== 'todos') {
-      tareasArray = tareasArray.filter((t: any) => t.tipo === filtroTipo);
-    }
-    
-    return tareasArray;
-  }, [tareas, filtroEstado, filtroPrioridad, filtroTipo]);
-
-  const limpiarFiltros = () => {
-    setFiltroEstado('todos');
-    setFiltroPrioridad('todas');
-    setFiltroTipo('todos');
-  };
-
-  const hayFiltrosActivos = filtroEstado !== 'todos' || filtroPrioridad !== 'todas' || 
-                           filtroTipo !== 'todos';
 
   if (loading) {
     return (
@@ -75,235 +50,105 @@ export default function EstablecimientoTareasPage() {
 
   return (
     <SimpleRoleGuard roles={['establecimiento']}>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30">
-        <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="mx-auto">
+        <div className="relative overflow-hidden mb-8 rounded-2xl">
+          <div className="absolute inset-0 bg-[#0f172a]"></div>
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-60"></div>
+          <div className="absolute top-0 right-1/4 w-64 h-64 bg-emerald-600/30 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-green-500/20 rounded-full blur-3xl"></div>
           
-          {/* Hero Section */}
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 mb-8 shadow-2xl">
-            <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,transparent,black)]"></div>
-            <div className="absolute top-0 right-0 -mt-4 -mr-4 w-72 h-72 bg-emerald-500/20 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-72 h-72 bg-green-500/20 rounded-full blur-3xl"></div>
-            
-            <div className="relative px-8 py-12">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-3 bg-emerald-500/10 backdrop-blur-sm rounded-2xl border border-emerald-500/20">
-                      <ClipboardList className="w-8 h-8 text-emerald-400" />
-                    </div>
-                    <div>
-                      <h1 className="text-3xl font-bold text-white mb-1">Gestión de Tareas</h1>
-                      <p className="text-slate-300">Organiza y monitorea las tareas del establecimiento</p>
+          <div className="relative z-10 px-6 sm:px-8 lg:px-12 py-6">
+            <div className="mb-6">
+              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 leading-tight">
+                Gestión de Tareas
+              </h1>
+              <p className="text-sm sm:text-base text-white/70">
+                Asigna, supervisa y gestiona las tareas del establecimiento
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardDescription className="text-[10px] font-semibold text-emerald-300 uppercase tracking-wider">
+                      Total Tareas
+                    </CardDescription>
+                    <div className="p-1.5 rounded-lg bg-emerald-500/20">
+                      <ClipboardList className="w-3 h-3 text-emerald-300" />
                     </div>
                   </div>
-                </div>
-              </div>
+                </CardHeader>
+                <CardContent className="pb-3">
+                  <p className="text-2xl font-bold text-white tabular-nums">{stats.total}</p>
+                  <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
+                    Todas
+                  </Badge>
+                </CardContent>
+              </Card>
+
+              <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardDescription className="text-[10px] font-semibold text-amber-300 uppercase tracking-wider">
+                      Pendientes
+                    </CardDescription>
+                    <div className="p-1.5 rounded-lg bg-amber-500/20">
+                      <Clock className="w-3 h-3 text-amber-300" />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pb-3">
+                  <p className="text-2xl font-bold text-white tabular-nums">{stats.pendientes}</p>
+                  <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
+                    Por realizar
+                  </Badge>
+                </CardContent>
+              </Card>
+
+              <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardDescription className="text-[10px] font-semibold text-green-300 uppercase tracking-wider">
+                      Completadas
+                    </CardDescription>
+                    <div className="p-1.5 rounded-lg bg-green-500/20">
+                      <CheckCircle2 className="w-3 h-3 text-green-300" />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pb-3">
+                  <p className="text-2xl font-bold text-white tabular-nums">{stats.completadas}</p>
+                  <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
+                    Finalizadas
+                  </Badge>
+                </CardContent>
+              </Card>
+
+              <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardDescription className="text-[10px] font-semibold text-blue-300 uppercase tracking-wider">
+                      En Progreso
+                    </CardDescription>
+                    <div className="p-1.5 rounded-lg bg-blue-500/20">
+                      <AlertTriangle className="w-3 h-3 text-blue-300" />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pb-3">
+                  <p className="text-2xl font-bold text-white tabular-nums">{stats.enProgreso}</p>
+                  <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
+                    En ejecución
+                  </Badge>
+                </CardContent>
+              </Card>
             </div>
           </div>
+        </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {/* Total Tareas */}
-            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 shadow-xl hover:shadow-2xl transition-all duration-300">
-              <div className="absolute inset-0 bg-grid-white/5"></div>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl group-hover:bg-orange-500/20 transition-all"></div>
-              
-              <div className="relative">
-                <div className="flex items-center justify-between mb-4">
-                  <ClipboardList className="w-8 h-8 text-orange-400" />
-                  <Badge variant="secondary" className="bg-white/5 text-white border-white/10 backdrop-blur-sm">
-                    Total
-                  </Badge>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-slate-300">Total Tareas</p>
-                  <p className="text-3xl font-bold text-white">{tareasStats.total}</p>
-                  <p className="text-xs text-slate-400">En el sistema</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Pendientes */}
-            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 shadow-xl hover:shadow-2xl transition-all duration-300">
-              <div className="absolute inset-0 bg-grid-white/5"></div>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition-all"></div>
-              
-              <div className="relative">
-                <div className="flex items-center justify-between mb-4">
-                  <Clock className="w-8 h-8 text-amber-400" />
-                  <Badge variant="secondary" className="bg-white/5 text-white border-white/10 backdrop-blur-sm">
-                    Pendientes
-                  </Badge>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-slate-300">Pendientes</p>
-                  <p className="text-3xl font-bold text-white">{tareasStats.pendientes}</p>
-                  <p className="text-xs text-slate-400">Por realizar</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Completadas */}
-            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 shadow-xl hover:shadow-2xl transition-all duration-300">
-              <div className="absolute inset-0 bg-grid-white/5"></div>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-2xl group-hover:bg-green-500/20 transition-all"></div>
-              
-              <div className="relative">
-                <div className="flex items-center justify-between mb-4">
-                  <CheckCircle2 className="w-8 h-8 text-green-400" />
-                  <Badge variant="secondary" className="bg-white/5 text-white border-white/10 backdrop-blur-sm">
-                    {((tareasStats.completadas / tareasStats.total) * 100 || 0).toFixed(0)}%
-                  </Badge>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-slate-300">Completadas</p>
-                  <p className="text-3xl font-bold text-white">{tareasStats.completadas}</p>
-                  <p className="text-xs text-slate-400">Finalizadas</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Vencidas */}
-            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 shadow-xl hover:shadow-2xl transition-all duration-300">
-              <div className="absolute inset-0 bg-grid-white/5"></div>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-2xl group-hover:bg-red-500/20 transition-all"></div>
-              
-              <div className="relative">
-                <div className="flex items-center justify-between mb-4">
-                  <AlertTriangle className="w-8 h-8 text-red-400" />
-                  <Badge variant="secondary" className="bg-white/5 text-white border-white/10 backdrop-blur-sm">
-                    Vencidas
-                  </Badge>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-slate-300">Vencidas</p>
-                  <p className="text-3xl font-bold text-white">{tareasStats.vencidas}</p>
-                  <p className="text-xs text-slate-400">Requieren atención</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Sección de Filtros */}
-          <Card className="rounded-2xl shadow-xl border-slate-200 mb-6">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Filter className="w-5 h-5 text-slate-600" />
-                  <h2 className="text-lg font-semibold text-slate-900">Filtros</h2>
-                  {hayFiltrosActivos && (
-                    <Badge variant="secondary" className="ml-2 bg-emerald-100 text-emerald-800">
-                      Activos
-                    </Badge>
-                  )}
-                </div>
-                <button
-                  onClick={() => setMostrarFiltros(!mostrarFiltros)}
-                  className="text-sm text-slate-600 hover:text-slate-900 font-medium"
-                >
-                  {mostrarFiltros ? 'Ocultar' : 'Mostrar'}
-                </button>
-              </div>
-            </CardHeader>
-            {mostrarFiltros && (
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                  {/* Filtro Estado */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Estado
-                    </label>
-                    <select
-                      value={filtroEstado}
-                      onChange={(e) => setFiltroEstado(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
-                    >
-                      <option value="todos">Todos</option>
-                      <option value="pendiente">Pendiente</option>
-                      <option value="en_progreso">En Progreso</option>
-                      <option value="completada">Completada</option>
-                      <option value="cancelada">Cancelada</option>
-                    </select>
-                  </div>
-
-                  {/* Filtro Prioridad */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Prioridad
-                    </label>
-                    <select
-                      value={filtroPrioridad}
-                      onChange={(e) => setFiltroPrioridad(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
-                    >
-                      <option value="todas">Todas</option>
-                      <option value="baja">Baja</option>
-                      <option value="media">Media</option>
-                      <option value="alta">Alta</option>
-                      <option value="urgente">Urgente</option>
-                    </select>
-                  </div>
-
-                  {/* Filtro Tipo */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Tipo
-                    </label>
-                    <select
-                      value={filtroTipo}
-                      onChange={(e) => setFiltroTipo(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
-                    >
-                      <option value="todos">Todos</option>
-                      <option value="alimentacion">Alimentación</option>
-                      <option value="limpieza">Limpieza</option>
-                      <option value="entrenamiento">Entrenamiento</option>
-                      <option value="veterinaria">Veterinaria</option>
-                      <option value="herreria">Herrería</option>
-                      <option value="mantenimiento">Mantenimiento</option>
-                      <option value="administrativa">Administrativa</option>
-                      <option value="otra">Otra</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Botón Limpiar Filtros */}
-                {hayFiltrosActivos && (
-                  <div className="flex justify-end">
-                    <button
-                      onClick={limpiarFiltros}
-                      className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                      Limpiar Filtros
-                    </button>
-                  </div>
-                )}
-
-                {/* Indicador de resultados */}
-                <div className="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                  <p className="text-sm text-slate-600">
-                    Mostrando <span className="font-semibold text-slate-900">{tareasFiltradas.length}</span> de{' '}
-                    <span className="font-semibold text-slate-900">{tareasStats.total}</span> tareas
-                  </p>
-                </div>
-              </CardContent>
-            )}
-          </Card>
-
-          {/* Tareas List */}
-          <Card className="rounded-2xl shadow-xl border-slate-200">
-            <CardHeader>
-              <CardDescription>
-                {hayFiltrosActivos 
-                  ? `Mostrando ${tareasFiltradas.length} tareas filtradas` 
-                  : 'Lista completa de tareas del establecimiento'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <TareaList tareasProp={tareasFiltradas} />
-            </CardContent>
-          </Card>
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+          <TareaKanban tareas={tareas} />
         </div>
       </div>
     </SimpleRoleGuard>

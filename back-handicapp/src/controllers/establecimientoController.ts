@@ -119,13 +119,40 @@ export class EstablecimientoController {
         superficie_hectareas,
         cantidad_boxes,
         servicios,
-        disciplina_principal
+        disciplina_principal,
+        // Datos del usuario administrador
+        admin_email,
+        admin_password,
+        admin_nombre,
+        admin_apellido
       } = req.body;
       const usuarioId = req.user!.id;
+
+      logger.info('🏢 Crear establecimiento - datos recibidos', {
+        nombre,
+        cuit,
+        admin_email,
+        admin_password: admin_password ? '***' : undefined,
+        admin_nombre,
+        admin_apellido,
+        tieneAdminData: !!(admin_email && admin_password && admin_nombre && admin_apellido)
+      });
 
       if (!nombre || !cuit) {
         ResponseHelper.badRequest(res, 'Nombre y CUIT son requeridos');
         return;
+      }
+
+      // Validar datos del administrador si se están creando
+      if (admin_email || admin_password) {
+        if (!admin_email || !admin_password || !admin_nombre || !admin_apellido) {
+          ResponseHelper.badRequest(res, 'Si creas un administrador, debes proporcionar email, contraseña, nombre y apellido');
+          return;
+        }
+        if (admin_password.length < 8) {
+          ResponseHelper.badRequest(res, 'La contraseña debe tener al menos 8 caracteres');
+          return;
+        }
       }
 
       const result = await EstablecimientoService.createEstablecimiento({
@@ -148,7 +175,11 @@ export class EstablecimientoController {
         superficie_hectareas,
         cantidad_boxes,
         servicios,
-        disciplina_principal
+        disciplina_principal,
+        admin_email,
+        admin_password,
+        admin_nombre,
+        admin_apellido
       }, usuarioId);
 
       if (result.success && result.data) {

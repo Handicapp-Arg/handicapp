@@ -51,6 +51,39 @@ router.get(
   TareaController.getAll
 );
 
+// ====================================
+// GESTIÓN DE ESTADO (ANTES DE /:id)
+// ====================================
+
+/**
+ * @route   POST /api/v1/tareas/:id/completar
+ * @desc    Marcar tarea como completada
+ * @access  Usuario asignado, Admin, Creador de la tarea
+ */
+router.post(
+  '/:id/completar',
+  paramValidations.id,
+  requirePermission('tasks:complete'),
+  TareaController.completar
+);
+
+/**
+ * @route   PUT /api/v1/tareas/:id/estado
+ * @desc    Cambiar estado de tarea
+ * @access  Usuario asignado, Admin, Creador de la tarea
+ */
+router.put(
+  '/:id/estado',
+  paramValidations.id,
+  requirePermission('tasks:write'),
+  tareaValidations.cambiarEstado,
+  TareaController.cambiarEstado
+);
+
+// ====================================
+// CRUD ESPECÍFICO (DESPUÉS DE RUTAS ESPECÍFICAS)
+// ====================================
+
 /**
  * @route   GET /api/v1/tareas/:id
  * @desc    Obtener tarea por ID
@@ -86,35 +119,6 @@ router.delete(
   paramValidations.id,
   requirePermission('tasks:delete'),
   TareaController.delete
-);
-
-// ====================================
-// GESTIÓN DE ESTADO
-// ====================================
-
-/**
- * @route   POST /api/v1/tareas/:id/completar
- * @desc    Marcar tarea como completada
- * @access  Usuario asignado, Admin, Creador de la tarea
- */
-router.post(
-  '/:id/completar',
-  paramValidations.id,
-  requirePermission('tasks:complete'),
-  TareaController.completar
-);
-
-/**
- * @route   PUT /api/v1/tareas/:id/estado
- * @desc    Cambiar estado de tarea
- * @access  Usuario asignado, Admin, Creador de la tarea
- */
-router.put(
-  '/:id/estado',
-  paramValidations.id,
-  requirePermission('tasks:write'),
-  tareaValidations.cambiarEstado,
-  TareaController.cambiarEstado
 );
 
 // ====================================

@@ -8,6 +8,7 @@ import { User } from '../models/User';
 import { Role } from '../models/roles';
 import bcrypt from 'bcrypt';
 import { config } from '../config/config';
+import { logger } from '../utils/logger';
 
 export class UserController {
   // Get all users
@@ -221,6 +222,14 @@ export class UserController {
     const currentUser = req.user!;
     const currentUserRole = currentUser.rol?.clave;
     
+    // DEBUG: Log para ver qué está llegando
+    logger.info('DEBUG - User create request:', {
+      body: req.body,
+      currentUserRole,
+      currentUserEstablecimientoId: currentUser.establecimiento_id,
+      currentUserId: currentUser.id
+    });
+    
     // Verificar permisos según el rol
     if (currentUserRole === 'establecimiento') {
       // Establecimiento solo puede crear: capataz (3), veterinario (4), empleado (5)
@@ -247,6 +256,21 @@ export class UserController {
       let establecimientoId = null;
       if (currentUserRole === 'establecimiento' && [3, 4, 5].includes(rol_id)) {
         establecimientoId = currentUser.establecimiento_id;
+        
+        // Si no está en el JWT, consultar desde la DB
+        if (!establecimientoId) {
+          const userFromDb = await User.findByPk(currentUser.id, {
+            attributes: ['id', 'establecimiento_id']
+          });
+          
+          if (userFromDb?.establecimiento_id) {
+            establecimientoId = userFromDb.establecimiento_id;
+            logger.info(`Usuario ${currentUser.id}: establecimiento_id=${establecimientoId} obtenido desde DB para crear empleado`);
+          } else {
+            logger.error(`Usuario ${currentUser.id} con rol establecimiento no puede crear empleados sin establecimiento_id asignado`);
+            return ResponseHelper.badRequest(res, 'Tu usuario no tiene un establecimiento asignado. Contacta al administrador.');
+          }
+        }
       }
 
       // Crear usuario
@@ -263,30 +287,7 @@ export class UserController {
         establecimiento_id: establecimientoId
       });
 
-      // Si es establecimiento creando empleado/capataz/veterinario, crear membresía
-      if (currentUserRole === 'establecimiento' && [3, 4, 5].includes(rol_id)) {
-        // Buscar el establecimiento del usuario que está creando
-        const { MembresiaUsuarioEstablecimiento } = require('../models');
-        const { EstadoMembresia } = require('../models/enums');
-        
-        const membresiasEstablecimiento = await MembresiaUsuarioEstablecimiento.findAll({
-          where: {
-            usuario_id: currentUser.id,
-            estado_membresia: EstadoMembresia.active
-          }
-        });
-
-        // Crear membresía en cada establecimiento del creador
-        for (const membresia of membresiasEstablecimiento) {
-          await MembresiaUsuarioEstablecimiento.create({
-            usuario_id: newUser.id,
-            establecimiento_id: membresia.establecimiento_id,
-            rol_en_establecimiento: rol_id === 3 ? 'capataz' : rol_id === 4 ? 'veterinario' : 'empleado',
-            estado_membresia: EstadoMembresia.active,
-            fecha_inicio: new Date()
-          });
-        }
-      }
+      logger.info(`Usuario ${newUser.id} creado exitosamente por ${currentUser.id} (${currentUserRole}) con establecimiento_id=${establecimientoId}`);
 
       // Obtener usuario con rol
       const userWithRole = await User.findByPk(newUser.id, {

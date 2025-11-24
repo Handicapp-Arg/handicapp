@@ -1,31 +1,39 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useStats } from '@/lib/hooks/useStats';
 import { TareaKanban } from '@/components/dashboard/TareaKanban';
-import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
-import { useTareas } from '@/lib/hooks';
+import { SimpleRoleGuard roles={["propietario"]} } from '@/components/common/SimplePermissionGuard';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ClipboardList, Clock, CheckCircle2, PlayCircle } from 'lucide-react';
+import { ClipboardList, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { useEffect, useState } from 'react';
+import { tareaService, type Tarea } from '@/lib/services/tareaService';
 
 export default function TareasPage() {
-  const { data: tareas = [], isLoading: loading } = useTareas({ page: 1, limit: 500 });
+  const { stats, loading } = useStats();
+  const [tareas, setTareas] = useState<Tarea[]>([]);
+  const [loadingTareas, setLoadingTareas] = useState(true);
 
-  // Calcular estadísticas basadas en los estados reales del backend
-  const stats = useMemo(() => {
-    const tareasArray = Array.isArray(tareas) ? tareas : (tareas as any)?.data || [];
-    
-    return {
-      total: tareasArray.length,
-      open: tareasArray.filter((t: any) => t.estado === 'open' || t.estado === 'pendiente').length,
-      inProgress: tareasArray.filter((t: any) => t.estado === 'in_progress' || t.estado === 'en_progreso').length,
-      done: tareasArray.filter((t: any) => t.estado === 'done' || t.estado === 'completada').length,
-      cancelled: tareasArray.filter((t: any) => t.estado === 'cancelled' || t.estado === 'cancelada').length,
+  useEffect(() => {
+    const fetchTareas = async () => {
+      try {
+        setLoadingTareas(true);
+        const response: any = await tareaService.getAll({ page: 1, limit: 500 });
+        const tareasData = response?.data?.tareas || response?.tareas || response?.data || response || [];
+        setTareas(Array.isArray(tareasData) ? tareasData : []);
+      } catch (error) {
+        console.error('Error loading tareas:', error);
+        setTareas([]);
+      } finally {
+        setLoadingTareas(false);
+      }
     };
-  }, [tareas]);
 
-  if (loading) {
+    fetchTareas();
+  }, []);
+
+  if (loading || loadingTareas) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <LoadingSpinnerFullPage label="Cargando..." variant="success" />
@@ -34,22 +42,21 @@ export default function TareasPage() {
   }
 
   return (
-    <SimpleRoleGuard roles={['propietario']}>
-      <div className="space-y-8">
-        {/* Hero Section con Stats */}
-        <div className="relative overflow-hidden rounded-2xl">
+    <SimpleRoleGuard roles={["propietario"]}>
+      <div className="mx-auto">
+        <div className="relative overflow-hidden mb-8 rounded-2xl">
           <div className="absolute inset-0 bg-[#0f172a]"></div>
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-60"></div>
-          <div className="absolute top-0 right-1/4 w-64 h-64 bg-slate-600/30 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-gray-500/20 rounded-full blur-3xl"></div>
+          <div className="absolute top-0 right-1/4 w-64 h-64 bg-blue-600/30 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-cyan-500/20 rounded-full blur-3xl"></div>
           
           <div className="relative z-10 px-6 sm:px-8 lg:px-12 py-6">
             <div className="mb-6">
               <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 leading-tight">
-                Cuidados Diarios
+                Gestión de Tareas
               </h1>
               <p className="text-sm sm:text-base text-white/70">
-                Seguimiento de alimentación, limpieza y cuidados de tus caballos
+                Asigna, supervisa y gestiona las tareas diarias del establecimiento
               </p>
             </div>
 
@@ -66,7 +73,7 @@ export default function TareasPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pb-3">
-                  <p className="text-2xl font-bold text-white tabular-nums">{stats.total}</p>
+                  <p className="text-2xl font-bold text-white tabular-nums">{stats.tareas?.total || 0}</p>
                   <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
                     Todas
                   </Badge>
@@ -77,7 +84,7 @@ export default function TareasPage() {
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardDescription className="text-[10px] font-semibold text-amber-300 uppercase tracking-wider">
-                      Abiertas
+                      Pendientes
                     </CardDescription>
                     <div className="p-1.5 rounded-lg bg-amber-500/20">
                       <Clock className="w-3 h-3 text-amber-300" />
@@ -85,28 +92,9 @@ export default function TareasPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pb-3">
-                  <p className="text-2xl font-bold text-white tabular-nums">{stats.open}</p>
+                  <p className="text-2xl font-bold text-white tabular-nums">{stats.tareas?.pendientes || 0}</p>
                   <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
                     Por realizar
-                  </Badge>
-                </CardContent>
-              </Card>
-
-              <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardDescription className="text-[10px] font-semibold text-blue-300 uppercase tracking-wider">
-                      En Progreso
-                    </CardDescription>
-                    <div className="p-1.5 rounded-lg bg-blue-500/20">
-                      <PlayCircle className="w-3 h-3 text-blue-300" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pb-3">
-                  <p className="text-2xl font-bold text-white tabular-nums">{stats.inProgress}</p>
-                  <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
-                    Trabajando
                   </Badge>
                 </CardContent>
               </Card>
@@ -123,9 +111,28 @@ export default function TareasPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pb-3">
-                  <p className="text-2xl font-bold text-white tabular-nums">{stats.done}</p>
+                  <p className="text-2xl font-bold text-white tabular-nums">{stats.tareas?.completadas || 0}</p>
                   <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
                     Finalizadas
+                  </Badge>
+                </CardContent>
+              </Card>
+
+              <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardDescription className="text-[10px] font-semibold text-red-300 uppercase tracking-wider">
+                      En Progreso
+                    </CardDescription>
+                    <div className="p-1.5 rounded-lg bg-red-500/20">
+                      <AlertTriangle className="w-3 h-3 text-red-300" />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pb-3">
+                  <p className="text-2xl font-bold text-white tabular-nums">{stats.tareas?.enProgreso || 0}</p>
+                  <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
+                    En ejecución
                   </Badge>
                 </CardContent>
               </Card>
@@ -133,11 +140,10 @@ export default function TareasPage() {
           </div>
         </div>
 
-        {/* Vista Kanban */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
           <TareaKanban tareas={tareas} />
         </div>
       </div>
-    </SimpleRoleGuard>
+    </SimpleRoleGuard roles={["propietario"]}>
   );
 }

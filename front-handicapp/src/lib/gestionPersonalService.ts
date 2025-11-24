@@ -161,8 +161,9 @@ class GestionPersonalService {
         return [];
       }
       
-      // Filtrar solo empleados, capataces y veterinarios (roles 3, 4, 5)
-      usuarios = usuarios.filter((u: { rol_id: number }) => [3, 4, 5].includes(u.rol_id));
+      // Filtrar solo empleados, capataces, veterinarios y establecimiento (roles 2, 3, 4, 5)
+      // Excluir admin (rol 1) y propietario (rol 6)
+      usuarios = usuarios.filter((u: { rol_id: number }) => [2, 3, 4, 5].includes(u.rol_id));
       
       // Mapear a formato Empleado
       let empleados: Empleado[] = usuarios.map((u: { 
@@ -254,7 +255,7 @@ class GestionPersonalService {
     }
   }
 
-  async crearEmpleado(data: CrearEmpleadoDTO): Promise<{ empleado: Empleado; passwordTemporal: string } | null> {
+  async crearEmpleado(data: CrearEmpleadoDTO): Promise<{ empleado: Empleado; passwordTemporal: string }> {
     try {
       // Crear usuario usando la API de users
       // Generar contraseña temporal basada en el documento o email
@@ -273,6 +274,8 @@ class GestionPersonalService {
         estado_usuario: 'active', // Usar estado_usuario en lugar de activo
       };
       
+      console.log('📤 Enviando datos para crear empleado:', userData);
+      
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const response = await apiClient.post('/users', userData) as any;
       
@@ -280,9 +283,21 @@ class GestionPersonalService {
         empleado: response.data || response,
         passwordTemporal: passwordTemp
       };
-    } catch (error) {
-      console.error('Error creando empleado:', error);
-      return null;
+    } catch (error: any) {
+      console.error('❌ Error creando empleado:', {
+        error,
+        message: error?.message,
+        data: error?.data,
+        status: error?.status
+      });
+      
+      // HttpError tiene el payload del backend en error.data
+      if (error?.data) {
+        throw error; // Tiene la estructura completa del backend
+      }
+      
+      // Si no, lanzar un error genérico
+      throw new Error('Error al crear empleado');
     }
   }
 
@@ -291,9 +306,20 @@ class GestionPersonalService {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const response = await apiClient.put(`/users/${id}`, data) as any;
       return response.data || response;
-    } catch (error) {
-      console.error('Error actualizando empleado:', error);
-      return null;
+    } catch (error: any) {
+      console.error('❌ Error actualizando empleado:', {
+        error,
+        message: error?.message,
+        data: error?.data,
+        status: error?.status
+      });
+      
+      // Re-lanzar el error con la estructura del backend
+      if (error?.data) {
+        throw error;
+      }
+      
+      throw new Error('Error al actualizar empleado');
     }
   }
 

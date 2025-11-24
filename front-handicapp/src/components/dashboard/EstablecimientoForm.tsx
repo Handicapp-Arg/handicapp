@@ -22,6 +22,8 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isCreating = !establecimiento; // Si no hay establecimiento, estamos creando uno nuevo
+  
   const [formData, setFormData] = useState({
     nombre: establecimiento?.nombre || '',
     cuit: establecimiento?.cuit || '',
@@ -42,7 +44,12 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
     superficie_hectareas: (establecimiento as any)?.superficie_hectareas || '',
     cantidad_boxes: (establecimiento as any)?.cantidad_boxes || '',
     servicios: (establecimiento as any)?.servicios || [],
-    disciplina_principal: (establecimiento as any)?.disciplina_principal || ''
+    disciplina_principal: (establecimiento as any)?.disciplina_principal || '',
+    // Campos del usuario administrador (solo para creación)
+    admin_email: '',
+    admin_password: '',
+    admin_nombre: '',
+    admin_apellido: ''
   });
 
   const handleInputChange = (field: string, value: any) => {
@@ -106,9 +113,18 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
       let result: Establecimiento;
       
       if (establecimiento?.id) {
+        // Editando establecimiento existente - no enviar datos de admin
         result = await establecimientoService.update(establecimiento.id, cleanData);
       } else {
-        result = await establecimientoService.create(cleanData);
+        // Creando nuevo establecimiento - incluir datos de admin
+        const createData = {
+          ...cleanData,
+          admin_email: formData.admin_email || undefined,
+          admin_password: formData.admin_password || undefined,
+          admin_nombre: formData.admin_nombre || undefined,
+          admin_apellido: formData.admin_apellido || undefined,
+        };
+        result = await establecimientoService.create(createData);
       }
 
       onSave?.(result);
@@ -334,6 +350,75 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
                   />
                 </div>
               </div>
+
+              {/* Datos del Administrador - Solo al crear */}
+              {isCreating && (
+                <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 sm:p-6">
+                  <h3 className="text-base sm:text-lg font-semibold text-blue-900 mb-2">
+                    Administrador del establecimiento
+                  </h3>
+                  <p className="text-sm text-blue-700 mb-4">
+                    Crea el usuario que administrará este establecimiento
+                  </p>
+                  
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="admin_nombre" className="text-sm font-medium text-gray-700">Nombre *</Label>
+                        <Input
+                          id="admin_nombre"
+                          value={formData.admin_nombre}
+                          onChange={(e) => handleInputChange('admin_nombre', e.target.value)}
+                          placeholder="Juan"
+                          className="mt-1 focus:ring-blue-500 focus:border-blue-500"
+                          required={isCreating}
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="admin_apellido" className="text-sm font-medium text-gray-700">Apellido *</Label>
+                        <Input
+                          id="admin_apellido"
+                          value={formData.admin_apellido}
+                          onChange={(e) => handleInputChange('admin_apellido', e.target.value)}
+                          placeholder="Pérez"
+                          className="mt-1 focus:ring-blue-500 focus:border-blue-500"
+                          required={isCreating}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="admin_email" className="text-sm font-medium text-gray-700">Email *</Label>
+                      <Input
+                        id="admin_email"
+                        type="email"
+                        value={formData.admin_email}
+                        onChange={(e) => handleInputChange('admin_email', e.target.value)}
+                        placeholder="admin@establecimiento.com"
+                        className="mt-1 focus:ring-blue-500 focus:border-blue-500"
+                        required={isCreating}
+                      />
+                      <p className="mt-1 text-xs text-gray-500">Este será el email de login</p>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="admin_password" className="text-sm font-medium text-gray-700">Contraseña *</Label>
+                      <Input
+                        id="admin_password"
+                        type="password"
+                        value={formData.admin_password}
+                        onChange={(e) => handleInputChange('admin_password', e.target.value)}
+                        placeholder="Mínimo 8 caracteres"
+                        className="mt-1 focus:ring-blue-500 focus:border-blue-500"
+                        required={isCreating}
+                        minLength={8}
+                      />
+                      <p className="mt-1 text-xs text-gray-500">Mínimo 8 caracteres</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Contacto */}
               <div className="bg-gray-50 rounded-xl p-4 sm:p-6">

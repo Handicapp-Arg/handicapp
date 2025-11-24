@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import toast from 'react-hot-toast';
+import { useToaster } from '@/components/ui/toaster';
 import type { Empleado, CrearEmpleadoDTO } from '@/lib/gestionPersonalService';
 
 interface Role {
@@ -36,6 +36,8 @@ export function EditEmpleadoModal({
   updateEmpleadoFn,
   primaryColor = '#2563eb', // blue-600
 }: EditEmpleadoModalProps) {
+  const { toast } = useToaster();
+  
   const [formData, setFormData] = useState<CrearEmpleadoDTO>({
     nombre: '',
     apellido: '',
@@ -69,18 +71,18 @@ export function EditEmpleadoModal({
   const handleSubmit = async () => {
     // Check if empleado exists
     if (!empleado) {
-      toast.error('No se ha seleccionado ningún empleado');
+      toast('No se ha seleccionado ningún empleado', 'error');
       return;
     }
 
     // Validations
     if (!formData.nombre || !formData.apellido || !formData.email || !formData.documento) {
-      toast.error('Por favor completa todos los campos obligatorios');
+      toast('Por favor completa todos los campos obligatorios', 'error');
       return;
     }
 
     if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      toast.error('Por favor ingresa un email válido');
+      toast('Por favor ingresa un email válido', 'error');
       return;
     }
 
@@ -90,16 +92,30 @@ export function EditEmpleadoModal({
       const success = await updateEmpleadoFn(empleado.id, formData);
       
       if (success) {
-        toast.success('Empleado actualizado correctamente');
+        toast('Empleado actualizado correctamente', 'success');
         onEmpleadoUpdated();
         onClose();
       } else {
-        toast.error('Error al actualizar empleado');
+        toast('Error al actualizar empleado', 'error');
       }
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('Error updating empleado:', error);
-      const message = error instanceof Error ? error.message : 'Error al actualizar empleado';
-      toast.error(message);
+      
+      // HttpError del backend: error.data contiene { success, message, errors? }
+      let errorMessage = 'Error al actualizar empleado';
+      
+      if (error?.data) {
+        if (error.data.message) {
+          errorMessage = error.data.message;
+        }
+        if (error.data.errors && Array.isArray(error.data.errors) && error.data.errors.length > 0) {
+          errorMessage += ': ' + error.data.errors.join(', ');
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      toast(errorMessage, 'error');
     } finally {
       setLoading(false);
     }

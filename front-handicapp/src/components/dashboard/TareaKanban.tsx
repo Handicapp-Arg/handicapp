@@ -59,7 +59,7 @@ export function TareaKanban({ tareas: tareasProp }: TareaKanbanProps) {
   const [localTareas, setLocalTareas] = useState<Tarea[]>([]);
   const [expandedColumns, setExpandedColumns] = useState<Set<string>>(new Set(['open'])); // Por defecto abierta la primera
   const [isMobile, setIsMobile] = useState(false);
-  const { isAuthenticated, isLoading: authLoading } = useAuthNew();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuthNew();
   const { canCreateTasks, canDeleteTasks, hasPermission } = usePermissions();
 
   // Detectar si es mobile
@@ -187,6 +187,12 @@ export function TareaKanban({ tareas: tareasProp }: TareaKanbanProps) {
   const TareaCard = ({ tarea }: { tarea: Tarea & { estadoNormalizado?: string } }) => {
     const estado = tarea.estadoNormalizado || normalizeEstado(tarea.estado);
     
+    // Verificar si el usuario puede mover esta tarea (creador o asignado)
+    const canMoveTarea = user && (
+      tarea.creado_por_usuario_id === user.id || 
+      tarea.asignado_a_usuario_id === user.id
+    );
+    
     return (
       <div 
         className="bg-white border border-gray-200 rounded-lg p-4 mb-3 hover:shadow-md transition-all duration-200 group relative"
@@ -206,19 +212,6 @@ export function TareaKanban({ tareas: tareasProp }: TareaKanbanProps) {
             {tarea.titulo}
           </h3>
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            {hasPermission('tasks:complete') && estado !== 'done' && (
-              <button 
-                onClick={() => handleChangeEstado(tarea, estado === 'open' ? 'in_progress' : 'done')}
-                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                title={estado === 'open' ? 'Iniciar' : 'Completar'}
-              >
-                {estado === 'open' ? (
-                  <PlayCircle className="h-4 w-4" />
-                ) : (
-                  <CheckCircle2 className="h-4 w-4" />
-                )}
-              </button>
-            )}
             {canCreateTasks() && (
               <button 
                 onClick={() => handleEditTarea(tarea)}
@@ -288,6 +281,55 @@ export function TareaKanban({ tareas: tareasProp }: TareaKanbanProps) {
             </div>
           )}
         </div>
+
+        {/* Botones de cambio de estado */}
+        {canMoveTarea && (
+          <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2">
+            {/* Botón retroceder */}
+            {estado === 'in_progress' && (
+              <button
+                onClick={() => handleChangeEstado(tarea, 'open')}
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded transition-colors"
+                title="Volver a Abierta"
+              >
+                <ChevronDown className="h-3 w-3" />
+                Abierta
+              </button>
+            )}
+            {estado === 'done' && (
+              <button
+                onClick={() => handleChangeEstado(tarea, 'in_progress')}
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded transition-colors"
+                title="Volver a En Progreso"
+              >
+                <ChevronDown className="h-3 w-3" />
+                En Progreso
+              </button>
+            )}
+            
+            {/* Botón avanzar */}
+            {estado === 'open' && (
+              <button
+                onClick={() => handleChangeEstado(tarea, 'in_progress')}
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded transition-colors"
+                title="Iniciar Tarea"
+              >
+                <PlayCircle className="h-3 w-3" />
+                Iniciar
+              </button>
+            )}
+            {estado === 'in_progress' && (
+              <button
+                onClick={() => handleChangeEstado(tarea, 'done')}
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 rounded transition-colors"
+                title="Completar Tarea"
+              >
+                <CheckCircle2 className="h-3 w-3" />
+                Completar
+              </button>
+            )}
+          </div>
+        )}
       </div>
     );
   };

@@ -11,6 +11,7 @@ import { Caballo } from '../models/Caballo';
 import { PropietarioCaballo } from '../models/PropietarioCaballo';
 import { ServiceResponse, PaginationQuery } from '../types';
 import { TipoTarea, EstadoTarea } from '../models/enums';
+import { logger } from '../utils/logger';
 
 interface CreateTareaData {
   establecimiento_id: number;
@@ -662,20 +663,39 @@ export class TareaService {
   static async cambiarEstadoTarea(
     tareaId: number,
     nuevoEstado: EstadoTarea,
-    userId: number
+    userId: number,
+    userRole?: string
   ): Promise<ServiceResponse<Tarea>> {
     try {
       const tarea = await Tarea.findByPk(tareaId);
       
       if (!tarea) {
+        logger.warn(`Tarea ${tareaId} no encontrada`);
         return {
           success: false,
           error: 'Tarea no encontrada',
         };
       }
 
-      // Verificar permisos: creador o asignado pueden cambiar estado
-      if (tarea.creado_por_usuario_id !== userId && tarea.asignado_a_usuario_id !== userId) {
+      // Admin puede cambiar cualquier tarea
+      const isAdmin = userRole === 'admin';
+      const isCreator = tarea.creado_por_usuario_id === userId;
+      const isAssigned = tarea.asignado_a_usuario_id === userId;
+
+      // Verificar permisos: admin, creador o asignado pueden cambiar estado
+      logger.info('Verificando permisos cambio estado', {
+        tareaId,
+        userId,
+        userRole,
+        creador: tarea.creado_por_usuario_id,
+        asignado: tarea.asignado_a_usuario_id,
+        isAdmin,
+        isCreator,
+        isAssigned
+      });
+
+      if (!isAdmin && !isCreator && !isAssigned) {
+        logger.warn(`Usuario ${userId} sin permisos para modificar tarea ${tareaId}`);
         return {
           success: false,
           error: 'Sin permisos para modificar esta tarea',
@@ -687,11 +707,14 @@ export class TareaService {
         actualizado_el: new Date(),
       });
 
+      logger.info(`Estado de tarea ${tareaId} cambiado a ${nuevoEstado} por usuario ${userId}`);
+
       return {
         success: true,
         data: tarea,
       };
     } catch (error) {
+      logger.error('Error al cambiar estado de tarea', { error, tareaId, userId });
       return {
         success: false,
         error: 'Error al cambiar estado de tarea',
