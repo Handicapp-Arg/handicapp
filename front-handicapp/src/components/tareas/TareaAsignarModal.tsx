@@ -8,7 +8,7 @@ import React, { useState, useEffect } from 'react';
 import { X, User, Save } from 'lucide-react';
 import { tareaService, Tarea } from '@/lib/services/tareaService';
 import { userService } from '@/lib/services/userService';
-import { toast } from 'react-hot-toast';
+import { showError, showSuccess, showWarning } from '@/lib/utils/errorHandler';
 import { LoadingSpinnerCard, LoadingSpinnerInline } from '@/components/ui/loading-spinner';
 
 interface TareaAsignarModalProps {
@@ -39,8 +39,7 @@ export function TareaAsignarModal({ tarea, isOpen, onClose, onSuccess }: TareaAs
       const usuariosResp = await userService.getAll();
       setUsuarios(usuariosResp.data || []);
     } catch (error) {
-      console.error('Error al cargar usuarios:', error);
-      toast.error('Error al cargar los usuarios');
+      showError(error, 'user', 'fetch_list');
     } finally {
       setLoadingUsuarios(false);
     }
@@ -50,19 +49,18 @@ export function TareaAsignarModal({ tarea, isOpen, onClose, onSuccess }: TareaAs
     e.preventDefault();
 
     if (!usuarioSeleccionado) {
-      toast.error('Por favor selecciona un usuario');
+      showWarning('Por favor selecciona un usuario');
       return;
     }
 
     try {
       setLoading(true);
       await tareaService.assign(tarea.id, parseInt(usuarioSeleccionado));
-      toast.success('✅ Tarea asignada exitosamente');
+      showSuccess('tarea', 'assigned');
       onSuccess();
       onClose();
     } catch (error: any) {
-      console.error('Error al asignar tarea:', error);
-      toast.error(error.message || 'Error al asignar la tarea');
+      showError(error, 'tarea', 'assign_failed');
     } finally {
       setLoading(false);
     }

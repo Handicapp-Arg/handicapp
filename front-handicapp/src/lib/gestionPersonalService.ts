@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/http';
+import { showError, showSuccess } from '@/lib/utils/errorHandler';
 
 // ==================== INTERFACES ====================
 
@@ -279,6 +280,8 @@ class GestionPersonalService {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const response = await apiClient.post('/users', userData) as any;
       
+      showSuccess('user', 'created', `Usuario ${data.nombre} ${data.apellido} creado exitosamente. Contraseña temporal: ${passwordTemp}`);
+      
       return {
         empleado: response.data || response,
         passwordTemporal: passwordTemp
@@ -291,13 +294,8 @@ class GestionPersonalService {
         status: error?.status
       });
       
-      // HttpError tiene el payload del backend en error.data
-      if (error?.data) {
-        throw error; // Tiene la estructura completa del backend
-      }
-      
-      // Si no, lanzar un error genérico
-      throw new Error('Error al crear empleado');
+      showError(error, 'user', 'create_failed');
+      throw error;
     }
   }
 
@@ -305,42 +303,33 @@ class GestionPersonalService {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const response = await apiClient.put(`/users/${id}`, data) as any;
+      
+      showSuccess('user', 'updated');
       return response.data || response;
-    } catch (error: any) {
-      console.error('❌ Error actualizando empleado:', {
-        error,
-        message: error?.message,
-        data: error?.data,
-        status: error?.status
-      });
-      
-      // Re-lanzar el error con la estructura del backend
-      if (error?.data) {
-        throw error;
-      }
-      
-      throw new Error('Error al actualizar empleado');
+    } catch (error) {
+      showError(error, 'user', 'update_failed');
+      throw error;
     }
   }
 
   async eliminarEmpleado(id: number): Promise<boolean> {
     try {
       await apiClient.delete(`/users/${id}`);
+      showSuccess('user', 'deleted');
       return true;
     } catch (error) {
-      console.error('Error eliminando empleado:', error);
+      showError(error, 'user', 'delete_failed');
       return false;
     }
   }
 
   async cambiarEstadoEmpleado(id: number, _estado: string): Promise<boolean> {
     try {
-      // La ruta correcta es /users/:id/toggle-status del backend
-      // Pero como solo cambiamos entre activo/inactivo, usamos toggle
       await apiClient.patch(`/users/${id}/toggle-status`);
+      showSuccess('user', 'updated', 'Estado del empleado actualizado exitosamente');
       return true;
     } catch (error) {
-      console.error('Error cambiando estado:', error);
+      showError(error, 'user', 'update_failed');
       return false;
     }
   }

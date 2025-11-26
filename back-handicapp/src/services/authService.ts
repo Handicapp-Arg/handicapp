@@ -319,7 +319,7 @@ export class AuthService {
       if (!user) {
         return {
           success: false,
-          message: 'Credenciales inválidas'
+          message: 'Email o contraseña incorrectos. Verificá los datos ingresados.'
         };
       }
 
@@ -327,13 +327,13 @@ export class AuthService {
       if (!user.verificado) {
         return {
           success: false,
-          message: 'Cuenta no verificada. Revisá tu correo para activarla.'
+          message: 'Tu cuenta no está verificada. Revisá tu correo electrónico para activarla.'
         };
       }
       if (!user.isActive) {
         return {
           success: false,
-          message: 'Usuario inactivo'
+          message: 'Tu cuenta está inactiva. Contactá al administrador para reactivarla.'
         };
       }
 
@@ -343,7 +343,7 @@ export class AuthService {
       if (!isValidPassword) {
         return {
           success: false,
-          message: 'Credenciales inválidas'
+          message: 'Email o contraseña incorrectos. Verificá los datos ingresados.'
         };
       }
 

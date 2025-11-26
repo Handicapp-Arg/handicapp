@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthNew } from '../../../lib/hooks/useAuthNew';
 import { useSearchParams } from 'next/navigation';
 import { useToaster } from '@/components/ui/toaster';
+import { showError, showSuccess, showInfo } from '@/lib/utils/errorHandler';
 import ApiClient from '@/lib/services/apiClient';
 import AuthManager from '@/lib/auth/AuthManager';
 import { LOGOS } from '@/lib/constants/logos';
@@ -127,7 +128,7 @@ export default function LoginPage() {
       }
       
       // Si llegamos aquí, el login fue exitoso
-      toast('Inicio de sesión exitoso', 'success');
+      showSuccess('auth', 'login', 'Inicio de sesión exitoso');
       const state = AuthManager.getInstance().getState();
       const roleKey = state.user?.rol?.clave || 'user';
       
@@ -143,10 +144,18 @@ export default function LoginPage() {
         }
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error inesperado';
+      console.error('🔐 Error de login:', err);
+      
+      const errorMessage = err instanceof Error ? err.message : 'Error inesperado al iniciar sesión';
       const normalizedErrors = normalizeLoginError(errorMessage, email);
       setFieldErrors(normalizedErrors);
-      // El error se muestra en el formulario, no en toast
+      
+      // Log para debugging
+      console.error('📋 Detalles del error:', {
+        original: errorMessage,
+        normalized: normalizedErrors,
+        email,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -250,21 +259,45 @@ export default function LoginPage() {
               </button>
             </div>
 
+            {/* Mensaje de error general */}
             {(fieldErrors.general || authError || fieldErrors.verification) && (
-              <div className={`rounded-xl p-3 border ${fieldErrors.verification ? 'bg-blue-50 border-blue-200' : 'bg-red-50 border-red-200'}`}>
-                <p className={`${fieldErrors.verification ? 'text-blue-700' : 'text-red-600'} text-sm`}>
-                  {fieldErrors.verification || fieldErrors.general || authError}
-                </p>
-                {fieldErrors.verification && (
-                  <button
-                    type="button"
-                    onClick={onResend}
-                    disabled={resending}
-                    className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-700 hover:text-blue-600"
-                  >
-                    {resending ? 'Reenviando correo…' : 'Reenviar enlace de verificación'}
-                  </button>
-                )}
+              <div className={`rounded-xl p-4 border-2 ${
+                fieldErrors.verification 
+                  ? 'bg-blue-50 border-blue-300' 
+                  : 'bg-red-50 border-red-300'
+              }`}>
+                <div className="flex items-start gap-3">
+                  <div className={`flex-shrink-0 mt-0.5 ${
+                    fieldErrors.verification ? 'text-blue-600' : 'text-red-600'
+                  }`}>
+                    {fieldErrors.verification ? (
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className={`${
+                      fieldErrors.verification ? 'text-blue-800' : 'text-red-800'
+                    } text-sm font-medium leading-relaxed`}>
+                      {fieldErrors.verification || fieldErrors.general || authError}
+                    </p>
+                    {fieldErrors.verification && (
+                      <button
+                        type="button"
+                        onClick={onResend}
+                        disabled={resending}
+                        className="mt-3 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {resending ? 'Reenviando correo…' : 'Reenviar enlace de verificación'}
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -350,38 +383,88 @@ export default function LoginPage() {
 function normalizeLoginError(message: string, email: string): FieldErrors {
   const normalized = message.toLowerCase();
 
-  if (normalized.includes('credenciales inválidas')) {
+  // Error de credenciales incorrectas
+  if (normalized.includes('credenciales') || 
+      normalized.includes('incorrecta') || 
+      normalized.includes('inválida') ||
+      normalized.includes('no coincide') ||
+      normalized.includes('unauthorized') ||
+      normalized.includes('401')) {
     return {
-      general: message || 'Credenciales inválidas. Revisá los datos e intentá nuevamente.',
-      password: 'La contraseña no coincide con nuestros registros.',
+      general: 'Email o contraseña incorrectos. Verificá los datos e intentá nuevamente.',
+      email: 'Verificá que el email sea correcto',
+      password: 'Verificá que la contraseña sea correcta',
     };
   }
 
-  if (normalized.includes('no verificada')) {
+  // Usuario no encontrado
+  if (normalized.includes('no encontrado') || 
+      normalized.includes('not found') ||
+      normalized.includes('404')) {
     return {
-      verification: `Tu cuenta todavía no está verificada. Revisá tu correo (${email || 'ingresado'}) o reenviá el enlace.`,
+      general: 'No existe una cuenta con este email. ¿Querés crear una cuenta nueva?',
+      email: 'Este email no está registrado en el sistema',
     };
   }
 
-  if (normalized.includes('inactivo')) {
+  // Email no verificado
+  if (normalized.includes('no verificada') || 
+      normalized.includes('not verified') ||
+      normalized.includes('verificación')) {
     return {
-      general: 'Tu usuario está inactivo. Contactá a un administrador para reactivarlo.',
+      verification: `Tu cuenta todavía no está verificada. Revisá tu correo (${email || 'ingresado'}) o reenviá el enlace de verificación.`,
     };
   }
 
-  if (normalized.includes('timeout') || normalized.includes('network')) {
+  // Usuario inactivo
+  if (normalized.includes('inactivo') || 
+      normalized.includes('deshabilitado') ||
+      normalized.includes('disabled') ||
+      normalized.includes('403')) {
     return {
-      general: 'No pudimos conectarnos con el servidor. Verificá tu conexión y volvé a intentar.',
+      general: 'Tu cuenta está inactiva. Contactá al administrador para reactivarla.',
     };
   }
 
-  if (normalized.includes('requeridos')) {
+  // Errores de red
+  if (normalized.includes('timeout') || 
+      normalized.includes('network') ||
+      normalized.includes('conexión') ||
+      normalized.includes('fetch')) {
     return {
-      general: 'Ingresá tu correo y contraseña para continuar.',
+      general: 'No pudimos conectarnos con el servidor. Verificá tu conexión a internet e intentá nuevamente.',
     };
   }
 
+  // Campos requeridos
+  if (normalized.includes('requeridos') || 
+      normalized.includes('required') ||
+      normalized.includes('vacío')) {
+    return {
+      general: 'Por favor, ingresá tu correo electrónico y contraseña.',
+    };
+  }
+
+  // Error del servidor
+  if (normalized.includes('500') || 
+      normalized.includes('server error') ||
+      normalized.includes('error del servidor')) {
+    return {
+      general: 'Ocurrió un error en el servidor. Por favor, intentá nuevamente en unos momentos.',
+    };
+  }
+
+  // Demasiados intentos
+  if (normalized.includes('too many') || 
+      normalized.includes('demasiados intentos') ||
+      normalized.includes('429')) {
+    return {
+      general: 'Demasiados intentos de inicio de sesión. Por favor, esperá unos minutos e intentá nuevamente.',
+    };
+  }
+
+  // Error genérico con el mensaje original
   return {
-    general: message || 'Ocurrió un error al iniciar sesión. Probá nuevamente en unos segundos.',
+    general: message || 'Ocurrió un error al iniciar sesión. Por favor, verificá tus credenciales e intentá nuevamente.',
   };
 }

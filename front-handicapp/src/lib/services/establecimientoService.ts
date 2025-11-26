@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/http';
+import { showError, showSuccess, parseError } from '@/lib/utils/errorHandler';
 
 export interface Establecimiento {
   id: number;
@@ -66,35 +67,63 @@ class EstablecimientoService {
   private baseUrl = '/establecimientos';
 
   async getAll(filters: EstablecimientoFilters = {}): Promise<{ data: Establecimiento[], total: number, page: number, limit: number }> {
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== '') {
-        params.append(key, value.toString());
-      }
-    });
+    try {
+      const params = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== '') {
+          params.append(key, value.toString());
+        }
+      });
 
-    const response = await apiClient.get(`${this.baseUrl}?${params}`) as any;
-    return response.data;
+      const response = await apiClient.get(`${this.baseUrl}?${params}`) as any;
+      return response.data;
+    } catch (error) {
+      showError(error, 'establecimiento', 'fetch_list');
+      throw error;
+    }
   }
 
   async getById(id: number): Promise<Establecimiento> {
-    const response = await apiClient.get(`${this.baseUrl}/${id}`) as any;
-    return response.data;
+    try {
+      const response = await apiClient.get(`${this.baseUrl}/${id}`) as any;
+      return response.data;
+    } catch (error) {
+      showError(error, 'establecimiento', 'not_found');
+      throw error;
+    }
   }
 
   async create(data: CreateEstablecimientoData): Promise<Establecimiento> {
-    const response = await apiClient.post(this.baseUrl, data) as any;
-    return response.data;
+    try {
+      const response = await apiClient.post(this.baseUrl, data) as any;
+      showSuccess('establecimiento', 'created');
+      return response.data;
+    } catch (error) {
+      showError(error, 'establecimiento', 'create_failed');
+      throw error;
+    }
   }
 
   async update(id: number, data: Partial<CreateEstablecimientoData>): Promise<Establecimiento> {
-    const response = await apiClient.put(`${this.baseUrl}/${id}`, data) as any;
-    return response.data;
+    try {
+      const response = await apiClient.put(`${this.baseUrl}/${id}`, data) as any;
+      showSuccess('establecimiento', 'updated');
+      return response.data;
+    } catch (error) {
+      showError(error, 'establecimiento', 'update_failed');
+      throw error;
+    }
   }
 
   async delete(id: number): Promise<{ success: boolean }> {
-    const response = await apiClient.delete(`${this.baseUrl}/${id}`) as any;
-    return response.data;
+    try {
+      const response = await apiClient.delete(`${this.baseUrl}/${id}`) as any;
+      showSuccess('establecimiento', 'deleted');
+      return response.data;
+    } catch (error) {
+      showError(error, 'establecimiento', 'delete_failed');
+      throw error;
+    }
   }
 
   async getUsuarios(id: number): Promise<any[]> {

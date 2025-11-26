@@ -7,7 +7,7 @@
 import React, { useState } from 'react';
 import { X, CheckCircle2, Clock, FileText } from 'lucide-react';
 import { tareaService, Tarea } from '@/lib/services/tareaService';
-import { toast } from 'react-hot-toast';
+import { showError, showSuccess } from '@/lib/utils/errorHandler';
 import { LoadingSpinnerInline } from '@/components/ui/loading-spinner';
 
 interface TareaCompletarModalProps {
@@ -34,12 +34,11 @@ export function TareaCompletarModal({ tarea, isOpen, onClose, onSuccess }: Tarea
         observaciones || undefined,
         tiempoReal ? parseInt(tiempoReal) : undefined
       );
-      toast.success('✅ Tarea completada exitosamente');
+      showSuccess('tarea', 'completed');
       onSuccess();
       onClose();
     } catch (error: any) {
-      console.error('Error al completar tarea:', error);
-      toast.error(error.message || 'Error al completar la tarea');
+      showError(error, 'tarea', 'complete_failed');
     } finally {
       setLoading(false);
     }

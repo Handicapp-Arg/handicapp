@@ -139,13 +139,20 @@ export default function EstablecimientoPersonalPage() {
   };
 
   const stats = useMemo(() => {
+    // Calcular departamentos únicos de los empleados
+    const departamentosUnicos = new Set(
+      empleados
+        .map(emp => emp.departamento)
+        .filter(Boolean) // Eliminar nulls/undefined
+    );
+    
     return {
       total: estadisticas?.total_empleados || 0,
       activos: estadisticas?.empleados_activos || 0,
-      departamentos: 4, // Valor calculado de los empleados únicos por departamento
+      departamentos: departamentosUnicos.size, // Número de departamentos/áreas únicas
       nuevos: estadisticas?.nuevos_mes || 0,
     };
-  }, [estadisticas]);
+  }, [estadisticas, empleados]);
 
   // Obtener listas únicas de puestos y departamentos
   const puestosUnicos = useMemo(() => {
@@ -277,12 +284,12 @@ export default function EstablecimientoPersonalPage() {
             </CardContent>
           </Card>
 
-          {/* Departamentos */}
+          {/* Departamentos/Áreas */}
           <Card className="relative overflow-hidden rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
             <CardContent className="p-3 sm:p-4 md:p-6">
               <div className="flex items-center justify-between">
                 <div className="min-w-0 flex-1">
-                  <p className="text-gray-600 text-[10px] sm:text-xs md:text-sm font-medium truncate">Departamentos</p>
+                  <p className="text-gray-600 text-[10px] sm:text-xs md:text-sm font-medium truncate">Áreas / Departamentos</p>
                   <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1">{stats.departamentos}</p>
                 </div>
                 <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-lg sm:rounded-xl bg-purple-100 flex items-center justify-center flex-shrink-0 ml-2">
@@ -291,7 +298,7 @@ export default function EstablecimientoPersonalPage() {
               </div>
               <div className="mt-2 sm:mt-3 md:mt-4">
                 <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-200 text-[10px] sm:text-xs px-1.5 sm:px-2">
-                  Áreas activas
+                  {stats.departamentos === 0 ? 'Sin áreas asignadas' : stats.departamentos === 1 ? '1 Área activa' : `${stats.departamentos} Áreas activas`}
                 </Badge>
               </div>
             </CardContent>
@@ -377,7 +384,10 @@ export default function EstablecimientoPersonalPage() {
                 onChange={(e) => setFiltroDepartamento(e.target.value)}
                 className="px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-xs sm:text-sm"
               >
-                <option value="todos">Todos los departamentos</option>
+                <option value="todos">Todas las áreas</option>
+                {departamentosUnicos.length === 0 && (
+                  <option disabled>Sin áreas definidas</option>
+                )}
                 {departamentosUnicos.map(depto => (
                   <option key={depto} value={depto}>{depto}</option>
                 ))}

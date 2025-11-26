@@ -11,7 +11,7 @@ import {
   DocumentIcon,
   VideoCameraIcon,
 } from '@heroicons/react/24/outline';
-import { toast } from 'react-hot-toast';
+import { showError, showSuccess, showInfo } from '@/lib/utils/errorHandler';
 
 interface AdjuntosListProps {
   caballoId?: number;
@@ -39,7 +39,8 @@ export default function AdjuntosList({ caballoId, eventoId, showActions = false 
         data = await AdjuntoService.getAdjuntosByEvento(eventoId);
       }
       setAdjuntos(data);
-    } catch (error: any) {      toast.error(error.message || 'Error al cargar documentos');
+    } catch (error: any) {
+      showError(error, 'file', 'fetch_list');
     } finally {
       setLoading(false);
     }
@@ -51,7 +52,7 @@ export default function AdjuntosList({ caballoId, eventoId, showActions = false 
     link.href = url;
     link.download = nombre;
     link.click();
-    toast.success('Descargando documento...');
+    showInfo('Descargando documento...');
   };
 
   const handleEliminar = async (adjuntoId: number) => {
@@ -59,10 +60,10 @@ export default function AdjuntosList({ caballoId, eventoId, showActions = false 
 
     try {
       await AdjuntoService.deleteAdjunto(adjuntoId);
-      toast.success('Documento eliminado');
+      showSuccess('file', 'deleted');
       cargarAdjuntos();
     } catch (error: any) {
-      toast.error(error.message || 'Error al eliminar documento');
+      showError(error, 'file', 'delete_failed');
     }
   };
 
