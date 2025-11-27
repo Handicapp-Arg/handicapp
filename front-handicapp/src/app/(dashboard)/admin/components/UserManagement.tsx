@@ -1,13 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { UserTable } from './UserTable';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { CreateUserModal, EditUserModal } from '@/components/common/UserModal';
+import { 
+  UserManagementTable, 
+  UserFilters,
+  UserManagementHeader,
+  type BaseUser,
+  type FilterConfig,
+  type ActionConfig,
+  type PaginationConfig
+} from '@/components/common/UserManagement';
 import ApiClient from '@/lib/services/apiClient';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { UserPlus, UserX, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'react-hot-toast';
+import { CardContent, CardHeader } from '@/components/ui/card';
 
 
 export interface User {
@@ -53,12 +61,12 @@ export function UserManagement() {
   const [userToToggle, setUserToToggle] = useState<User | null>(null);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRole, setSelectedRole] = useState<string>('');
-  const [selectedEstado, setSelectedEstado] = useState<string>('');
+  const [selectedRole, setSelectedRole] = useState<string>('todos');
+  const [selectedEstado, setSelectedEstado] = useState<string>('todos');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  const fetchUsers = async (page = 1, search = '', roleId?: number, estado?: string) => {
+  const fetchUsers = useCallback(async (page = 1, search = '', roleId?: number, estado?: string) => {
     try {
       setLoading(true);
       
@@ -83,7 +91,7 @@ export function UserManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const fetchRoles = async () => {
     try {
@@ -114,30 +122,23 @@ export function UserManagement() {
 
   // Búsqueda reactiva y cambios de página
   useEffect(() => {
-    const roleId = selectedRole ? Number(selectedRole) : undefined;
-    const estado = selectedEstado || undefined;
+    const roleId = selectedRole && selectedRole !== 'todos' ? Number(selectedRole) : undefined;
+    const estado = selectedEstado && selectedEstado !== 'todos' ? selectedEstado : undefined;
     fetchUsers(currentPage, searchTerm, roleId, estado);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, searchTerm, selectedRole, selectedEstado]);
+  }, [currentPage, searchTerm, selectedRole, selectedEstado, fetchUsers]);
 
-  const handleSearchChange = (value: string) => {
-    setSearchTerm(value);
+  const handleClearFilters = () => {
+    setSelectedRole('todos');
+    setSelectedEstado('todos');
     setCurrentPage(1);
   };
 
-  const handleRoleFilterChange = (value: string) => {
-    setSelectedRole(value);
-    setCurrentPage(1);
-  };
-
-  const handleEstadoFilterChange = (value: string) => {
-    setSelectedEstado(value);
-    setCurrentPage(1);
-  };
-
-  const handleEdit = (user: User) => {
-    setSelectedUser(user);
-    setShowEditModal(true);
+  const handleEdit = (user: BaseUser) => {
+    const fullUser = users.find(u => u.id === user.id);
+    if (fullUser) {
+      setSelectedUser(fullUser);
+      setShowEditModal(true);
+    }
   };
 
   const handleDelete = (userId: number) => {
@@ -155,8 +156,8 @@ export function UserManagement() {
       await ApiClient.deleteUser(userToDelete.id);
       toast.success('Usuario eliminado correctamente');
       
-      const roleId = selectedRole ? Number(selectedRole) : undefined;
-      const estado = selectedEstado || undefined;
+      const roleId = selectedRole && selectedRole !== 'todos' ? Number(selectedRole) : undefined;
+      const estado = selectedEstado && selectedEstado !== 'todos' ? selectedEstado : undefined;
       fetchUsers(currentPage, searchTerm, roleId, estado);
     } catch (error: any) {
       toast.error(error.message || 'Error al eliminar usuario');
@@ -204,8 +205,8 @@ export function UserManagement() {
       toast.error(error.message || 'Error al cambiar estado del usuario');
       
       // En caso de error, recargar para asegurar consistencia
-      const roleId = selectedRole ? Number(selectedRole) : undefined;
-      const estado = selectedEstado || undefined;
+      const roleId = selectedRole && selectedRole !== 'todos' ? Number(selectedRole) : undefined;
+      const estado = selectedEstado && selectedEstado !== 'todos' ? selectedEstado : undefined;
       fetchUsers(currentPage, searchTerm, roleId, estado);
     } finally {
       setShowConfirmModal(false);
@@ -215,16 +216,16 @@ export function UserManagement() {
 
   const handleUserCreated = () => {
     setShowCreateModal(false);
-    const roleId = selectedRole ? Number(selectedRole) : undefined;
-    const estado = selectedEstado || undefined;
+    const roleId = selectedRole && selectedRole !== 'todos' ? Number(selectedRole) : undefined;
+    const estado = selectedEstado && selectedEstado !== 'todos' ? selectedEstado : undefined;
     fetchUsers(currentPage, searchTerm, roleId, estado);
   };
 
   const handleUserUpdated = () => {
     setShowEditModal(false);
     setSelectedUser(null);
-    const roleId = selectedRole ? Number(selectedRole) : undefined;
-    const estado = selectedEstado || undefined;
+    const roleId = selectedRole && selectedRole !== 'todos' ? Number(selectedRole) : undefined;
+    const estado = selectedEstado && selectedEstado !== 'todos' ? selectedEstado : undefined;
     fetchUsers(currentPage, searchTerm, roleId, estado);
   };
 
@@ -238,103 +239,90 @@ export function UserManagement() {
     return await ApiClient.createUser(userData);
   };
 
-  // Nota: mantenemos el loader en la tabla para unificar experiencia, pero mostramos un skeleton simple aquí
+  // Transform users to BaseUser format
+  const usersAsBaseUsers: BaseUser[] = useMemo(() => {
+    return users.map(user => ({
+      id: user.id,
+      nombre: user.nombre,
+      apellido: user.apellido,
+      email: user.email,
+      telefono: user.telefono,
+      estado: user.estado_usuario,
+      rol: user.rol.nombre,
+      rol_id: user.rol.id,
+      verificado: user.verificado,
+      ubicacion: user.ubicacion,
+      establecimiento_id: user.establecimiento_id || undefined,
+    }));
+  }, [users]);
+
+  // Configuración de filtros para admin
+  const filterConfig: FilterConfig = {
+    showRolFilter: true,
+    showEstadoFilter: true,
+    roles: roles,
+  };
+
+  // Configuración de acciones para admin (sin view/navegación)
+  const actionConfig: ActionConfig = {
+    showView: false,
+    showEdit: true,
+    showToggleStatus: true,
+    showDelete: true,
+    editLabel: 'Editar',
+    toggleLabel: 'Desactivar',
+    deleteLabel: 'Eliminar',
+  };
+
+  // Configuración de paginación
+  const paginationConfig: PaginationConfig = {
+    currentPage,
+    totalPages,
+    onPageChange: (page) => {
+      setCurrentPage(page);
+    },
+  };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      {/* Buscador + Filtros + Acción */}
-      <div className="p-4 sm:p-6 border-b border-gray-200">
-        <div className="flex flex-col gap-3">
-          {/* Primera fila: Buscador y Botón */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <div className="relative flex-1">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <input
-                type="text"
-                placeholder="Buscar por nombre o email..."
-                value={searchTerm}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              />
-            </div>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#0f172a] text-white rounded-xl font-semibold hover:bg-[#0f172a]/90 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-            >
-              <UserPlus className="w-5 h-5" />
-              Crear Usuario
-            </button>
-          </div>
-          
-          {/* Segunda fila: Filtros */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            {/* Filtro por Rol */}
-            <div className="flex-1 sm:flex-none sm:w-48">
-              <select
-                value={selectedRole}
-                onChange={(e) => handleRoleFilterChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
-              >
-                <option value="">Todos los roles</option>
-                {roles.map((role) => (
-                  <option key={role.id} value={role.id.toString()}>
-                    {role.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            {/* Filtro por Estado */}
-            <div className="flex-1 sm:flex-none sm:w-48">
-              <select
-                value={selectedEstado}
-                onChange={(e) => handleEstadoFilterChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
-              >
-                <option value="">Todos los estados</option>
-                <option value="active">Activo</option>
-                <option value="pending">Pendiente</option>
-                <option value="invited">Invitado</option>
-                <option value="suspended">Suspendido</option>
-                <option value="disabled">Deshabilitado</option>
-                <option value="deleted">Eliminado</option>
-              </select>
-            </div>
-            
-            {/* Botón limpiar filtros */}
-            {(selectedRole || selectedEstado) && (
-              <button
-                onClick={() => {
-                  setSelectedRole('');
-                  setSelectedEstado('');
-                  setCurrentPage(1);
-                }}
-                className="inline-flex items-center justify-center px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium"
-              >
-                Limpiar filtros
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="p-4 sm:p-6">
-        <UserTable
-          users={users}
-          loading={loading}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onToggleStatus={handleToggleStatus}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={(page) => {
-            const roleId = selectedRole ? Number(selectedRole) : undefined;
-            const estado = selectedEstado || undefined;
-            fetchUsers(page, searchTerm, roleId, estado);
-          }}
+    <>
+      <CardHeader className="px-4 sm:px-6">
+        {/* Header con Buscador y Botón */}
+        <UserManagementHeader
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          onCreateClick={() => setShowCreateModal(true)}
+          createButtonLabel="Crear Usuario"
+          searchPlaceholder="Buscar por nombre o email..."
+          primaryColor="#0f172a"
         />
-      </div>
+      </CardHeader>
+
+      <CardContent className="px-3 sm:px-4 md:px-6">
+        {/* Filters */}
+        <UserFilters
+          config={filterConfig}
+          filtroEstado={selectedEstado}
+          setFiltroEstado={setSelectedEstado}
+          filtroRol={selectedRole}
+          setFiltroRol={setSelectedRole}
+          onClearFilters={handleClearFilters}
+        />
+
+        {/* Table */}
+        <UserManagementTable
+          users={usersAsBaseUsers}
+          loading={loading}
+          emptyMessage="No se encontraron usuarios"
+          actions={actionConfig}
+          onEdit={handleEdit}
+          onToggleStatus={handleToggleStatus}
+          onDelete={handleDelete}
+          primaryColor="#0f172a"
+          pagination={paginationConfig}
+          showVerificado={true}
+          showUbicacion={true}
+        />
+      </CardContent>
 
       {/* Modals */}
       <CreateUserModal
@@ -474,6 +462,6 @@ export function UserManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

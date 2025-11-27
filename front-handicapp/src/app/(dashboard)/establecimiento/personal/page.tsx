@@ -1,12 +1,10 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import Link from 'next/link';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Users, UserCheck, Shield, UserCog, Search, Eye, Edit, UserX, UserPlus, Plus, Trash2 } from 'lucide-react';
+import { Users, Shield, Trash2, UserX, UserPlus } from 'lucide-react';
 import {
   gestionPersonalService,
   Empleado,
@@ -15,8 +13,15 @@ import {
 import { toast } from 'react-hot-toast';
 import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 import { CreateEmpleadoModal, EditEmpleadoModal } from '@/components/common/EmpleadoModal';
-import { UserTable } from '@/components/common/UserTable';
-import type { BaseUser } from '@/components/common/UserTable';
+import { 
+  UserManagementTable, 
+  UserStatsCards, 
+  UserFilters,
+  UserManagementHeader,
+  type BaseUser,
+  type FilterConfig,
+  type ActionConfig 
+} from '@/components/common/UserManagement';
 
 export default function EstablecimientoPersonalPage() {
   const [empleados, setEmpleados] = useState<Empleado[]>([]);
@@ -85,7 +90,7 @@ export default function EstablecimientoPersonalPage() {
     setModalEditar(true);
   };
 
-  const updateEmpleadoWrapper = async (empleadoId: number, data: any) => {
+  const updateEmpleadoWrapper = async (empleadoId: number, data: Partial<Empleado>) => {
     const result = await gestionPersonalService.actualizarEmpleado(empleadoId, data);
     return result !== null;
   };
@@ -98,6 +103,20 @@ export default function EstablecimientoPersonalPage() {
   const handleViewEmpleado = (empleadoId: number) => {
     // Navegar al perfil del empleado
     window.location.href = `/establecimiento/personal/${empleadoId}`;
+  };
+
+  const handleToggleWrapper = (empleadoId: number) => {
+    const empleado = empleados.find(e => e.id === empleadoId);
+    if (empleado) {
+      handleToggleEstado(empleado);
+    }
+  };
+
+  const handleDeleteWrapper = (empleadoId: number) => {
+    const empleado = empleados.find(e => e.id === empleadoId);
+    if (empleado) {
+      handleEliminarEmpleado(empleado);
+    }
   };
 
   const confirmarToggleEstado = async () => {
@@ -156,12 +175,12 @@ export default function EstablecimientoPersonalPage() {
 
   // Obtener listas únicas de puestos y departamentos
   const puestosUnicos = useMemo(() => {
-    const puestos = empleados.map(emp => emp.puesto).filter(Boolean);
+    const puestos = empleados.map(emp => emp.puesto).filter((p): p is string => !!p);
     return Array.from(new Set(puestos)).sort();
   }, [empleados]);
 
   const departamentosUnicos = useMemo(() => {
-    const departamentos = empleados.map(emp => emp.departamento).filter(Boolean);
+    const departamentos = empleados.map(emp => emp.departamento).filter((d): d is string => !!d);
     return Array.from(new Set(departamentos)).sort();
   }, [empleados]);
 
@@ -210,6 +229,34 @@ export default function EstablecimientoPersonalPage() {
     }));
   }, [empleadosFiltrados]);
 
+  // Configuración de filtros para establecimiento
+  const filterConfig: FilterConfig = {
+    showEstadoFilter: true,
+    showPuestoFilter: true,
+    showDepartamentoFilter: true,
+    puestos: puestosUnicos,
+    departamentos: departamentosUnicos,
+  };
+
+  // Handler para limpiar filtros
+  const handleClearFilters = () => {
+    setFiltroEstado('todos');
+    setFiltroPuesto('todos');
+    setFiltroDepartamento('todos');
+  };
+
+  // Configuración de acciones para establecimiento (con view/navegación)
+  const actionConfig: ActionConfig = {
+    showView: true,
+    showEdit: true,
+    showToggleStatus: true,
+    showDelete: true,
+    viewLabel: 'Ver perfil',
+    editLabel: 'Editar',
+    toggleLabel: 'Desactivar',
+    deleteLabel: 'Eliminar',
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -221,271 +268,59 @@ export default function EstablecimientoPersonalPage() {
   return (
     <SimpleRoleGuard roles={['establecimiento']}>
       <div className="space-y-4 sm:space-y-6">
-        {/* Hero Section */}
-        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 sm:p-6 md:p-8">
-          {/* Background Pattern */}
-          <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,transparent,black)]" />
-          
-          {/* Gradient Orbs */}
-          <div className="absolute top-0 right-0 w-48 h-48 sm:w-72 sm:h-72 md:w-96 md:h-96 bg-emerald-500/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 sm:w-72 sm:h-72 md:w-96 md:h-96 bg-green-500/20 rounded-full blur-3xl" />
-          
-          {/* Content */}
-          <div className="relative">
-            <div className="flex items-center gap-2 sm:gap-3 mb-2">
-              <Users className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0 text-emerald-400" />
-              <h1 className="text-2xl sm:text-3xl font-bold text-white truncate">Gestión de Personal</h1>
-            </div>
-            <p className="text-slate-300 text-sm sm:text-base md:text-lg">
-              Administra tu equipo y personal del establecimiento
-            </p>
-          </div>
-        </div>
-
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-          {/* Total */}
-          <Card className="relative overflow-hidden rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
-            <CardContent className="p-3 sm:p-4 md:p-6">
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-gray-600 text-[10px] sm:text-xs md:text-sm font-medium truncate">Total Personal</p>
-                  <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1">{stats.total}</p>
-                </div>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-lg sm:rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0 ml-2">
-                  <Users className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-emerald-600" />
-                </div>
-              </div>
-              <div className="mt-2 sm:mt-3 md:mt-4">
-                <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] sm:text-xs px-1.5 sm:px-2">
-                  Registrados
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Activos */}
-          <Card className="relative overflow-hidden rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
-            <CardContent className="p-3 sm:p-4 md:p-6">
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-gray-600 text-[10px] sm:text-xs md:text-sm font-medium truncate">Activos</p>
-                  <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1">{stats.activos}</p>
-                </div>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-lg sm:rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0 ml-2">
-                  <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-green-600" />
-                </div>
-              </div>
-              <div className="mt-2 sm:mt-3 md:mt-4">
-                <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 text-[10px] sm:text-xs px-1.5 sm:px-2 truncate">
-                  {Math.round((stats.activos / (stats.total || 1)) * 100)}% del total
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Departamentos/Áreas */}
-          <Card className="relative overflow-hidden rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
-            <CardContent className="p-3 sm:p-4 md:p-6">
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-gray-600 text-[10px] sm:text-xs md:text-sm font-medium truncate">Áreas / Departamentos</p>
-                  <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1">{stats.departamentos}</p>
-                </div>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-lg sm:rounded-xl bg-purple-100 flex items-center justify-center flex-shrink-0 ml-2">
-                  <Shield className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-purple-600" />
-                </div>
-              </div>
-              <div className="mt-2 sm:mt-3 md:mt-4">
-                <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-200 text-[10px] sm:text-xs px-1.5 sm:px-2">
-                  {stats.departamentos === 0 ? 'Sin áreas asignadas' : stats.departamentos === 1 ? '1 Área activa' : `${stats.departamentos} Áreas activas`}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Nuevos */}
-          <Card className="relative overflow-hidden rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
-            <CardContent className="p-3 sm:p-4 md:p-6">
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-gray-600 text-[10px] sm:text-xs md:text-sm font-medium truncate">Nuevos Este Mes</p>
-                  <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1">{stats.nuevos}</p>
-                </div>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-lg sm:rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0 ml-2">
-                  <UserCog className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-blue-600" />
-                </div>
-              </div>
-              <div className="mt-2 sm:mt-3 md:mt-4">
-                <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] sm:text-xs px-1.5 sm:px-2">
-                  <span className="hidden sm:inline">Últimos 30 días</span>
-                  <span className="sm:hidden">30 días</span>
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <UserStatsCards
+          total={stats.total}
+          activos={stats.activos}
+          metric3={stats.departamentos}
+          nuevos={stats.nuevos}
+          metric3Label="Áreas / Departamentos"
+          metric3Icon={Shield}
+          metric3Badge={stats.departamentos === 0 ? 'Sin áreas asignadas' : stats.departamentos === 1 ? '1 Área activa' : `${stats.departamentos} Áreas activas`}
+          primaryColor="#059669"
+        />
 
         {/* Content Card */}
         <Card className="rounded-xl sm:rounded-2xl shadow-xl">
           <CardHeader className="px-4 sm:px-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <CardDescription className="text-xs sm:text-sm">
-                Lista completa del personal del establecimiento
-              </CardDescription>
-              <button
-                onClick={handleNuevoEmpleado}
-                className="px-3 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 active:bg-emerald-800 transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm font-medium"
-              >
-                <Users className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="hidden xs:inline">Nuevo Empleado</span>
-                <span className="xs:hidden">Nuevo</span>
-              </button>
-            </div>
+            {/* Header con Buscador y Botón */}
+            <UserManagementHeader
+              searchTerm={busqueda}
+              onSearchChange={setBusqueda}
+              onCreateClick={handleNuevoEmpleado}
+              createButtonLabel="Nuevo Empleado"
+              searchPlaceholder="Buscar por nombre, apellido o email..."
+              primaryColor="#059669"
+            />
           </CardHeader>
           <CardContent className="px-3 sm:px-4 md:px-6">
             {/* Filters */}
-            <div className="mb-4 sm:mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-              <div className="sm:col-span-2 lg:col-span-1 relative">
-                <input
-                  type="text"
-                  placeholder="Buscar por nombre, apellido o email..."
-                  value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-2.5 pl-9 sm:pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-xs sm:text-sm"
-                />
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-              </div>
-              
-              <select
-                value={filtroEstado}
-                onChange={(e) => setFiltroEstado(e.target.value)}
-                className="px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-xs sm:text-sm"
-              >
-                <option value="todos">Todos los estados</option>
-                <option value="activo">Activos</option>
-                <option value="inactivo">Inactivos</option>
-                <option value="ausente">Ausentes</option>
-              </select>
-
-              <select
-                value={filtroPuesto}
-                onChange={(e) => setFiltroPuesto(e.target.value)}
-                className="px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-xs sm:text-sm"
-              >
-                <option value="todos">Todos los puestos</option>
-                {puestosUnicos.map(puesto => (
-                  <option key={puesto} value={puesto}>{puesto}</option>
-                ))}
-              </select>
-
-              <select
-                value={filtroDepartamento}
-                onChange={(e) => setFiltroDepartamento(e.target.value)}
-                className="px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-xs sm:text-sm"
-              >
-                <option value="todos">Todas las áreas</option>
-                {departamentosUnicos.length === 0 && (
-                  <option disabled>Sin áreas definidas</option>
-                )}
-                {departamentosUnicos.map(depto => (
-                  <option key={depto} value={depto}>{depto}</option>
-                ))}
-              </select>
-            </div>
+            <UserFilters
+              config={filterConfig}
+              filtroEstado={filtroEstado}
+              setFiltroEstado={setFiltroEstado}
+              filtroPuesto={filtroPuesto}
+              setFiltroPuesto={setFiltroPuesto}
+              filtroDepartamento={filtroDepartamento}
+              setFiltroDepartamento={setFiltroDepartamento}
+              onClearFilters={handleClearFilters}
+            />
 
             {/* Table */}
-            <div className="overflow-x-auto rounded-lg sm:rounded-xl border border-gray-100 -mx-3 sm:mx-0">
-              <table className="w-full text-xs sm:text-sm min-w-[640px]">
-                <thead className="bg-gray-50 border-b">
-                  <tr>
-                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase">Nombre</th>
-                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase">Email</th>
-                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase">Puesto</th>
-                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase">Departamento</th>
-                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase">Estado</th>
-                    <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-center text-[10px] sm:text-xs font-medium text-gray-500 uppercase">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {empleadosFiltrados.map((emp) => (
-                    <tr key={emp.id} className="hover:bg-gray-50 active:bg-gray-100 transition-colors">
-                      <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap">
-                        <div className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-[120px] sm:max-w-none">{emp.nombre} {emp.apellido}</div>
-                      </td>
-                      <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap">
-                        <div className="text-xs sm:text-sm text-gray-500 truncate max-w-[120px] sm:max-w-[180px] md:max-w-none">{emp.email}</div>
-                      </td>
-                      <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap">
-                        <div className="text-xs sm:text-sm text-gray-500 truncate max-w-[80px] sm:max-w-none">{emp.puesto}</div>
-                      </td>
-                      <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap">
-                        <div className="text-xs sm:text-sm text-gray-500 truncate max-w-[80px] sm:max-w-none">{emp.departamento}</div>
-                      </td>
-                      <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap">
-                        <Badge 
-                          className={`text-[10px] sm:text-xs px-1.5 sm:px-2 ${emp.estado === 'activo' 
-                            ? 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200' 
-                            : 'bg-red-100 text-red-800 border-red-300 hover:bg-red-200'
-                          }`}
-                        >
-                          {emp.estado === 'activo' ? '● Activo' : '● Inactivo'}
-                        </Badge>
-                      </td>
-                      <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1 sm:gap-2">
-                          <Link
-                            href={`/establecimiento/personal/${emp.id}`}
-                            className="p-1.5 sm:p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-purple-600 hover:text-white active:bg-purple-700 transition-all duration-200 hover:scale-110 inline-flex items-center justify-center"
-                            title="Ver perfil"
-                          >
-                            <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
-                          </Link>
-                          <button
-                            onClick={() => handleEditarEmpleado(emp)}
-                            type="button"
-                            className="p-1.5 sm:p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-blue-600 hover:text-white active:bg-blue-700 transition-all duration-200 hover:scale-110"
-                            title="Editar"
-                          >
-                            <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleToggleEstado(emp)}
-                            type="button"
-                            className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 hover:scale-110 ${
-                              emp.estado === 'activo' 
-                                ? 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 active:bg-red-200' 
-                                : 'bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 active:bg-green-200'
-                            }`}
-                            title={emp.estado === 'activo' ? 'Desactivar' : 'Activar'}
-                          >
-                            {emp.estado === 'activo' ? (
-                              <UserX className="h-3 w-3 sm:h-4 sm:w-4" />
-                            ) : (
-                              <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
-                            )}
-                          </button>
-                          <button
-                            onClick={() => handleEliminarEmpleado(emp)}
-                            type="button"
-                            className="p-1.5 sm:p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-red-600 hover:text-white active:bg-red-700 transition-all duration-200 hover:scale-110"
-                            title="Eliminar"
-                          >
-                            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {empleadosFiltrados.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-gray-500">No se encontraron empleados</p>
-              </div>
-            )}
+            <UserManagementTable
+              users={empleadosAsBaseUsers}
+              loading={loading}
+              emptyMessage="No se encontraron empleados"
+              actions={actionConfig}
+              onView={handleViewEmpleado}
+              onEdit={(user) => {
+                const empleado = empleados.find(e => e.id === user.id);
+                if (empleado) handleEditarEmpleado(empleado);
+              }}
+              onToggleStatus={handleToggleWrapper}
+              onDelete={handleDeleteWrapper}
+              primaryColor="#059669"
+            />
           </CardContent>
         </Card>
 
