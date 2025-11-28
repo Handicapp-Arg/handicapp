@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
@@ -7,7 +5,7 @@ import { establecimientoService, type Establecimiento } from '@/lib/services/est
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import EstablecimientoDetailView from '@/components/dashboard/EstablecimientoDetailView';
 
-export default function PropietarioEstablecimientoDetailPage() {
+export default function AdminEstablecimientoDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [establecimiento, setEstablecimiento] = useState<Establecimiento | null>(null);
@@ -44,7 +42,7 @@ export default function PropietarioEstablecimientoDetailPage() {
         <div className="bg-red-50 border border-red-200 rounded-xl p-6">
           <p className="text-red-800 mb-4">{error || 'Establecimiento no encontrado'}</p>
           <button
-            onClick={() => router.push('/propietario/establecimientos')}
+            onClick={() => router.push('/admin/establecimientos')}
             className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
           >
             Volver
@@ -60,4 +58,3 @@ export default function PropietarioEstablecimientoDetailPage() {
     </SimpleRoleGuard>
   );
 }
-

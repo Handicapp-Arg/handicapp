@@ -324,6 +324,7 @@ export class EstablecimientoService {
       }
 
       // Para otros usuarios, verificar membresía activa
+      /*
       const establecimiento = await Establecimiento.findByPk(establecimientoId, {
         include: [
           {
@@ -359,6 +360,36 @@ export class EstablecimientoService {
         return {
           success: false,
           error: 'Establecimiento no encontrado o sin acceso',
+        };
+      }
+
+      return {
+        success: true,
+        data: establecimiento,
+      };
+      */
+      // Permitir acceso universal (sin membresía)
+      const establecimiento = await Establecimiento.findByPk(establecimientoId, {
+        include: [
+          {
+            model: User,
+            as: 'usuarios',
+            where: { establecimiento_id: establecimientoId },
+            required: false,
+            attributes: ['id', 'nombre', 'apellido', 'email', 'rol_id', 'creado_el', 'establecimiento_id'],
+            include: [{
+              model: Role,
+              as: 'rol',
+              attributes: ['id', 'clave', 'nombre']
+            }]
+          }
+        ]
+      });
+
+      if (!establecimiento) {
+        return {
+          success: false,
+          error: 'Establecimiento no encontrado',
         };
       }
 
