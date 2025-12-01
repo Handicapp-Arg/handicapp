@@ -105,8 +105,7 @@ export default function ReportesEventosPage() {
       URL.revokeObjectURL(url);
 
       toast.success('Reporte generado exitosamente', { id: toastId });
-    } catch (error) {
-      console.error('Error generando reporte:', error);
+    } catch {
       toast.error('Error al generar el reporte', { id: toastId });
     } finally {
       setGenerando(false);

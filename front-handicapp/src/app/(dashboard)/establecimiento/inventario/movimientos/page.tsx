@@ -1,17 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, TrendingUp, TrendingDown, RefreshCw, Package, Calendar, User, Filter } from 'lucide-react';
 import { inventarioService, type Movimiento } from '@/lib/inventarioService';
 import { toast } from 'react-hot-toast';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 export default function MovimientosGeneralesPage() {
+  const searchParams = useSearchParams();
+  const productoIdParam = searchParams.get('producto_id');
+  
   const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroTipo, setFiltroTipo] = useState<string>('todos');
+  const [filtroProductoId, setFiltroProductoId] = useState<string>(productoIdParam || '');
   const [busqueda, setBusqueda] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
@@ -41,6 +47,8 @@ export default function MovimientosGeneralesPage() {
     
     const matchesTipo = filtroTipo === 'todos' || mov.tipo === filtroTipo;
     
+    const matchesProducto = !filtroProductoId || mov.producto_id.toString() === filtroProductoId;
+    
     // Filtro por fecha
     let matchesFecha = true;
     if (fechaDesde || fechaHasta) {
@@ -60,7 +68,7 @@ export default function MovimientosGeneralesPage() {
       }
     }
     
-    return matchesBusqueda && matchesTipo && matchesFecha;
+    return matchesBusqueda && matchesTipo && matchesProducto && matchesFecha;
   });
 
   const getIconoTipo = (tipo: string) => {
@@ -103,40 +111,16 @@ export default function MovimientosGeneralesPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+        <LoadingSpinnerFullPage label="Cargando..." />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-900 via-amber-800 to-orange-900 p-8">
-        <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,transparent,black)]" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-orange-500/20 rounded-full blur-3xl" />
-        
-        <div className="relative">
-          <Link
-            href="/establecimiento/inventario"
-            className="inline-flex items-center gap-2 text-amber-200 hover:text-white mb-4 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Volver al inventario
-          </Link>
-          <div className="flex items-center gap-3 mb-2">
-            <TrendingUp className="w-8 h-8 text-amber-400" />
-            <h1 className="text-3xl font-bold text-white">Movimientos de Inventario</h1>
-          </div>
-          <p className="text-amber-200 text-lg">
-            Historial completo de todos los movimientos del inventario
-          </p>
-        </div>
-      </div>
-
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
+        <Card className="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -155,7 +139,7 @@ export default function MovimientosGeneralesPage() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
+        <Card className="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -174,7 +158,7 @@ export default function MovimientosGeneralesPage() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
+        <Card className="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -213,94 +197,109 @@ export default function MovimientosGeneralesPage() {
         </Card>
       </div>
 
-      {/* Filtros */}
-      <Card className="rounded-2xl shadow-xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-amber-600" />
-            Filtrar Movimientos
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Primera fila: Búsqueda y Tipo */}
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1 relative">
-                <input
-                  type="text"
-                  placeholder="Buscar por producto, código o motivo..."
-                  value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
-                  className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                />
-                <Package className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+      {/* Content Card */}
+      <Card className="rounded-lg border border-gray-200 shadow-sm">
+        <CardHeader className="px-4 sm:px-6 space-y-4">
+          {/* Título y acciones */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-semibold text-gray-900">Movimientos de Inventario</h2>
+                {filtroProductoId && (
+                  <Badge className="bg-blue-100 text-blue-700 border-blue-200">
+                    Producto específico
+                  </Badge>
+                )}
               </div>
-              <select
-                value={filtroTipo}
-                onChange={(e) => setFiltroTipo(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-              >
-                <option value="todos">Todos los tipos</option>
-                <option value="entrada">Entradas</option>
-                <option value="salida">Salidas</option>
-                <option value="ajuste">Ajustes</option>
-                <option value="devolucion">Devoluciones</option>
-                <option value="merma">Mermas</option>
-              </select>
+              <p className="text-sm text-gray-600 mt-1">
+                {filtroProductoId 
+                  ? 'Movimientos del producto seleccionado' 
+                  : 'Historial completo de todos los movimientos del inventario'}
+              </p>
             </div>
-
-            {/* Segunda fila: Rango de fechas */}
-            <div className="flex flex-col md:flex-row gap-4 items-end">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Desde
-                </label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    value={fechaDesde}
-                    onChange={(e) => setFechaDesde(e.target.value)}
-                    className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                  />
-                  <Calendar className="absolute left-3 top-3 h-5 w-5 text-gray-400 pointer-events-none" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Hasta
-                </label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    value={fechaHasta}
-                    onChange={(e) => setFechaHasta(e.target.value)}
-                    className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                  />
-                  <Calendar className="absolute left-3 top-3 h-5 w-5 text-gray-400 pointer-events-none" />
-                </div>
-              </div>
-              {(fechaDesde || fechaHasta) && (
-                <button
-                  onClick={() => {
-                    setFechaDesde('');
-                    setFechaHasta('');
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  Limpiar fechas
-                </button>
-              )}
-            </div>
+            <Link
+              href="/establecimiento/inventario"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Volver
+            </Link>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Tabla de Movimientos */}
-      <Card className="rounded-2xl shadow-xl">
-        <CardHeader>
-          <CardTitle>Historial Completo</CardTitle>
+          {/* Buscador */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Buscar por producto, código o motivo..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <Package className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+          </div>
         </CardHeader>
-        <CardContent>
+
+        <CardContent className="px-3 sm:px-4 md:px-6">
+          {/* Filtros en una sola línea */}
+          <div className="mb-6 flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
+            {/* Tipo de movimiento */}
+            <select
+              value={filtroTipo}
+              onChange={(e) => setFiltroTipo(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            >
+              <option value="todos">Todos los tipos</option>
+              <option value="entrada">Entradas</option>
+              <option value="salida">Salidas</option>
+              <option value="ajuste">Ajustes</option>
+              <option value="devolucion">Devoluciones</option>
+              <option value="merma">Mermas</option>
+            </select>
+
+            {/* Fecha desde */}
+            <input
+              type="date"
+              value={fechaDesde}
+              onChange={(e) => setFechaDesde(e.target.value)}
+              placeholder="Desde"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            />
+
+            {/* Fecha hasta */}
+            <input
+              type="date"
+              value={fechaHasta}
+              onChange={(e) => setFechaHasta(e.target.value)}
+              placeholder="Hasta"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            />
+
+            {/* Botón limpiar fechas */}
+            {(fechaDesde || fechaHasta) && (
+              <button
+                onClick={() => {
+                  setFechaDesde('');
+                  setFechaHasta('');
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors whitespace-nowrap"
+              >
+                Limpiar fechas
+              </button>
+            )}
+
+            {/* Botón ver todos los productos */}
+            {filtroProductoId && (
+              <button
+                onClick={() => setFiltroProductoId('')}
+                className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors whitespace-nowrap flex items-center justify-center gap-2 text-sm font-medium ml-auto"
+              >
+                <Filter className="w-4 h-4" />
+                Ver todos los productos
+              </button>
+            )}
+          </div>
+
+          {/* Tabla de Movimientos */}
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b">

@@ -199,7 +199,7 @@ export default function RolesPage() {
   return (
     <SimpleAdminOnly>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           
           {/* Hero Section */}
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 mb-8 shadow-2xl">

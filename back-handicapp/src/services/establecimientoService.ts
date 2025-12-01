@@ -6,13 +6,15 @@
 import { Op } from 'sequelize';
 import { Establecimiento } from '../models/Establecimiento';
 import { User } from '../models/User';
+import { Role } from '../models/roles';
 import { MembresiaUsuarioEstablecimiento } from '../models/MembresiaUsuarioEstablecimiento';
 import { CaballoEstablecimiento } from '../models/CaballoEstablecimiento';
 import { Caballo } from '../models/Caballo';
 import { PropietarioCaballo } from '../models/PropietarioCaballo';
 import { ServiceResponse, PaginationQuery } from '../types';
-import { EstadoMembresia, RolEnEstablecimiento, Disciplina, EstadoAsociacionCE } from '../models/enums';
+import { EstadoMembresia, RolEnEstablecimiento, Disciplina, EstadoAsociacionCE, EstadoUsuario } from '../models/enums';
 import { logger } from '../utils/logger';
+import bcrypt from 'bcrypt';
 // import errors helpers (no direct use here)
 
 interface CreateEstablecimientoData {
@@ -27,6 +29,9 @@ interface CreateEstablecimientoData {
   ciudad?: string;
   provincia?: string;
   pais?: string;
+  latitud?: number;
+  longitud?: number;
+  descripcion?: string;
   logo_url?: string;
   disciplina_principal?: string;
   tipo_establecimiento?: string;
@@ -34,6 +39,11 @@ interface CreateEstablecimientoData {
   superficie_hectareas?: number;
   cantidad_boxes?: number;
   servicios?: string[];
+  // Datos del administrador (opcionales)
+  admin_email?: string;
+  admin_password?: string;
+  admin_nombre?: string;
+  admin_apellido?: string;
 }
 
 interface UpdateEstablecimientoData extends Partial<CreateEstablecimientoData> {}
@@ -56,17 +66,55 @@ export class EstablecimientoService {
 
       const offset = (page - 1) * limit;
 
-      const whereClause: any = {
-        estado: 'activo' // Solo establecimientos activos
-      };
+      const whereConditions: any[] = [];
+      
+      // Si hay usuarioId (propietario), solo mostrar activos
+      // Si no hay usuarioId (admin), mostrar todos los estados
+      if (usuarioId) {
+        whereConditions.push({ estado: 'activo' }); // Solo establecimientos activos para propietarios
+      }
+      // Si no hay usuarioId, no filtrar por estado (admin ve todos)
 
       // Si hay búsqueda, filtrar por nombre, ciudad o provincia
       if (search) {
-        whereClause[Op.or] = [
-          { nombre: { [Op.iLike]: `%${search}%` } },
-          { ciudad: { [Op.iLike]: `%${search}%` } },
-          { provincia: { [Op.iLike]: `%${search}%` } }
-        ];
+        whereConditions.push({
+          [Op.or]: [
+            { nombre: { [Op.iLike]: `%${search}%` } },
+            { ciudad: { [Op.iLike]: `%${search}%` } },
+            { provincia: { [Op.iLike]: `%${search}%` } }
+          ]
+        });
+      }
+
+      const whereClause = whereConditions.length > 0 
+        ? { [Op.and]: whereConditions }
+        : {};
+
+      logger.info('🔍 getAllPublicEstablecimientos query', { 
+        usuarioId, 
+        whereConditions: whereConditions.length, 
+        whereClause,
+        page, 
+        limit, 
+        search 
+      });
+
+      // Preparar includes - si no hay usuarioId (admin), incluir usuarios
+      const includes: any[] = [];
+      if (!usuarioId) {
+        // Admin ve los usuarios del establecimiento (solo los que tienen establecimiento_id)
+        includes.push({
+          model: User,
+          as: 'usuarios',
+          where: { establecimiento_id: { [Op.ne]: null } }, // Solo usuarios que pertenecen a algún establecimiento
+          required: false, // LEFT JOIN para que devuelva establecimientos aunque no tengan usuarios
+          attributes: ['id', 'nombre', 'apellido', 'email', 'rol_id', 'creado_el', 'establecimiento_id'],
+          include: [{
+            model: Role,
+            as: 'rol',
+            attributes: ['id', 'clave', 'nombre']
+          }]
+        });
       }
 
       const { count, rows } = await Establecimiento.findAndCountAll({
@@ -74,10 +122,31 @@ export class EstablecimientoService {
         limit,
         offset,
         order: [[sortBy, sortOrder]],
+        include: includes,
+      });
+
+      logger.info('📊 getAllPublicEstablecimientos result', { 
+        count, 
+        rowsCount: rows.length,
+        includes: includes.length,
+        usuariosEnPrimerEstab: (rows[0] as any)?.usuarios?.length || 0,
+        primerosUsuarios: (rows[0] as any)?.usuarios?.map((u: any) => ({
+          id: u.id,
+          email: u.email,
+          establecimiento_id: u.establecimiento_id
+        }))
       });
 
       // Si es propietario, agregar info de sus caballos en cada establecimiento
+      // Si es admin (sin usuarioId), devolver todos los establecimientos sin info de caballos
       let establecimientosConInfo = rows.map(e => e.toJSON());
+      
+      // Inicializar mis_caballos como array vacío para todos los establecimientos
+      establecimientosConInfo = establecimientosConInfo.map((est: any) => ({
+        ...est,
+        mis_caballos: [],
+        caballos_count: 0
+      }));
       
       if (usuarioId) {
         // Obtener IDs de caballos del propietario
@@ -200,21 +269,91 @@ export class EstablecimientoService {
     userId: number
   ): Promise<ServiceResponse<Establecimiento>> {
     try {
-      const establecimiento = await Establecimiento.findByPk(establecimientoId, {
+      // Primero verificar si el usuario existe y obtener su rol
+      const user = await User.findByPk(userId, {
         include: [{
-          model: MembresiaUsuarioEstablecimiento,
-          as: 'membresias',
-          where: { 
-            usuario_id: userId,
-            estado_membresia: EstadoMembresia.active 
-          },
-          required: true,
+          model: Role,
+          as: 'rol',
+          attributes: ['clave']
+        }]
+      });
+
+      const isAdmin = (user as any)?.rol?.clave === 'admin';
+
+      // Si es admin, puede ver cualquier establecimiento sin restricción
+      if (isAdmin) {
+        const establecimiento = await Establecimiento.findByPk(establecimientoId, {
           include: [{
             model: User,
-            as: 'usuario',
-            attributes: ['id', 'nombre', 'apellido', 'email']
+            as: 'usuarios',
+            where: { establecimiento_id: establecimientoId }, // Solo usuarios de ESTE establecimiento
+            required: false,
+            attributes: ['id', 'nombre', 'apellido', 'email', 'rol_id', 'creado_el', 'establecimiento_id'],
+            include: [{
+              model: Role,
+              as: 'rol',
+              attributes: ['id', 'clave', 'nombre']
+            }]
           }]
-        }]
+        });
+
+        logger.info('🔍 getEstablecimientoById (admin)', {
+          establecimientoId,
+          encontrado: !!establecimiento,
+          usuarios: (establecimiento as any)?.usuarios?.length || 0,
+          usuariosData: (establecimiento as any)?.usuarios?.map((u: any) => ({
+            id: u.id,
+            nombre: u.nombre,
+            email: u.email,
+            establecimiento_id: u.establecimiento_id,
+            rol: u.rol?.clave
+          }))
+        });
+
+        if (!establecimiento) {
+          return {
+            success: false,
+            error: 'Establecimiento no encontrado',
+          };
+        }
+
+        return {
+          success: true,
+          data: establecimiento,
+        };
+      }
+
+      // Para otros usuarios, verificar membresía activa
+      /*
+      const establecimiento = await Establecimiento.findByPk(establecimientoId, {
+        include: [
+          {
+            model: MembresiaUsuarioEstablecimiento,
+            as: 'membresias',
+            where: { 
+              usuario_id: userId,
+              estado_membresia: EstadoMembresia.active 
+            },
+            required: true,
+            include: [{
+              model: User,
+              as: 'usuario',
+              attributes: ['id', 'nombre', 'apellido', 'email']
+            }]
+          },
+          {
+            model: User,
+            as: 'usuarios',
+            where: { establecimiento_id: establecimientoId }, // Solo usuarios de ESTE establecimiento
+            required: false,
+            attributes: ['id', 'nombre', 'apellido', 'email', 'rol_id', 'creado_el', 'establecimiento_id'],
+            include: [{
+              model: Role,
+              as: 'rol',
+              attributes: ['id', 'clave', 'nombre']
+            }]
+          }
+        ]
       });
 
       if (!establecimiento) {
@@ -228,7 +367,38 @@ export class EstablecimientoService {
         success: true,
         data: establecimiento,
       };
+      */
+      // Permitir acceso universal (sin membresía)
+      const establecimiento = await Establecimiento.findByPk(establecimientoId, {
+        include: [
+          {
+            model: User,
+            as: 'usuarios',
+            where: { establecimiento_id: establecimientoId },
+            required: false,
+            attributes: ['id', 'nombre', 'apellido', 'email', 'rol_id', 'creado_el', 'establecimiento_id'],
+            include: [{
+              model: Role,
+              as: 'rol',
+              attributes: ['id', 'clave', 'nombre']
+            }]
+          }
+        ]
+      });
+
+      if (!establecimiento) {
+        return {
+          success: false,
+          error: 'Establecimiento no encontrado',
+        };
+      }
+
+      return {
+        success: true,
+        data: establecimiento,
+      };
     } catch (error) {
+      logger.error('Error al obtener establecimiento por ID', { error });
       return {
         success: false,
         error: 'Error al obtener establecimiento',
@@ -265,6 +435,19 @@ export class EstablecimientoService {
         };
       }
 
+      // Si se proporcionan datos del admin, verificar que el email no exista
+      if (data.admin_email) {
+        const existingUser = await User.findOne({
+          where: { email: data.admin_email }
+        });
+        if (existingUser) {
+          return {
+            success: false,
+            error: 'Ya existe un usuario con este email',
+          };
+        }
+      }
+
       // Crear el establecimiento
       const establecimiento = await Establecimiento.create({
         nombre: data.nombre,
@@ -278,6 +461,9 @@ export class EstablecimientoService {
         ciudad: data.ciudad || null,
         provincia: data.provincia || null,
         pais: data.pais || null,
+        latitud: data.latitud || null,
+        longitud: data.longitud || null,
+        descripcion: data.descripcion || null,
         logo_url: data.logo_url || null,
         disciplina_principal: (data.disciplina_principal as Disciplina | undefined) ?? null,
         tipo_establecimiento: (data as any).tipo_establecimiento || 'mixto',
@@ -287,7 +473,7 @@ export class EstablecimientoService {
         servicios: (data as any).servicios || [],
       });
 
-      // Crear la membresía del usuario como administrador del establecimiento
+      // Crear la membresía del usuario que crea el establecimiento
       await MembresiaUsuarioEstablecimiento.create({
         usuario_id: userId,
         establecimiento_id: establecimiento.id,
@@ -295,6 +481,64 @@ export class EstablecimientoService {
         estado_membresia: EstadoMembresia.active,
         fecha_inicio: new Date(),
       });
+
+      // Si se proporcionan datos del administrador, crear el usuario
+      logger.info('🔍 Verificando datos del admin', {
+        admin_email: data.admin_email,
+        admin_password: data.admin_password ? '***' : undefined,
+        admin_nombre: data.admin_nombre,
+        admin_apellido: data.admin_apellido,
+        cumpleCondicion: !!(data.admin_email && data.admin_password && data.admin_nombre && data.admin_apellido)
+      });
+
+      if (data.admin_email && data.admin_password && data.admin_nombre && data.admin_apellido) {
+        logger.info('✅ Creando usuario administrador para establecimiento', { 
+          establecimientoId: establecimiento.id,
+          adminEmail: data.admin_email,
+          adminNombre: data.admin_nombre,
+          adminApellido: data.admin_apellido
+        });
+
+        // Obtener el rol "establecimiento"
+        const rolEstablecimiento = await Role.findOne({ 
+          where: { clave: 'establecimiento' } 
+        });
+
+        if (!rolEstablecimiento) {
+          logger.error('No se encontró el rol "establecimiento"');
+          return {
+            success: false,
+            error: 'Error en configuración del sistema: rol no encontrado',
+          };
+        }
+
+        // Hashear contraseña
+        const hashedPassword = await bcrypt.hash(data.admin_password, 12);
+
+        // Crear usuario administrador
+        const adminUser = await User.create({
+          email: data.admin_email,
+          hash_contrasena: hashedPassword,
+          nombre: data.admin_nombre,
+          apellido: data.admin_apellido,
+          rol_id: rolEstablecimiento.id,
+          establecimiento_id: establecimiento.id,
+          verificado: true,
+          estado_usuario: EstadoUsuario.active,
+          creado_el: new Date(),
+          actualizado_el: new Date(),
+        });
+
+        logger.info('✅ Usuario administrador creado exitosamente', { 
+          userId: adminUser.id,
+          email: adminUser.email,
+          establecimientoId: establecimiento.id,
+          establecimiento_id_del_usuario: adminUser.establecimiento_id
+        });
+      } else {
+        logger.warn('⚠️ No se creó usuario administrador - datos incompletos');
+      }
+
       return {
         success: true,
         data: establecimiento,

@@ -2,19 +2,23 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
-import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   FileText,
   FileSpreadsheet,
-  Activity,
   Package,
   Users,
+  Activity,
   TrendingUp,
+  ChevronDown,
+  ChevronUp,
+  Calendar,
+  Download,
 } from 'lucide-react';
 import { useStats } from '@/lib/hooks/useStats';
 import { useCaballos } from '@/lib/hooks';
 import { inventarioService } from '@/lib/inventarioService';
+import { gestionPersonalService, type Empleado } from '@/lib/gestionPersonalService';
 import { 
   generarReporteCaballosPDF, 
   exportarCaballosExcel, 
@@ -31,54 +35,66 @@ type TipoReporte = 'inventario' | 'personal' | 'operaciones' | 'consolidado';
 
 export default function EstablecimientoReportesPage() {
   const [generando, setGenerando] = useState(false);
-  const { stats, loading: loadingStats } = useStats();
+  const [reporteExpandido, setReporteExpandido] = useState<TipoReporte | null>(null);
+  const [fechaDesde, setFechaDesde] = useState('');
+  const [fechaHasta, setFechaHasta] = useState('');
+  
+  const { stats } = useStats();
   const { data: caballosResponse } = useCaballos({ page: 1, limit: 1000 });
-  const [productos, setProductos] = useState<any[]>([]);
-  const [usuarios, setUsuarios] = useState<any[]>([]);
+  
+  interface Producto {
+    id: number;
+    nombre: string;
+    categoria?: { nombre: string };
+    cantidad: number;
+    stock_minimo?: number;
+    unidad_medida?: string;
+  }
+  
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [empleados, setEmpleados] = useState<Empleado[]>([]);
 
-  // Cargar productos para reporte de inventario
+  // Cargar productos
   useEffect(() => {
     const loadProductos = async () => {
       try {
         const data = await inventarioService.getProductos();
-        setProductos(data || []);
-      } catch (error) {
-        console.error('Error loading productos:', error);
+        setProductos((data || []) as unknown as Producto[]);
+      } catch {
+        setProductos([]);
       }
     };
     loadProductos();
   }, []);
 
-  // Cargar usuarios para reporte de personal (simulado - ajustar según tu API)
+  // Cargar empleados reales
   useEffect(() => {
-    const loadUsuarios = async () => {
+    const loadEmpleados = async () => {
       try {
-        // TODO: Reemplazar con tu servicio de usuarios real
-        // const data = await usuarioService.getUsuarios();
-        // Por ahora, datos de ejemplo
-        setUsuarios([
-          { id: 1, nombre: 'Juan', apellido: 'Pérez', email: 'juan@example.com', rol: { nombre: 'Empleado' }, activo: true, creado_el: new Date() },
-          { id: 2, nombre: 'María', apellido: 'García', email: 'maria@example.com', rol: { nombre: 'Veterinario' }, activo: true, creado_el: new Date() },
-        ]);
-      } catch (error) {
-        console.error('Error loading usuarios:', error);
+        const data = await gestionPersonalService.getEmpleados();
+        setEmpleados(data || []);
+      } catch {
+        setEmpleados([]);
       }
     };
-    loadUsuarios();
+    loadEmpleados();
   }, []);
 
-  const statsReportes = useMemo(() => {
-    return {
-      total: (stats.caballos?.total || 0) + (productos.length || 0) + (stats.tareas?.total || 0),
-      generadosHoy: 0, // Se incrementará cuando se generen reportes
-      tiposDisponibles: 4,
-      ultimaGeneracion: 'No generado aún',
-    };
-  }, [stats, productos]);
+  interface CaballoData {
+    id: number;
+    nombre: string;
+    raza: string;
+    edad: number;
+    sexo?: string;
+    pelaje?: string;
+  }
 
   const caballos = useMemo(() => {
     if (!caballosResponse) return [];
-    const data = (caballosResponse as { data?: { caballos?: any[] }; caballos?: any[] });
+    const data = caballosResponse as { 
+      data?: { caballos?: CaballoData[] }; 
+      caballos?: CaballoData[] 
+    };
     return data?.data?.caballos || data?.caballos || [];
   }, [caballosResponse]);
 
@@ -113,36 +129,38 @@ export default function EstablecimientoReportesPage() {
     },
   ];
 
+  // Generar reporte directamente
   const handleGenerarReporte = async (tipo: TipoReporte, formato: 'pdf' | 'excel') => {
     setGenerando(true);
+    
     try {
       if (tipo === 'operaciones') {
         if (formato === 'pdf') {
-          await generarReporteCaballosPDF(caballos, {
+          await generarReporteCaballosPDF(caballos as unknown as any[], {
             titulo: 'Reporte de Operaciones - Caballos',
             subtitulo: 'Establecimiento',
           });
           toast.success('Reporte PDF generado exitosamente');
         } else {
-          exportarCaballosExcel(caballos);
+          exportarCaballosExcel(caballos as unknown as any[]);
           toast.success('Reporte Excel generado exitosamente');
         }
       } else if (tipo === 'inventario') {
         if (formato === 'pdf') {
-          await generarReporteInventarioPDF(productos, {
+          await generarReporteInventarioPDF(productos as unknown as any[], {
             titulo: 'Reporte de Inventario',
             subtitulo: 'Establecimiento',
           });
           toast.success('Reporte PDF de inventario generado');
         } else {
-          exportarInventarioExcel(productos);
+          exportarInventarioExcel(productos as unknown as any[]);
           toast.success('Reporte Excel de inventario generado');
         }
       } else if (tipo === 'consolidado') {
         if (formato === 'pdf') {
           await generarReporteConsolidadoPDF({
-            caballos,
-            productos,
+            caballos: caballos as unknown as any[],
+            productos: productos as unknown as any[],
             stats
           }, {
             titulo: 'Reporte Consolidado',
@@ -150,25 +168,39 @@ export default function EstablecimientoReportesPage() {
           });
           toast.success('Reporte consolidado PDF generado');
         } else {
-          exportarDatosCompletosExcel({ caballos, eventos: [] });
+          exportarDatosCompletosExcel({ caballos: caballos as unknown as any[], eventos: [] });
           toast.success('Reporte consolidado Excel generado');
         }
       } else if (tipo === 'personal') {
+        // Transformar empleados a formato compatible con los reportes
+        const usuariosParaReporte = empleados.map(emp => ({
+          id: emp.id,
+          nombre: emp.nombre,
+          apellido: emp.apellido,
+          email: emp.email,
+          telefono: emp.telefono,
+          activo: emp.estado === 'activo',
+          rol: { 
+            id: emp.rol_id, 
+            nombre: emp.rol_nombre,
+            clave: emp.rol_nombre.toLowerCase()
+          }
+        }));
+        
         if (formato === 'pdf') {
-          await generarReportePersonalPDF(usuarios, {
+          await generarReportePersonalPDF(usuariosParaReporte as unknown as any[], {
             titulo: 'Reporte de Personal',
             subtitulo: 'Establecimiento',
           });
           toast.success('Reporte PDF de personal generado');
         } else {
-          exportarPersonalExcel(usuarios);
+          exportarPersonalExcel(usuariosParaReporte as unknown as any[]);
           toast.success('Reporte Excel de personal generado');
         }
       } else {
         toast(`Reporte de ${tipo} en desarrollo`, { icon: '🚧' });
       }
-    } catch (error) {
-      console.error('Error generando reporte:', error);
+    } catch {
       toast.error('Error al generar el reporte');
     } finally {
       setGenerando(false);
@@ -177,174 +209,307 @@ export default function EstablecimientoReportesPage() {
 
   return (
     <SimpleRoleGuard roles={['establecimiento']}>
-      <div className="space-y-6">
-        {/* Hero Section */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8">
-          {/* Background Pattern */}
-          <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,transparent,black)]" />
-          
-          {/* Gradient Orbs */}
-          <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-green-500/20 rounded-full blur-3xl" />
-          
-          {/* Content */}
-          <div className="relative">
-            <div className="flex items-center gap-3 mb-2">
-              <FileText className="w-8 h-8 text-emerald-400" />
-              <h1 className="text-3xl font-bold text-white">Generación de Reportes</h1>
-            </div>
-            <p className="text-slate-300 text-lg">
-              Genera reportes detallados en PDF o Excel
-            </p>
-          </div>
+      <div className="space-y-4 p-4 sm:p-6">
+        {/* Header */}
+        <div>
+          <h1 className="text-lg sm:text-xl font-bold text-gray-900">Reportes</h1>
+          <p className="text-sm text-gray-600 mt-1">
+            Visualiza los datos y descarga reportes en PDF o Excel
+          </p>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Total */}
-          <Card className="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm font-medium">Total Datos</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">{loadingStats ? '...' : statsReportes.total}</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-emerald-600" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200">
-                  Disponibles
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Caballos */}
-          <Card className="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm font-medium">Caballos</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">{loadingStats ? '...' : stats.caballos?.total || 0}</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                  <Activity className="w-6 h-6 text-blue-600" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
-                  Registrados
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Productos */}
-          <Card className="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm font-medium">Productos</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">{productos.length}</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
-                  <Package className="w-6 h-6 text-purple-600" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-200">
-                  Inventario
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Tareas */}
-          <Card className="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm font-medium">Tareas</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">{loadingStats ? '...' : stats.tareas?.total || 0}</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-green-600" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
-                  Activas
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Reportes Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Lista de Reportes con Tablas Expandibles */}
+        <div className="space-y-3">
           {reportes.map((reporte) => {
             const Icon = reporte.icon;
+            const isExpanded = reporteExpandido === reporte.tipo;
+            const colorClasses: Record<string, string> = {
+              emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+              blue: 'bg-blue-50 text-blue-700 border-blue-200',
+              purple: 'bg-purple-50 text-purple-700 border-purple-200',
+              orange: 'bg-orange-50 text-orange-700 border-orange-200',
+            };
+            
             return (
-              <Card key={reporte.tipo} className="rounded-2xl shadow-xl">
-                <CardHeader>
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className={`w-12 h-12 rounded-xl bg-${reporte.color}-500/20 flex items-center justify-center`}>
-                      <Icon className={`w-6 h-6 text-${reporte.color}-400`} />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold">{reporte.titulo}</h3>
-                      <CardDescription>{reporte.descripcion}</CardDescription>
+              <Card key={reporte.tipo} className={isExpanded ? 'ring-2 ring-blue-200' : ''}>
+                <CardContent className="p-0">
+                  {/* Header del Reporte */}
+                  <div className="p-3 sm:p-4 flex items-center justify-between gap-2 sm:gap-4">
+                    {/* Izquierda: Info + Toggle */}
+                    <button
+                      onClick={() => setReporteExpandido(isExpanded ? null : reporte.tipo)}
+                      className="flex items-center gap-2 sm:gap-3 flex-1 text-left group min-w-0"
+                    >
+                      <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0 border ${colorClasses[reporte.color]}`}>
+                        <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 truncate">
+                          {reporte.titulo}
+                        </h3>
+                        <p className="text-xs text-gray-600 mt-0.5 line-clamp-1">
+                          {reporte.descripcion}
+                        </p>
+                      </div>
+                      {isExpanded ? (
+                        <ChevronUp className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-gray-400 group-hover:text-blue-600 flex-shrink-0" />
+                      )}
+                    </button>
+
+                    {/* Derecha: Botones de Descarga */}
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => handleGenerarReporte(reporte.tipo, 'pdf')}
+                        disabled={generando}
+                        className="p-2 sm:p-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+                        title="Descargar PDF"
+                      >
+                        <FileText className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleGenerarReporte(reporte.tipo, 'excel')}
+                        disabled={generando}
+                        className="p-2 sm:p-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+                        title="Descargar Excel"
+                      >
+                        <FileSpreadsheet className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => handleGenerarReporte(reporte.tipo, 'pdf')}
-                      disabled={generando}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-lg hover:from-emerald-700 hover:to-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                    >
-                      <FileText className="w-5 h-5" />
-                      <span>Generar PDF</span>
-                    </button>
-                    <button
-                      onClick={() => handleGenerarReporte(reporte.tipo, 'excel')}
-                      disabled={generando}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                    >
-                      <FileSpreadsheet className="w-5 h-5" />
-                      <span>Generar Excel</span>
-                    </button>
-                  </div>
+
+                  {/* Contenido Expandible */}
+                  {isExpanded && (
+                    <div className="border-t border-gray-200 bg-gray-50 p-3 sm:p-4 space-y-4">
+                      {/* Filtros de Fecha */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                          <Calendar className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                          <input
+                            type="date"
+                            value={fechaDesde}
+                            onChange={(e) => setFechaDesde(e.target.value)}
+                            className="flex-1 min-w-[120px] px-2 sm:px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Desde"
+                          />
+                          <span className="text-sm text-gray-500 flex-shrink-0">hasta</span>
+                          <input
+                            type="date"
+                            value={fechaHasta}
+                            onChange={(e) => setFechaHasta(e.target.value)}
+                            className="flex-1 min-w-[120px] px-2 sm:px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Hasta"
+                          />
+                          {(fechaDesde || fechaHasta) && (
+                            <button
+                              onClick={() => {
+                                setFechaDesde('');
+                                setFechaHasta('');
+                              }}
+                              className="text-sm text-gray-600 hover:text-gray-900 underline whitespace-nowrap"
+                            >
+                              Limpiar
+                            </button>
+                          )}
+                        </div>
+                        <div className="mt-2 pt-2 border-t border-gray-100 flex items-center justify-end gap-2">
+                          <Download className="w-4 h-4 text-gray-400" />
+                          <span className="text-xs text-gray-600">
+                            {reporte.tipo === 'inventario' && `${productos.length} productos`}
+                            {reporte.tipo === 'personal' && `${empleados.length} empleados`}
+                            {reporte.tipo === 'operaciones' && `${caballos.length} caballos`}
+                            {reporte.tipo === 'consolidado' && 'Datos completos'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Tabla de Datos */}
+                      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                        {/* Inventario */}
+                        {reporte.tipo === 'inventario' && (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead className="bg-gray-100">
+                                <tr>
+                                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-700">Producto</th>
+                                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-700">Categoría</th>
+                                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-700">Stock Actual</th>
+                                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-700">Stock Mín.</th>
+                                  <th className="px-4 py-2.5 text-center text-xs font-semibold text-gray-700">Estado</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                                {productos.length > 0 ? (
+                                  productos.slice(0, 100).map((producto) => {
+                                    const stockBajo = producto.stock_minimo && producto.cantidad < producto.stock_minimo;
+                                    return (
+                                      <tr key={producto.id} className="hover:bg-gray-50">
+                                        <td className="px-4 py-2.5 font-medium text-gray-900">{producto.nombre}</td>
+                                        <td className="px-4 py-2.5 text-gray-600">
+                                          {producto.categoria?.nombre || 'Sin categoría'}
+                                        </td>
+                                        <td className="px-4 py-2.5 text-right text-gray-900">
+                                          {producto.cantidad} {producto.unidad_medida || 'un'}
+                                        </td>
+                                        <td className="px-4 py-2.5 text-right text-gray-600">
+                                          {producto.stock_minimo || '-'}
+                                        </td>
+                                        <td className="px-4 py-2.5 text-center">
+                                          {stockBajo ? (
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                              Bajo
+                                            </span>
+                                          ) : (
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                              OK
+                                            </span>
+                                          )}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })
+                                ) : (
+                                  <tr>
+                                    <td colSpan={5} className="px-4 py-12 text-center text-gray-500">
+                                      No hay productos disponibles
+                                    </td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
+                            {productos.length > 100 && (
+                              <div className="px-4 py-2 bg-gray-50 border-t text-xs text-gray-600 text-center">
+                                Mostrando 100 de {productos.length} productos
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Personal */}
+                        {reporte.tipo === 'personal' && (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead className="bg-gray-100">
+                                <tr>
+                                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-700">Nombre</th>
+                                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-700">Email</th>
+                                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-700">Rol</th>
+                                  <th className="px-4 py-2.5 text-center text-xs font-semibold text-gray-700">Estado</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-200">
+                                {empleados.length > 0 ? (
+                                  empleados.map((empleado: Empleado) => (
+                                    <tr key={empleado.id} className="hover:bg-gray-50">
+                                      <td className="px-4 py-2.5 font-medium text-gray-900">
+                                        {empleado.nombre} {empleado.apellido}
+                                      </td>
+                                      <td className="px-4 py-2.5 text-gray-600">{empleado.email}</td>
+                                      <td className="px-4 py-2.5 text-gray-600">{empleado.rol_nombre || 'Sin rol'}</td>
+                                      <td className="px-4 py-2.5 text-center">
+                                        {empleado.estado === 'activo' ? (
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            Activo
+                                          </span>
+                                        ) : (
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                            {empleado.estado.charAt(0).toUpperCase() + empleado.estado.slice(1)}
+                                          </span>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  ))
+                                ) : (
+                                  <tr>
+                                    <td colSpan={4} className="px-4 py-12 text-center text-gray-500">
+                                      No hay personal disponible
+                                    </td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+
+                        {/* Operaciones (Caballos) */}
+                        {reporte.tipo === 'operaciones' && (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead className="bg-gray-100">
+                                <tr>
+                                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-700">Caballo</th>
+                                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-700">Raza</th>
+                                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-700">Sexo</th>
+                                  <th className="px-4 py-2.5 text-center text-xs font-semibold text-gray-700">Edad</th>
+                                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-700">Pelaje</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-200">
+                                {caballos.length > 0 ? (
+                                  caballos.slice(0, 100).map((caballo) => (
+                                    <tr key={caballo.id} className="hover:bg-gray-50">
+                                      <td className="px-4 py-2.5 font-medium text-gray-900">{caballo.nombre}</td>
+                                      <td className="px-4 py-2.5 text-gray-600">{caballo.raza}</td>
+                                      <td className="px-4 py-2.5 text-gray-600">{caballo.sexo || '-'}</td>
+                                      <td className="px-4 py-2.5 text-center text-gray-900">{caballo.edad} años</td>
+                                      <td className="px-4 py-2.5 text-gray-600">{caballo.pelaje || '-'}</td>
+                                    </tr>
+                                  ))
+                                ) : (
+                                  <tr>
+                                    <td colSpan={5} className="px-4 py-12 text-center text-gray-500">
+                                      No hay caballos disponibles
+                                    </td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
+                            {caballos.length > 100 && (
+                              <div className="px-4 py-2 bg-gray-50 border-t text-xs text-gray-600 text-center">
+                                Mostrando 100 de {caballos.length} caballos
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Consolidado */}
+                        {reporte.tipo === 'consolidado' && (
+                          <div className="p-6">
+                            <div className="grid grid-cols-3 gap-6 mb-6">
+                              <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+                                <div className="text-3xl font-bold text-purple-900">{caballos.length}</div>
+                                <div className="text-sm text-purple-700 mt-1">Caballos</div>
+                              </div>
+                              <div className="text-center p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                                <div className="text-3xl font-bold text-emerald-900">{productos.length}</div>
+                                <div className="text-sm text-emerald-700 mt-1">Productos</div>
+                              </div>
+                              <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                <div className="text-3xl font-bold text-blue-900">{stats.tareas?.total || 0}</div>
+                                <div className="text-sm text-blue-700 mt-1">Tareas</div>
+                              </div>
+                            </div>
+                            <p className="text-sm text-gray-600 text-center">
+                              El reporte consolidado incluye todas las métricas y datos del establecimiento
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );
           })}
         </div>
 
-        {/* Info Card */}
-        <Card className="rounded-2xl shadow-xl bg-gradient-to-br from-blue-50 to-indigo-50">
-          <CardContent className="p-6">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                <Activity className="w-6 h-6 text-blue-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Información sobre Reportes</h3>
-                <p className="text-sm text-gray-600 mb-2">
-                  Los reportes se generan con datos actualizados en tiempo real. Puedes descargarlos en formato PDF para visualización o Excel para análisis detallado.
-                </p>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• <strong>PDF:</strong> Formato ideal para presentaciones y documentación</li>
-                  <li>• <strong>Excel:</strong> Permite análisis personalizado de datos</li>
-                  <li>• Los reportes incluyen gráficos y estadísticas relevantes</li>
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Footer Info */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+          <p className="text-xs sm:text-sm text-blue-900 text-center">
+            <strong>Tip:</strong> Haz clic en un reporte para ver los datos antes de descargar
+          </p>
+        </div>
       </div>
     </SimpleRoleGuard>
   );

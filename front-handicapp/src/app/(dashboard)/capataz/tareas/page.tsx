@@ -1,159 +1,149 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
-import { TareaList } from '@/components/dashboard';
-import { useTareas } from '@/lib/hooks';
+import { useStats } from '@/lib/hooks/useStats';
+import { TareaKanban } from '@/components/dashboard/TareaKanban';
+import { SimpleRoleGuard roles={["capataz"]} } from '@/components/common/SimplePermissionGuard';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ClipboardList, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { useEffect, useState } from 'react';
+import { tareaService, type Tarea } from '@/lib/services/tareaService';
 
-export default function CapatazTareasPage() {
-  const { data: tareas = [], isLoading: loading } = useTareas({ page: 1, limit: 500 });
+export default function TareasPage() {
+  const { stats, loading } = useStats();
+  const [tareas, setTareas] = useState<Tarea[]>([]);
+  const [loadingTareas, setLoadingTareas] = useState(true);
 
-  const tareasStats = useMemo(() => {
-    const tareasArray = Array.isArray(tareas) ? tareas : (tareas as any)?.data || [];
-    const now = new Date();
-    
-    const total = tareasArray.length;
-    const pendientes = tareasArray.filter((t: any) => t.estado === 'pendiente').length;
-    const completadas = tareasArray.filter((t: any) => t.estado === 'completada').length;
-    const vencidas = tareasArray.filter((t: any) => {
-      if (t.estado === 'completada') return false;
-      const fechaVencimiento = new Date(t.fecha_vencimiento);
-      return fechaVencimiento < now;
-    }).length;
+  useEffect(() => {
+    const fetchTareas = async () => {
+      try {
+        setLoadingTareas(true);
+        const response: any = await tareaService.getAll({ page: 1, limit: 500 });
+        const tareasData = response?.data?.tareas || response?.tareas || response?.data || response || [];
+        setTareas(Array.isArray(tareasData) ? tareasData : []);
+      } catch (error) {
+        console.error('Error loading tareas:', error);
+        setTareas([]);
+      } finally {
+        setLoadingTareas(false);
+      }
+    };
 
-    return { total, pendientes, completadas, vencidas };
-  }, [tareas]);
+    fetchTareas();
+  }, []);
 
-  if (loading) {
+  if (loading || loadingTareas) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+        <LoadingSpinnerFullPage label="Cargando..." variant="warning" />
       </div>
     );
   }
 
   return (
-    <SimpleRoleGuard roles={['capataz']}>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <SimpleRoleGuard roles={["capataz"]}>
+      <div className="mx-auto">
+        <div className="relative overflow-hidden mb-8 rounded-2xl">
+          <div className="absolute inset-0 bg-[#0f172a]"></div>
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-60"></div>
+          <div className="absolute top-0 right-1/4 w-64 h-64 bg-orange-600/30 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-amber-500/20 rounded-full blur-3xl"></div>
           
-          {/* Hero Section */}
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 mb-8 shadow-2xl">
-            <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,transparent,black)]"></div>
-            <div className="absolute top-0 right-0 -mt-4 -mr-4 w-72 h-72 bg-orange-500/20 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-72 h-72 bg-amber-500/20 rounded-full blur-3xl"></div>
-            
-            <div className="relative px-8 py-12">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-3 bg-orange-500/10 backdrop-blur-sm rounded-2xl border border-orange-500/20">
-                      <ClipboardList className="w-8 h-8 text-orange-400" />
-                    </div>
-                    <div>
-                      <h1 className="text-3xl font-bold text-white mb-1">Gestión de Tareas</h1>
-                      <p className="text-slate-300">Organiza y monitorea las tareas del establecimiento</p>
+          <div className="relative z-10 px-6 sm:px-8 lg:px-12 py-6">
+            <div className="mb-6">
+              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 leading-tight">
+                Gestión de Tareas
+              </h1>
+              <p className="text-sm sm:text-base text-white/70">
+                Asigna, supervisa y gestiona las tareas diarias del establecimiento
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardDescription className="text-[10px] font-semibold text-orange-300 uppercase tracking-wider">
+                      Total Tareas
+                    </CardDescription>
+                    <div className="p-1.5 rounded-lg bg-orange-500/20">
+                      <ClipboardList className="w-3 h-3 text-orange-300" />
                     </div>
                   </div>
-                </div>
-              </div>
+                </CardHeader>
+                <CardContent className="pb-3">
+                  <p className="text-2xl font-bold text-white tabular-nums">{stats.tareas?.total || 0}</p>
+                  <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
+                    Todas
+                  </Badge>
+                </CardContent>
+              </Card>
+
+              <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardDescription className="text-[10px] font-semibold text-amber-300 uppercase tracking-wider">
+                      Pendientes
+                    </CardDescription>
+                    <div className="p-1.5 rounded-lg bg-amber-500/20">
+                      <Clock className="w-3 h-3 text-amber-300" />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pb-3">
+                  <p className="text-2xl font-bold text-white tabular-nums">{stats.tareas?.pendientes || 0}</p>
+                  <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
+                    Por realizar
+                  </Badge>
+                </CardContent>
+              </Card>
+
+              <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardDescription className="text-[10px] font-semibold text-green-300 uppercase tracking-wider">
+                      Completadas
+                    </CardDescription>
+                    <div className="p-1.5 rounded-lg bg-green-500/20">
+                      <CheckCircle2 className="w-3 h-3 text-green-300" />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pb-3">
+                  <p className="text-2xl font-bold text-white tabular-nums">{stats.tareas?.completadas || 0}</p>
+                  <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
+                    Finalizadas
+                  </Badge>
+                </CardContent>
+              </Card>
+
+              <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardDescription className="text-[10px] font-semibold text-red-300 uppercase tracking-wider">
+                      En Progreso
+                    </CardDescription>
+                    <div className="p-1.5 rounded-lg bg-red-500/20">
+                      <AlertTriangle className="w-3 h-3 text-red-300" />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pb-3">
+                  <p className="text-2xl font-bold text-white tabular-nums">{stats.tareas?.enProgreso || 0}</p>
+                  <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
+                    En ejecución
+                  </Badge>
+                </CardContent>
+              </Card>
             </div>
           </div>
+        </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 shadow-xl hover:shadow-2xl transition-all duration-300">
-              <div className="absolute inset-0 bg-grid-white/5"></div>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl group-hover:bg-orange-500/20 transition-all"></div>
-              
-              <div className="relative">
-                <div className="flex items-center justify-between mb-4">
-                  <ClipboardList className="w-8 h-8 text-orange-400" />
-                  <Badge variant="secondary" className="bg-white/5 text-white border-white/10 backdrop-blur-sm">
-                    Total
-                  </Badge>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-slate-300">Total Tareas</p>
-                  <p className="text-3xl font-bold text-white">{tareasStats.total}</p>
-                  <p className="text-xs text-slate-400">En el sistema</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 shadow-xl hover:shadow-2xl transition-all duration-300">
-              <div className="absolute inset-0 bg-grid-white/5"></div>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition-all"></div>
-              
-              <div className="relative">
-                <div className="flex items-center justify-between mb-4">
-                  <Clock className="w-8 h-8 text-amber-400" />
-                  <Badge variant="secondary" className="bg-white/5 text-white border-white/10 backdrop-blur-sm">
-                    Pendientes
-                  </Badge>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-slate-300">Pendientes</p>
-                  <p className="text-3xl font-bold text-white">{tareasStats.pendientes}</p>
-                  <p className="text-xs text-slate-400">Por realizar</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 shadow-xl hover:shadow-2xl transition-all duration-300">
-              <div className="absolute inset-0 bg-grid-white/5"></div>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-2xl group-hover:bg-green-500/20 transition-all"></div>
-              
-              <div className="relative">
-                <div className="flex items-center justify-between mb-4">
-                  <CheckCircle2 className="w-8 h-8 text-green-400" />
-                  <Badge variant="secondary" className="bg-white/5 text-white border-white/10 backdrop-blur-sm">
-                    {((tareasStats.completadas / tareasStats.total) * 100 || 0).toFixed(0)}%
-                  </Badge>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-slate-300">Completadas</p>
-                  <p className="text-3xl font-bold text-white">{tareasStats.completadas}</p>
-                  <p className="text-xs text-slate-400">Finalizadas</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 shadow-xl hover:shadow-2xl transition-all duration-300">
-              <div className="absolute inset-0 bg-grid-white/5"></div>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-2xl group-hover:bg-red-500/20 transition-all"></div>
-              
-              <div className="relative">
-                <div className="flex items-center justify-between mb-4">
-                  <AlertTriangle className="w-8 h-8 text-red-400" />
-                  <Badge variant="secondary" className="bg-white/5 text-white border-white/10 backdrop-blur-sm">
-                    Vencidas
-                  </Badge>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-slate-300">Vencidas</p>
-                  <p className="text-3xl font-bold text-white">{tareasStats.vencidas}</p>
-                  <p className="text-xs text-slate-400">Requieren atención</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <Card className="rounded-2xl shadow-xl border-slate-200">
-            <CardHeader>
-              <CardDescription>
-                Lista completa de tareas del establecimiento
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <TareaList />
-            </CardContent>
-          </Card>
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+          <TareaKanban tareas={tareas} />
         </div>
       </div>
-    </SimpleRoleGuard>
+    </SimpleRoleGuard roles={["capataz"]}>
   );
 }

@@ -7,7 +7,6 @@ import {
   ArrowLeft, 
   Edit2, 
   Trash2,
-  Loader2, 
   Calendar, 
   Pill, 
   FileText, 
@@ -20,6 +19,7 @@ import {
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { tratamientoService, Tratamiento } from '@/lib/services/tratamientoService';
 import { toast } from 'react-hot-toast';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 export default function DetalleTratamientoPage() {
   const router = useRouter();
@@ -100,14 +100,7 @@ export default function DetalleTratamientoPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-purple-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Cargando tratamiento...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinnerFullPage label="Cargando tratamiento..." variant="warning" />;
   }
 
   if (!tratamiento) {

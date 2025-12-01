@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { LOGOS } from '@/lib/constants/logos';
-import { 
+import {
   Home,
   Users,
   Settings,
@@ -20,7 +20,8 @@ import {
   Bell,
   Trophy,
   Activity,
-  Package
+  Package,
+  CreditCard
 } from 'lucide-react';
 
 // Definir los menús por rol con estructura clara
@@ -93,7 +94,7 @@ const ROLE_MENUS = {
     { name: 'Reportes', href: '/propietario/reportes', icon: BarChart3 },
     { name: 'Tareas', href: '/propietario/tareas', icon: FileText },
     { name: 'Configuración', href: '/propietario/configuracion', icon: Settings },
-    { name: 'Suscripciones', href: '/propietario/suscripciones', icon: Users },
+  { name: 'Suscripciones', href: '/propietario/suscripciones', icon: CreditCard },
   ],
 };
 
@@ -138,7 +139,7 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
         isCollapsed ? 'lg:w-20' : 'lg:w-72'
       }`}>
         <div className="flex flex-col flex-grow bg-card border-r border-border">
-          <div className="flex items-center justify-center h-14 sm:h-16 px-4">
+          <div className="flex items-center justify-center h-16 sm:h-18 lg:h-20 px-4">
             <div className="animate-pulse h-8 w-32 bg-muted rounded"></div>
           </div>
         </div>
@@ -152,14 +153,14 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
     <>
       {/* Desktop Sidebar */}
       <div className={`hidden lg:flex lg:flex-col lg:fixed transition-all duration-300 ${
-        isCollapsed ? 'lg:w-20 lg:left-4' : 'lg:w-72 lg:left-4'
-      } lg:top-4 lg:bottom-4 z-30`}>
-        <div className="flex flex-col h-full bg-[#0f172a] rounded-2xl shadow-xl overflow-hidden"
+        isCollapsed ? 'lg:w-20' : 'lg:w-72'
+      } lg:left-0 lg:top-0 lg:bottom-0 z-30`}>
+        <div className="flex flex-col h-full bg-[#0f172a] border-r border-white/10 shadow-lg"
              style={{
-               boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), inset 0 0 0 1px rgba(255, 255, 255, 0.05)'
+               boxShadow: '4px 0 6px -1px rgba(0, 0, 0, 0.1)'
              }}>
           {/* Logo/Header */}
-          <div className="relative h-14 sm:h-16 border-b border-white/10 flex-shrink-0">
+          <div className="relative h-16 sm:h-18 lg:h-20 border-b border-white/10 flex-shrink-0">
             <div className="flex items-center justify-center h-full px-4">
               {!isCollapsed ? (
                 <div className="flex items-center gap-3">
@@ -173,7 +174,7 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
                   <Image 
                     src={LOGOS.TEXT_BROWN}
                     alt="HandicApp" 
-                    width={130} 
+                    width={140} 
                     height={28}
                     className="object-contain flex-shrink-0 brightness-0 invert"
                   />
@@ -182,8 +183,8 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
                 <Image 
                   src={LOGOS.ICON_WHITE}
                   alt="HandicApp" 
-                  width={42} 
-                  height={42}
+                  width={44} 
+                  height={44}
                   className="object-contain"
                 />
               )}
@@ -191,13 +192,22 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
           </div>
 
           {/* Navigation Menu */}
-          <nav className={`flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent hover:scrollbar-thumb-white/30 ${
+          <nav className={`flex-1 px-3 py-6 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent hover:scrollbar-thumb-white/30 ${
             isCollapsed ? 'overflow-x-hidden' : ''
           }`}
           style={{
             scrollbarWidth: 'thin',
             scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent'
           }}>
+            {/* Label MENU */}
+            {!isCollapsed && (
+              <div className="px-3 py-2 mb-2">
+                <span className="text-xs font-semibold text-white/40 uppercase tracking-wider">
+                  Menú
+                </span>
+              </div>
+            )}
+            
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href || 
@@ -220,9 +230,9 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
                     `}
                     title={isCollapsed ? item.name : undefined}
                   >
-                    <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-white' : ''}`} />
+                    <Icon className={`w-6 h-6 flex-shrink-0 ${isActive ? 'text-white' : ''}`} />
                     {!isCollapsed && (
-                      <span className="truncate font-medium">{item.name}</span>
+                      <span className="truncate font-medium text-[15px]">{item.name}</span>
                     )}
                   </Link>
                   {/* Tooltip para modo colapsado */}
@@ -245,7 +255,7 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         {/* Mobile Header */}
-        <div className="relative h-14 sm:h-16 border-b border-white/10">
+        <div className="relative h-16 sm:h-18 lg:h-20 border-b border-white/10">
           <div className="flex items-center justify-between h-full px-4">
             <div className="flex items-center gap-3">
               <Image 
@@ -258,7 +268,7 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
               <Image 
                 src={LOGOS.TEXT_BROWN}
                 alt="HandicApp" 
-                width={130} 
+                width={140} 
                 height={28}
                 className="object-contain flex-shrink-0 brightness-0 invert"
               />
@@ -275,11 +285,18 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
         </div>
 
         {/* Mobile Navigation */}
-        <nav className="flex-1 px-3 pt-4 pb-4 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent hover:scrollbar-thumb-white/30"
+        <nav className="flex-1 px-3 pt-6 pb-4 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent hover:scrollbar-thumb-white/30"
         style={{
           scrollbarWidth: 'thin',
           scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent'
         }}>
+          {/* Label MENU */}
+          <div className="px-3 py-2 mb-2">
+            <span className="text-xs font-semibold text-white/40 uppercase tracking-wider">
+              Menú
+            </span>
+          </div>
+          
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href || 
@@ -294,15 +311,15 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
                 href={item.href}
                 onClick={onClose}
                 className={`
-                  flex items-center px-3 py-3 gap-3 rounded-lg transition-smooth touch-manipulation
+                  flex items-center px-3 py-2.5 gap-3 rounded-lg transition-smooth touch-manipulation
                   ${isActive
                     ? 'bg-[#af936f] text-white shadow-md shadow-[#af936f]/20'
                     : 'text-white/70 hover:text-white hover:bg-white/10'
                   }
                 `}
               >
-                <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-white' : ''}`} />
-                <span className="truncate font-medium">{item.name}</span>
+                <Icon className={`w-6 h-6 flex-shrink-0 ${isActive ? 'text-white' : ''}`} />
+                <span className="truncate font-medium text-[15px]">{item.name}</span>
               </Link>
             );
           })}

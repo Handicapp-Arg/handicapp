@@ -6,6 +6,7 @@ import { useStats } from '@/lib/hooks/useStats';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Activity, TrendingUp, AlertCircle, Heart, Syringe, Users, CheckCircle, Clock } from 'lucide-react';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 export default function VeterinarioEstadisticasPage() {
   const { stats, loading } = useStats();
@@ -20,11 +21,7 @@ export default function VeterinarioEstadisticasPage() {
   }, [stats]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-      </div>
-    );
+    return <LoadingSpinnerFullPage label="Cargando..." variant="warning" />;
   }
 
   return (

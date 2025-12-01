@@ -56,11 +56,11 @@ export class TareaController {
       // Determinar establecimiento_id según el contexto
       let finalEstablecimientoId = establecimientoId;
       
-      // Si es establecimiento, SIEMPRE consultar el establecimiento_id desde la DB
-      // Esto asegura que tengamos el valor actualizado incluso si el JWT es antiguo
-      if (userRole === 'establecimiento') {
+      // Si el usuario no proporciona establecimiento_id, usar el de su perfil
+      // Esto aplica para: establecimiento, capataz, veterinario, empleado
+      if (!finalEstablecimientoId) {
+        // Si no está en el JWT, consultar desde la DB
         if (!userEstablecimientoId) {
-          // Consultar desde la base de datos
           const userFromDb = await User.findByPk(usuarioId, {
             attributes: ['id', 'establecimiento_id']
           });
@@ -69,16 +69,17 @@ export class TareaController {
             userEstablecimientoId = userFromDb.establecimiento_id;
             logger.info(`Usuario ${usuarioId}: establecimiento_id=${userEstablecimientoId} obtenido desde DB`);
           } else {
-            logger.warn(`Usuario ${usuarioId} (rol: establecimiento) no tiene establecimiento_id asignado en la base de datos.`);
+            logger.warn(`Usuario ${usuarioId} (rol: ${userRole}) no tiene establecimiento_id asignado en la base de datos.`);
           }
         }
         
-        // Usar el establecimiento del usuario establecimiento
+        // Usar el establecimiento del usuario
         if (userEstablecimientoId) {
           finalEstablecimientoId = userEstablecimientoId;
           logger.info(`Tarea auto-asignada al establecimiento ${userEstablecimientoId} del usuario ${usuarioId}`);
-        } else {
-          logger.error(`Usuario ${usuarioId} con rol establecimiento no puede crear tareas sin establecimiento_id asignado`);
+        } else if (userRole !== 'admin' && userRole !== 'propietario') {
+          // Solo admin y propietario pueden crear tareas sin establecimiento
+          logger.error(`Usuario ${usuarioId} con rol ${userRole} no puede crear tareas sin establecimiento_id asignado`);
           res.status(400).json(ApiResponse.error('Tu usuario no tiene un establecimiento asignado. Contacta al administrador.'));
           return;
         }
@@ -329,6 +330,7 @@ export class TareaController {
   const tareaId = parseInt((req.params['id'] as string) || '');
   const { nuevoEstado } = req.body;
       const usuarioId = req.user!.id;
+      const userRole = req.user!.rol?.clave;
 
       if (isNaN(tareaId) || !nuevoEstado) {
         res.status(400).json(ApiResponse.error('ID de tarea y nuevo estado son requeridos'));
@@ -344,7 +346,8 @@ export class TareaController {
       const changeResult = await TareaService.cambiarEstadoTarea(
         tareaId,
         nuevoEstado as any,
-        usuarioId
+        usuarioId,
+        userRole
       );
 
       if (!changeResult.success || !changeResult.data) {
@@ -368,7 +371,7 @@ export class TareaController {
   /**
    * Asignar tarea a usuario
    * PUT /api/v1/tareas/:id/asignar
-   * Roles: admin, creador de la tarea, capataz
+   * Roles: admin (todas), creador de la tarea (solo las que creó)
    */
   static async asignar(_req: AuthenticatedRequest, res: Response): Promise<void> {
     try {

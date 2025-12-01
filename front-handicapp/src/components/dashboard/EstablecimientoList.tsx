@@ -10,9 +10,23 @@ import {
   Mail, 
   Home, 
   CheckCircle2,
+  Edit2,
+  Loader2,
 } from 'lucide-react';
 
-export function EstablecimientoList() {
+interface EstablecimientoListProps {
+  showAll?: boolean; // Si es true, muestra todos los establecimientos sin filtrar por mis_caballos
+  onViewDetails?: (establecimiento: Establecimiento) => void; // Callback opcional para manejar el click en "Ver Detalles"
+  onEdit?: (establecimiento: Establecimiento) => void; // Callback opcional para manejar la edición
+  detailUrlPrefix?: string; // Prefijo de URL para el detalle (por defecto '/propietario/establecimientos')
+}
+
+export function EstablecimientoList({ 
+  showAll = false, 
+  onViewDetails,
+  onEdit,
+  detailUrlPrefix = '/propietario/establecimientos'
+}: EstablecimientoListProps) {
   const [establecimientos, setEstablecimientos] = useState<Establecimiento[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,12 +53,15 @@ export function EstablecimientoList() {
   useEffect(() => {
     // Asegurar que establecimientos es un array antes de filtrar
     if (Array.isArray(establecimientos)) {
-      // SOLO mostrar establecimientos donde el usuario tiene caballos
-      const misEstablecimientos = establecimientos.filter(est => 
-        est.mis_caballos && est.mis_caballos.length > 0
-      );
+      // Si showAll es true (página de admin), mostrar todos los establecimientos
+      // Si showAll es false (página de propietario), solo mostrar donde el usuario tiene caballos
+      const establecimientosParaFiltrar = showAll 
+        ? establecimientos 
+        : establecimientos.filter(est => 
+            est.mis_caballos && est.mis_caballos.length > 0
+          );
       
-      const filtered = misEstablecimientos.filter(est => {
+      const filtered = establecimientosParaFiltrar.filter(est => {
         const matchSearch = searchTerm === '' || 
           est.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
           (est.ciudad && est.ciudad.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -63,7 +80,7 @@ export function EstablecimientoList() {
     } else {
       setFilteredEstablecimientos([]);
     }
-  }, [searchTerm, establecimientos, filters.tipo_establecimiento, filters.estado]);
+  }, [searchTerm, establecimientos, filters.tipo_establecimiento, filters.estado, showAll]);
 
   const loadEstablecimientos = async () => {
     try {
@@ -78,21 +95,28 @@ export function EstablecimientoList() {
       });
       
       // Manejar diferentes estructuras de respuesta
+      // El servicio ya extrae response.data, así que response es { items: [...], pagination: {...} }
       let establecimientosArray: Establecimiento[] = [];
       
       if (Array.isArray(response)) {
         establecimientosArray = response;
       } else if (response && typeof response === 'object') {
-        const r = response as { data?: unknown; items?: unknown; [key: string]: unknown };
-        const dataItems = (r.data as { items?: unknown; establecimientos?: unknown; [key: string]: unknown });
-        establecimientosArray = (dataItems?.items || 
-                                dataItems?.establecimientos || 
-                                r.items || 
-                                r.data || 
+        const r = response as { data?: unknown; items?: unknown; establecimientos?: unknown; [key: string]: unknown };
+        // El servicio devuelve response.data que es { items: [...], pagination: {...} }
+        // Entonces buscamos directamente items o establecimientos
+        establecimientosArray = (r.items || 
+                                r.establecimientos || 
+                                (r.data as { items?: unknown; establecimientos?: unknown })?.items ||
+                                (r.data as { items?: unknown; establecimientos?: unknown })?.establecimientos ||
+                                (Array.isArray(r.data) ? r.data : []) || 
                                 []) as Establecimiento[];
       }
       
-      console.log('📦 Establecimientos cargados:', establecimientosArray);
+      console.log('📦 Establecimientos cargados:', {
+        count: establecimientosArray.length,
+        establecimientos: establecimientosArray,
+        response: response
+      });
       setEstablecimientos(Array.isArray(establecimientosArray) ? establecimientosArray : []);
     } catch (err) {
       console.error('❌ Error cargando establecimientos:', err);
@@ -107,8 +131,8 @@ export function EstablecimientoList() {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-sm">Cargando establecimientos...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-slate-600 mx-auto mb-3" />
+          <p className="text-slate-600 text-sm font-medium">Cargando establecimientos...</p>
         </div>
       </div>
     );
@@ -131,9 +155,9 @@ export function EstablecimientoList() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       {/* Búsqueda y filtros */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {/* Búsqueda y filtros en una fila */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
@@ -174,137 +198,202 @@ export function EstablecimientoList() {
         </div>
 
         {/* Contador */}
-        <div className="text-sm text-gray-600">
-          {filteredEstablecimientos.length} establecimiento{filteredEstablecimientos.length !== 1 ? 's' : ''}
+        <div className="text-sm font-medium text-slate-600">
+          {filteredEstablecimientos.length} establecimiento{filteredEstablecimientos.length !== 1 ? 's' : ''} encontrado{filteredEstablecimientos.length !== 1 ? 's' : ''}
         </div>
       </div>
 
       {/* Lista de establecimientos */}
       {filteredEstablecimientos.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-          <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-          <p className="text-gray-600">
+        <div className="text-center py-16 bg-slate-50 rounded-xl border border-slate-200">
+          <MapPin className="h-16 w-16 text-slate-300 mx-auto mb-4" />
+          <p className="text-slate-600 text-base font-medium mb-1">
             {searchTerm ? 'No se encontraron establecimientos' : 'No hay establecimientos asociados'}
+          </p>
+          <p className="text-slate-500 text-sm">
+            {searchTerm ? 'Intenta con otros términos de búsqueda' : 'Agrega un nuevo establecimiento para comenzar'}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
           {filteredEstablecimientos.map((establecimiento) => (
             <div 
               key={establecimiento.id}
-              className="group bg-white border border-gray-200 rounded-xl hover:shadow-lg transition-all duration-200 overflow-hidden"
+              className="group bg-white border border-slate-200 rounded-xl hover:shadow-lg hover:border-slate-300 transition-all duration-200 overflow-hidden flex flex-col h-full"
             >
               {/* Header más sutil */}
-              <div className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-base text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
-                      {establecimiento.nombre}
-                    </h4>
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                      <MapPin className="h-3.5 w-3.5" />
-                      <span className="line-clamp-1">{establecimiento.direccion}</span>
-                    </div>
-                  </div>
-                  {establecimiento.estado === 'activo' && (
-                    <div className="flex-shrink-0 ml-2">
-                      <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                    </div>
-                  )}
-                </div>
+              <div className="bg-slate-50 border-b border-slate-200 p-4">
+                <h4 className="font-bold text-base text-slate-900 group-hover:text-[#0f172a] transition-colors line-clamp-2">
+                  {establecimiento.nombre}
+                </h4>
               </div>
 
               {/* Contenido */}
-              <div className="p-4 space-y-3">
-                {/* Caballos del usuario - más profesional */}
-                {establecimiento.mis_caballos && establecimiento.mis_caballos.length > 0 && (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="h-5 w-5 rounded-full bg-emerald-500 flex items-center justify-center">
-                        <CheckCircle2 className="h-3 w-3 text-white" />
+              <div className="p-5 flex flex-col h-full">
+                <div className="space-y-4 flex-1">
+                  {/* Caballos del usuario - más profesional */}
+                  {establecimiento.mis_caballos && establecimiento.mis_caballos.length > 0 && (
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3.5">
+                      <div className="flex items-center gap-2 mb-2.5">
+                        <div className="h-5 w-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                          <CheckCircle2 className="h-3 w-3 text-white" />
+                        </div>
+                        <span className="text-xs font-semibold text-emerald-900">
+                          Tus caballos aquí ({establecimiento.mis_caballos.length})
+                        </span>
                       </div>
-                      <span className="text-xs font-medium text-emerald-900">
-                        Tus caballos aquí ({establecimiento.mis_caballos.length})
+                      <div className="flex flex-wrap gap-1.5">
+                        {establecimiento.mis_caballos.map((caballo) => (
+                          <Badge key={caballo.id} variant="outline" className="bg-white border-emerald-300 text-emerald-700 text-xs">
+                            {caballo.nombre}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Badges */}
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="secondary" className="capitalize text-xs bg-slate-100 text-slate-700 border-0 font-medium">
+                      {establecimiento.tipo_establecimiento}
+                    </Badge>
+                    <Badge 
+                      className={`text-xs border-0 font-medium ${
+                        establecimiento.estado === 'activo' 
+                          ? 'bg-emerald-100 text-emerald-700' 
+                          : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      {establecimiento.estado}
+                    </Badge>
+                  </div>
+
+                  {/* Stats - sin emojis */}
+                  {(establecimiento.superficie_hectareas || establecimiento.cantidad_boxes) && (
+                    <div className="flex gap-5 text-xs text-slate-600 py-2.5">
+                      {establecimiento.superficie_hectareas && (
+                        <div className="flex items-center gap-1.5">
+                          <Home className="h-4 w-4 text-slate-400" />
+                          <span className="font-semibold">{establecimiento.superficie_hectareas}</span>
+                          <span className="text-slate-500">ha</span>
+                        </div>
+                      )}
+                      {establecimiento.cantidad_boxes && (
+                        <div className="flex items-center gap-1.5">
+                          <div className="h-4 w-4 text-slate-400">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="3" y="11" width="18" height="10" rx="2" />
+                              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                          </div>
+                          <span className="font-semibold">{establecimiento.cantidad_boxes}</span>
+                          <span className="text-slate-500">boxes</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Contacto y ubicación */}
+                  <div className="space-y-2 text-xs text-slate-600 pt-3 border-t border-slate-100">
+                    {/* Ubicación - siempre visible */}
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                      <span className={`line-clamp-1 ${!establecimiento.ciudad && !establecimiento.provincia ? 'text-slate-400 italic' : ''}`}>
+                        {establecimiento.ciudad || establecimiento.provincia 
+                          ? [establecimiento.ciudad, establecimiento.provincia].filter(Boolean).join(', ')
+                          : 'Sin ubicación'}
                       </span>
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {establecimiento.mis_caballos.map((caballo) => (
-                        <Badge key={caballo.id} variant="outline" className="bg-white border-emerald-300 text-emerald-700 text-xs">
-                          {caballo.nombre}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Badges */}
-                <div className="flex flex-wrap gap-1.5">
-                  <Badge variant="secondary" className="capitalize text-xs bg-gray-100 text-gray-700 border-0">
-                    {establecimiento.tipo_establecimiento}
-                  </Badge>
-                  <Badge 
-                    className={`text-xs border-0 ${
-                      establecimiento.estado === 'activo' 
-                        ? 'bg-green-100 text-green-700' 
-                        : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {establecimiento.estado}
-                  </Badge>
-                </div>
-
-                {/* Stats - sin emojis */}
-                {(establecimiento.superficie_hectareas || establecimiento.cantidad_boxes) && (
-                  <div className="flex gap-4 text-xs text-gray-600 py-2">
-                    {establecimiento.superficie_hectareas && (
-                      <div className="flex items-center gap-1.5">
-                        <Home className="h-3.5 w-3.5 text-gray-400" />
-                        <span className="font-medium">{establecimiento.superficie_hectareas}</span>
-                        <span className="text-gray-500">ha</span>
-                      </div>
-                    )}
-                    {establecimiento.cantidad_boxes && (
-                      <div className="flex items-center gap-1.5">
-                        <div className="h-3.5 w-3.5 text-gray-400">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="3" y="11" width="18" height="10" rx="2" />
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                          </svg>
-                        </div>
-                        <span className="font-medium">{establecimiento.cantidad_boxes}</span>
-                        <span className="text-gray-500">boxes</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Contacto */}
-                {(establecimiento.telefono || establecimiento.email) && (
-                  <div className="space-y-1.5 text-xs text-gray-600 pt-2 border-t border-gray-100">
+                    
                     {establecimiento.telefono && (
-                      <div className="flex items-center gap-1.5">
-                        <Phone className="h-3.5 w-3.5 text-gray-400" />
-                        <span>{establecimiento.telefono}</span>
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                        <a 
+                          href={`tel:${establecimiento.telefono}`}
+                          className="hover:text-[#0f172a] transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {establecimiento.telefono}
+                        </a>
                       </div>
                     )}
+                    
                     {establecimiento.email && (
-                      <div className="flex items-center gap-1.5">
-                        <Mail className="h-3.5 w-3.5 text-gray-400" />
-                        <span className="truncate">{establecimiento.email}</span>
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                        <a 
+                          href={`mailto:${establecimiento.email}`}
+                          className="truncate hover:text-[#0f172a] transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {establecimiento.email}
+                        </a>
                       </div>
                     )}
                   </div>
-                )}
+
+                  {/* Administrador del establecimiento - solo para admin */}
+                  {establecimiento.usuarios && establecimiento.usuarios.length > 0 && (() => {
+                    const admin = establecimiento.usuarios.find((u: any) => u.rol?.clave === 'establecimiento');
+                    return admin ? (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <div className="h-6 w-6 rounded-full bg-blue-500 flex items-center justify-center">
+                            <span className="text-white font-bold text-xs">
+                              {admin.nombre?.[0]}{admin.apellido?.[0]}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold text-blue-900 truncate">
+                              {admin.nombre} {admin.apellido}
+                            </p>
+                            <p className="text-xs text-blue-700 truncate">
+                              👑 Administrador
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
+                </div>
 
                 {/* Botón */}
                 <button
-                  onClick={() => {
-                    window.location.href = `/propietario/establecimientos/${establecimiento.id}`;
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('🔍 Click en Ver Detalles:', { 
+                      tieneCallback: !!onViewDetails, 
+                      establecimientoId: establecimiento.id,
+                      detailUrlPrefix 
+                    });
+                    if (onViewDetails) {
+                      console.log('✅ Usando callback onViewDetails');
+                      onViewDetails(establecimiento);
+                    } else {
+                      console.log('⚠️ No hay callback, redirigiendo a:', `${detailUrlPrefix}/${establecimiento.id}`);
+                      window.location.href = `${detailUrlPrefix}/${establecimiento.id}`;
+                    }
                   }}
-                  className="w-full mt-2 px-4 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium text-sm"
+                  className="w-full mt-2 px-4 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors font-medium text-sm"
                 >
                   Ver Detalles
                 </button>
+
+                {/* Botón de editar - solo visible si hay callback onEdit */}
+                {onEdit && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onEdit(establecimiento);
+                    }}
+                    className="w-full mt-2 px-4 py-2.5 bg-white border-2 border-slate-900 text-slate-900 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm flex items-center justify-center gap-2"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    Editar
+                  </button>
+                )}
               </div>
             </div>
           ))}

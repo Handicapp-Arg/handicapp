@@ -70,32 +70,32 @@ export const seedDatabase = async () => {
       defaults: adminData
     });
 
-    // Crear usuario veterinario por defecto
-    const vetRole = await db.Role.findOne({ where: { clave: 'veterinario' } });
-    if (!vetRole) {
-      throw new Error('Veterinario role not found');
-    }
-    const vetRoleId: number | undefined = (vetRole as any).id ?? (vetRole as any).get?.('id');
+    // Comentado - no crear veterinario automáticamente
+    // const vetRole = await db.Role.findOne({ where: { clave: 'veterinario' } });
+    // if (!vetRole) {
+    //   throw new Error('Veterinario role not found');
+    // }
+    // const vetRoleId: number | undefined = (vetRole as any).id ?? (vetRole as any).get?.('id');
 
-    const [_vetUser, vetCreated] = await db.User.findOrCreate({
-      where: { email: 'vet@test.com' },
-      defaults: {
-        email: 'vet@test.com',
-        hash_contrasena: hashedPassword,
-        rol_id: vetRoleId as number,
-        verificado: true,
-        estado_usuario: EstadoUsuario.active,
-        nombre: 'Veterinario',
-        apellido: 'Test',
-        telefono: null,
-        creado_el: new Date(),
-        actualizado_el: new Date(),
-        ultimo_acceso_el: new Date()
-      }
-    });
+    // const [_vetUser, vetCreated] = await db.User.findOrCreate({
+    //   where: { email: 'vet@test.com' },
+    //   defaults: {
+    //     email: 'vet@test.com',
+    //     hash_contrasena: hashedPassword,
+    //     rol_id: vetRoleId as number,
+    //     verificado: true,
+    //     estado_usuario: EstadoUsuario.active,
+    //     nombre: 'Veterinario',
+    //     apellido: 'Test',
+    //     telefono: null,
+    //     creado_el: new Date(),
+    //     actualizado_el: new Date(),
+    //     ultimo_acceso_el: new Date()
+    //   }
+    // });
 
-    if (adminCreated || vetCreated) {
-      logger.info('✅ Default users created');
+    if (adminCreated) {
+      logger.info('✅ Admin user created');
     }
 
     return true;

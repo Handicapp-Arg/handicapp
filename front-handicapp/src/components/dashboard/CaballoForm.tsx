@@ -38,6 +38,7 @@ function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoFormProps) 
     microchip: undefined,
     establecimiento_id: undefined,
     padre_id: undefined,
+
     madre_id: undefined,
     propietario_usuario_id: user?.id || undefined,
     porcentaje_tenencia: 100,
@@ -51,6 +52,9 @@ function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoFormProps) 
     altura: undefined,
     peso: undefined
   });
+
+  // Para detectar cambio de establecimiento
+  const [originalEstablecimientoId, setOriginalEstablecimientoId] = useState<number | undefined>(undefined);
 
   // Load data on mount
   const formatToInputDate = (dateStr?: string | null) => {
@@ -80,6 +84,7 @@ function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoFormProps) 
       loadCaballosPadres();
       
       if (caballo) {
+        const estId = caballo.asociaciones_establecimientos?.[0]?.establecimiento_id || undefined;
         setFormData({
           nombre: caballo.nombre,
           sexo: caballo.sexo || undefined,
@@ -88,7 +93,7 @@ function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoFormProps) 
           raza: caballo.raza || undefined,
           disciplina: caballo.disciplina || undefined,
           microchip: caballo.microchip || undefined,
-          establecimiento_id: caballo.asociaciones_establecimientos?.[0]?.establecimiento_id || undefined,
+          establecimiento_id: estId,
           padre_id: caballo.padre_id || undefined,
           madre_id: caballo.madre_id || undefined,
           propietario_usuario_id: caballo.propiedades?.[0]?.propietario_usuario_id || user?.id || undefined,
@@ -103,6 +108,7 @@ function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoFormProps) 
           altura: caballo.altura || undefined,
           peso: caballo.peso || undefined
         });
+        setOriginalEstablecimientoId(estId);
         setPreviewUrl(caballo.foto_url || null);
       } else {
         // Reset form for new caballo

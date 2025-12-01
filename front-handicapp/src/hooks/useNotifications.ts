@@ -27,9 +27,10 @@ export function useNotifications() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Conectar al WebSocket
-  const { isConnected, on, off } = useWebSocket({
-    autoConnect: true,
+  // Conectar al WebSocket solo cuando sea necesario (lazy loading)
+  // OPTIMIZACIÓN: autoConnect false por defecto, se conecta solo cuando se necesita
+  const { isConnected, on, off, connect } = useWebSocket({
+    autoConnect: false, // No conectar automáticamente
     onConnect: () => {
       console.log('✅ WebSocket conectado - Notificaciones en tiempo real activas');
       cargarNotificaciones();
@@ -39,6 +40,18 @@ export function useNotifications() {
       setError('Error de conexión en tiempo real');
     },
   });
+
+  // Conectar WebSocket solo cuando se carga la primera vez o cuando se necesita
+  useEffect(() => {
+    // Conectar después de un pequeño delay para no bloquear carga inicial
+    const connectTimer = setTimeout(() => {
+      if (!isConnected) {
+        connect();
+      }
+    }, 2000); // Esperar 2 segundos después de montar
+
+    return () => clearTimeout(connectTimer);
+  }, [isConnected, connect]);
 
   /**
    * Cargar notificaciones iniciales

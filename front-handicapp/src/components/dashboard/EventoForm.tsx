@@ -391,19 +391,23 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Prioridad
+                Prioridad *
               </label>
               <select
                 name="prioridad"
                 value={formData.prioridad}
                 onChange={handleChange}
+                required
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="baja">Baja</option>
-                <option value="media">Media</option>
-                <option value="alta">Alta</option>
-                <option value="critica">Crítica</option>
+                <option value="baja">🟢 Baja</option>
+                <option value="media">🟡 Media</option>
+                <option value="alta">🟠 Alta</option>
+                <option value="critica">🔴 Crítica</option>
               </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Selecciona el nivel de urgencia del evento
+              </p>
             </div>
 
             <div>

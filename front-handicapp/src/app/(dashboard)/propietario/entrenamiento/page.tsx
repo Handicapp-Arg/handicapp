@@ -6,6 +6,7 @@ import { useEventos, useCaballos } from '@/lib/hooks';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dumbbell, Activity, Target, TrendingUp } from 'lucide-react';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 export default function PropietarioEntrenamientoPage() {
   const { data: eventosResponse, isLoading: loadingEventos } = useEventos({ search: 'entrenamiento', page: 1, limit: 50 });
@@ -37,11 +38,7 @@ export default function PropietarioEntrenamientoPage() {
   }), [caballos, eventos]);
 
   if (loadingEventos || loadingCaballos) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <LoadingSpinnerFullPage label="Cargando..." variant="success" />;
   }
 
   return (

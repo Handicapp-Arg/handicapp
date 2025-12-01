@@ -161,7 +161,7 @@ export class InventarioController {
         return;
       }
 
-      const { codigo, nombre, descripcion, categoria_id, proveedor_id, unidad_medida, precio_unitario, stock_minimo, stock_maximo, estado, imagen_url, notas } = req.body;
+      const { codigo, nombre, descripcion, categoria_id, proveedor_id, unidad_medida, precio_unitario, stock_actual, stock_minimo, stock_maximo, estado, imagen_url, notas } = req.body;
 
       if (codigo && codigo !== producto.codigo) {
         const existe = await Producto.findOne({
@@ -181,6 +181,7 @@ export class InventarioController {
         proveedor_id: proveedor_id !== undefined ? (proveedor_id ? Number(proveedor_id) : null) : producto.proveedor_id,
         unidad_medida: unidad_medida || producto.unidad_medida,
         precio_unitario: precio_unitario !== undefined ? Number(precio_unitario) : producto.precio_unitario,
+        stock_actual: stock_actual !== undefined ? Number(stock_actual) : producto.stock_actual,
         stock_minimo: stock_minimo !== undefined ? Number(stock_minimo) : producto.stock_minimo,
         stock_maximo: stock_maximo !== undefined ? Number(stock_maximo) : producto.stock_maximo,
         estado: estado || producto.estado,

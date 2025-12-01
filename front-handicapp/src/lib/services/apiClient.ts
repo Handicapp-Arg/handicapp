@@ -161,8 +161,20 @@ export class ApiClient {
   }
 
   // User endpoints
-  static async getUsers(page = 1, limit = 10) {
-    return this.request(`/users?page=${page}&limit=${limit}`);
+  static async getUsers(page = 1, limit = 10, filters?: { roleId?: number; estado?: string }) {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    
+    if (filters?.roleId) {
+      params.append('roleId', filters.roleId.toString());
+    }
+    if (filters?.estado) {
+      params.append('estado', filters.estado);
+    }
+    
+    return this.request(`/users?${params.toString()}`);
   }
 
   static async searchUsers(query: string, page = 1, limit = 10) {

@@ -1,6 +1,21 @@
 import { apiClient } from '@/lib/http';
+import { showError, showSuccess } from '@/lib/utils/errorHandler';
 
 // ==================== INTERFACES ====================
+
+export interface Departamento {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+}
+
+export interface Puesto {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+  departamento_id?: number;
+  departamento?: Departamento;
+}
 
 export interface Empleado {
   id: number;
@@ -17,8 +32,10 @@ export interface Empleado {
   fecha_ingreso: string;
   fecha_egreso?: string;
   salario?: number;
-  departamento?: string;
-  puesto?: string;
+  departamento_id?: number;
+  departamento?: Departamento;
+  puesto_id?: number;
+  puesto?: Puesto;
   supervisor_id?: number;
   supervisor_nombre?: string;
   horario_id?: number;
@@ -39,8 +56,8 @@ export interface CrearEmpleadoDTO {
   rol_id: number;
   fecha_ingreso: string;
   salario?: number;
-  departamento?: string;
-  puesto?: string;
+  departamento_id?: number;
+  puesto_id?: number;
   supervisor_id?: number;
   horario_id?: number;
   observaciones?: string;
@@ -55,8 +72,8 @@ export interface ActualizarEmpleadoDTO {
   rol_id?: number;
   estado?: 'activo' | 'inactivo' | 'suspendido' | 'vacaciones';
   salario?: number;
-  departamento?: string;
-  puesto?: string;
+  departamento_id?: number;
+  puesto_id?: number;
   supervisor_id?: number;
   horario_id?: number;
   observaciones?: string;
@@ -137,7 +154,8 @@ export interface EmpleadoPorDepartamento {
 export interface FiltrosEmpleados {
   estado?: 'activo' | 'inactivo' | 'suspendido' | 'vacaciones';
   rol_id?: number;
-  departamento?: string;
+  departamento_id?: number;
+  puesto_id?: number;
   supervisor_id?: number;
   busqueda?: string;
 }
@@ -145,6 +163,31 @@ export interface FiltrosEmpleados {
 // ==================== SERVICE CLASS ====================
 
 class GestionPersonalService {
+  
+  // ========== DEPARTAMENTOS Y PUESTOS ==========
+  
+  async getDepartamentos(): Promise<Departamento[]> {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const response = await apiClient.get('/departamentos') as any;
+      return response.data || response || [];
+    } catch (error) {
+      console.error('Error fetching departamentos:', error);
+      return [];
+    }
+  }
+
+  async getPuestos(departamentoId?: number): Promise<Puesto[]> {
+    try {
+      const url = departamentoId ? `/puestos?departamento_id=${departamentoId}` : '/puestos';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const response = await apiClient.get(url) as any;
+      return response.data || response || [];
+    } catch (error) {
+      console.error('Error fetching puestos:', error);
+      return [];
+    }
+  }
   
   // ========== EMPLEADOS - CRUD ==========
   
@@ -161,8 +204,9 @@ class GestionPersonalService {
         return [];
       }
       
-      // Filtrar solo empleados, capataces y veterinarios (roles 3, 4, 5)
-      usuarios = usuarios.filter((u: { rol_id: number }) => [3, 4, 5].includes(u.rol_id));
+      // Filtrar solo empleados, capataces, veterinarios y establecimiento (roles 2, 3, 4, 5)
+      // Excluir admin (rol 1) y propietario (rol 6)
+      usuarios = usuarios.filter((u: { rol_id: number }) => [2, 3, 4, 5].includes(u.rol_id));
       
       // Mapear a formato Empleado
       let empleados: Empleado[] = usuarios.map((u: { 
@@ -173,17 +217,18 @@ class GestionPersonalService {
         telefono?: string; 
         documento?: string; 
         rol_id: number; 
-        rol?: { nombre: string }; 
+        rol?: { nombre: string };
+        departamento_id?: number;
+        departamento?: { id: number; nombre: string };
+        puesto_id?: number;
+        puesto?: { id: number; nombre: string };
         establecimiento_id?: number; 
-        departamento?: string; 
-        cargo?: string; 
         fecha_ingreso?: string; 
         estado?: string;
         estado_usuario?: string;
         salario?: number;
         creado_el?: string;
         actualizado_el?: string;
-        puesto?: string;
         created_at?: string;
         updated_at?: string;
       }) => ({
@@ -197,8 +242,10 @@ class GestionPersonalService {
         rol_nombre: u.rol?.nombre || this.getRolNombre(u.rol_id),
         fecha_ingreso: u.creado_el || new Date().toISOString(),
         estado: u.estado_usuario === 'active' ? 'activo' : 'inactivo',
-        departamento: u.departamento || 'Operaciones',
-        puesto: u.puesto || this.getPuestoDefault(u.rol_id),
+        departamento_id: u.departamento_id,
+        departamento: u.departamento,
+        puesto_id: u.puesto_id,
+        puesto: u.puesto,
         salario: u.salario || null,
         creado_el: u.creado_el,
         actualizado_el: u.actualizado_el,
@@ -213,8 +260,8 @@ class GestionPersonalService {
       if (filtros?.rol_id) {
         empleados = empleados.filter(e => e.rol_id === filtros.rol_id);
       }
-      if (filtros?.departamento) {
-        empleados = empleados.filter(e => e.departamento === filtros.departamento);
+      if (filtros?.departamento_id) {
+        empleados = empleados.filter(e => e.departamento_id === filtros.departamento_id);
       }
       
       return empleados;
@@ -254,7 +301,7 @@ class GestionPersonalService {
     }
   }
 
-  async crearEmpleado(data: CrearEmpleadoDTO): Promise<{ empleado: Empleado; passwordTemporal: string } | null> {
+  async crearEmpleado(data: CrearEmpleadoDTO): Promise<{ empleado: Empleado; passwordTemporal: string }> {
     try {
       // Crear usuario usando la API de users
       // Generar contraseña temporal basada en el documento o email
@@ -276,13 +323,23 @@ class GestionPersonalService {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const response = await apiClient.post('/users', userData) as any;
       
+      showSuccess('user', 'created', `Usuario ${data.nombre} ${data.apellido} creado exitosamente. Contraseña temporal: ${passwordTemp}`);
+      
       return {
         empleado: response.data || response,
         passwordTemporal: passwordTemp
       };
-    } catch (error) {
-      console.error('Error creando empleado:', error);
-      return null;
+    } catch (error: unknown) {
+      const err = error as { message?: string; data?: unknown; status?: number };
+      console.error('❌ Error creando empleado:', {
+        error,
+        message: err?.message,
+        data: err?.data,
+        status: err?.status
+      });
+      
+      showError(error, 'user', 'create_failed');
+      throw error;
     }
   }
 
@@ -290,31 +347,33 @@ class GestionPersonalService {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const response = await apiClient.put(`/users/${id}`, data) as any;
+      
+      showSuccess('user', 'updated');
       return response.data || response;
     } catch (error) {
-      console.error('Error actualizando empleado:', error);
-      return null;
+      showError(error, 'user', 'update_failed');
+      throw error;
     }
   }
 
   async eliminarEmpleado(id: number): Promise<boolean> {
     try {
       await apiClient.delete(`/users/${id}`);
+      showSuccess('user', 'deleted');
       return true;
     } catch (error) {
-      console.error('Error eliminando empleado:', error);
+      showError(error, 'user', 'delete_failed');
       return false;
     }
   }
 
   async cambiarEstadoEmpleado(id: number, _estado: string): Promise<boolean> {
     try {
-      // La ruta correcta es /users/:id/toggle-status del backend
-      // Pero como solo cambiamos entre activo/inactivo, usamos toggle
       await apiClient.patch(`/users/${id}/toggle-status`);
+      showSuccess('user', 'updated', 'Estado del empleado actualizado exitosamente');
       return true;
     } catch (error) {
-      console.error('Error cambiando estado:', error);
+      showError(error, 'user', 'update_failed');
       return false;
     }
   }
@@ -481,7 +540,7 @@ class GestionPersonalService {
       const deptSalaries: Record<string, number[]> = {};
       
       empleados.forEach(emp => {
-        const dept = emp.departamento || 'Sin asignar';
+        const dept = emp.departamento?.nombre || 'Sin asignar';
         deptCounts[dept] = (deptCounts[dept] || 0) + 1;
         
         if (!deptSalaries[dept]) {

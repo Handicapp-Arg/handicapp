@@ -2,7 +2,7 @@
 
 import { Establecimiento } from '@/lib/services/establecimientoService';
 import { EstablecimientoCard } from './EstablecimientoCard';
-import { Loader2 } from 'lucide-react';
+import { LoadingSpinnerCard } from '@/components/ui/loading-spinner';
 
 interface EstablecimientoGridProps {
   establecimientos: Establecimiento[];
@@ -18,7 +18,7 @@ export function EstablecimientoGrid({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <LoadingSpinnerCard label="Cargando establecimientos..." />
       </div>
     );
   }

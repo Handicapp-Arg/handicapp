@@ -64,6 +64,7 @@ export interface ActualizarProductoDTO {
   descripcion?: string;
   categoria_id?: number;
   unidad_medida?: 'unidad' | 'kg' | 'litro' | 'metro' | 'caja' | 'bolsa';
+  stock_actual?: number;
   stock_minimo?: number;
   stock_maximo?: number;
   precio_unitario?: number;
@@ -253,199 +254,6 @@ const mockProveedores: Proveedor[] = [
   },
 ];
 
-const mockProductos: Producto[] = [
-  {
-    id: 1,
-    codigo: 'ALI-001',
-    nombre: 'Avena Premium',
-    descripcion: 'Avena de alta calidad para alimentación equina',
-    categoria_id: 1,
-    categoria_nombre: 'Alimentos',
-    unidad_medida: 'kg',
-    stock_actual: 450,
-    stock_minimo: 200,
-    stock_maximo: 1000,
-    precio_unitario: 85.50,
-    ubicacion: 'Depósito A - Estante 1',
-    proveedor_id: 1,
-    proveedor_nombre: 'AgriFood SA',
-    estado: 'activo',
-    fecha_ultima_compra: '2025-10-15',
-    created_at: '2025-01-10T10:00:00Z',
-    updated_at: '2025-10-15T14:30:00Z',
-  },
-  {
-    id: 2,
-    codigo: 'MED-001',
-    nombre: 'Antibiótico Veterinario',
-    descripcion: 'Antibiótico de amplio espectro',
-    categoria_id: 2,
-    categoria_nombre: 'Medicamentos',
-    unidad_medida: 'unidad',
-    stock_actual: 15,
-    stock_minimo: 20,
-    stock_maximo: 50,
-    precio_unitario: 1250.00,
-    ubicacion: 'Farmacia - Refrigerador 1',
-    proveedor_id: 2,
-    proveedor_nombre: 'VetSupply',
-    estado: 'activo',
-    fecha_ultima_compra: '2025-10-18',
-    fecha_vencimiento: '2026-12-31',
-    created_at: '2025-02-05T10:00:00Z',
-    updated_at: '2025-10-18T16:00:00Z',
-  },
-  {
-    id: 3,
-    codigo: 'EQU-001',
-    nombre: 'Cepillo para Caballos',
-    descripcion: 'Cepillo de cerdas suaves',
-    categoria_id: 3,
-    categoria_nombre: 'Equipamiento',
-    unidad_medida: 'unidad',
-    stock_actual: 8,
-    stock_minimo: 10,
-    stock_maximo: 30,
-    precio_unitario: 450.00,
-    ubicacion: 'Depósito B - Caja 3',
-    proveedor_id: 3,
-    proveedor_nombre: 'Equipo Total',
-    estado: 'activo',
-    fecha_ultima_compra: '2025-10-10',
-    created_at: '2025-03-15T10:00:00Z',
-    updated_at: '2025-10-10T11:20:00Z',
-  },
-  {
-    id: 4,
-    codigo: 'ALI-002',
-    nombre: 'Heno de Alfalfa',
-    descripcion: 'Fardo de heno de alfalfa',
-    categoria_id: 1,
-    categoria_nombre: 'Alimentos',
-    unidad_medida: 'unidad',
-    stock_actual: 85,
-    stock_minimo: 50,
-    stock_maximo: 150,
-    precio_unitario: 320.00,
-    ubicacion: 'Galpón Principal',
-    proveedor_id: 1,
-    proveedor_nombre: 'AgriFood SA',
-    estado: 'activo',
-    fecha_ultima_compra: '2025-10-12',
-    created_at: '2025-01-10T10:00:00Z',
-    updated_at: '2025-10-12T09:00:00Z',
-  },
-  {
-    id: 5,
-    codigo: 'LIM-001',
-    nombre: 'Desinfectante',
-    descripcion: 'Desinfectante de uso veterinario',
-    categoria_id: 4,
-    categoria_nombre: 'Limpieza',
-    unidad_medida: 'litro',
-    stock_actual: 12,
-    stock_minimo: 15,
-    stock_maximo: 40,
-    precio_unitario: 280.00,
-    ubicacion: 'Depósito C - Estante 2',
-    proveedor_id: 2,
-    proveedor_nombre: 'VetSupply',
-    estado: 'activo',
-    fecha_ultima_compra: '2025-10-08',
-    created_at: '2025-02-20T10:00:00Z',
-    updated_at: '2025-10-08T13:45:00Z',
-  },
-];
-
-const mockMovimientos: Movimiento[] = [
-  {
-    id: 1,
-    producto_id: 1,
-    producto_nombre: 'Avena Premium',
-    producto_codigo: 'ALI-001',
-    tipo: 'entrada',
-    cantidad: 200,
-    stock_anterior: 250,
-    stock_nuevo: 450,
-    precio_unitario: 85.50,
-    monto_total: 17100.00,
-    motivo: 'Compra mensual',
-    proveedor_id: 1,
-    proveedor_nombre: 'AgriFood SA',
-    usuario_id: 1,
-    usuario_nombre: 'Juan Pérez',
-    referencia: 'FC-001234',
-    fecha: '2025-10-15',
-    created_at: '2025-10-15T14:30:00Z',
-  },
-  {
-    id: 2,
-    producto_id: 2,
-    producto_nombre: 'Antibiótico Veterinario',
-    producto_codigo: 'MED-001',
-    tipo: 'salida',
-    cantidad: 5,
-    stock_anterior: 20,
-    stock_nuevo: 15,
-    motivo: 'Tratamiento equino #1234',
-    usuario_id: 2,
-    usuario_nombre: 'María García',
-    fecha: '2025-10-18',
-    observaciones: 'Tratamiento de infección respiratoria',
-    created_at: '2025-10-18T10:15:00Z',
-  },
-  {
-    id: 3,
-    producto_id: 3,
-    producto_nombre: 'Cepillo para Caballos',
-    producto_codigo: 'EQU-001',
-    tipo: 'salida',
-    cantidad: 2,
-    stock_anterior: 10,
-    stock_nuevo: 8,
-    motivo: 'Asignación al personal',
-    usuario_id: 1,
-    usuario_nombre: 'Juan Pérez',
-    fecha: '2025-10-17',
-    created_at: '2025-10-17T09:20:00Z',
-  },
-  {
-    id: 4,
-    producto_id: 4,
-    producto_nombre: 'Heno de Alfalfa',
-    producto_codigo: 'ALI-002',
-    tipo: 'entrada',
-    cantidad: 50,
-    stock_anterior: 35,
-    stock_nuevo: 85,
-    precio_unitario: 320.00,
-    monto_total: 16000.00,
-    motivo: 'Reposición stock',
-    proveedor_id: 1,
-    proveedor_nombre: 'AgriFood SA',
-    usuario_id: 1,
-    usuario_nombre: 'Juan Pérez',
-    referencia: 'FC-001235',
-    fecha: '2025-10-12',
-    created_at: '2025-10-12T09:00:00Z',
-  },
-  {
-    id: 5,
-    producto_id: 5,
-    producto_nombre: 'Desinfectante',
-    producto_codigo: 'LIM-001',
-    tipo: 'salida',
-    cantidad: 3,
-    stock_anterior: 15,
-    stock_nuevo: 12,
-    motivo: 'Limpieza semanal',
-    usuario_id: 3,
-    usuario_nombre: 'Carlos López',
-    fecha: '2025-10-19',
-    created_at: '2025-10-19T16:30:00Z',
-  },
-];
-
 // ==================== SERVICE CLASS ====================
 
 class InventarioService {
@@ -467,31 +275,7 @@ class InventarioService {
       return Array.isArray(response) ? response : response.data;
     } catch (error) {
       console.error('Error fetching productos:', error);
-      let productos = [...mockProductos];
-      
-      // Aplicar filtros al mock data
-      if (filtros?.categoria_id) {
-        productos = productos.filter(p => p.categoria_id === filtros.categoria_id);
-      }
-      if (filtros?.proveedor_id) {
-        productos = productos.filter(p => p.proveedor_id === filtros.proveedor_id);
-      }
-      if (filtros?.estado) {
-        productos = productos.filter(p => p.estado === filtros.estado);
-      }
-      if (filtros?.stock_bajo) {
-        productos = productos.filter(p => p.stock_actual < p.stock_minimo);
-      }
-      if (filtros?.busqueda) {
-        const search = filtros.busqueda.toLowerCase();
-        productos = productos.filter(p => 
-          p.nombre.toLowerCase().includes(search) ||
-          p.codigo.toLowerCase().includes(search) ||
-          p.descripcion?.toLowerCase().includes(search)
-        );
-      }
-      
-      return productos;
+      return [];
     }
   }
 
@@ -501,7 +285,7 @@ class InventarioService {
       return 'data' in response ? response.data : response;
     } catch (error) {
       console.error(`Error fetching producto ${id}:`, error);
-      return mockProductos.find(p => p.id === id) || null;
+      return null;
     }
   }
 
@@ -580,17 +364,7 @@ class InventarioService {
       return response.data || response;
     } catch (error) {
       console.error('Error fetching movimientos:', error);
-      let movimientos = [...mockMovimientos];
-      
-      // Aplicar filtros
-      if (filtros?.producto_id) {
-        movimientos = movimientos.filter(m => m.producto_id === filtros.producto_id);
-      }
-      if (filtros?.tipo) {
-        movimientos = movimientos.filter(m => m.tipo === filtros.tipo);
-      }
-      
-      return movimientos;
+      return [];
     }
   }
 
@@ -614,34 +388,7 @@ class InventarioService {
       return response.data || response;
     } catch (error) {
       console.error('Error fetching alertas:', error);
-      
-      // Generar alertas desde productos con stock bajo
-      const alertas: AlertaStock[] = mockProductos
-        .filter(p => p.stock_actual < p.stock_minimo)
-        .map(p => {
-          const diferencia = p.stock_minimo - p.stock_actual;
-          const porcentaje = (p.stock_actual / p.stock_minimo) * 100;
-          let tipo: 'critico' | 'bajo' | 'normal' | 'alto' = 'bajo';
-          
-          if (porcentaje <= 25) tipo = 'critico';
-          else if (porcentaje <= 50) tipo = 'bajo';
-          
-          return {
-            id: p.id,
-            producto_id: p.id,
-            producto_nombre: p.nombre,
-            producto_codigo: p.codigo,
-            categoria_nombre: p.categoria_nombre,
-            stock_actual: p.stock_actual,
-            stock_minimo: p.stock_minimo,
-            diferencia,
-            porcentaje: Math.round(porcentaje),
-            tipo,
-            fecha_deteccion: new Date().toISOString(),
-          };
-        });
-      
-      return alertas;
+      return [];
     }
   }
 
@@ -654,22 +401,16 @@ class InventarioService {
       return response.data || response;
     } catch (error) {
       console.error('Error fetching estadisticas:', error);
-      
-      const productosActivos = mockProductos.filter(p => p.estado === 'activo');
-      const valorInventario = mockProductos.reduce((sum, p) => sum + (p.stock_actual * p.precio_unitario), 0);
-      const alertasStock = mockProductos.filter(p => p.stock_actual < p.stock_minimo).length;
-      const sinStock = mockProductos.filter(p => p.stock_actual === 0).length;
-      
       return {
-        total_productos: mockProductos.length,
-        productos_activos: productosActivos.length,
-        productos_inactivos: mockProductos.filter(p => p.estado === 'inactivo').length,
-        total_categorias: mockCategorias.length,
-        valor_inventario: valorInventario,
-        alertas_stock: alertasStock,
-        movimientos_mes: mockMovimientos.length,
-        productos_sin_stock: sinStock,
-        productos_proximos_vencer: 1,
+        total_productos: 0,
+        productos_activos: 0,
+        productos_inactivos: 0,
+        total_categorias: 0,
+        valor_inventario: 0,
+        alertas_stock: 0,
+        movimientos_mes: 0,
+        productos_sin_stock: 0,
+        productos_proximos_vencer: 0,
       };
     }
   }
@@ -681,21 +422,7 @@ class InventarioService {
       return response.data || response;
     } catch (error) {
       console.error('Error fetching productos por categoria:', error);
-      
-      const totalValor = mockProductos.reduce((sum, p) => sum + (p.stock_actual * p.precio_unitario), 0);
-      
-      return mockCategorias.map(cat => {
-        const productos = mockProductos.filter(p => p.categoria_id === cat.id);
-        const valor = productos.reduce((sum, p) => sum + (p.stock_actual * p.precio_unitario), 0);
-        
-        return {
-          categoria_id: cat.id,
-          categoria_nombre: cat.nombre,
-          total_productos: productos.length,
-          valor_total: valor,
-          porcentaje: totalValor > 0 ? (valor / totalValor) * 100 : 0,
-        };
-      });
+      return [];
     }
   }
 
@@ -706,23 +433,7 @@ class InventarioService {
       return response.data || response;
     } catch (error) {
       console.error('Error fetching movimientos por tipo:', error);
-      
-      const tipos = ['entrada', 'salida', 'ajuste', 'devolucion', 'merma'];
-      const totalMovimientos = mockMovimientos.length;
-      
-      return tipos.map(tipo => {
-        const movs = mockMovimientos.filter(m => m.tipo === tipo);
-        const cantidadTotal = movs.reduce((sum, m) => sum + m.cantidad, 0);
-        const valorTotal = movs.reduce((sum, m) => sum + (m.monto_total || 0), 0);
-        
-        return {
-          tipo,
-          cantidad_movimientos: movs.length,
-          cantidad_total: cantidadTotal,
-          valor_total: valorTotal,
-          porcentaje: totalMovimientos > 0 ? (movs.length / totalMovimientos) * 100 : 0,
-        };
-      });
+      return [];
     }
   }
 

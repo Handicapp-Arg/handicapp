@@ -34,6 +34,18 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
   const { user, logout, isLoading } = useAuthNew();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotifDropdownOpen, setIsNotifDropdownOpen] = useState(false);
+
+  // Cerrar notificaciones al hacer scroll en móvil
+  useEffect(() => {
+    if (!isNotifDropdownOpen) return;
+    const handleScroll = () => {
+      setIsNotifDropdownOpen(false);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [isNotifDropdownOpen]);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   
@@ -63,6 +75,25 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
       router.push('/login');
     }
   };
+
+  const getNotificacionesPath = () => {
+    const roleKey = user?.rol?.clave;
+    const rolesDisponibles = new Set([
+      'propietario',
+      'veterinario',
+      'establecimiento',
+      'empleado',
+      'capataz',
+    ]);
+
+    if (!roleKey || !rolesDisponibles.has(roleKey)) {
+      return '/propietario/notificaciones';
+    }
+
+    return `/${roleKey}/notificaciones`;
+  };
+
+  const notificacionesPath = getNotificacionesPath();
 
   const getIconoTipo = (tipo: string) => {
     const iconos: Record<string, React.ElementType> = {
@@ -117,10 +148,10 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
     let path = '/profile';
     switch (roleKey) {
       case 'admin':
-        path = '/admin/profile';
+        path = '/admin/configuracion';
         break;
       case 'establecimiento':
-        path = '/establecimiento/perfil';
+        path = '/establecimiento/configuracion';
         break;
       case 'capataz':
         path = '/capataz/perfil';
@@ -142,20 +173,20 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
   };
 
   return (
-    <header className="bg-white sticky top-0 z-30 transition-all shadow-sm rounded-tl-2xl">
-      <div className="flex items-center justify-between h-20 px-6 lg:px-8">
+    <header className="sticky top-0 z-30 bg-white border-b border-slate-200 shadow-sm">
+      <div className="flex items-center justify-between h-16 sm:h-18 lg:h-20 px-4 sm:px-6 lg:px-8">
         {/* Left Side - Menu Button, Collapse Button & Breadcrumb */}
-        <div className="flex items-center gap-4 min-w-0 flex-1">
-          {/* Mobile Menu Button - Más grande */}
+        <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 min-w-0 flex-1">
+          {/* Mobile Menu Button */}
           <button
             onClick={onMenuClick}
-            className="lg:hidden p-3 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all duration-200 touch-manipulation flex-shrink-0"
+            className="lg:hidden p-2 sm:p-2.5 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all duration-200 touch-manipulation flex-shrink-0"
             aria-label="Abrir menú"
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
 
-          {/* Desktop Collapse Button - Más grande */}
+          {/* Desktop Collapse Button */}
           <button
             onClick={onToggleCollapse}
             className="hidden lg:flex items-center p-2.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all duration-200 group flex-shrink-0"
@@ -168,8 +199,10 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
             )}
           </button>
 
-          {/* Breadcrumb - Solo Desktop */}
-          <Breadcrumb />
+          {/* Breadcrumb - Siempre visible pero más compacto en móvil */}
+          <div className="min-w-0 flex-1">
+            <Breadcrumb />
+          </div>
         </div>
 
         {/* Right Side - Notifications & User Menu */}
@@ -191,9 +224,9 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
 
             {/* Notifications Dropdown */}
             {isNotifDropdownOpen && (
-              <div className="fixed sm:absolute right-2 sm:right-0 left-2 sm:left-auto mt-3 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden">
+              <div className="fixed sm:absolute right-2 sm:right-0 left-2 sm:left-auto mt-3 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden flex flex-col max-h-[85vh]">
                 {/* Header */}
-                <div className="px-3 sm:px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-primary/5 to-primary/10">
+                <div className="px-3 sm:px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-primary/5 to-primary/10 flex-shrink-0">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
@@ -219,11 +252,11 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                   )}
                 </div>
 
-                {/* Notificaciones List */}
-                <div className="max-h-[50vh] sm:max-h-96 overflow-y-auto">
+                {/* Notificaciones List - Con scroll */}
+                <div className="overflow-y-auto flex-1 min-h-0 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
                   {notificaciones && notificaciones.length > 0 ? (
                     <>
-                      {/* Mostrar primero las no leídas, luego las leídas - máximo 5 en total */}
+                      {/* Mostrar todas las notificaciones ordenadas: primero no leídas, luego leídas */}
                       {[...notificaciones]
                         .sort((a, b) => {
                           // Primero las no leídas
@@ -232,16 +265,17 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                           // Luego por fecha más reciente
                           return new Date(b.creado_el).getTime() - new Date(a.creado_el).getTime();
                         })
-                        .slice(0, 5)
                         .map((notif) => {
                         const Icono = getIconoTipo(notif.tipo);
                         return (
                           <div
                             key={notif.id}
                             onClick={async () => {
+                              setIsNotifDropdownOpen(false);
                               if (!notif.leida) {
                                 await marcarComoLeida(notif.id);
                               }
+                              router.push(`${notificacionesPath}?highlight=${notif.id}`);
                             }}
                             className={`px-3 sm:px-4 py-2.5 sm:py-3 border-b border-slate-100 hover:bg-slate-50 active:bg-slate-100 cursor-pointer transition-colors ${
                               !notif.leida ? 'bg-blue-50/50' : ''
@@ -280,12 +314,11 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
 
                 {/* Footer - Ver todas */}
                 {notificaciones && notificaciones.length > 0 && (
-                  <div className="px-3 sm:px-4 py-2.5 sm:py-3 border-t border-slate-100 bg-slate-50">
+                  <div className="px-3 sm:px-4 py-2.5 sm:py-3 border-t border-slate-100 bg-slate-50 flex-shrink-0">
                     <button
                       onClick={() => {
                         setIsNotifDropdownOpen(false);
-                        const roleKey = user?.rol?.clave || 'propietario';
-                        router.push(`/${roleKey}/notificaciones`);
+                        router.push(notificacionesPath);
                       }}
                       className="w-full flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold text-primary hover:text-primary/80 active:text-primary/60 transition-colors py-1"
                     >
@@ -302,11 +335,14 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-3 rounded-xl p-2 pr-3 hover:bg-slate-100 transition-all duration-200 touch-manipulation"
+              className="flex items-center gap-2 sm:gap-3 rounded-xl p-1.5 sm:p-2 pr-2 sm:pr-3 hover:bg-slate-100 transition-all duration-200 touch-manipulation"
             >
-              <Avatar className="h-9 w-9 ring-2 ring-slate-200">
-                <AvatarFallback className="bg-[#1e293b] text-white text-sm font-medium">
-                  {user?.nombre?.[0]}{user?.apellido?.[0]}
+              <Avatar className="h-8 w-8 sm:h-9 sm:w-9 ring-2 ring-slate-200">
+                <AvatarFallback className="bg-[#1e293b] text-white text-xs sm:text-sm font-medium">
+                  {user?.rol?.clave === 'establecimiento' && user?.establecimiento_nombre
+                    ? user.establecimiento_nombre.substring(0, 2).toUpperCase()
+                    : `${user?.nombre?.[0] || ''}${user?.apellido?.[0] || ''}`
+                  }
                 </AvatarFallback>
               </Avatar>
               <div className="text-left hidden lg:block min-w-0">
@@ -314,7 +350,11 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                   {isLoading ? 'Cargando...' : user?.rol?.nombre || 'Usuario'}
                 </p>
                 <p className="text-xs text-slate-500 truncate max-w-32">
-                  {isLoading ? '' : (user?.nombre && user?.apellido ? `${user.nombre} ${user.apellido}` : '')}
+                  {isLoading ? '' : (
+                    user?.rol?.clave === 'establecimiento' && user?.establecimiento_nombre
+                      ? user.establecimiento_nombre
+                      : (user?.nombre && user?.apellido ? `${user.nombre} ${user.apellido}` : '')
+                  )}
                 </p>
               </div>
               <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 flex-shrink-0 hidden lg:block ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -326,7 +366,10 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                 {/* User Info */}
                 <div className="px-4 py-3 border-b border-slate-100">
                   <p className="text-sm font-semibold text-slate-900 truncate">
-                    {user?.nombre && user?.apellido ? `${user.nombre} ${user.apellido}` : 'Usuario'}
+                    {user?.rol?.clave === 'establecimiento' && user?.establecimiento_nombre
+                      ? user.establecimiento_nombre
+                      : (user?.nombre && user?.apellido ? `${user.nombre} ${user.apellido}` : 'Usuario')
+                    }
                   </p>
                   <p className="text-xs text-slate-500 truncate mt-0.5">
                     {user?.rol?.nombre || 'Rol no definido'}
@@ -362,14 +405,6 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
           </div>
         </div>
       </div>
-
-      {/* Overlay para cerrar dropdown - COMENTADO porque bloquea todos los clicks en la página */}
-      {/* {isDropdownOpen && (
-        <div
-          className="fixed inset-0 z-30"
-          onClick={() => setIsDropdownOpen(false)}
-        />
-      )} */}
     </header>
   );
 }

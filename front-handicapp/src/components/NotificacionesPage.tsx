@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { notificacionService } from '@/lib/services/notificacionService';
 
 interface Notificacion {
@@ -21,10 +22,38 @@ export default function NotificacionesPage() {
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'todas' | 'no_leidas' | 'leidas'>('todas');
+  const [highlightId, setHighlightId] = useState<number | null>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     fetchNotificaciones();
   }, []);
+
+  useEffect(() => {
+    const highlightParam = searchParams?.get('highlight');
+
+    if (highlightParam) {
+      const id = Number(highlightParam);
+      if (!Number.isNaN(id)) {
+        setHighlightId(id);
+      }
+      router.replace(pathname, { scroll: false });
+    }
+  }, [searchParams, router, pathname]);
+
+  useEffect(() => {
+    if (highlightId === null) return;
+
+    const timeout = window.setTimeout(() => {
+      setHighlightId(null);
+    }, 4000);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [highlightId]);
 
   const fetchNotificaciones = async () => {
     try {
@@ -223,7 +252,9 @@ export default function NotificacionesPage() {
                 <div
                   key={notif.id}
                   className={`bg-white rounded-xl shadow-sm border transition-all ${
-                    notif.leida
+                    highlightId === notif.id
+                      ? 'border-blue-400 ring-2 ring-blue-200 animate-pulse'
+                      : notif.leida
                       ? 'border-gray-200 opacity-75'
                       : 'border-blue-200 shadow-md'
                   }`}

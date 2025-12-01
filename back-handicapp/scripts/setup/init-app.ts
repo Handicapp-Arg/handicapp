@@ -1,4 +1,4 @@
-import { connectDatabase, syncDatabase } from '../src/config/database';
+import { connectDatabase } from '../src/config/database';
 import { initializeModels } from '../src/models';
 import { sequelize } from '../src/config/database';
 import { seedDatabase } from '../src/services/seedService';
@@ -17,7 +17,14 @@ async function initializeApp() {
     
     // 3. Sincronizar modelos (crear tablas)
     console.log('📊 Sincronizando modelos de base de datos...');
-    await syncDatabase();
+    const forceReset = process.env['DB_RESET_ON_START'] === 'true';
+    if (forceReset) {
+      await sequelize.sync({ force: true });
+      console.log('⚠️  Base de datos reseteada (FORCE mode)');
+    } else {
+      await sequelize.sync({ alter: true });
+      console.log('✅ Base de datos sincronizada');
+    }
     
     // 4. Ejecutar seeds (datos iniciales)
     console.log('🌱 Ejecutando seeds...');

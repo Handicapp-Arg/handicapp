@@ -6,6 +6,7 @@ import { notificacionService } from '@/lib/services/notificacionService';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Bell, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 interface Notificacion {
   id: number;
@@ -85,7 +86,7 @@ export default function EmpleadoNotificacionesPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+        <LoadingSpinnerFullPage label="Cargando..." variant="warning" />
       </div>
     );
   }

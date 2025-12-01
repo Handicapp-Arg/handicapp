@@ -7,6 +7,7 @@ import { eventoService } from '@/lib/services/eventoService';
 import { tareaService } from '@/lib/services/tareaService';
 import { gestionPersonalService } from '@/lib/gestionPersonalService';
 import { inventarioService } from '@/lib/inventarioService';
+import { establecimientoService } from '@/lib/services/establecimientoService';
 import { useAuthNew } from './useAuthNew';
 
 export interface DashboardStats {
@@ -40,6 +41,10 @@ export interface DashboardStats {
     categorias: number;
     valorTotal: number;
   };
+  establecimientos?: {
+    total: number;
+    activos: number;
+  };
 }
 
 export function useStats() {
@@ -57,7 +62,8 @@ export function useStats() {
     if (!authLoading && isAuthenticated) {
       fetchStats();
     }
-  }, [authLoading, isAuthenticated, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, isAuthenticated]);
 
   const fetchStats = async () => {
     try {
@@ -67,6 +73,9 @@ export function useStats() {
       const userRole = (user as any)?.role || (user as any)?.rol?.clave;
       const shouldFetchEmpleados = ['admin', 'capataz', 'establecimiento'].includes(userRole);
       const shouldFetchInventario = userRole === 'establecimiento';
+      const isAdmin = userRole === 'admin';
+
+      console.log('👤 User role:', userRole, 'isAdmin:', isAdmin);
 
       const promises: Record<string, Promise<any>> = {
         caballos: caballoService.getAll({ limit: 100 }),
@@ -74,6 +83,7 @@ export function useStats() {
         tareas: tareaService.getAll(),
         empleados: shouldFetchEmpleados ? gestionPersonalService.getEmpleados() : Promise.resolve(null),
         inventario: shouldFetchInventario ? inventarioService.getProductos() : Promise.resolve(null),
+        establecimientos: isAdmin ? establecimientoService.getAll({ limit: 100 }) : Promise.resolve(null),
       };
 
       const entries = Object.entries(promises);
@@ -132,11 +142,30 @@ export function useStats() {
         const treintaDias = new Date();
         treintaDias.setDate(treintaDias.getDate() - 30);
 
+        const nuevos = empleados.filter((e: any) => {
+          // Intentar con fecha_ingreso primero, si no existe usar creado_el o created_at
+          const fecha = e.fecha_ingreso || e.creado_el || e.created_at;
+          return fecha && new Date(fecha) > treintaDias;
+        });
+
+        console.log('👥 Estadísticas de empleados:', {
+          total: empleados.length,
+          activos: empleados.filter((e: any) => e.estado === 'activo').length,
+          nuevos: nuevos.length,
+          listaEmpleados: empleados.map((e: any) => ({
+            id: e.id,
+            nombre: e.nombre,
+            email: e.email,
+            rol_id: e.rol_id,
+            creado_el: e.creado_el || e.created_at
+          }))
+        });
+
         empleadosStats = {
           total: empleados.length,
           activos: empleados.filter((e: any) => e.estado === 'activo').length,
           departamentos: deptosUnicos.size,
-          nuevos: empleados.filter((e: any) => e.fecha_ingreso && new Date(e.fecha_ingreso) > treintaDias).length
+          nuevos: nuevos.length
         };
       }
 
@@ -156,12 +185,26 @@ export function useStats() {
         };
       }
 
+      let establecimientosStats = { total: 0, activos: 0 };
+      if (isAdmin && resolved.establecimientos) {
+        console.log('🏢 Establecimientos response:', resolved.establecimientos);
+        // El backend devuelve {items: [], pagination: {}} no {data: []}
+        const establecimientosData = resolved.establecimientos?.items || resolved.establecimientos?.data || [];
+        console.log('🏢 Establecimientos data:', establecimientosData);
+        establecimientosStats = {
+          total: establecimientosData.length,
+          activos: establecimientosData.filter((e: any) => e.estado === 'activo').length
+        };
+        console.log('🏢 Establecimientos stats:', establecimientosStats);
+      }
+
       setStats({
         caballos: caballosStats,
         eventos: eventosStats,
         tareas: tareasStats,
         empleados: empleadosStats,
-        inventario: inventarioStats
+        inventario: inventarioStats,
+        establecimientos: establecimientosStats
       });
     } catch (error) {
   console.error('Error fetching stats:', error);

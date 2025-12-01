@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { notificacionService } from '@/lib/services/notificacionService';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Bell, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 interface Notificacion {
   id: number;
@@ -21,10 +23,38 @@ export default function PropietarioNotificacionesPage() {
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'todas' | 'no_leidas' | 'leidas'>('todas');
+  const [highlightId, setHighlightId] = useState<number | null>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     fetchNotificaciones();
   }, []);
+
+  useEffect(() => {
+    const highlightParam = searchParams?.get('highlight');
+
+    if (highlightParam) {
+      const id = Number(highlightParam);
+      if (!Number.isNaN(id)) {
+        setHighlightId(id);
+      }
+      router.replace(pathname, { scroll: false });
+    }
+  }, [searchParams, router, pathname]);
+
+  useEffect(() => {
+    if (highlightId === null) return;
+
+    const timeout = window.setTimeout(() => {
+      setHighlightId(null);
+    }, 4000);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [highlightId]);
 
   const fetchNotificaciones = async () => {
     try {
@@ -86,7 +116,7 @@ export default function PropietarioNotificacionesPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <LoadingSpinnerFullPage label="Cargando..." variant="success" />
       </div>
     );
   }
@@ -219,7 +249,13 @@ export default function PropietarioNotificacionesPage() {
               {filteredNotificaciones.map((notif) => (
                 <div
                   key={notif.id}
-                  className={`p-4 rounded-lg border ${notif.leida ? 'bg-gray-50 border-gray-200' : 'bg-blue-50 border-blue-200'}`}
+                  className={`p-4 rounded-lg border transition-all ${
+                    highlightId === notif.id
+                      ? 'bg-blue-50 border-blue-400 ring-2 ring-blue-200 animate-pulse'
+                      : notif.leida
+                      ? 'bg-white border-gray-200 hover:bg-gray-50'
+                      : 'bg-blue-50/50 border-blue-200 border-l-4 border-l-blue-600 hover:bg-blue-50'
+                  }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">

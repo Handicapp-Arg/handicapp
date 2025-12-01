@@ -9,6 +9,7 @@ import { useEstablecimientos } from '@/lib/hooks';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Circle, Activity, Heart, TrendingUp } from 'lucide-react';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 export default function EstablecimientoCaballosPage() {
   const { stats, loading: statsLoading } = useStats();
@@ -40,11 +41,7 @@ export default function EstablecimientoCaballosPage() {
   }, [caballos]);
 
   if (loading || loadingEst) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
-      </div>
-    );
+    return <LoadingSpinnerFullPage label="Cargando..." />;
   }
 
   return (

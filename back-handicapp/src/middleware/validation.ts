@@ -145,6 +145,23 @@ export const userValidations = {
       .matches(/^[\+]?[\d\s\-\(\)]{7,20}$/)
       .withMessage('Teléfono debe ser un número válido'),
     
+    body('documento')
+      .optional()
+      .isString()
+      .trim()
+      .isLength({ max: 50 })
+      .withMessage('Documento debe tener máximo 50 caracteres'),
+    
+    body('departamento_id')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('Departamento debe ser un ID válido'),
+    
+    body('puesto_id')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('Puesto debe ser un ID válido'),
+    
     body('rol_id')
       .isInt({ min: 1 })
       .withMessage('Rol es requerido y debe ser válido'),
@@ -184,6 +201,23 @@ export const userValidations = {
       .optional()
       .matches(/^[\+]?[\d\s\-\(\)]{7,20}$/)
       .withMessage('Teléfono debe ser un número válido'),
+    
+    body('documento')
+      .optional()
+      .isString()
+      .trim()
+      .isLength({ max: 50 })
+      .withMessage('Documento debe tener máximo 50 caracteres'),
+    
+    body('departamento_id')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('Departamento debe ser un ID válido'),
+    
+    body('puesto_id')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('Puesto debe ser un ID válido'),
 
     handleValidationErrors
   ],
@@ -218,17 +252,134 @@ export const establecimientoValidations = {
       .withMessage('CUIT es requerido y debe tener entre 11 y 13 caracteres'),
     
     body('direccion_calle')
-      .optional()
+      .optional({ checkFalsy: true })
       .isString()
       .trim()
-      .isLength({ min: 5, max: 500 })
-      .withMessage('Dirección debe tener entre 5 y 500 caracteres'),
+      .isLength({ min: 1, max: 500 })
+      .withMessage('Dirección debe tener entre 1 y 500 caracteres'),
+    
+    body('direccion_numero')
+      .optional({ checkFalsy: true })
+      .isString()
+      .trim()
+      .isLength({ max: 50 })
+      .withMessage('Número de dirección debe tener máximo 50 caracteres'),
+    
+    body('direccion_complemento')
+      .optional({ checkFalsy: true })
+      .isString()
+      .trim()
+      .isLength({ max: 200 })
+      .withMessage('Complemento de dirección debe tener máximo 200 caracteres'),
+    
+    body('codigo_postal')
+      .optional({ checkFalsy: true })
+      .isString()
+      .trim()
+      .isLength({ max: 20 })
+      .withMessage('Código postal debe tener máximo 20 caracteres'),
+    
+    body('ciudad')
+      .optional({ checkFalsy: true })
+      .isString()
+      .trim()
+      .isLength({ max: 100 })
+      .withMessage('Ciudad debe tener máximo 100 caracteres'),
+    
+    body('provincia')
+      .optional({ checkFalsy: true })
+      .isString()
+      .trim()
+      .isLength({ max: 100 })
+      .withMessage('Provincia debe tener máximo 100 caracteres'),
+    
+    body('pais')
+      .optional({ checkFalsy: true })
+      .isString()
+      .trim()
+      .isLength({ max: 100 })
+      .withMessage('País debe tener máximo 100 caracteres'),
+    
+    body('latitud')
+      .optional({ checkFalsy: true })
+      .custom((value) => {
+        if (value === '' || value === null || value === undefined) return true;
+        const num = Number(value);
+        if (isNaN(num) || num < -90 || num > 90) {
+          throw new Error('Latitud debe ser un número entre -90 y 90');
+        }
+        return true;
+      }),
+    
+    body('longitud')
+      .optional({ checkFalsy: true })
+      .custom((value) => {
+        if (value === '' || value === null || value === undefined) return true;
+        const num = Number(value);
+        if (isNaN(num) || num < -180 || num > 180) {
+          throw new Error('Longitud debe ser un número entre -180 y 180');
+        }
+        return true;
+      }),
+    
+    body('tipo_establecimiento')
+      .optional({ checkFalsy: true })
+      .isString()
+      .trim()
+      .isIn(['haras', 'polo', 'salto', 'doma', 'turf', 'enduro', 'mixto', 'otro'])
+      .withMessage('Tipo de establecimiento debe ser válido'),
+    
+    body('estado')
+      .optional({ checkFalsy: true })
+      .isString()
+      .trim()
+      .isIn(['activo', 'inactivo', 'mantenimiento', 'suspendido'])
+      .withMessage('Estado debe ser válido'),
+    
+    body('superficie_hectareas')
+      .optional({ checkFalsy: true })
+      .custom((value) => {
+        if (value === '' || value === null || value === undefined) return true;
+        const num = Number(value);
+        if (isNaN(num) || num < 0) {
+          throw new Error('Superficie debe ser un número positivo');
+        }
+        return true;
+      }),
+    
+    body('cantidad_boxes')
+      .optional({ checkFalsy: true })
+      .custom((value) => {
+        if (value === '' || value === null || value === undefined) return true;
+        const num = Number(value);
+        if (isNaN(num) || num < 0 || !Number.isInteger(num)) {
+          throw new Error('Cantidad de boxes debe ser un número entero positivo');
+        }
+        return true;
+      }),
+    
+    body('servicios')
+      .optional({ checkFalsy: true })
+      .custom((value) => {
+        if (value === '' || value === null || value === undefined) return true;
+        if (!Array.isArray(value)) {
+          throw new Error('Servicios debe ser un array');
+        }
+        return true;
+      }),
+    
+    body('disciplina_principal')
+      .optional({ checkFalsy: true })
+      .isString()
+      .trim()
+      .isLength({ max: 100 })
+      .withMessage('Disciplina principal debe tener máximo 100 caracteres'),
     
     commonValidations.telefono('telefono'),
     commonValidations.email('email'),
     
     body('descripcion')
-      .optional()
+      .optional({ checkFalsy: true })
       .isString()
       .trim()
       .isLength({ max: 1000 })

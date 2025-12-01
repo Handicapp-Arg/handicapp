@@ -32,6 +32,7 @@ export interface CreateTareaData {
   descripcion?: string;
   tipo: 'alimentacion' | 'limpieza' | 'entrenamiento' | 'mantenimiento' | 'veterinaria' | 'administrativa' | 'otro';
   prioridad: 'baja' | 'media' | 'alta' | 'urgente';
+  estado?: 'pendiente' | 'en_progreso' | 'completada' | 'cancelada';
   fecha_vencimiento?: string;
   tiempo_estimado_minutos?: number;
   ubicacion?: string;
@@ -84,6 +85,7 @@ class TareaService {
       descripcion: data.descripcion,
       tipo: data.tipo,
       prioridad: data.prioridad,
+      estado: data.estado,
       fechaVencimiento: data.fecha_vencimiento,
       tiempoEstimadoMinutos: data.tiempo_estimado_minutos,
       ubicacion: data.ubicacion,
@@ -110,6 +112,14 @@ class TareaService {
   async delete(id: number): Promise<{ success: boolean }> {
     const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}`, {
       method: 'DELETE'
+    }) as any;
+    return response;
+  }
+
+  async changeEstado(id: number, nuevoEstado: string): Promise<Tarea> {
+    const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}/estado`, {
+      method: 'PUT',
+      body: JSON.stringify({ nuevoEstado })
     }) as any;
     return response;
   }

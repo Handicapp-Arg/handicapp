@@ -1,31 +1,45 @@
 import { apiClient } from '@/lib/http';
+import { showError, showSuccess, parseError } from '@/lib/utils/errorHandler';
 
 export interface Establecimiento {
   id: number;
   nombre: string;
-  direccion: string;
+  cuit?: string;
+  // Dirección estructurada
+  direccion_calle?: string;
+  direccion_numero?: string;
+  direccion_complemento?: string;
+  codigo_postal?: string;
+  ciudad?: string;
+  provincia?: string;
+  pais?: string;
+  latitud?: number | null;
+  longitud?: number | null;
+  // Contacto
   telefono?: string;
   email?: string;
-  tipo_establecimiento: 'haras' | 'polo' | 'salto' | 'doma' | 'turf' | 'mixto';
+  // Detalles
+  tipo_establecimiento?: 'haras' | 'polo' | 'salto' | 'doma' | 'turf' | 'enduro' | 'mixto' | 'otro';
+  estado?: 'activo' | 'inactivo' | 'mantenimiento' | 'suspendido';
   superficie_hectareas?: number;
   cantidad_boxes?: number;
   cantidad_paddocks?: number;
-  servicios_disponibles?: string[];
-  estado: 'activo' | 'inactivo' | 'mantenimiento';
-  creado_el: string;
-  actualizado_el: string;
-  propietario_id: number;
-  // Nuevos campos
-  latitud?: number | null;
-  longitud?: number | null;
+  disciplina_principal?: string;
   descripcion?: string | null;
+  // Media & Ratings
   imagenes?: string[];
+  logo_url?: string | null;
   rating_promedio?: number;
   total_resenas?: number;
   verificado?: boolean;
-  logo_url?: string | null;
-  ciudad?: string | null;
-  provincia?: string | null;
+  // Servicios
+  servicios?: string[];
+  servicios_disponibles?: string[];
+  // Metadata
+  creado_el: string;
+  actualizado_el: string;
+  propietario_id?: number;
+  // Relaciones
   usuarios?: any[];
   caballos?: any[];
   // Campos para propietarios (backend los agrega)
@@ -45,10 +59,29 @@ export interface Establecimiento {
 
 export interface CreateEstablecimientoData {
   nombre: string;
-  cuit: string;
+  cuit?: string;
   direccion_calle?: string;
+  direccion_numero?: string;
+  direccion_complemento?: string;
+  codigo_postal?: string;
+  ciudad?: string;
+  provincia?: string;
+  pais?: string;
+  latitud?: number;
+  longitud?: number;
+  descripcion?: string;
   telefono?: string;
   email?: string;
+  tipo_establecimiento?: string;
+  estado?: string;
+  superficie_hectareas?: number;
+  cantidad_boxes?: number;
+  servicios?: string[];
+  disciplina_principal?: string;
+  admin_email?: string;
+  admin_password?: string;
+  admin_nombre?: string;
+  admin_apellido?: string;
 }
 
 export interface EstablecimientoFilters {
@@ -65,35 +98,63 @@ class EstablecimientoService {
   private baseUrl = '/establecimientos';
 
   async getAll(filters: EstablecimientoFilters = {}): Promise<{ data: Establecimiento[], total: number, page: number, limit: number }> {
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== '') {
-        params.append(key, value.toString());
-      }
-    });
+    try {
+      const params = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== '') {
+          params.append(key, value.toString());
+        }
+      });
 
-    const response = await apiClient.get(`${this.baseUrl}?${params}`) as any;
-    return response.data;
+      const response = await apiClient.get(`${this.baseUrl}?${params}`) as any;
+      return response.data;
+    } catch (error) {
+      showError(error, 'establecimiento', 'fetch_list');
+      throw error;
+    }
   }
 
   async getById(id: number): Promise<Establecimiento> {
-    const response = await apiClient.get(`${this.baseUrl}/${id}`) as any;
-    return response.data;
+    try {
+      const response = await apiClient.get(`${this.baseUrl}/${id}`) as any;
+      return response.data;
+    } catch (error) {
+      showError(error, 'establecimiento', 'not_found');
+      throw error;
+    }
   }
 
   async create(data: CreateEstablecimientoData): Promise<Establecimiento> {
-    const response = await apiClient.post(this.baseUrl, data) as any;
-    return response.data;
+    try {
+      const response = await apiClient.post(this.baseUrl, data) as any;
+      showSuccess('establecimiento', 'created');
+      return response.data;
+    } catch (error) {
+      showError(error, 'establecimiento', 'create_failed');
+      throw error;
+    }
   }
 
   async update(id: number, data: Partial<CreateEstablecimientoData>): Promise<Establecimiento> {
-    const response = await apiClient.put(`${this.baseUrl}/${id}`, data) as any;
-    return response.data;
+    try {
+      const response = await apiClient.put(`${this.baseUrl}/${id}`, data) as any;
+      showSuccess('establecimiento', 'updated');
+      return response.data;
+    } catch (error) {
+      showError(error, 'establecimiento', 'update_failed');
+      throw error;
+    }
   }
 
   async delete(id: number): Promise<{ success: boolean }> {
-    const response = await apiClient.delete(`${this.baseUrl}/${id}`) as any;
-    return response.data;
+    try {
+      const response = await apiClient.delete(`${this.baseUrl}/${id}`) as any;
+      showSuccess('establecimiento', 'deleted');
+      return response.data;
+    } catch (error) {
+      showError(error, 'establecimiento', 'delete_failed');
+      throw error;
+    }
   }
 
   async getUsuarios(id: number): Promise<any[]> {

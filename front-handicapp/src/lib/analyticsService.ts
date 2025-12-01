@@ -3,7 +3,74 @@
  * Servicio para obtener métricas y estadísticas del sistema
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3001';
+import { apiClient } from '@/lib/http';
+
+interface UsuarioSummary {
+  estado?: string | null;
+  creado_el?: string;
+  role?: {
+    nombre?: string;
+  } | null;
+}
+
+interface CaballoSummary {
+  creado_el?: string;
+}
+
+interface EventoSummary {
+  fecha?: string;
+  tipo_evento?: {
+    nombre?: string;
+  } | null;
+  tipo?: string;
+}
+
+interface TareaSummary {
+  estado?: string;
+}
+
+interface EstablecimientoSummary {
+  estado?: string;
+}
+
+interface AuditoriaStatsResponse {
+  data?: {
+    total?: number;
+    last24h?: number;
+    last7days?: number;
+  };
+}
+
+interface UsuariosApiResponse {
+  data?: UsuarioSummary[] | {
+    usuarios?: UsuarioSummary[];
+  };
+}
+
+interface CaballosApiResponse {
+  data?: CaballoSummary[] | {
+    caballos?: CaballoSummary[];
+  };
+}
+
+interface EstablecimientosApiResponse {
+  data?: EstablecimientoSummary[] | {
+    establecimientos?: EstablecimientoSummary[];
+  };
+}
+
+interface EventosApiResponse {
+  data?: EventoSummary[] | {
+    eventos?: EventoSummary[];
+    data?: EventoSummary[];
+  };
+}
+
+interface TareasApiResponse {
+  data?: TareaSummary[] | {
+    data?: TareaSummary[];
+  };
+}
 
 export interface SystemStats {
   usuarios: {
@@ -75,30 +142,23 @@ class AnalyticsService {
     try {
       // Llamadas paralelas a diferentes endpoints
       const [
-        usuariosRes,
-        caballosRes,
-        establecimientosRes,
-        eventosRes,
-        tareasRes,
-        auditoriaRes
+        usuarios,
+        caballos,
+        establecimientos,
+        eventos,
+        tareas,
+        auditoria
       ] = await Promise.all([
-        fetch(`${API_BASE}/api/v1/users?limit=1000`, { credentials: 'include' }),
-        fetch(`${API_BASE}/api/v1/caballos?limit=1000`, { credentials: 'include' }),
-        fetch(`${API_BASE}/api/v1/establecimientos?limit=1000`, { credentials: 'include' }),
-        fetch(`${API_BASE}/api/v1/eventos?limit=1000`, { credentials: 'include' }),
-        fetch(`${API_BASE}/api/v1/tareas?limit=1000`, { credentials: 'include' }),
-        fetch(`${API_BASE}/api/v1/auditoria/stats`, { credentials: 'include' })
+        apiClient.get<UsuariosApiResponse>('/users?limit=1000'),
+        apiClient.get<CaballosApiResponse>('/caballos?limit=1000'),
+        apiClient.get<EstablecimientosApiResponse>('/establecimientos?limit=1000'),
+        apiClient.get<EventosApiResponse>('/eventos?limit=1000'),
+        apiClient.get<TareasApiResponse>('/tareas?limit=1000'),
+        apiClient.get<AuditoriaStatsResponse>('/auditoria/stats'),
       ]);
 
-      const usuarios = await usuariosRes.json();
-      const caballos = await caballosRes.json();
-      const establecimientos = await establecimientosRes.json();
-      const eventos = await eventosRes.json();
-      const tareas = await tareasRes.json();
-      const auditoria = await auditoriaRes.json();
-
       // Procesar datos de usuarios
-      const usuariosData = Array.isArray(usuarios.data) 
+      const usuariosData: UsuarioSummary[] = Array.isArray(usuarios.data) 
         ? usuarios.data 
         : usuarios.data?.usuarios || [];
 
@@ -123,7 +183,7 @@ class AnalyticsService {
       }));
 
       // Procesar datos de caballos
-      const caballosData = Array.isArray(caballos.data)
+      const caballosData: CaballoSummary[] = Array.isArray(caballos.data)
         ? caballos.data
         : caballos.data?.caballos || [];
 
@@ -132,7 +192,7 @@ class AnalyticsService {
       ).length;
 
       // Procesar eventos
-      const eventosData = Array.isArray(eventos.data)
+      const eventosData: EventoSummary[] = Array.isArray(eventos.data)
         ? eventos.data
         : eventos.data?.eventos || eventos.data?.data || [];
 
@@ -153,7 +213,7 @@ class AnalyticsService {
       }));
 
       // Procesar tareas
-      const tareasData = Array.isArray(tareas.data)
+      const tareasData: TareaSummary[] = Array.isArray(tareas.data)
         ? tareas.data
         : tareas.data?.data || [];
 
@@ -162,7 +222,7 @@ class AnalyticsService {
       const tareasEnProceso = tareasData.filter((t: any) => t.estado === 'en_proceso').length;
 
       // Procesar establecimientos
-      const establecimientosData = Array.isArray(establecimientos.data)
+      const establecimientosData: EstablecimientoSummary[] = Array.isArray(establecimientos.data)
         ? establecimientos.data
         : establecimientos.data?.establecimientos || [];
 

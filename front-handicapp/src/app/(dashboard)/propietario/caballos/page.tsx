@@ -8,6 +8,7 @@ import { useCaballos } from '@/lib/hooks/useCaballosQuery';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Circle, Trophy, Heart, TrendingUp } from 'lucide-react';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 export default function MisCaballosPage() {
   const { stats, loading: statsLoading } = useStats();
@@ -43,9 +44,11 @@ export default function MisCaballosPage() {
   if (statsLoading || caballosLoading) {
     return (
       <SimpleRoleGuard roles={['propietario']}>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <LoadingSpinnerFullPage 
+          label="Cargando caballos..." 
+          description="Preparando tu haras"
+          variant="success"
+        />
       </SimpleRoleGuard>
     );
   }

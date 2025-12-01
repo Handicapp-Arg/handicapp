@@ -42,12 +42,10 @@ export default function MovimientosProductoPage() {
 
   const loadData = async () => {
     try {
-      console.log('🔵 CARGANDO MOVIMIENTOS - ID:', params.id);
       setLoading(true);
       
       // Cargar producto
       const producto = await inventarioService.getProducto(Number(params.id));
-      console.log('🔵 PRODUCTO RECIBIDO:', producto);
       
       if (!producto) {
         toast.error('Producto no encontrado');
@@ -59,11 +57,9 @@ export default function MovimientosProductoPage() {
       
       // Cargar movimientos
       const movs = await inventarioService.getMovimientos({ producto_id: Number(params.id) });
-      console.log('🔵 MOVIMIENTOS RECIBIDOS:', movs);
       setMovimientos(movs || []);
       
-    } catch (error) {
-      console.error('❌ Error loading data:', error);
+    } catch {
       toast.error('Error al cargar los datos');
     } finally {
       setLoading(false);

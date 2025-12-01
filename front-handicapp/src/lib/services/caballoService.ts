@@ -1,5 +1,6 @@
 import ApiClient from './apiClient';
 import { logger } from '@/lib/utils/logger';
+import { showError, showSuccess } from '@/lib/utils/errorHandler';
 
 export interface Caballo {
   id: number;
@@ -234,12 +235,14 @@ export const caballoService = {
    */
   async create(data: CreateCaballoData) {
     try {
-      return await ApiClient.makeRequest('/caballos', {
+      const result = await ApiClient.makeRequest('/caballos', {
         method: 'POST',
         body: JSON.stringify(data),
       });
+      showSuccess('caballo', 'created');
+      return result;
     } catch (error) {
-  console.error('Error creating caballo:', error);
+      showError(error, 'caballo', 'create_failed');
       throw error;
     }
   },
@@ -249,12 +252,14 @@ export const caballoService = {
    */
   async update(id: number, data: UpdateCaballoData) {
     try {
-      return await ApiClient.makeRequest(`/caballos/${id}`, {
+      const result = await ApiClient.makeRequest(`/caballos/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
       });
+      showSuccess('caballo', 'updated');
+      return result;
     } catch (error) {
-  console.error('Error updating caballo:', error);
+      showError(error, 'caballo', 'update_failed');
       throw error;
     }
   },
@@ -264,11 +269,13 @@ export const caballoService = {
    */
   async delete(id: number) {
     try {
-      return await ApiClient.makeRequest(`/caballos/${id}`, {
+      const result = await ApiClient.makeRequest(`/caballos/${id}`, {
         method: 'DELETE',
       });
+      showSuccess('caballo', 'deleted');
+      return result;
     } catch (error) {
-  console.error('Error deleting caballo:', error);
+      showError(error, 'caballo', 'delete_failed');
       throw error;
     }
   },

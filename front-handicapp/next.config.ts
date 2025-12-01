@@ -46,7 +46,7 @@ const nextConfig: NextConfig = {
   
   experimental: {
     serverActions: { allowedOrigins: ["*"] },
-    // Habilitar optimizaciones de imports
+    // Habilitar optimizaciones de imports (compatible con Turbopack)
     optimizePackageImports: [
       'lucide-react',
       '@radix-ui/react-dialog',
@@ -60,10 +60,10 @@ const nextConfig: NextConfig = {
     ],
   },
   
-  // Optimización de Webpack
+  // Configuración de Webpack (solo se usa si NO estás en modo Turbopack)
   webpack: (config, { isServer }) => {
-    // Optimizaciones de producción
-    if (!isServer) {
+    // Solo aplicar optimizaciones en producción con Webpack
+    if (!isServer && process.env.NODE_ENV === 'production') {
       config.optimization = {
         ...config.optimization,
         splitChunks: {
@@ -71,28 +71,24 @@ const nextConfig: NextConfig = {
           cacheGroups: {
             default: false,
             vendors: false,
-            // Vendor chunk para librerías grandes
             vendor: {
               name: 'vendor',
               chunks: 'all',
               test: /node_modules/,
               priority: 20,
             },
-            // Chunk separado para librerías pesadas
             lib: {
               test: /[\\/]node_modules[\\/](leaflet|react-leaflet|chart\.js|react-chartjs-2)[\\/]/,
               name: 'lib',
               chunks: 'async',
               priority: 30,
             },
-            // Chunk para reportes (jspdf, xlsx)
             reports: {
               test: /[\\/]node_modules[\\/](jspdf|jspdf-autotable|xlsx)[\\/]/,
               name: 'reports',
               chunks: 'async',
               priority: 40,
             },
-            // Chunk para Sentry (solo en producción, lazy loaded)
             sentry: {
               test: /[\\/]node_modules[\\/](@sentry)[\\/]/,
               name: 'sentry',

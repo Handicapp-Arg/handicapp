@@ -1,40 +1,62 @@
 'use client';
 
 import { useStats } from '@/lib/hooks/useStats';
-import { TareaList } from '@/components/dashboard/TareaList';
-import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
+import { TareaKanban } from '@/components/dashboard/TareaKanban';
+import { SimpleRoleGuard roles={["propietario"]} } from '@/components/common/SimplePermissionGuard';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ClipboardList, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { useEffect, useState } from 'react';
+import { tareaService, type Tarea } from '@/lib/services/tareaService';
 
 export default function TareasPage() {
   const { stats, loading } = useStats();
+  const [tareas, setTareas] = useState<Tarea[]>([]);
+  const [loadingTareas, setLoadingTareas] = useState(true);
 
-  if (loading) {
+  useEffect(() => {
+    const fetchTareas = async () => {
+      try {
+        setLoadingTareas(true);
+        const response: any = await tareaService.getAll({ page: 1, limit: 500 });
+        const tareasData = response?.data?.tareas || response?.tareas || response?.data || response || [];
+        setTareas(Array.isArray(tareasData) ? tareasData : []);
+      } catch (error) {
+        console.error('Error loading tareas:', error);
+        setTareas([]);
+      } finally {
+        setLoadingTareas(false);
+      }
+    };
+
+    fetchTareas();
+  }, []);
+
+  if (loading || loadingTareas) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600"></div>
+        <LoadingSpinnerFullPage label="Cargando..." variant="success" />
       </div>
     );
   }
 
   return (
-    <SimpleRoleGuard roles={['propietario']}>
-      <div className="space-y-8">
-        {/* Hero Section con Stats */}
-        <div className="relative overflow-hidden rounded-2xl">
+    <SimpleRoleGuard roles={["propietario"]}>
+      <div className="mx-auto">
+        <div className="relative overflow-hidden mb-8 rounded-2xl">
           <div className="absolute inset-0 bg-[#0f172a]"></div>
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-60"></div>
-          <div className="absolute top-0 right-1/4 w-64 h-64 bg-slate-600/30 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-gray-500/20 rounded-full blur-3xl"></div>
+          <div className="absolute top-0 right-1/4 w-64 h-64 bg-blue-600/30 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-cyan-500/20 rounded-full blur-3xl"></div>
           
           <div className="relative z-10 px-6 sm:px-8 lg:px-12 py-6">
             <div className="mb-6">
               <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 leading-tight">
-                Cuidados Diarios
+                Gestión de Tareas
               </h1>
               <p className="text-sm sm:text-base text-white/70">
-                Seguimiento de alimentación, limpieza y cuidados de tus caballos
+                Asigna, supervisa y gestiona las tareas diarias del establecimiento
               </p>
             </div>
 
@@ -110,7 +132,7 @@ export default function TareasPage() {
                 <CardContent className="pb-3">
                   <p className="text-2xl font-bold text-white tabular-nums">{stats.tareas?.enProgreso || 0}</p>
                   <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
-                    Trabajando
+                    En ejecución
                   </Badge>
                 </CardContent>
               </Card>
@@ -119,9 +141,9 @@ export default function TareasPage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-          <TareaList />
+          <TareaKanban tareas={tareas} />
         </div>
       </div>
-    </SimpleRoleGuard>
+    </SimpleRoleGuard roles={["propietario"]}>
   );
 }

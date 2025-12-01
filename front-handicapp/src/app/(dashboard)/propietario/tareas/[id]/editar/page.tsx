@@ -12,13 +12,13 @@ import {
   Calendar,
   Users,
   AlertCircle,
-  ListTodo,
-  Loader2
+  ListTodo
 } from 'lucide-react';
 import { tareaService, Tarea } from '@/lib/services/tareaService';
 import { caballoService } from '@/lib/services/caballoService';
 import { userService, User as UserType } from '@/lib/services/userService';
 import { toast } from 'react-hot-toast';
+import { LoadingSpinnerCard } from '@/components/ui/loading-spinner';
 
 export default function EditarTareaPage() {
   const router = useRouter();
@@ -136,10 +136,7 @@ export default function EditarTareaPage() {
   if (loadingData) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-brand-gold animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Cargando tarea...</p>
-        </div>
+        <LoadingSpinnerCard label="Cargando tarea..." variant="success" />
       </div>
     );
   }

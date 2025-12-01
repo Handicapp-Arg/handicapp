@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/authService';
+import { UserService } from '../services/userService';
 import { ResponseHelper } from '../utils/response';
 import { asyncHandler } from '../utils/errors';
 import { LoginData, AuthenticatedRequest } from '../types';
@@ -203,7 +204,29 @@ export class AuthController {
     if (!token) return ResponseHelper.badRequest(res, 'Token requerido');
     const result = await AuthService.verifyEmail(token);
     if (!result.success) return ResponseHelper.badRequest(res, result.error || 'Token inválido');
-    return ResponseHelper.success(res, null, result.message || 'Cuenta verificada');
+    
+    // Si hay tokens en la respuesta, establecer cookies httpOnly (login automático)
+    if (result.data?.accessToken && result.data?.refreshToken) {
+      // Configurar access token como httpOnly cookie
+      res.cookie('auth-token', result.data.accessToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        maxAge: 60 * 60 * 1000, // 1 hora
+        path: '/'
+      });
+
+      // Configurar refresh token como httpOnly cookie
+      res.cookie('refresh-token', result.data.refreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
+        path: '/'
+      });
+    }
+    
+    return ResponseHelper.success(res, result.data || {}, result.message || 'Cuenta verificada');
   });
 
   /**
@@ -214,8 +237,10 @@ export class AuthController {
     const { email } = req.body || {};
     if (!email) return ResponseHelper.badRequest(res, 'Email requerido');
     const result = await AuthService.sendPasswordReset(email);
-    if (!result.success) return ResponseHelper.internalError(res, result.error || 'Error enviando email');
-    return ResponseHelper.success(res, null, result.message || 'Si el email existe, enviaremos instrucciones.');
+    if (!result.success) {
+      return ResponseHelper.badRequest(res, result.error || 'No pudimos enviar instrucciones a ese correo.');
+    }
+    return ResponseHelper.success(res, null, result.message || 'Te enviamos instrucciones para restablecer tu contraseña.');
   });
 
   /**
@@ -296,6 +321,13 @@ export class AuthController {
       return ResponseHelper.unauthorized(res, 'Usuario no autenticado');
     }
 
-    return ResponseHelper.success(res, user, 'Perfil obtenido exitosamente');
+    // Recargar usuario desde la base de datos para obtener datos actualizados
+    const result = await UserService.getUserById(user.id.toString());
+    
+    if (!result.success || !result.data) {
+      return ResponseHelper.notFound(res, 'Usuario no encontrado');
+    }
+
+    return ResponseHelper.success(res, result.data, 'Perfil obtenido exitosamente');
   });
 }

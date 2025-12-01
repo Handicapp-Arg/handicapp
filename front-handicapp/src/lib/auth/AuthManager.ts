@@ -18,6 +18,7 @@ export interface UserData {
   avatar_url?: string | null;
   ubicacion?: string | null;
   establecimiento_id?: number;
+  establecimiento_nombre?: string;
   ultimo_acceso_el?: string | null;
   rol: {
     id: number;
@@ -299,8 +300,8 @@ class AuthManager {
 
       const data = await response.json();
       
-      if (data?.data?.user) {
-        const user = data.data.user;
+      if (data?.data) {
+        const user = data.data;
         this.saveAuthData(token, user);
         this.updateState({ user });
       }
@@ -335,6 +336,28 @@ class AuthManager {
     } catch (error) {
       console.warn('Token verification failed:', error);
       return false;
+    }
+  }
+
+  /**
+   * Establecer tokens de autenticación (para verificación de email)
+   */
+  async setAuthTokens({ accessToken, refreshToken, user }: { accessToken: string; refreshToken: string; user: UserData }): Promise<void> {
+    try {
+      // Guardar tokens en cookies httpOnly (el backend lo hace automáticamente, pero también guardamos localmente)
+      this.saveAuthData(accessToken, user);
+      
+      // Actualizar estado
+      this.updateState({
+        isAuthenticated: true,
+        user,
+        token: accessToken,
+        isLoading: false,
+        error: null,
+      });
+    } catch (error) {
+      console.error('Error estableciendo tokens:', error);
+      throw error;
     }
   }
 

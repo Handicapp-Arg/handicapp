@@ -6,6 +6,7 @@ import { SimpleAdminOnly } from '@/components/common/SimplePermissionGuard';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Circle, TrendingUp, Calendar, Heart } from 'lucide-react';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 export default function CaballosPage() {
   const { stats, loading } = useStats();
@@ -13,14 +14,14 @@ export default function CaballosPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600"></div>
+        <LoadingSpinnerFullPage label="Cargando..." variant="primary" />
       </div>
     );
   }
 
   return (
     <SimpleAdminOnly>
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto">
         {/* Hero Section */}
         <div className="relative overflow-hidden mb-8 rounded-2xl">
           <div className="absolute inset-0 bg-[#0f172a]"></div>

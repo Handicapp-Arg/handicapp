@@ -1,87 +1,31 @@
-import nodemailer from 'nodemailer';
-import { Resend } from 'resend';
-import { config } from '../config/config';
-import { logger } from '../utils/logger';
-
-type EmailParams = {
-  to: string;
-  subject: string;
-  html: string;
-};
-
-let transporter: nodemailer.Transporter | null = null;
+/**
+ * Base Email Template
+ * Template HTML base para todos los emails de HandicApp
+ */
 
 // URL del logo desde Cloudinary - Logo blanco para header oscuro
 const LOGO_URL = 'https://res.cloudinary.com/dh2m9ychv/image/upload/v1762370535/logo-icon-white_fbeduu.png';
 
-function getTransporter() {
-  if (transporter) return transporter;
-  if (!config.email.smtp.host || !config.email.smtp.port || !config.email.smtp.user || !config.email.smtp.pass) {
-    logger.warn('SMTP no configurado; EmailService funcionará en modo no-op');
-    return null;
-  }
-  transporter = nodemailer.createTransport({
-    host: config.email.smtp.host,
-    port: config.email.smtp.port,
-    secure: config.email.smtp.port === 465,
-    auth: {
-      user: config.email.smtp.user,
-      pass: config.email.smtp.pass,
-    },
-  });
-  return transporter;
+export interface EmailTemplateParams {
+  title: string;
+  intro: string;
+  actionText?: string;
+  actionUrl?: string;
+  footer?: string;
+  additionalContent?: string;
 }
 
-export async function sendEmail({ to, subject, html }: EmailParams) {
-  const from = `${config.email.from.name} <${config.email.from.email || 'no-reply@handicapp.local'}>`;
-  
-  // Priorizar Resend API si está configurada (evita bloqueos SMTP en Render)
-  if (config.email.smtp.user === 'resend' && config.email.smtp.pass) {
-    try {
-      const resend = new Resend(config.email.smtp.pass);
-      const fromEmail = config.email.from.email || 'onboarding@resend.dev';
-      
-      logger.info(`📧 Enviando email via Resend - From: ${fromEmail}, To: ${to}, Subject: ${subject}`);
-      
-      const result = await resend.emails.send({
-        from: fromEmail,
-        to,
-        subject,
-        html,
-      });
-      
-      // Resend devuelve { data: { id: 'xxx' }, error: null } o { data: null, error: {...} }
-      if (result.error) {
-        logger.error('❌ Error de Resend:', result.error);
-        throw new Error(`Resend error: ${result.error.message || JSON.stringify(result.error)}`);
-      }
-      
-      logger.info(`✅ Email enviado via Resend a ${to} - ID: ${result.data?.id || 'N/A'}`);
-      return { messageId: result.data?.id || 'resend-sent' };
-    } catch (error: any) {
-      logger.error('❌ Error enviando email via Resend:', {
-        message: error.message,
-        name: error.name,
-        stack: error.stack,
-      });
-      throw error;
-    }
-  }
-  
-  // Fallback a SMTP tradicional
-  const tx = getTransporter();
-  if (!tx) {
-    // No-op en desarrollo si SMTP no está configurado
-    logger.info(`Email simulado a ${to} | ${subject}`);
-    logger.debug(html);
-    return { simulated: true } as const;
-  }
-  const info = await tx.sendMail({ from, to, subject, html });
-  logger.info(`Email enviado a ${to} - id: ${info.messageId}`);
-  return { messageId: info.messageId };
-}
-
-export function renderBrandedEmail({ title, intro, actionText, actionUrl, footer }: { title: string; intro: string; actionText: string; actionUrl: string; footer?: string; }) {
+/**
+ * Generar template HTML de email con branding de HandicApp
+ */
+export function renderBrandedEmail({
+  title,
+  intro,
+  actionText,
+  actionUrl,
+  footer,
+  additionalContent,
+}: EmailTemplateParams): string {
   // Paleta moderna alineada con el diseño de la app
   const bg = '#f8fafc';            // slate-50 - fondo general
   const card = '#ffffff';          // blanco - card principal
@@ -93,10 +37,31 @@ export function renderBrandedEmail({ title, intro, actionText, actionUrl, footer
   const accent = '#af936f';        // color dorado/bronceado de la marca
   const btnBg = '#1e293b';         // slate-800 - botón principal
   const btnText = '#ffffff';       // blanco
-  // const btnHover = '#0f172a';      // slate-900 (Removed unused variable)
 
   // Usar logo de Cloudinary con Content-ID para mejor compatibilidad
   const logoTag = `<img src="${LOGO_URL}" alt="HandicApp" width="64" height="64" style="display:block;margin:0 auto;width:64px;height:64px;object-fit:contain;border:0;" />`;
+
+  // Botón de acción (solo si hay actionText y actionUrl)
+  const actionButton = actionText && actionUrl ? `
+    <div style="text-align:center;margin:32px 0;">
+      <a href="${actionUrl}" style="display:inline-block;background:${btnBg};color:${btnText};text-decoration:none;padding:14px 32px;border-radius:12px;font-weight:600;font-size:15px;letter-spacing:0.3px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.05);transition:all 0.2s;">${actionText}</a>
+    </div>
+  ` : '';
+
+  // Link alternativo (solo si hay actionUrl)
+  const alternativeLink = actionUrl ? `
+    <div style="margin-top:24px;padding:16px;background:${bg};border:1px solid ${border};border-radius:8px;">
+      <p style="margin:0 0 8px;font-size:12px;color:${muted};font-weight:500;">Si el botón no funciona, copiá y pegá este enlace en tu navegador:</p>
+      <p style="margin:0;font-size:12px;color:${accent};word-break:break-all;"><a href="${actionUrl}" style="color:${accent};text-decoration:none;">${actionUrl}</a></p>
+    </div>
+  ` : '';
+
+  // Contenido adicional
+  const extraContent = additionalContent ? `
+    <div style="margin-top:24px;padding:16px;background:${bg};border:1px solid ${border};border-radius:8px;">
+      ${additionalContent}
+    </div>
+  ` : '';
 
   // Template moderno con diseño limpio
   return `
@@ -130,21 +95,15 @@ export function renderBrandedEmail({ title, intro, actionText, actionUrl, footer
           <td style="padding:32px 24px;">
             <p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:${text};">${intro}</p>
             
-            <!-- Botón de Acción -->
-            <div style="text-align:center;margin:32px 0;">
-              <a href="${actionUrl}" style="display:inline-block;background:${btnBg};color:${btnText};text-decoration:none;padding:14px 32px;border-radius:12px;font-weight:600;font-size:15px;letter-spacing:0.3px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.05);transition:all 0.2s;">${actionText}</a>
-            </div>
+            ${actionButton}
             
             <!-- Texto Adicional -->
             <p style="margin:24px 0 0;font-size:14px;line-height:1.5;color:${muted};">
               Si no solicitaste esta acción, podés ignorar este mensaje.
             </p>
             
-            <!-- Link Alternativo -->
-            <div style="margin-top:24px;padding:16px;background:${bg};border:1px solid ${border};border-radius:8px;">
-              <p style="margin:0 0 8px;font-size:12px;color:${muted};font-weight:500;">Si el botón no funciona, copiá y pegá este enlace en tu navegador:</p>
-              <p style="margin:0;font-size:12px;color:${accent};word-break:break-all;"><a href="${actionUrl}" style="color:${accent};text-decoration:none;">${actionUrl}</a></p>
-            </div>
+            ${alternativeLink}
+            ${extraContent}
           </td>
         </tr>
         
@@ -171,3 +130,4 @@ export function renderBrandedEmail({ title, intro, actionText, actionUrl, footer
   </body>
   </html>`;
 }
+

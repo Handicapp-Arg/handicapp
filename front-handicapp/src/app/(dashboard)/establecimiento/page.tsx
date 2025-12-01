@@ -10,6 +10,7 @@ import { useStats } from '@/lib/hooks/useStats';
 import { useEventosProximos } from '@/lib/hooks/useEventosProximos';
 import { getRoleInfo } from '@/lib/design-tokens';
 import { Users, Activity, Wrench, Calendar, FileText, Circle, Package } from 'lucide-react';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 export default function EstablecimientoDashboard() {
   const { stats, loading } = useStats();
@@ -17,11 +18,7 @@ export default function EstablecimientoDashboard() {
   const roleInfo = getRoleInfo('establecimiento');
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
-      </div>
-    );
+    return <LoadingSpinnerFullPage label="Cargando..." />;
   }
 
   // Stats principales

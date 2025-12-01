@@ -6,11 +6,14 @@ import ApiClient from '@/lib/services/apiClient';
 import { useToaster } from '@/components/ui/toaster';
 import { LOGOS } from '@/lib/constants/logos';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { ROLE_DASHBOARD_ROUTES } from '@/lib/utils/roleUtils';
+import AuthManager from '@/lib/auth/AuthManager';
 
 export default function VerifyPage() {
   const params = useSearchParams();
   const token = useMemo(() => params.get('token') || '', [params]);
   const [status, setStatus] = useState<'pending'|'ok'|'error'>('pending');
+  const [userData, setUserData] = useState<{ email: string; roleKey: string } | null>(null);
   const router = useRouter();
   const { toast } = useToaster();
 
@@ -19,11 +22,44 @@ export default function VerifyPage() {
     async function run() {
       if (!token) { setStatus('error'); return; }
       try {
-        await ApiClient.verifyEmail(token);
+        const response = await ApiClient.verifyEmail(token) as any;
         if (!cancelled) {
           setStatus('ok');
-          toast('Cuenta verificada. Ahora podés iniciar sesión', 'success');
-          setTimeout(() => router.push('/login'), 2000);
+          toast('Cuenta verificada exitosamente', 'success');
+          
+          // Obtener datos del usuario desde la respuesta
+          const roleKey = response?.data?.roleKey || 'propietario';
+          const email = response?.data?.email || '';
+          const accessToken = response?.data?.accessToken;
+          const refreshToken = response?.data?.refreshToken;
+          const user = response?.data?.user;
+          
+          setUserData({ email, roleKey });
+          
+          // Si hay tokens, autenticar automáticamente al usuario y redirigir al dashboard
+          if (accessToken && refreshToken && user) {
+            try {
+              // Guardar tokens en AuthManager
+              await AuthManager.getInstance().setAuthTokens({
+                accessToken,
+                refreshToken,
+                user
+              });
+              
+              // Redirigir directamente al dashboard (sin timeout para que sea inmediato)
+              const dashboardRoute = ROLE_DASHBOARD_ROUTES[roleKey as keyof typeof ROLE_DASHBOARD_ROUTES] || '/propietario';
+              router.push(dashboardRoute);
+            } catch (authError) {
+              console.error('Error autenticando usuario:', authError);
+              // Si falla la autenticación, redirigir al login
+              const dashboardRoute = ROLE_DASHBOARD_ROUTES[roleKey as keyof typeof ROLE_DASHBOARD_ROUTES] || '/propietario';
+              router.push(`/login?email=${encodeURIComponent(email)}&redirectTo=${encodeURIComponent(dashboardRoute)}&verified=1`);
+            }
+          } else {
+            // Si no hay tokens, redirigir al login
+            const dashboardRoute = ROLE_DASHBOARD_ROUTES[roleKey as keyof typeof ROLE_DASHBOARD_ROUTES] || '/propietario';
+            router.push(`/login?email=${encodeURIComponent(email)}&redirectTo=${encodeURIComponent(dashboardRoute)}&verified=1`);
+          }
         }
       } catch (e) {
         if (!cancelled) setStatus('error');
@@ -75,7 +111,7 @@ export default function VerifyPage() {
                   ¡Cuenta verificada!
                 </h1>
                 <p className="text-slate-600">
-                  Tu correo ha sido verificado exitosamente. Serás redirigido al login en unos segundos...
+                  Tu correo ha sido verificado exitosamente. Serás redirigido al dashboard en unos segundos...
                 </p>
               </>
             )}
@@ -92,12 +128,31 @@ export default function VerifyPage() {
           </div>
 
           {/* Action Buttons */}
-          {status === 'ok' && (
+          {status === 'ok' && userData && (
             <button
-              onClick={() => router.push('/login')}
+              onClick={async () => {
+                try {
+                  // Re-autenticar si es necesario
+                  const authManager = AuthManager.getInstance();
+                  const state = authManager.getState();
+                  
+                  if (state.isAuthenticated) {
+                    // Si ya está autenticado, ir directo al dashboard
+                    const dashboardRoute = ROLE_DASHBOARD_ROUTES[userData.roleKey as keyof typeof ROLE_DASHBOARD_ROUTES] || '/propietario';
+                    router.push(dashboardRoute);
+                  } else {
+                    // Si no está autenticado, ir al login
+                    const dashboardRoute = ROLE_DASHBOARD_ROUTES[userData.roleKey as keyof typeof ROLE_DASHBOARD_ROUTES] || '/propietario';
+                    router.push(`/login?email=${encodeURIComponent(userData.email)}&redirectTo=${encodeURIComponent(dashboardRoute)}&verified=1`);
+                  }
+                } catch (e) {
+                  const dashboardRoute = ROLE_DASHBOARD_ROUTES[userData.roleKey as keyof typeof ROLE_DASHBOARD_ROUTES] || '/propietario';
+                  router.push(`/login?email=${encodeURIComponent(userData.email)}&redirectTo=${encodeURIComponent(dashboardRoute)}&verified=1`);
+                }
+              }}
               className="w-full bg-[#1e293b] text-white font-semibold py-3.5 rounded-xl hover:bg-[#0f172a] hover:shadow-lg transition-all duration-200"
             >
-              Ir al Login
+              Continuar al Dashboard
             </button>
           )}
 

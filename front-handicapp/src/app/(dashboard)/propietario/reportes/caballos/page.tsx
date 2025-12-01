@@ -130,8 +130,7 @@ export default function ReportesCaballosPage() {
 
       descargarArchivo(blob, nombreArchivo);
       toast.success(`Reporte ${formato.toUpperCase()} generado exitosamente`);
-    } catch (error) {
-      console.error('Error al generar reporte:', error);
+    } catch {
       toast.error('Error al generar el reporte');
     } finally {
       setGeneratingReport(null);

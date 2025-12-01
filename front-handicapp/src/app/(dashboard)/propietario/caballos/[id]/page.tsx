@@ -10,7 +10,8 @@ import AdjuntosList from "@/components/adjuntos/AdjuntosList";
 import QRCodeDisplay from "@/components/qr/QRCodeDisplay";
 import PropietariosList from "@/components/propietarios/PropietariosList";
 import CaballoForm from "@/components/dashboard/CaballoForm";
-import { QrCodeIcon, ArrowPathIcon as RefreshCw, ArrowDownTrayIcon as Download, PencilIcon as Edit } from "@heroicons/react/24/outline";
+import { QrCodeIcon, ArrowPathIcon as RefreshCw, ArrowDownTrayIcon as Download, PencilIcon as Edit2 } from "@heroicons/react/24/outline";
+import { LoadingSpinnerFullPage } from "@/components/ui/loading-spinner";
 
 export default function CaballoDetallePage() {
   const params = useParams();
@@ -21,7 +22,7 @@ export default function CaballoDetallePage() {
   const [loading, setLoading] = useState(true);
   const [pedigree, setPedigree] = useState<CaballoPedigree | null>(null);
   const [origin, setOrigin] = useState("");
-  const [activeTab, setActiveTab] = useState<"info" | "documentos" | "propietarios">("info");
+  const [activeTab, setActiveTab] = useState<"ficha" | "pedigree" | "tareas" | "historial" | "documentos" | "propietarios">("ficha");
   const [showQRModal, setShowQRModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
 
@@ -97,35 +98,11 @@ export default function CaballoDetallePage() {
 
   return (
     <SimpleRoleGuard roles={["propietario"]} fallback={<div className="p-6">Sin permisos</div>}>
-      <div className="max-w-7xl mx-auto">
-        {/* Botón volver */}
-        <div className="mb-6">
-          <button 
-            onClick={() => router.push("/propietario/caballos")} 
-            className="inline-flex items-center gap-2 text-gray-600 hover:text-[#0f172a] transition-colors font-medium group"
-          >
-            <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            <span>Volver a Mis Caballos</span>
-          </button>
-        </div>
+      <div className="min-h-screen bg-slate-50">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
         {loading && (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              {/* Spinner moderno */}
-              <div className="relative inline-block mb-6">
-                <div className="absolute inset-0 bg-[#af936f]/20 rounded-full blur-2xl animate-pulse"></div>
-                <div className="relative w-16 h-16 mx-auto">
-                  <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
-                  <div className="absolute inset-0 border-4 border-[#0f172a] rounded-full border-t-transparent animate-spin"></div>
-                </div>
-              </div>
-              <p className="text-gray-600 font-medium">Cargando información del caballo...</p>
-              <p className="text-gray-400 text-sm mt-2">Un momento por favor</p>
-            </div>
-          </div>
+          <LoadingSpinnerFullPage label="Cargando información del caballo..." />
         )}
 
           {!loading && !caballo && (
@@ -151,100 +128,196 @@ export default function CaballoDetallePage() {
 
           {!loading && caballo && (
             <>
-              <div className="mb-8 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                <div className="flex-1">
-                  <h1 className="text-4xl font-bold text-gray-900 mb-3">{caballo.nombre}</h1>
-                  <div className="flex items-center gap-3">
-                    <div className="px-4 py-2 bg-gradient-to-r from-[#0f172a]/5 to-[#af936f]/5 rounded-lg border border-[#af936f]/20">
-                      <span className="text-sm text-gray-600">Microchip: </span>
-                      <span className="font-mono font-semibold text-[#0f172a]">{caballo.microchip}</span>
+              <div className="space-y-4">
+                {/* Breadcrumb */}
+                <button 
+                  onClick={() => router.push("/propietario/caballos")} 
+                  className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors text-sm font-medium group"
+                >
+                  <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Volver a Mis Caballos
+                </button>
+
+                {/* Header Compacto */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+                  <div className="px-6 py-4">
+                    <div className="flex items-start justify-between gap-4">
+                      {/* Info Principal */}
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-slate-900 flex items-center justify-center">
+                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                          </svg>
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h1 className="text-xl font-bold text-slate-900 truncate">
+                              {caballo.nombre}
+                            </h1>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${
+                              caballo.estado_global === "activo" 
+                                ? "bg-emerald-100 text-emerald-700" 
+                                : caballo.estado_global === "inactivo" 
+                                ? "bg-amber-100 text-amber-700" 
+                                : caballo.estado_global === "vendido" 
+                                ? "bg-blue-100 text-blue-700" 
+                                : "bg-slate-100 text-slate-700"
+                            }`}>
+                              {caballo.estado_global ? caballo.estado_global.toUpperCase() : "SIN ESTADO"}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center gap-3 text-sm text-slate-600">
+                            {caballo.microchip && (
+                              <span className="font-mono">{caballo.microchip}</span>
+                            )}
+                            {caballo.raza && (
+                              <>
+                                <span className="text-slate-300">•</span>
+                                <span>{caballo.raza}</span>
+                              </>
+                            )}
+                            <span className="text-slate-300">•</span>
+                            <span>{caballo.sexo === "macho" ? "Macho" : caballo.sexo === "hembra" ? "Hembra" : "—"}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => setShowQRModal(true)} 
+                          className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                        >
+                          <QrCodeIcon className="w-4 h-4" />
+                          QR
+                        </button>
+                        <button 
+                          onClick={() => loadCaballoData(Number(params?.id))} 
+                          disabled={loading}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+                        >
+                          <RefreshCw className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={exportarFicha}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => setShowEditModal(true)} 
+                          className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-colors"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                          Editar
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <button 
-                    onClick={() => setShowQRModal(true)} 
-                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-[#0f172a]/20 transition-all duration-200 shadow-sm hover:shadow font-medium"
-                  >
-                    <QrCodeIcon className="w-4 h-4" />
-                    Ver QR
-                  </button>
-                  <button 
-                    onClick={() => loadCaballoData(Number(params?.id))} 
-                    disabled={loading}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-[#0f172a]/20 transition-all duration-200 shadow-sm hover:shadow font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    Actualizar
-                  </button>
-                  <button 
-                    onClick={exportarFicha}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-[#0f172a]/20 transition-all duration-200 shadow-sm hover:shadow font-medium"
-                  >
-                    <Download className="w-4 h-4" />
-                    Exportar
-                  </button>
-                  <button 
-                    onClick={() => setShowEditModal(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#0f172a] text-white rounded-xl hover:bg-[#0f172a]/90 transition-all duration-200 shadow-lg hover:shadow-xl font-medium"
-                  >
-                    <Edit className="w-4 h-4" />
-                    Editar
-                  </button>
-                </div>
-              </div>
 
-              {/* Tabs */}
-              <div className="mb-8">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-2">
-                  <nav className="flex gap-2">
+                {/* Tabs */}
+                <div className="border-b border-slate-200 bg-white rounded-t-xl">
+                  <nav className="flex gap-1 px-4" aria-label="Tabs">
                     <button
-                      onClick={() => setActiveTab("info")}
-                      className={`flex items-center gap-2 py-3 px-6 rounded-lg font-medium text-sm transition-all duration-200 ${
-                        activeTab === "info"
-                          ? "bg-[#0f172a] text-white shadow-lg"
-                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      onClick={() => setActiveTab("ficha")}
+                      className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                        activeTab === "ficha"
+                          ? "border-slate-900 text-slate-900"
+                          : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
                       }`}
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      Información General
+                      Ficha Completa
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("pedigree")}
+                      className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                        activeTab === "pedigree"
+                          ? "border-slate-900 text-slate-900"
+                          : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
+                      }`}
+                    >
+                      Pedigree
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("tareas")}
+                      className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                        activeTab === "tareas"
+                          ? "border-slate-900 text-slate-900"
+                          : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
+                      }`}
+                    >
+                      Tareas
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("historial")}
+                      className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                        activeTab === "historial"
+                          ? "border-slate-900 text-slate-900"
+                          : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
+                      }`}
+                    >
+                      Historial
                     </button>
                     <button
                       onClick={() => setActiveTab("documentos")}
-                      className={`flex items-center gap-2 py-3 px-6 rounded-lg font-medium text-sm transition-all duration-200 ${
+                      className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                         activeTab === "documentos"
-                          ? "bg-[#0f172a] text-white shadow-lg"
-                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                          ? "border-slate-900 text-slate-900"
+                          : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
                       }`}
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                      </svg>
                       Documentos
                     </button>
                     <button
                       onClick={() => setActiveTab("propietarios")}
-                      className={`flex items-center gap-2 py-3 px-6 rounded-lg font-medium text-sm transition-all duration-200 ${
+                      className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                         activeTab === "propietarios"
-                          ? "bg-[#0f172a] text-white shadow-lg"
-                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                          ? "border-slate-900 text-slate-900"
+                          : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
                       }`}
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
                       Propietarios
                     </button>
                   </nav>
                 </div>
-              </div>
 
               {/* Tab Content */}
-              {activeTab === "info" && <CaballoFicha caballo={caballo} origin={origin} pedigree={pedigree} />}
-              {activeTab === "documentos" && <AdjuntosList caballoId={Number(params?.id)} showActions={false} />}
-              {activeTab === "propietarios" && <PropietariosList caballoId={Number(params?.id)} />}
+              <div id="ficha-caballo">
+                {activeTab === "ficha" && <CaballoFicha caballo={caballo} origin={origin} pedigree={pedigree} />}
+                {activeTab === "pedigree" && (
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4">Pedigree</h3>
+                    <p className="text-slate-600">Contenido del pedigree próximamente...</p>
+                  </div>
+                )}
+                {activeTab === "tareas" && (
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4">Tareas</h3>
+                    <p className="text-slate-600">Lista de tareas próximamente...</p>
+                  </div>
+                )}
+                {activeTab === "historial" && (
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4">Historial</h3>
+                    <p className="text-slate-600">Historial del caballo próximamente...</p>
+                  </div>
+                )}
+                {activeTab === "documentos" && (
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <AdjuntosList caballoId={Number(params?.id)} showActions={false} />
+                  </div>
+                )}
+                {activeTab === "propietarios" && (
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <PropietariosList caballoId={Number(params?.id)} />
+                  </div>
+                )}
+              </div>
 
               {/* QR Modal */}
               {showQRModal && (
@@ -269,8 +342,10 @@ export default function CaballoDetallePage() {
                 }}
                 caballo={caballo}
               />
+              </div>
             </>
           )}
+        </div>
       </div>
     </SimpleRoleGuard>
   );

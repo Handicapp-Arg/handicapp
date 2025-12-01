@@ -24,11 +24,10 @@ export class EstablecimientoController {
       let result;
       
       if (userRole === 'admin') {
-        // Admin ve solo sus establecimientos (con membresía)
-        result = await EstablecimientoService.searchEstablecimientos(
-          search || '',
-          usuarioId,
-          { page, limit }
+        // Admin ve TODOS los establecimientos (sin filtrar por membresía)
+        result = await EstablecimientoService.getAllPublicEstablecimientos(
+          { page, limit, search },
+          undefined // No pasar usuarioId para que no filtre por caballos
         );
       } else if (userRole === 'propietario') {
         // Propietarios ven TODOS los establecimientos activos + sus caballos en cada uno
@@ -103,33 +102,84 @@ export class EstablecimientoController {
       const { 
         nombre, 
         cuit, 
-        direccion_calle, 
+        direccion_calle,
+        direccion_numero,
+        direccion_complemento,
+        codigo_postal,
+        ciudad,
+        provincia,
+        pais,
+        latitud,
+        longitud,
+        descripcion,
         telefono, 
         email,
         tipo_establecimiento,
         estado,
         superficie_hectareas,
         cantidad_boxes,
-        servicios
+        servicios,
+        disciplina_principal,
+        // Datos del usuario administrador
+        admin_email,
+        admin_password,
+        admin_nombre,
+        admin_apellido
       } = req.body;
       const usuarioId = req.user!.id;
+
+      logger.info('🏢 Crear establecimiento - datos recibidos', {
+        nombre,
+        cuit,
+        admin_email,
+        admin_password: admin_password ? '***' : undefined,
+        admin_nombre,
+        admin_apellido,
+        tieneAdminData: !!(admin_email && admin_password && admin_nombre && admin_apellido)
+      });
 
       if (!nombre || !cuit) {
         ResponseHelper.badRequest(res, 'Nombre y CUIT son requeridos');
         return;
       }
 
+      // Validar datos del administrador si se están creando
+      if (admin_email || admin_password) {
+        if (!admin_email || !admin_password || !admin_nombre || !admin_apellido) {
+          ResponseHelper.badRequest(res, 'Si creas un administrador, debes proporcionar email, contraseña, nombre y apellido');
+          return;
+        }
+        if (admin_password.length < 8) {
+          ResponseHelper.badRequest(res, 'La contraseña debe tener al menos 8 caracteres');
+          return;
+        }
+      }
+
       const result = await EstablecimientoService.createEstablecimiento({
         nombre,
         cuit,
         direccion_calle,
+        direccion_numero,
+        direccion_complemento,
+        codigo_postal,
+        ciudad,
+        provincia,
+        pais,
+        latitud,
+        longitud,
+        descripcion,
         telefono,
         email,
         tipo_establecimiento,
         estado,
         superficie_hectareas,
         cantidad_boxes,
-        servicios
+        servicios,
+        disciplina_principal,
+        admin_email,
+        admin_password,
+        admin_nombre,
+        admin_apellido
       }, usuarioId);
 
       if (result.success && result.data) {

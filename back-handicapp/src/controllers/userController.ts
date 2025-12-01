@@ -8,6 +8,7 @@ import { User } from '../models/User';
 import { Role } from '../models/roles';
 import bcrypt from 'bcrypt';
 import { config } from '../config/config';
+import { logger } from '../utils/logger';
 
 export class UserController {
   // Get all users
@@ -16,6 +17,10 @@ export class UserController {
     const limit = Number((req.query['limit'] as string) || 10);
     const sortBy = (req.query['sortBy'] as string) || 'creado_el';
     const sortOrder = (req.query['sortOrder'] as string) === 'ASC' ? 'ASC' : 'DESC';
+    
+    // Filtros opcionales
+    const roleId = req.query['roleId'] ? Number(req.query['roleId']) : undefined;
+    const estadoUsuario = req.query['estado'] as string | undefined;
 
     const currentUser = req.user!;
     const currentUserRole = currentUser.rol?.clave;
@@ -28,9 +33,19 @@ export class UserController {
       if (typeof currentUser.establecimiento_id === 'number') {
         query.establecimiento_id = currentUser.establecimiento_id;
       }
+      if (estadoUsuario) {
+        query.estado_usuario = estadoUsuario;
+      }
       result = await UserService.getUsers(query);
     } else {
-      result = await UserService.getUsers({ page, limit, sortBy, sortOrder });
+      const query: any = { page, limit, sortBy, sortOrder };
+      if (roleId) {
+        query.roleIds = [roleId];
+      }
+      if (estadoUsuario) {
+        query.estado_usuario = estadoUsuario;
+      }
+      result = await UserService.getUsers(query);
     }
 
     return ResponseHelper.success(res, result.data, 'Users retrieved successfully');
@@ -75,12 +90,28 @@ export class UserController {
   // Delete user
   static deleteUser = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
     const { id } = req.params;
+    const authReq = req as AuthenticatedRequest;
+    const currentUser = authReq.user;
     
     if (!id) {
       return ResponseHelper.badRequest(res, 'User ID is required');
     }
     
-    const result = await UserService.deleteUser(id);
+    // Mapear currentUser al formato esperado por el servicio
+    let userContext: { id: number; rol?: { clave: string }; establecimiento_id?: number | null } | undefined;
+    
+    if (currentUser) {
+      userContext = {
+        id: currentUser.id,
+        establecimiento_id: currentUser.establecimiento_id ?? null
+      };
+      
+      if (currentUser.rol) {
+        userContext.rol = { clave: currentUser.rol.clave };
+      }
+    }
+    
+    const result = await UserService.deleteUser(id, userContext);
     
     if (result.success) {
       return ResponseHelper.success(res, null, 'User deleted successfully');
@@ -144,8 +175,38 @@ export class UserController {
     
     const result = await UserService.updateUser(userId.toString(), updateData);
     
-    if (result.success) {
-      return ResponseHelper.success(res, result.data, 'Profile updated successfully');
+    if (result.success && result.data) {
+      // Recargar el usuario con todas las relaciones para asegurar datos frescos
+      const updatedUser = await User.findByPk(userId, {
+        attributes: { exclude: ['hash_contrasena'] },
+        include: [{
+          model: Role,
+          as: 'rol',
+          attributes: ['id', 'nombre', 'clave']
+        }]
+      });
+
+      if (!updatedUser) {
+        return ResponseHelper.notFound(res, 'Usuario no encontrado');
+      }
+
+      const userData = {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        nombre: updatedUser.nombre,
+        apellido: updatedUser.apellido,
+        telefono: updatedUser.telefono,
+        ubicacion: updatedUser.ubicacion,
+        avatar_url: updatedUser.avatar_url,
+        verificado: updatedUser.verificado,
+        estado_usuario: updatedUser.estado_usuario,
+        establecimiento_id: updatedUser.establecimiento_id,
+        rol: updatedUser.rol,
+        creado_el: updatedUser.creado_el,
+        actualizado_el: updatedUser.actualizado_el
+      };
+
+      return ResponseHelper.success(res, userData, 'Profile updated successfully');
     }
     
     return ResponseHelper.badRequest(res, result.error || 'Failed to update profile');
@@ -160,6 +221,14 @@ export class UserController {
     
     const currentUser = req.user!;
     const currentUserRole = currentUser.rol?.clave;
+    
+    // DEBUG: Log para ver qué está llegando
+    logger.info('DEBUG - User create request:', {
+      body: req.body,
+      currentUserRole,
+      currentUserEstablecimientoId: currentUser.establecimiento_id,
+      currentUserId: currentUser.id
+    });
     
     // Verificar permisos según el rol
     if (currentUserRole === 'establecimiento') {
@@ -187,6 +256,21 @@ export class UserController {
       let establecimientoId = null;
       if (currentUserRole === 'establecimiento' && [3, 4, 5].includes(rol_id)) {
         establecimientoId = currentUser.establecimiento_id;
+        
+        // Si no está en el JWT, consultar desde la DB
+        if (!establecimientoId) {
+          const userFromDb = await User.findByPk(currentUser.id, {
+            attributes: ['id', 'establecimiento_id']
+          });
+          
+          if (userFromDb?.establecimiento_id) {
+            establecimientoId = userFromDb.establecimiento_id;
+            logger.info(`Usuario ${currentUser.id}: establecimiento_id=${establecimientoId} obtenido desde DB para crear empleado`);
+          } else {
+            logger.error(`Usuario ${currentUser.id} con rol establecimiento no puede crear empleados sin establecimiento_id asignado`);
+            return ResponseHelper.badRequest(res, 'Tu usuario no tiene un establecimiento asignado. Contacta al administrador.');
+          }
+        }
       }
 
       // Crear usuario
@@ -203,30 +287,7 @@ export class UserController {
         establecimiento_id: establecimientoId
       });
 
-      // Si es establecimiento creando empleado/capataz/veterinario, crear membresía
-      if (currentUserRole === 'establecimiento' && [3, 4, 5].includes(rol_id)) {
-        // Buscar el establecimiento del usuario que está creando
-        const { MembresiaUsuarioEstablecimiento } = require('../models');
-        const { EstadoMembresia } = require('../models/enums');
-        
-        const membresiasEstablecimiento = await MembresiaUsuarioEstablecimiento.findAll({
-          where: {
-            usuario_id: currentUser.id,
-            estado_membresia: EstadoMembresia.active
-          }
-        });
-
-        // Crear membresía en cada establecimiento del creador
-        for (const membresia of membresiasEstablecimiento) {
-          await MembresiaUsuarioEstablecimiento.create({
-            usuario_id: newUser.id,
-            establecimiento_id: membresia.establecimiento_id,
-            rol_en_establecimiento: rol_id === 3 ? 'capataz' : rol_id === 4 ? 'veterinario' : 'empleado',
-            estado_membresia: EstadoMembresia.active,
-            fecha_inicio: new Date()
-          });
-        }
-      }
+      logger.info(`Usuario ${newUser.id} creado exitosamente por ${currentUser.id} (${currentUserRole}) con establecimiento_id=${establecimientoId}`);
 
       // Obtener usuario con rol
       const userWithRole = await User.findByPk(newUser.id, {

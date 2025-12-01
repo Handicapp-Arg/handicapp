@@ -2,6 +2,8 @@ import { Router, type Router as ExpressRouter } from 'express';
 import { authRoutes } from './authRoutes';
 import { userRoutes } from './userRoutes';
 import { roleRoutes } from './roleRoutes';
+import { departamentoRoutes } from './departamentoRoutes';
+import { puestoRoutes } from './puestoRoutes';
 import { establecimientoRoutes } from './establecimientoRoutes';
 import { caballoRoutes } from './caballoRoutes';
 import { eventoRoutes } from './eventoRoutes';
@@ -34,6 +36,8 @@ router.get('/health', (_req, res) => {
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/roles', roleRoutes);
+router.use('/departamentos', departamentoRoutes);
+router.use('/puestos', puestoRoutes);
 
 // Business entity routes (Phase 2)
 router.use('/establecimientos', establecimientoRoutes);

@@ -11,6 +11,7 @@ import { Caballo } from '../models/Caballo';
 import { PropietarioCaballo } from '../models/PropietarioCaballo';
 import { ServiceResponse, PaginationQuery } from '../types';
 import { TipoTarea, EstadoTarea } from '../models/enums';
+import { logger } from '../utils/logger';
 
 interface CreateTareaData {
   establecimiento_id: number;
@@ -77,9 +78,55 @@ export class TareaService {
       }
 
       // Control de acceso por rol
-      const rolesConVistaCompleta = ['admin', 'establecimiento', 'capataz'];
       
-      if (userRole === 'propietario' && usuarioId) {
+      if (userRole === 'admin') {
+        // ADMIN: Ve todas las tareas sin restricciones
+        
+      } else if (userRole === 'establecimiento' && usuarioId) {
+        // ESTABLECIMIENTO: Solo ve tareas de su establecimiento o creadas/asignadas a él
+        const usuario = await User.findByPk(usuarioId, {
+          attributes: ['establecimiento_id']
+        });
+        
+        const userEstablecimientoId = usuario?.establecimiento_id;
+        
+        if (userEstablecimientoId) {
+          // Ve tareas de su establecimiento O creadas por él O asignadas a él
+          where[Op.or] = [
+            { establecimiento_id: userEstablecimientoId },
+            { creado_por_usuario_id: usuarioId },
+            { asignado_a_usuario_id: usuarioId },
+          ];
+        } else {
+          // Si no tiene establecimiento asignado, solo ve las que creó o le asignaron
+          where[Op.or] = [
+            { creado_por_usuario_id: usuarioId },
+            { asignado_a_usuario_id: usuarioId },
+          ];
+        }
+        
+      } else if (userRole === 'capataz' && usuarioId) {
+        // CAPATAZ: Ve tareas de su establecimiento o creadas/asignadas a él
+        const usuario = await User.findByPk(usuarioId, {
+          attributes: ['establecimiento_id']
+        });
+        
+        const userEstablecimientoId = usuario?.establecimiento_id;
+        
+        if (userEstablecimientoId) {
+          where[Op.or] = [
+            { establecimiento_id: userEstablecimientoId },
+            { creado_por_usuario_id: usuarioId },
+            { asignado_a_usuario_id: usuarioId },
+          ];
+        } else {
+          where[Op.or] = [
+            { creado_por_usuario_id: usuarioId },
+            { asignado_a_usuario_id: usuarioId },
+          ];
+        }
+        
+      } else if (userRole === 'propietario' && usuarioId) {
         // PROPIETARIO: Solo ve tareas de SUS caballos
         const caballosDelPropietario = await PropietarioCaballo.findAll({
           where: { propietario_usuario_id: usuarioId },
@@ -99,7 +146,7 @@ export class TareaService {
         // Solo tareas que tienen caballo_id y pertenecen al propietario
         where.caballo_id = { [Op.in]: caballoIds };
         
-      } else if (userRole && !rolesConVistaCompleta.includes(userRole) && usuarioId) {
+      } else if (userRole && usuarioId) {
         // EMPLEADO/VETERINARIO: Ve tareas asignadas o creadas por él
         where[Op.or] = [
           { creado_por_usuario_id: usuarioId },
@@ -144,10 +191,10 @@ export class TareaService {
         return { success: false, error: 'Tarea no encontrada' };
       }
 
-      // Permisos: admin, capataz o creador pueden asignar
-      const allowed = actorRole === 'admin' || actorRole === 'capataz' || tarea.creado_por_usuario_id === actorUserId;
+      // Permisos: solo admin puede asignar cualquier tarea, otros roles solo las que crearon
+      const allowed = actorRole === 'admin' || tarea.creado_por_usuario_id === actorUserId;
       if (!allowed) {
-        return { success: false, error: 'Sin permisos para asignar' };
+        return { success: false, error: 'Sin permisos para asignar esta tarea' };
       }
 
       // Validar usuario de destino
@@ -616,20 +663,39 @@ export class TareaService {
   static async cambiarEstadoTarea(
     tareaId: number,
     nuevoEstado: EstadoTarea,
-    userId: number
+    userId: number,
+    userRole?: string
   ): Promise<ServiceResponse<Tarea>> {
     try {
       const tarea = await Tarea.findByPk(tareaId);
       
       if (!tarea) {
+        logger.warn(`Tarea ${tareaId} no encontrada`);
         return {
           success: false,
           error: 'Tarea no encontrada',
         };
       }
 
-      // Verificar permisos: creador o asignado pueden cambiar estado
-      if (tarea.creado_por_usuario_id !== userId && tarea.asignado_a_usuario_id !== userId) {
+      // Admin puede cambiar cualquier tarea
+      const isAdmin = userRole === 'admin';
+      const isCreator = tarea.creado_por_usuario_id === userId;
+      const isAssigned = tarea.asignado_a_usuario_id === userId;
+
+      // Verificar permisos: admin, creador o asignado pueden cambiar estado
+      logger.info('Verificando permisos cambio estado', {
+        tareaId,
+        userId,
+        userRole,
+        creador: tarea.creado_por_usuario_id,
+        asignado: tarea.asignado_a_usuario_id,
+        isAdmin,
+        isCreator,
+        isAssigned
+      });
+
+      if (!isAdmin && !isCreator && !isAssigned) {
+        logger.warn(`Usuario ${userId} sin permisos para modificar tarea ${tareaId}`);
         return {
           success: false,
           error: 'Sin permisos para modificar esta tarea',
@@ -641,11 +707,14 @@ export class TareaService {
         actualizado_el: new Date(),
       });
 
+      logger.info(`Estado de tarea ${tareaId} cambiado a ${nuevoEstado} por usuario ${userId}`);
+
       return {
         success: true,
         data: tarea,
       };
     } catch (error) {
+      logger.error('Error al cambiar estado de tarea', { error, tareaId, userId });
       return {
         success: false,
         error: 'Error al cambiar estado de tarea',

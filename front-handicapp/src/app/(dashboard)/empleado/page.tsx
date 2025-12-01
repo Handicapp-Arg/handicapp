@@ -10,6 +10,7 @@ import { useStats } from '@/lib/hooks/useStats';
 import { useEventosProximos } from '@/lib/hooks/useEventosProximos';
 import { getRoleInfo } from '@/lib/design-tokens';
 import { ClipboardCheck, Activity, Calendar, Bell, User, Circle } from 'lucide-react';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 export default function EmpleadoDashboard() {
   const { stats, loading } = useStats();
@@ -17,11 +18,7 @@ export default function EmpleadoDashboard() {
   const roleInfo = getRoleInfo('empleado');
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
-      </div>
-    );
+    return <LoadingSpinnerFullPage label="Cargando..." variant="warning" />;
   }
 
   // Stats principales usando design tokens

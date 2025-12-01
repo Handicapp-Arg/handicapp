@@ -10,6 +10,7 @@ import { useStats } from '@/lib/hooks/useStats';
 import { useEventosProximos } from '@/lib/hooks/useEventosProximos';
 import { getRoleInfo } from '@/lib/design-tokens';
 import { Users, Building2, Activity, Settings, BarChart3, Circle } from 'lucide-react';
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 export default function AdminDashboard() {
   const { stats, loading } = useStats();
@@ -17,11 +18,7 @@ export default function AdminDashboard() {
   const roleInfo = getRoleInfo('admin');
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600"></div>
-      </div>
-    );
+    return <LoadingSpinnerFullPage label="Cargando..." variant="primary" />;
   }
 
   // Stats principales
@@ -35,7 +32,7 @@ export default function AdminDashboard() {
     },
     {
       label: 'Establecimientos',
-      value: 0, // DashboardStats does not have establecimientos
+      value: stats.establecimientos?.total || 0,
       icon: Building2,
       color: 'success',
       badges: [{ label: 'Registrados', variant: 'secondary' }],
@@ -72,7 +69,7 @@ export default function AdminDashboard() {
       href: '/admin/establecimientos',
       icon: Building2,
       colorScheme: 'green',
-      count: 0, // No establecimientos in DashboardStats
+      count: stats.establecimientos?.total || 0,
     },
     {
       title: 'Reportes',
@@ -102,7 +99,7 @@ export default function AdminDashboard() {
     }>
       <div className="min-h-screen bg-gray-50">
         {/* Hero Section */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8 pt-8">
           <DashboardHero
             title={roleInfo.title}
             description={roleInfo.description}
@@ -126,7 +123,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
           {/* Stats Grid */}
           <StatsGrid stats={dashboardStats} columns={4} />
 

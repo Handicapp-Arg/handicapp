@@ -5,16 +5,25 @@ import { useRouter } from 'next/navigation';
 import { useAuthNew } from '../../../lib/hooks/useAuthNew';
 import { useSearchParams } from 'next/navigation';
 import { useToaster } from '@/components/ui/toaster';
+import { showError, showSuccess, showInfo } from '@/lib/utils/errorHandler';
 import ApiClient from '@/lib/services/apiClient';
 import AuthManager from '@/lib/auth/AuthManager';
 import { LOGOS } from '@/lib/constants/logos';
 import { Eye, EyeOff } from 'lucide-react';
 
+type FieldErrors = {
+  email?: string;
+  password?: string;
+  general?: string;
+  verification?: string;
+};
+
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
   
@@ -23,6 +32,8 @@ export default function LoginPage() {
   const params = useSearchParams();
   const checkEmail = useMemo(() => params.get('checkEmail') === '1', [params]);
   const emailParam = useMemo(() => params.get('email') || '', [params]);
+  const redirectTo = useMemo(() => params.get('redirectTo') || '', [params]);
+  const verified = useMemo(() => params.get('verified') === '1', [params]);
   const { toast } = useToaster();
   const [resending, setResending] = useState(false);
   const shownInfoRef = useRef(false);
@@ -30,7 +41,21 @@ export default function LoginPage() {
   useEffect(() => {
     // Garantiza que el primer render (SSR y primer render del cliente) sea estable
     setMounted(true);
+    
+    // Cargar email guardado si existe
+    const savedEmail = localStorage.getItem('rememberedEmail');
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
   }, []);
+
+  // Prellenar email si viene en los parámetros
+  useEffect(() => {
+    if (emailParam && mounted) {
+      setEmail(emailParam);
+    }
+  }, [emailParam, mounted]);
 
   useEffect(() => {
     if (checkEmail && !shownInfoRef.current) {
@@ -38,6 +63,14 @@ export default function LoginPage() {
       toast(`Te enviamos un correo a ${emailParam || 'tu casilla'} para verificar la cuenta.`, { type: 'info', duration: 5000 });
     }
   }, [checkEmail, emailParam, toast]);
+
+  // Mostrar mensaje de éxito si viene de verificación
+  useEffect(() => {
+    if (verified && !shownInfoRef.current && mounted) {
+      shownInfoRef.current = true;
+      toast('¡Cuenta verificada exitosamente! Ingresá tu contraseña para continuar.', { type: 'success', duration: 5000 });
+    }
+  }, [verified, mounted, toast]);
 
   const onResend = async () => {
     if (!emailParam) {
@@ -57,29 +90,72 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setFieldErrors({});
     
     if (!email || !password) {
-      setError('Por favor, complete todos los campos');
+      setFieldErrors({
+        email: !email ? 'Ingresá tu correo electrónico' : undefined,
+        password: !password ? 'Ingresá tu contraseña' : undefined,
+        general: 'Por favor, completá los campos requeridos',
+      });
+      return;
+    }
+
+    const newFieldErrors: FieldErrors = {};
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      newFieldErrors.email = 'El formato del correo no es válido';
+    }
+    if (password.length < 6) {
+      newFieldErrors.password = 'La contraseña debe tener al menos 6 caracteres';
+    }
+    if (Object.keys(newFieldErrors).length > 0) {
+      setFieldErrors({
+        ...newFieldErrors,
+        general: 'Revisá los datos ingresados antes de continuar',
+      });
       return;
     }
 
     try {
       setIsLoading(true);
       await login(email, password);
+      
+      // Guardar o eliminar email según "Recordarme"
+      if (rememberMe) {
+        localStorage.setItem('rememberedEmail', email);
+      } else {
+        localStorage.removeItem('rememberedEmail');
+      }
+      
       // Si llegamos aquí, el login fue exitoso
-      toast('Inicio de sesión exitoso', 'success');
+      showSuccess('auth', 'login', 'Inicio de sesión exitoso');
       const state = AuthManager.getInstance().getState();
       const roleKey = state.user?.rol?.clave || 'user';
-      // Redirección por rol: admin -> /admin, propietario/u otros -> home
-      if (roleKey === 'admin') {
-        router.push('/admin');
+      
+      // Si hay un redirectTo en los parámetros, usarlo (viene de verificación)
+      if (redirectTo) {
+        router.push(redirectTo);
       } else {
-        router.push('/');
+        // Redirección por rol: admin -> /admin, propietario/u otros -> home
+        if (roleKey === 'admin') {
+          router.push('/admin');
+        } else {
+          router.push('/');
+        }
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error inesperado';
-      setError(errorMessage);
+      console.error('🔐 Error de login:', err);
+      
+      const errorMessage = err instanceof Error ? err.message : 'Error inesperado al iniciar sesión';
+      const normalizedErrors = normalizeLoginError(errorMessage, email);
+      setFieldErrors(normalizedErrors);
+      
+      // Log para debugging
+      console.error('📋 Detalles del error:', {
+        original: errorMessage,
+        normalized: normalizedErrors,
+        email,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -106,11 +182,21 @@ export default function LoginPage() {
                 name="email"
                 autoComplete="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#af936f] focus:border-transparent transition-all"
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (fieldErrors.email || fieldErrors.general) {
+                    setFieldErrors((prev) => ({ ...prev, email: undefined, general: undefined }));
+                  }
+                }}
+                className={`w-full px-4 py-3 bg-white border rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                  fieldErrors.email ? 'border-red-400 focus:ring-red-300' : 'border-slate-200 focus:ring-[#af936f]'
+                }`}
                 placeholder="tu@email.com"
                 required
               />
+              {fieldErrors.email && (
+                <p className="mt-2 text-sm text-red-600">{fieldErrors.email}</p>
+              )}
             </div>
 
             <div>
@@ -123,8 +209,15 @@ export default function LoginPage() {
                   name="password"
                   autoComplete="current-password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 pr-12 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#af936f] focus:border-transparent transition-all"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (fieldErrors.password || fieldErrors.general) {
+                      setFieldErrors((prev) => ({ ...prev, password: undefined, general: undefined }));
+                    }
+                  }}
+                  className={`w-full px-4 py-3 pr-12 bg-white border rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                    fieldErrors.password ? 'border-red-400 focus:ring-red-300' : 'border-slate-200 focus:ring-[#af936f]'
+                  }`}
                   placeholder="••••••••"
                   required
                 />
@@ -141,6 +234,9 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
+              {fieldErrors.password && (
+                <p className="mt-2 text-sm text-red-600">{fieldErrors.password}</p>
+              )}
             </div>
 
             {/* Recordarme */}
@@ -148,7 +244,9 @@ export default function LoginPage() {
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 rounded border-slate-300 text-[#1e293b] focus:ring-[#af936f] focus:ring-offset-0"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-300 text-[#1e293b] focus:ring-[#af936f] focus:ring-offset-0 cursor-pointer"
                 />
                 <span className="text-sm text-slate-600">Recordarme</span>
               </label>
@@ -161,9 +259,45 @@ export default function LoginPage() {
               </button>
             </div>
 
-            {(error || authError) && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-3">
-                <p className="text-red-600 text-sm">{error || authError}</p>
+            {/* Mensaje de error general */}
+            {(fieldErrors.general || authError || fieldErrors.verification) && (
+              <div className={`rounded-xl p-4 border-2 ${
+                fieldErrors.verification 
+                  ? 'bg-blue-50 border-blue-300' 
+                  : 'bg-red-50 border-red-300'
+              }`}>
+                <div className="flex items-start gap-3">
+                  <div className={`flex-shrink-0 mt-0.5 ${
+                    fieldErrors.verification ? 'text-blue-600' : 'text-red-600'
+                  }`}>
+                    {fieldErrors.verification ? (
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className={`${
+                      fieldErrors.verification ? 'text-blue-800' : 'text-red-800'
+                    } text-sm font-medium leading-relaxed`}>
+                      {fieldErrors.verification || fieldErrors.general || authError}
+                    </p>
+                    {fieldErrors.verification && (
+                      <button
+                        type="button"
+                        onClick={onResend}
+                        disabled={resending}
+                        className="mt-3 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {resending ? 'Reenviando correo…' : 'Reenviar enlace de verificación'}
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -244,4 +378,93 @@ export default function LoginPage() {
       </div>
     </div>
   );
+}
+
+function normalizeLoginError(message: string, email: string): FieldErrors {
+  const normalized = message.toLowerCase();
+
+  // Error de credenciales incorrectas
+  if (normalized.includes('credenciales') || 
+      normalized.includes('incorrecta') || 
+      normalized.includes('inválida') ||
+      normalized.includes('no coincide') ||
+      normalized.includes('unauthorized') ||
+      normalized.includes('401')) {
+    return {
+      general: 'Email o contraseña incorrectos. Verificá los datos e intentá nuevamente.',
+      email: 'Verificá que el email sea correcto',
+      password: 'Verificá que la contraseña sea correcta',
+    };
+  }
+
+  // Usuario no encontrado
+  if (normalized.includes('no encontrado') || 
+      normalized.includes('not found') ||
+      normalized.includes('404')) {
+    return {
+      general: 'No existe una cuenta con este email. ¿Querés crear una cuenta nueva?',
+      email: 'Este email no está registrado en el sistema',
+    };
+  }
+
+  // Email no verificado
+  if (normalized.includes('no verificada') || 
+      normalized.includes('not verified') ||
+      normalized.includes('verificación')) {
+    return {
+      verification: `Tu cuenta todavía no está verificada. Revisá tu correo (${email || 'ingresado'}) o reenviá el enlace de verificación.`,
+    };
+  }
+
+  // Usuario inactivo
+  if (normalized.includes('inactivo') || 
+      normalized.includes('deshabilitado') ||
+      normalized.includes('disabled') ||
+      normalized.includes('403')) {
+    return {
+      general: 'Tu cuenta está inactiva. Contactá al administrador para reactivarla.',
+    };
+  }
+
+  // Errores de red
+  if (normalized.includes('timeout') || 
+      normalized.includes('network') ||
+      normalized.includes('conexión') ||
+      normalized.includes('fetch')) {
+    return {
+      general: 'No pudimos conectarnos con el servidor. Verificá tu conexión a internet e intentá nuevamente.',
+    };
+  }
+
+  // Campos requeridos
+  if (normalized.includes('requeridos') || 
+      normalized.includes('required') ||
+      normalized.includes('vacío')) {
+    return {
+      general: 'Por favor, ingresá tu correo electrónico y contraseña.',
+    };
+  }
+
+  // Error del servidor
+  if (normalized.includes('500') || 
+      normalized.includes('server error') ||
+      normalized.includes('error del servidor')) {
+    return {
+      general: 'Ocurrió un error en el servidor. Por favor, intentá nuevamente en unos momentos.',
+    };
+  }
+
+  // Demasiados intentos
+  if (normalized.includes('too many') || 
+      normalized.includes('demasiados intentos') ||
+      normalized.includes('429')) {
+    return {
+      general: 'Demasiados intentos de inicio de sesión. Por favor, esperá unos minutos e intentá nuevamente.',
+    };
+  }
+
+  // Error genérico con el mensaje original
+  return {
+    general: message || 'Ocurrió un error al iniciar sesión. Por favor, verificá tus credenciales e intentá nuevamente.',
+  };
 }

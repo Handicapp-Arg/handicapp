@@ -8,7 +8,6 @@ import { establecimientoService } from '@/lib/services/establecimientoService';
 import { userService } from '@/lib/services/userService';
 import { usePermissions } from '@/lib/hooks/usePermissions';
 import { Modal } from '@/components/ui/modal';
-import { logger } from '@/lib/utils/logger';
 import { Button } from '@/components/ui/button';
 
 interface TareaFormProps {
@@ -54,11 +53,12 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
     descripcion: '',
     tipo: 'otro',
     prioridad: 'media',
+    estado: 'pendiente',
     fecha_vencimiento: '',
     tiempo_estimado_minutos: 60,
     ubicacion: '',
     caballo_id: undefined,
-    establecimiento_id: undefined,
+    establecimiento_id: user?.establecimiento_id || undefined,
     asignado_a_usuario_id: undefined
   });
 
@@ -89,6 +89,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
         descripcion: tarea.descripcion || '',
         tipo: tarea.tipo || 'otro',
         prioridad: tarea.prioridad || 'media',
+        estado: tarea.estado || 'pendiente',
         fecha_vencimiento: tarea.fecha_vencimiento ? tarea.fecha_vencimiento.split('T')[0] : '',
         tiempo_estimado_minutos: tarea.tiempo_estimado_minutos || 60,
         ubicacion: tarea.ubicacion || '',
@@ -106,6 +107,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
         descripcion: '',
         tipo: 'otro',
         prioridad: 'media',
+        estado: 'pendiente',
         fecha_vencimiento: '',
         tiempo_estimado_minutos: 60,
         ubicacion: '',
@@ -346,7 +348,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
             />
           </div>
 
-          {/* Prioridad y Fecha */}
+          {/* Prioridad, Estado y Fecha */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -368,6 +370,24 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                Estado *
+              </label>
+              <select
+                name="estado"
+                value={formData.estado || 'pendiente'}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="pendiente">Pendiente</option>
+                <option value="en_progreso">En Progreso</option>
+                <option value="completada">Completada</option>
+                <option value="cancelada">Cancelada</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Fecha de Vencimiento
               </label>
               <input
@@ -378,21 +398,22 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tiempo Estimado (minutos)
-              </label>
-              <input
-                type="number"
-                name="tiempo_estimado_minutos"
-                value={formData.tiempo_estimado_minutos || 60}
-                onChange={handleChange}
-                min="5"
-                max="1440"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+          {/* Tiempo Estimado */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Tiempo Estimado (minutos)
+            </label>
+            <input
+              type="number"
+              name="tiempo_estimado_minutos"
+              value={formData.tiempo_estimado_minutos || 60}
+              onChange={handleChange}
+              min="5"
+              max="1440"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
           </div>
 
           {/* Asignación */}

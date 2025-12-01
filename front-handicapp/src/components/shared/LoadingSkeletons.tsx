@@ -1,11 +1,12 @@
+import { LoadingSpinnerCard } from '@/components/ui/loading-spinner';
+
 // Loading Skeletons para lazy loading components
 export function MapLoadingSkeleton() {
   return (
-    <div className="w-full h-[600px] bg-slate-100 dark:bg-slate-800 rounded-lg animate-pulse flex items-center justify-center">
-      <div className="text-center">
-        <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-slate-600 dark:text-slate-400">Cargando mapa...</p>
-      </div>
+    <div className="w-full h-[600px] bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center">
+      <LoadingSpinnerCard 
+        label="Cargando mapa..." 
+      />
     </div>
   );
 }

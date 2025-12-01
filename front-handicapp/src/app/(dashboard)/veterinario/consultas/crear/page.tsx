@@ -10,6 +10,7 @@ import {
   Stethoscope,
   FileText
 } from 'lucide-react';
+import { LoadingSpinnerInline } from '@/components/ui/loading-spinner';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { eventoService } from '@/lib/services/eventoService';
 import { caballoService } from '@/lib/services/caballoService';
@@ -259,7 +260,7 @@ export default function CrearConsultaPage() {
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <LoadingSpinnerInline />
                   Agendando...
                 </>
               ) : (
