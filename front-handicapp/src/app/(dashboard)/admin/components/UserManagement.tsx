@@ -64,15 +64,17 @@ export function UserManagement() {
   const [selectedRole, setSelectedRole] = useState<string>('todos');
   const [selectedEstado, setSelectedEstado] = useState<string>('todos');
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
-  const fetchUsers = useCallback(async (page = 1, search = '', roleId?: number, estado?: string) => {
+  const fetchUsers = useCallback(async (page = 1, perPage = 10, search = '', roleId?: number, estado?: string) => {
     try {
       setLoading(true);
       
       const data = search 
-        ? await ApiClient.searchUsers(search, page, 10)
-        : await ApiClient.getUsers(page, 10, { roleId, estado });
+        ? await ApiClient.searchUsers(search, page, perPage)
+        : await ApiClient.getUsers(page, perPage, { roleId, estado });
       
       const usersArray = (data as any).data?.users || [];
       
@@ -85,6 +87,7 @@ export function UserManagement() {
       
       setUsers(mappedUsers);
       setTotalPages((data as any).meta?.totalPages || (data as any).data?.totalPages || 1);
+      setTotalItems((data as any).meta?.totalItems || (data as any).data?.totalItems || usersArray.length);
     } catch (error: any) {
       console.error('Error fetching users:', error);
       setUsers([]);
@@ -124,8 +127,8 @@ export function UserManagement() {
   useEffect(() => {
     const roleId = selectedRole && selectedRole !== 'todos' ? Number(selectedRole) : undefined;
     const estado = selectedEstado && selectedEstado !== 'todos' ? selectedEstado : undefined;
-    fetchUsers(currentPage, searchTerm, roleId, estado);
-  }, [currentPage, searchTerm, selectedRole, selectedEstado, fetchUsers]);
+    fetchUsers(currentPage, itemsPerPage, searchTerm, roleId, estado);
+  }, [currentPage, itemsPerPage, searchTerm, selectedRole, selectedEstado, fetchUsers]);
 
   const handleClearFilters = () => {
     setSelectedRole('todos');
@@ -158,7 +161,7 @@ export function UserManagement() {
       
       const roleId = selectedRole && selectedRole !== 'todos' ? Number(selectedRole) : undefined;
       const estado = selectedEstado && selectedEstado !== 'todos' ? selectedEstado : undefined;
-      fetchUsers(currentPage, searchTerm, roleId, estado);
+      fetchUsers(currentPage, itemsPerPage, searchTerm, roleId, estado);
     } catch (error: any) {
       toast.error(error.message || 'Error al eliminar usuario');
     } finally {
@@ -207,7 +210,7 @@ export function UserManagement() {
       // En caso de error, recargar para asegurar consistencia
       const roleId = selectedRole && selectedRole !== 'todos' ? Number(selectedRole) : undefined;
       const estado = selectedEstado && selectedEstado !== 'todos' ? selectedEstado : undefined;
-      fetchUsers(currentPage, searchTerm, roleId, estado);
+      fetchUsers(currentPage, itemsPerPage, searchTerm, roleId, estado);
     } finally {
       setShowConfirmModal(false);
       setUserToToggle(null);
@@ -218,7 +221,7 @@ export function UserManagement() {
     setShowCreateModal(false);
     const roleId = selectedRole && selectedRole !== 'todos' ? Number(selectedRole) : undefined;
     const estado = selectedEstado && selectedEstado !== 'todos' ? selectedEstado : undefined;
-    fetchUsers(currentPage, searchTerm, roleId, estado);
+    fetchUsers(currentPage, itemsPerPage, searchTerm, roleId, estado);
   };
 
   const handleUserUpdated = () => {
@@ -226,7 +229,7 @@ export function UserManagement() {
     setSelectedUser(null);
     const roleId = selectedRole && selectedRole !== 'todos' ? Number(selectedRole) : undefined;
     const estado = selectedEstado && selectedEstado !== 'todos' ? selectedEstado : undefined;
-    fetchUsers(currentPage, searchTerm, roleId, estado);
+    fetchUsers(currentPage, itemsPerPage, searchTerm, roleId, estado);
   };
 
   // Wrapper para updateUser para mantener el contexto de ApiClient
@@ -278,8 +281,14 @@ export function UserManagement() {
   const paginationConfig: PaginationConfig = {
     currentPage,
     totalPages,
+    totalItems,
+    itemsPerPage,
     onPageChange: (page) => {
       setCurrentPage(page);
+    },
+    onItemsPerPageChange: (items) => {
+      setItemsPerPage(items);
+      setCurrentPage(1);
     },
   };
 
@@ -298,7 +307,7 @@ export function UserManagement() {
       </CardHeader>
 
       <CardContent className="px-3 sm:px-4 md:px-6">
-        {/* Filters */}
+        {/* Filters con selector de registros */}
         <UserFilters
           config={filterConfig}
           filtroEstado={selectedEstado}
@@ -306,6 +315,11 @@ export function UserManagement() {
           filtroRol={selectedRole}
           setFiltroRol={setSelectedRole}
           onClearFilters={handleClearFilters}
+          itemsPerPage={itemsPerPage}
+          onItemsPerPageChange={(items) => {
+            setItemsPerPage(items);
+            setCurrentPage(1);
+          }}
         />
 
         {/* Table */}

@@ -44,7 +44,7 @@ export default function EmpleadoDetallePage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinnerFullPage label="Cargando..." variant="success" />
+        <LoadingSpinnerFullPage label="Cargando..." />
       </div>
     );
   }
@@ -105,7 +105,11 @@ export default function EmpleadoDetallePage() {
                 <h1 className="text-3xl font-bold text-white">
                   {empleado.nombre} {empleado.apellido}
                 </h1>
-                <p className="text-emerald-200 text-lg mt-1">{empleado.puesto || 'Sin puesto asignado'}</p>
+                <p className="text-emerald-200 text-lg mt-1">
+                  {typeof empleado.puesto === 'string' 
+                    ? empleado.puesto 
+                    : empleado.puesto?.nombre || 'Sin puesto asignado'}
+                </p>
               </div>
             </div>
             <div>
@@ -205,7 +209,11 @@ export default function EmpleadoDetallePage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-gray-500">Departamento</p>
-                  <p className="font-semibold text-gray-900">{empleado.departamento}</p>
+                  <p className="font-semibold text-gray-900">
+                    {typeof empleado.departamento === 'string' 
+                      ? empleado.departamento 
+                      : empleado.departamento.nombre}
+                  </p>
                 </div>
               </div>
             )}
@@ -217,7 +225,11 @@ export default function EmpleadoDetallePage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-gray-500">Puesto</p>
-                  <p className="font-semibold text-gray-900">{empleado.puesto}</p>
+                  <p className="font-semibold text-gray-900">
+                    {typeof empleado.puesto === 'string' 
+                      ? empleado.puesto 
+                      : empleado.puesto.nombre}
+                  </p>
                 </div>
               </div>
             )}

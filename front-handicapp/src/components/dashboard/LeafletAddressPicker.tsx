@@ -20,6 +20,28 @@ const Marker = dynamic(
   () => import('react-leaflet').then((mod) => mod.Marker),
   { ssr: false }
 );
+
+interface NominatimAddress {
+  road?: string;
+  street?: string;
+  house_number?: string;
+  postcode?: string;
+  city?: string;
+  town?: string;
+  village?: string;
+  municipality?: string;
+  state?: string;
+  region?: string;
+  country?: string;
+}
+
+interface NominatimResult {
+  lat: string;
+  lon: string;
+  display_name: string;
+  address?: NominatimAddress;
+}
+
 interface AddressData {
   direccion_calle: string;
   direccion_numero?: string;
@@ -72,7 +94,7 @@ const MapController = dynamic(
         }, 100);
         
         return () => clearTimeout(timer);
-      }, [center[0], center[1], zoom, map]);
+      }, [center, zoom, map]);
       
       return null;
     };
@@ -87,7 +109,7 @@ const MapClickHandler = dynamic(
     const { useMapEvents } = mod;
     const MapClickHandlerComponent = ({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) => {
       useMapEvents({
-        click: (e: any) => {
+        click: (e) => {
           onMapClick(e.latlng.lat, e.latlng.lng);
         },
       });
@@ -116,7 +138,7 @@ function DraggableMarker({
 
   const eventHandlers = useMemo(
     () => ({
-      dragend: (e: any) => {
+      dragend: (e: { target: { getLatLng: () => { lat: number; lng: number } } }) => {
         const marker = e.target;
         const newPosition = marker.getLatLng();
         setMarkerPosition([newPosition.lat, newPosition.lng]);
@@ -142,12 +164,15 @@ export const LeafletAddressPicker: React.FC<LeafletAddressPickerProps> = ({
 }) => {
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<NominatimResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   // Si ya hay ciudad/provincia/pais, asumimos que se seleccionó una dirección
   const [hasSelectedAddress, setHasSelectedAddress] = useState(
     !!(value?.ciudad || value?.provincia || value?.pais)
   );
+  
+  // ID único para este componente (evita conflictos de re-uso del contenedor)
+  const mapId = useMemo(() => `map-${Math.random().toString(36).substr(2, 9)}`, []);
   
   // Inicializar centro del mapa de forma segura
   const getInitialCenter = useCallback((): [number, number] => {
@@ -236,16 +261,17 @@ export const LeafletAddressPicker: React.FC<LeafletAddressPickerProps> = ({
       if (data && data.address) {
         const addr = data.address;
         
-        // Solo extraer ciudad, provincia, país y código postal
-        // Mantener calle y número actuales o dejarlos vacíos
+        // Extraer toda la información de dirección
+        const road = addr.road || addr.street || '';
+        const houseNumber = addr.house_number || '';
         const codigo_postal = addr.postcode || '';
         const ciudad = addr.city || addr.town || addr.village || addr.municipality || '';
         const provincia = addr.state || addr.region || '';
         const pais = addr.country || 'Argentina';
 
         onChange({
-          direccion_calle: value?.direccion_calle || '',
-          direccion_numero: value?.direccion_numero || '',
+          direccion_calle: road || '',
+          direccion_numero: houseNumber || '',
           codigo_postal: codigo_postal || undefined,
           ciudad: ciudad || undefined,
           provincia: provincia || undefined,
@@ -261,10 +287,10 @@ export const LeafletAddressPicker: React.FC<LeafletAddressPickerProps> = ({
     } catch (error) {
       console.error('Error en geocodificación inversa:', error);
     }
-  }, [onChange, value]);
+  }, [onChange]);
 
   // Manejar selección de resultado de búsqueda
-  const handleSelectResult = useCallback((result: any) => {
+  const handleSelectResult = useCallback((result: NominatimResult) => {
     const lat = parseFloat(result.lat);
     const lng = parseFloat(result.lon);
     
@@ -274,16 +300,19 @@ export const LeafletAddressPicker: React.FC<LeafletAddressPickerProps> = ({
     }
     
     const addr = result.address || {};
-    // Solo extraer ciudad, provincia y país - calle y número se dejan para que el usuario complete
+    
+    // Extraer la calle y número del resultado
+    const road = addr.road || addr.street || '';
+    const houseNumber = addr.house_number || '';
     const codigo_postal = addr.postcode || '';
     const ciudad = addr.city || addr.town || addr.village || addr.municipality || '';
     const provincia = addr.state || addr.region || '';
     const pais = addr.country || 'Argentina';
 
-    // Mantener los valores actuales de calle y número si existen, o dejarlos vacíos
+    // Actualizar con los valores del resultado seleccionado
     onChange({
-      direccion_calle: value?.direccion_calle || '',
-      direccion_numero: value?.direccion_numero || '',
+      direccion_calle: road || '',
+      direccion_numero: houseNumber || '',
       codigo_postal: codigo_postal || undefined,
       ciudad: ciudad || undefined,
       provincia: provincia || undefined,
@@ -295,9 +324,13 @@ export const LeafletAddressPicker: React.FC<LeafletAddressPickerProps> = ({
     setHasSelectedAddress(true);
     setMapCenter([lat, lng]);
     setMapZoom(15);
-    setSearchQuery(result.display_name);
+    
+    // Limpiar el buscador después de seleccionar para que quede limpio
+    setSearchQuery('');
+    
+    // Cerrar el dropdown
     setSearchResults([]);
-  }, [onChange, value]);
+  }, [onChange]);
 
   // Manejar clic en el mapa
   const handleMapClick = useCallback((lat: number, lng: number) => {
@@ -428,7 +461,7 @@ export const LeafletAddressPicker: React.FC<LeafletAddressPickerProps> = ({
         <div className="relative mt-1">
           <Input
             id="address-input"
-            value={searchQuery || value?.direccion_calle || ''}
+            value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Escribe una dirección o haz clic en el mapa"
             className="pr-10"
@@ -568,6 +601,7 @@ export const LeafletAddressPicker: React.FC<LeafletAddressPickerProps> = ({
         <Label className="text-sm font-medium text-gray-700 mb-2 block">Mapa</Label>
         <div className="w-full h-64 rounded-lg border border-gray-300 overflow-hidden">
           <MapContainer
+            key={mapId}
             center={mapCenter}
             zoom={mapZoom}
             style={{ height: '100%', width: '100%' }}

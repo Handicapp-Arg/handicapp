@@ -77,20 +77,26 @@ export interface JwtPayload {
 
 export interface CreateEstablecimientoData {
   nombre: string;
-  direccion: string;
-  telefono?: string;
-  email?: string;
-  descripcion?: string;
-  creadoPorUsuarioId: number;
-  // Campos opcionales del modelo
   cuit?: string;
+  direccion_calle?: string;
   direccion_numero?: string;
   direccion_complemento?: string;
   codigo_postal?: string;
   ciudad?: string;
   provincia?: string;
   pais?: string;
+  latitud?: number;
+  longitud?: number;
+  telefono?: string;
+  email?: string;
+  descripcion?: string;
   disciplina_principal?: string;
+  tipo_establecimiento?: string;
+  estado?: string;
+  superficie_hectareas?: number;
+  cantidad_boxes?: number;
+  servicios?: string[];
+  creadoPorUsuarioId: number;
 }
 
 export interface CreateCaballoData {
@@ -167,6 +173,9 @@ export interface UpdateUserData {
   apellido?: string;
   email?: string;
   telefono?: string;
+  documento?: string;
+  departamento_id?: number;
+  puesto_id?: number;
   ubicacion?: string;
   avatar_url?: string;
   rol_id?: number;

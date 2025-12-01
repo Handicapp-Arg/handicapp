@@ -18,6 +18,7 @@ export interface UserData {
   avatar_url?: string | null;
   ubicacion?: string | null;
   establecimiento_id?: number;
+  establecimiento_nombre?: string;
   ultimo_acceso_el?: string | null;
   rol: {
     id: number;
@@ -299,8 +300,8 @@ class AuthManager {
 
       const data = await response.json();
       
-      if (data?.data?.user) {
-        const user = data.data.user;
+      if (data?.data) {
+        const user = data.data;
         this.saveAuthData(token, user);
         this.updateState({ user });
       }

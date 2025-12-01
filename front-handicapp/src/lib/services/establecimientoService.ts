@@ -4,29 +4,42 @@ import { showError, showSuccess, parseError } from '@/lib/utils/errorHandler';
 export interface Establecimiento {
   id: number;
   nombre: string;
-  direccion: string;
+  cuit?: string;
+  // Dirección estructurada
+  direccion_calle?: string;
+  direccion_numero?: string;
+  direccion_complemento?: string;
+  codigo_postal?: string;
+  ciudad?: string;
+  provincia?: string;
+  pais?: string;
+  latitud?: number | null;
+  longitud?: number | null;
+  // Contacto
   telefono?: string;
   email?: string;
-  tipo_establecimiento: 'haras' | 'polo' | 'salto' | 'doma' | 'turf' | 'mixto';
+  // Detalles
+  tipo_establecimiento?: 'haras' | 'polo' | 'salto' | 'doma' | 'turf' | 'enduro' | 'mixto' | 'otro';
+  estado?: 'activo' | 'inactivo' | 'mantenimiento' | 'suspendido';
   superficie_hectareas?: number;
   cantidad_boxes?: number;
   cantidad_paddocks?: number;
-  servicios_disponibles?: string[];
-  estado: 'activo' | 'inactivo' | 'mantenimiento';
-  creado_el: string;
-  actualizado_el: string;
-  propietario_id: number;
-  // Nuevos campos
-  latitud?: number | null;
-  longitud?: number | null;
+  disciplina_principal?: string;
   descripcion?: string | null;
+  // Media & Ratings
   imagenes?: string[];
+  logo_url?: string | null;
   rating_promedio?: number;
   total_resenas?: number;
   verificado?: boolean;
-  logo_url?: string | null;
-  ciudad?: string | null;
-  provincia?: string | null;
+  // Servicios
+  servicios?: string[];
+  servicios_disponibles?: string[];
+  // Metadata
+  creado_el: string;
+  actualizado_el: string;
+  propietario_id?: number;
+  // Relaciones
   usuarios?: any[];
   caballos?: any[];
   // Campos para propietarios (backend los agrega)
@@ -46,11 +59,29 @@ export interface Establecimiento {
 
 export interface CreateEstablecimientoData {
   nombre: string;
-  cuit: string;
+  cuit?: string;
   direccion_calle?: string;
+  direccion_numero?: string;
+  direccion_complemento?: string;
+  codigo_postal?: string;
+  ciudad?: string;
+  provincia?: string;
+  pais?: string;
+  latitud?: number;
+  longitud?: number;
+  descripcion?: string;
   telefono?: string;
   email?: string;
-  estado?: 'activo' | 'inactivo' | 'mantenimiento';
+  tipo_establecimiento?: string;
+  estado?: string;
+  superficie_hectareas?: number;
+  cantidad_boxes?: number;
+  servicios?: string[];
+  disciplina_principal?: string;
+  admin_email?: string;
+  admin_password?: string;
+  admin_nombre?: string;
+  admin_apellido?: string;
 }
 
 export interface EstablecimientoFilters {

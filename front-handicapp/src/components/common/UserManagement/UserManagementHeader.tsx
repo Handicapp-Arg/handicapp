@@ -10,10 +10,9 @@ export function UserManagementHeader({
   onCreateClick,
   createButtonLabel = 'Crear Usuario',
   searchPlaceholder = 'Buscar por nombre o email...',
-  primaryColor = '#0f172a'
 }: UserManagementHeaderProps) {
   
-  const buttonBg = primaryColor === '#059669' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-[#0f172a] hover:bg-[#0f172a]/90';
+  const buttonBg = 'bg-blue-600 hover:bg-blue-700';
   
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4">
@@ -32,9 +31,9 @@ export function UserManagementHeader({
       {/* Botón Crear */}
       <button
         onClick={onCreateClick}
-        className={`inline-flex items-center justify-center gap-2 px-6 py-3 ${buttonBg} text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5`}
+        className={`inline-flex items-center justify-center gap-2 px-4 py-2 ${buttonBg} text-white rounded-lg font-medium transition-colors text-sm`}
       >
-        <UserPlus className="w-5 h-5" />
+        <UserPlus className="w-4 h-4" />
         {createButtonLabel}
       </button>
     </div>

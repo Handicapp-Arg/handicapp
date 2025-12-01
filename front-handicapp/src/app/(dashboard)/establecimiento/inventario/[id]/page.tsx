@@ -22,20 +22,16 @@ export default function DetalleProductoPage() {
 
   const loadProducto = async () => {
     try {
-      console.log('🔵 CARGANDO PRODUCTO - ID:', params.id);
       setLoading(true);
       const data = await inventarioService.getProducto(Number(params.id));
-      console.log('🔵 PRODUCTO RECIBIDO:', data);
       
       if (data) {
         setProducto(data);
       } else {
-        console.error('❌ Producto no encontrado');
         toast.error('Producto no encontrado');
         window.location.href = '/establecimiento/inventario';
       }
-    } catch (error) {
-      console.error('❌ Error loading producto:', error);
+    } catch {
       toast.error('Error al cargar el producto');
     } finally {
       setLoading(false);

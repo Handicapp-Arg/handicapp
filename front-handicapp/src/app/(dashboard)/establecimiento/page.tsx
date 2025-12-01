@@ -18,7 +18,7 @@ export default function EstablecimientoDashboard() {
   const roleInfo = getRoleInfo('establecimiento');
 
   if (loading) {
-    return <LoadingSpinnerFullPage label="Cargando..." variant="success" />;
+    return <LoadingSpinnerFullPage label="Cargando..." />;
   }
 
   // Stats principales

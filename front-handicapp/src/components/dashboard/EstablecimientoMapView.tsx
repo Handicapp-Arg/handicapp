@@ -384,7 +384,8 @@ export function EstablecimientoMapView() {
                   
                   // Obtener icono personalizado según tipo
                   const customIcons = (window as { customIcons?: Record<string, unknown> }).customIcons;
-                  const icon = customIcons?.[establecimiento.tipo_establecimiento] || customIcons?.default;
+                  const tipoIcon = establecimiento.tipo_establecimiento || 'default';
+                  const icon = customIcons?.[tipoIcon] || customIcons?.default;
                   
                   return (
                     <Marker
@@ -430,7 +431,9 @@ export function EstablecimientoMapView() {
                           <div className="flex items-start gap-2 mb-3">
                             <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
                             <span className="text-xs text-gray-600 line-clamp-2">
-                              {[establecimiento.ciudad, establecimiento.provincia].filter(Boolean).join(', ') || establecimiento.direccion}
+                              {[establecimiento.direccion_calle, establecimiento.ciudad, establecimiento.provincia]
+                                .filter(Boolean)
+                                .join(', ') || 'Sin dirección'}
                             </span>
                           </div>
                           
@@ -541,7 +544,11 @@ function EstablecimientoCard({
             </h3>
             <div className={`flex items-center gap-1.5 text-gray-500 ${compact ? 'text-xs' : 'text-xs'}`}>
               <MapPin className={`flex-shrink-0 ${compact ? 'h-3 w-3' : 'h-3.5 w-3.5'}`} />
-              <span className="line-clamp-1">{establecimiento.direccion}</span>
+              <span className="line-clamp-1">
+                {[establecimiento.direccion_calle, establecimiento.ciudad]
+                  .filter(Boolean)
+                  .join(', ') || 'Sin dirección'}
+              </span>
             </div>
           </div>
           {establecimiento.verificado && (

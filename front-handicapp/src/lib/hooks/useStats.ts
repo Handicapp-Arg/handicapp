@@ -62,7 +62,8 @@ export function useStats() {
     if (!authLoading && isAuthenticated) {
       fetchStats();
     }
-  }, [authLoading, isAuthenticated, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, isAuthenticated]);
 
   const fetchStats = async () => {
     try {

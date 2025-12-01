@@ -253,8 +253,8 @@ export default function PropietarioNotificacionesPage() {
                     highlightId === notif.id
                       ? 'bg-blue-50 border-blue-400 ring-2 ring-blue-200 animate-pulse'
                       : notif.leida
-                      ? 'bg-gray-50 border-gray-200'
-                      : 'bg-blue-50 border-blue-200'
+                      ? 'bg-white border-gray-200 hover:bg-gray-50'
+                      : 'bg-blue-50/50 border-blue-200 border-l-4 border-l-blue-600 hover:bg-blue-50'
                   }`}
                 >
                   <div className="flex items-start justify-between">

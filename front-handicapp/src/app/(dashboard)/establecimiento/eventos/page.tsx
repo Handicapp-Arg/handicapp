@@ -30,7 +30,7 @@ export default function EstablecimientoEventosPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinnerFullPage label="Cargando..." variant="success" />
+        <LoadingSpinnerFullPage label="Cargando..." />
       </div>
     );
   }

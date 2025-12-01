@@ -21,7 +21,10 @@ export interface BaseUser {
 export interface PaginationConfig {
   currentPage: number;
   totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
   onPageChange: (page: number) => void;
+  onItemsPerPageChange: (items: number) => void;
 }
 
 export interface UserStatsConfig {
@@ -82,6 +85,8 @@ export interface UserFiltersProps {
   filtroDepartamento?: string;
   setFiltroDepartamento?: (value: string) => void;
   onClearFilters?: () => void;
+  itemsPerPage?: number;
+  onItemsPerPageChange?: (items: number) => void;
 }
 
 export interface UserManagementHeaderProps {

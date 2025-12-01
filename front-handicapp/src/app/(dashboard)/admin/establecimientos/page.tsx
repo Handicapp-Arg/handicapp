@@ -118,14 +118,15 @@ export default function AdminEstablecimientosPage() {
                 <div>
                   <h1 className="text-3xl font-bold text-white mb-2">{est.nombre}</h1>
                   <div className="flex items-center gap-4 text-white/70 text-sm">
-                    {est.direccion && (
+                    {(est.direccion_calle || est.ciudad) && (
                       <div className="flex items-center gap-1.5">
                         <MapPin className="w-4 h-4" />
-                        <span>{est.direccion}</span>
+                        <span>
+                          {[est.direccion_calle, est.ciudad, est.provincia]
+                            .filter(Boolean)
+                            .join(', ')}
+                        </span>
                       </div>
-                    )}
-                    {est.ciudad && est.provincia && (
-                      <span>{est.ciudad}, {est.provincia}</span>
                     )}
                   </div>
                 </div>
@@ -204,20 +205,25 @@ export default function AdminEstablecimientosPage() {
               )}
 
               {/* Información de contacto */}
-              {(est.telefono || est.email || est.direccion) && (
+              {(est.telefono || est.email || est.direccion_calle || est.ciudad) && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">Contacto y Ubicación</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    {est.direccion && (
+                    {(est.direccion_calle || est.ciudad) && (
                       <div className="flex items-start gap-2 text-gray-700">
                         <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                         <div>
-                          <span className="block">{est.direccion}</span>
-                          {(est.ciudad || est.provincia) && (
+                          {est.direccion_calle && (
+                            <span className="block">
+                              {[est.direccion_calle, est.direccion_numero].filter(Boolean).join(' ')}
+                              {est.direccion_complemento && ` (${est.direccion_complemento})`}
+                            </span>
+                          )}
+                          {(est.ciudad || est.provincia || est.codigo_postal) && (
                             <span className="text-sm text-gray-500">
-                              {[est.ciudad, est.provincia].filter(Boolean).join(', ')}
+                              {[est.codigo_postal, est.ciudad, est.provincia, est.pais].filter(Boolean).join(', ')}
                             </span>
                           )}
                         </div>

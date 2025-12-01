@@ -145,6 +145,23 @@ export const userValidations = {
       .matches(/^[\+]?[\d\s\-\(\)]{7,20}$/)
       .withMessage('Teléfono debe ser un número válido'),
     
+    body('documento')
+      .optional()
+      .isString()
+      .trim()
+      .isLength({ max: 50 })
+      .withMessage('Documento debe tener máximo 50 caracteres'),
+    
+    body('departamento_id')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('Departamento debe ser un ID válido'),
+    
+    body('puesto_id')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('Puesto debe ser un ID válido'),
+    
     body('rol_id')
       .isInt({ min: 1 })
       .withMessage('Rol es requerido y debe ser válido'),
@@ -184,6 +201,23 @@ export const userValidations = {
       .optional()
       .matches(/^[\+]?[\d\s\-\(\)]{7,20}$/)
       .withMessage('Teléfono debe ser un número válido'),
+    
+    body('documento')
+      .optional()
+      .isString()
+      .trim()
+      .isLength({ max: 50 })
+      .withMessage('Documento debe tener máximo 50 caracteres'),
+    
+    body('departamento_id')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('Departamento debe ser un ID válido'),
+    
+    body('puesto_id')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('Puesto debe ser un ID válido'),
 
     handleValidationErrors
   ],

@@ -1,6 +1,8 @@
 import { Op } from 'sequelize';
 import { User } from '../models/User';
 import { Role } from '../models/roles';
+import { Departamento } from '../models/Departamento';
+import { Puesto } from '../models/Puesto';
 import { UpdateUserData, ServiceResponse } from '../types';
 import { NotFoundError, ConflictError } from '../utils/errors';
 
@@ -47,11 +49,23 @@ export class UserService {
       const { count, rows } = await User.findAndCountAll({
         where: whereConditions,
         attributes: { exclude: ['hash_contrasena'] },
-        include: [{
-          model: Role,
-          as: 'rol',
-          attributes: ['id', 'nombre', 'clave']
-        }],
+        include: [
+          {
+            model: Role,
+            as: 'rol',
+            attributes: ['id', 'nombre', 'clave']
+          },
+          {
+            model: Departamento,
+            as: 'departamento',
+            attributes: ['id', 'nombre']
+          },
+          {
+            model: Puesto,
+            as: 'puesto',
+            attributes: ['id', 'nombre']
+          }
+        ],
         limit,
         offset,
         order: [[sortBy, sortOrder]],
@@ -78,11 +92,23 @@ export class UserService {
     try {
       const user = await User.findByPk(userId, {
         attributes: { exclude: ['hash_contrasena'] },
-        include: [{
-          model: Role,
-          as: 'rol',
-          attributes: ['id', 'nombre', 'clave']
-        }]
+        include: [
+          {
+            model: Role,
+            as: 'rol',
+            attributes: ['id', 'nombre', 'clave']
+          },
+          {
+            model: Departamento,
+            as: 'departamento',
+            attributes: ['id', 'nombre']
+          },
+          {
+            model: Puesto,
+            as: 'puesto',
+            attributes: ['id', 'nombre']
+          }
+        ]
       });
 
       if (!user) {

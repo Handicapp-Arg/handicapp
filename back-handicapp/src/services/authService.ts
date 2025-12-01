@@ -309,11 +309,19 @@ export class AuthService {
       // Buscar usuario con rol y contraseña
       const user = await User.scope('withSecret').findOne({
         where: { email },
-        include: [{
-          model: Role,
-          as: 'rol',
-          attributes: ['id', 'nombre', 'clave']
-        }]
+        include: [
+          {
+            model: Role,
+            as: 'rol',
+            attributes: ['id', 'nombre', 'clave']
+          },
+          {
+            model: require('../models/Establecimiento').Establecimiento,
+            as: 'establecimiento',
+            attributes: ['id', 'nombre'],
+            required: false
+          }
+        ]
       });
 
       if (!user) {
@@ -357,6 +365,8 @@ export class AuthService {
         email: user.email,
         nombre: user.nombre,
         apellido: user.apellido,
+        establecimiento_id: user.establecimiento_id || undefined,
+        establecimiento_nombre: (user as any).establecimiento?.nombre || undefined,
         rol: {
           id: user.rol?.id || 0,
           nombre: user.rol?.nombre || 'Usuario',

@@ -2,20 +2,18 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
-import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Users, Shield, Trash2, UserX, UserPlus } from 'lucide-react';
+import { Trash2, UserX, UserPlus } from 'lucide-react';
 import {
   gestionPersonalService,
   Empleado,
-  EstadisticasPersonal,
 } from '@/lib/gestionPersonalService';
 import { toast } from 'react-hot-toast';
 import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 import { CreateEmpleadoModal, EditEmpleadoModal } from '@/components/common/EmpleadoModal';
 import { 
   UserManagementTable, 
-  UserStatsCards, 
   UserFilters,
   UserManagementHeader,
   type BaseUser,
@@ -25,12 +23,13 @@ import {
 
 export default function EstablecimientoPersonalPage() {
   const [empleados, setEmpleados] = useState<Empleado[]>([]);
-  const [estadisticas, setEstadisticas] = useState<EstadisticasPersonal | null>(null);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<string>('todos');
   const [filtroPuesto, setFiltroPuesto] = useState<string>('todos');
   const [filtroDepartamento, setFiltroDepartamento] = useState<string>('todos');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [modalNuevo, setModalNuevo] = useState(false);
   const [modalEditar, setModalEditar] = useState(false);
   const [modalConfirm, setModalConfirm] = useState(false);
@@ -48,14 +47,8 @@ export default function EstablecimientoPersonalPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [empData, estData] = await Promise.all([
-        gestionPersonalService.getEmpleados(),
-        gestionPersonalService.getEstadisticasPersonal(),
-      ]);
-      console.log('Empleados obtenidos:', empData);
-      console.log('Estadísticas obtenidas:', estData);
+      const empData = await gestionPersonalService.getEmpleados();
       setEmpleados(empData || []);
-      setEstadisticas(estData || null);
     } catch (error) {
       console.error('Error loading data:', error);
       // No mostrar error, el servicio maneja fallback a mock
@@ -157,30 +150,18 @@ export default function EstablecimientoPersonalPage() {
     setEmpleadoAEliminar(null);
   };
 
-  const stats = useMemo(() => {
-    // Calcular departamentos únicos de los empleados
-    const departamentosUnicos = new Set(
-      empleados
-        .map(emp => emp.departamento)
-        .filter(Boolean) // Eliminar nulls/undefined
-    );
-    
-    return {
-      total: estadisticas?.total_empleados || 0,
-      activos: estadisticas?.empleados_activos || 0,
-      departamentos: departamentosUnicos.size, // Número de departamentos/áreas únicas
-      nuevos: estadisticas?.nuevos_mes || 0,
-    };
-  }, [estadisticas, empleados]);
-
   // Obtener listas únicas de puestos y departamentos
   const puestosUnicos = useMemo(() => {
-    const puestos = empleados.map(emp => emp.puesto).filter((p): p is string => !!p);
+    const puestos = empleados
+      .map(emp => emp.puesto?.nombre)
+      .filter((p): p is string => !!p);
     return Array.from(new Set(puestos)).sort();
   }, [empleados]);
 
   const departamentosUnicos = useMemo(() => {
-    const departamentos = empleados.map(emp => emp.departamento).filter((d): d is string => !!d);
+    const departamentos = empleados
+      .map(emp => emp.departamento?.nombre)
+      .filter((d): d is string => !!d);
     return Array.from(new Set(departamentos)).sort();
   }, [empleados]);
 
@@ -203,12 +184,12 @@ export default function EstablecimientoPersonalPage() {
     
     // Filtro por puesto
     if (filtroPuesto !== 'todos') {
-      filtered = filtered.filter(emp => emp.puesto === filtroPuesto);
+      filtered = filtered.filter(emp => emp.puesto?.nombre === filtroPuesto);
     }
     
     // Filtro por departamento
     if (filtroDepartamento !== 'todos') {
-      filtered = filtered.filter(emp => emp.departamento === filtroDepartamento);
+      filtered = filtered.filter(emp => emp.departamento?.nombre === filtroDepartamento);
     }
     
     return filtered;
@@ -224,10 +205,26 @@ export default function EstablecimientoPersonalPage() {
       telefono: emp.telefono,
       estado: emp.estado === 'activo' ? 'activo' : 'inactivo',
       rol: emp.rol_nombre,
-      puesto: emp.puesto,
-      departamento: emp.departamento,
+      puesto: emp.puesto?.nombre,
+      departamento: emp.departamento?.nombre,
     }));
   }, [empleadosFiltrados]);
+
+  // Paginación
+  const totalItems = empleadosAsBaseUsers.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const empleadosPaginados = empleadosAsBaseUsers.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (items: number) => {
+    setItemsPerPage(items);
+    setCurrentPage(1);
+  };
 
   // Configuración de filtros para establecimiento
   const filterConfig: FilterConfig = {
@@ -260,29 +257,23 @@ export default function EstablecimientoPersonalPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinnerFullPage label="Cargando..." variant="success" />
+        <LoadingSpinnerFullPage label="Cargando..." />
       </div>
     );
   }
 
   return (
     <SimpleRoleGuard roles={['establecimiento']}>
-      <div className="space-y-4 sm:space-y-6">
-        {/* Stats Grid */}
-        <UserStatsCards
-          total={stats.total}
-          activos={stats.activos}
-          metric3={stats.departamentos}
-          nuevos={stats.nuevos}
-          metric3Label="Áreas / Departamentos"
-          metric3Icon={Shield}
-          metric3Badge={stats.departamentos === 0 ? 'Sin áreas asignadas' : stats.departamentos === 1 ? '1 Área activa' : `${stats.departamentos} Áreas activas`}
-          primaryColor="#059669"
-        />
-
+      <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
         {/* Content Card */}
-        <Card className="rounded-xl sm:rounded-2xl shadow-xl">
-          <CardHeader className="px-4 sm:px-6">
+        <Card className="rounded-lg border border-gray-200 shadow-sm">
+          <CardHeader className="px-4 sm:px-6 space-y-4">
+            {/* Título */}
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">Personal del Establecimiento</h2>
+              <p className="text-sm text-gray-600 mt-1">Gestiona y administra el personal de tu establecimiento</p>
+            </div>
+            
             {/* Header con Buscador y Botón */}
             <UserManagementHeader
               searchTerm={busqueda}
@@ -294,7 +285,7 @@ export default function EstablecimientoPersonalPage() {
             />
           </CardHeader>
           <CardContent className="px-3 sm:px-4 md:px-6">
-            {/* Filters */}
+            {/* Filters con selector de registros */}
             <UserFilters
               config={filterConfig}
               filtroEstado={filtroEstado}
@@ -304,11 +295,13 @@ export default function EstablecimientoPersonalPage() {
               filtroDepartamento={filtroDepartamento}
               setFiltroDepartamento={setFiltroDepartamento}
               onClearFilters={handleClearFilters}
+              itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
             />
 
             {/* Table */}
             <UserManagementTable
-              users={empleadosAsBaseUsers}
+              users={empleadosPaginados}
               loading={loading}
               emptyMessage="No se encontraron empleados"
               actions={actionConfig}
@@ -320,6 +313,14 @@ export default function EstablecimientoPersonalPage() {
               onToggleStatus={handleToggleWrapper}
               onDelete={handleDeleteWrapper}
               primaryColor="#059669"
+              pagination={{
+                currentPage,
+                totalPages,
+                totalItems,
+                itemsPerPage,
+                onPageChange: handlePageChange,
+                onItemsPerPageChange: handleItemsPerPageChange,
+              }}
             />
           </CardContent>
         </Card>
@@ -331,7 +332,7 @@ export default function EstablecimientoPersonalPage() {
           onEmpleadoCreated={handleEmpleadoCreated}
           roles={roles}
           createEmpleadoFn={gestionPersonalService.crearEmpleado}
-          primaryColor="#059669"
+          primaryColor="#2563eb"
         />
 
         <EditEmpleadoModal

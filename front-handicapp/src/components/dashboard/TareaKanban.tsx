@@ -3,8 +3,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useAuthNew } from '@/lib/hooks/useAuthNew';
 import { tareaService, type Tarea } from '@/lib/services/tareaService';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { TareaForm } from './TareaForm';
 import { usePermissions } from '@/lib/hooks/usePermissions';
 import { 
@@ -17,15 +15,11 @@ import {
   MapPin, 
   User, 
   Calendar,
-  FileText,
-  Timer,
   PlayCircle,
   Sparkles,
-  MoreVertical,
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
-import { logger } from '@/lib/utils/logger';
 import toast from 'react-hot-toast';
 
 interface TareaKanbanProps {
@@ -59,8 +53,9 @@ export function TareaKanban({ tareas: tareasProp }: TareaKanbanProps) {
   const [localTareas, setLocalTareas] = useState<Tarea[]>([]);
   const [expandedColumns, setExpandedColumns] = useState<Set<string>>(new Set(['open'])); // Por defecto abierta la primera
   const [isMobile, setIsMobile] = useState(false);
-  const { isAuthenticated, isLoading: authLoading, user } = useAuthNew();
-  const { canCreateTasks, canDeleteTasks, hasPermission } = usePermissions();
+  const [activeView, setActiveView] = useState<'all' | 'open' | 'in_progress' | 'completed'>('all');
+  const { user } = useAuthNew();
+  const { canCreateTasks, canDeleteTasks } = usePermissions();
 
   // Detectar si es mobile
   useEffect(() => {
@@ -86,7 +81,43 @@ export function TareaKanban({ tareas: tareasProp }: TareaKanbanProps) {
       estadoNormalizado: normalizeEstado(t.estado)
     }));
 
-    const filtered = normalized.filter((t: any) => {
+    // Filtrar por búsqueda
+    const filteredBySearch = normalized.filter((t: any) => {
+      if (!searchTerm) return true;
+      const search = searchTerm.toLowerCase();
+      return (
+        t.titulo?.toLowerCase().includes(search) ||
+        t.descripcion?.toLowerCase().includes(search) ||
+        t.tipo?.toLowerCase().includes(search)
+      );
+    });
+
+    // Filtrar por vista activa
+    let filtered = filteredBySearch;
+    if (activeView === 'open') {
+      filtered = filteredBySearch.filter((t: any) => t.estadoNormalizado === 'open');
+    } else if (activeView === 'in_progress') {
+      filtered = filteredBySearch.filter((t: any) => t.estadoNormalizado === 'in_progress');
+    } else if (activeView === 'completed') {
+      filtered = filteredBySearch.filter((t: any) => t.estadoNormalizado === 'done');
+    }
+
+    return {
+      open: filtered.filter((t: any) => t.estadoNormalizado === 'open'),
+      in_progress: filtered.filter((t: any) => t.estadoNormalizado === 'in_progress'),
+      done: filtered.filter((t: any) => t.estadoNormalizado === 'done'),
+      cancelled: filtered.filter((t: any) => t.estadoNormalizado === 'cancelled'),
+    };
+  }, [localTareas, searchTerm, activeView]);
+
+  // Calcular contadores para los tabs (sin filtro de vista, solo búsqueda)
+  const viewCounts = useMemo(() => {
+    const normalized = localTareas.map((t: any) => ({
+      ...t,
+      estadoNormalizado: normalizeEstado(t.estado)
+    }));
+
+    const filteredBySearch = normalized.filter((t: any) => {
       if (!searchTerm) return true;
       const search = searchTerm.toLowerCase();
       return (
@@ -97,10 +128,10 @@ export function TareaKanban({ tareas: tareasProp }: TareaKanbanProps) {
     });
 
     return {
-      open: filtered.filter((t: any) => t.estadoNormalizado === 'open'),
-      in_progress: filtered.filter((t: any) => t.estadoNormalizado === 'in_progress'),
-      done: filtered.filter((t: any) => t.estadoNormalizado === 'done'),
-      cancelled: filtered.filter((t: any) => t.estadoNormalizado === 'cancelled'),
+      all: filteredBySearch.length,
+      open: filteredBySearch.filter(t => t.estadoNormalizado === 'open').length,
+      in_progress: filteredBySearch.filter(t => t.estadoNormalizado === 'in_progress').length,
+      completed: filteredBySearch.filter(t => t.estadoNormalizado === 'done').length
     };
   }, [localTareas, searchTerm]);
 
@@ -420,6 +451,86 @@ export function TareaKanban({ tareas: tareasProp }: TareaKanbanProps) {
 
   return (
     <div className="p-6">
+      {/* Tabs de Filtro con Contadores */}
+      <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2 sm:pb-0">
+        <button
+          onClick={() => setActiveView('all')}
+          className={`px-4 py-2 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${
+            activeView === 'all'
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          Todas
+          {viewCounts.all > 0 && (
+            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${
+              activeView === 'all'
+                ? 'bg-blue-700 text-white'
+                : 'bg-gray-200 text-gray-700'
+            }`}>
+              {viewCounts.all}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveView('open')}
+          className={`px-4 py-2 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${
+            activeView === 'open'
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          Abiertas
+          {viewCounts.open > 0 && (
+            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${
+              activeView === 'open'
+                ? 'bg-blue-700 text-white'
+                : 'bg-gray-200 text-gray-700'
+            }`}>
+              {viewCounts.open}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveView('in_progress')}
+          className={`px-4 py-2 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${
+            activeView === 'in_progress'
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          En Progreso
+          {viewCounts.in_progress > 0 && (
+            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${
+              activeView === 'in_progress'
+                ? 'bg-blue-700 text-white'
+                : 'bg-gray-200 text-gray-700'
+            }`}>
+              {viewCounts.in_progress}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveView('completed')}
+          className={`px-4 py-2 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${
+            activeView === 'completed'
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          Completadas
+          {viewCounts.completed > 0 && (
+            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${
+              activeView === 'completed'
+                ? 'bg-blue-700 text-white'
+                : 'bg-gray-200 text-gray-700'
+            }`}>
+              {viewCounts.completed}
+            </span>
+          )}
+        </button>
+      </div>
+
       {/* Buscador + Acción */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6">
         <div className="relative flex-1">

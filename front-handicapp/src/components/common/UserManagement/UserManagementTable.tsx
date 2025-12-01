@@ -1,7 +1,6 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Eye, Edit, UserX, UserPlus, Trash2, CheckCircle, XCircle, MapPin } from 'lucide-react';
 import type { UserManagementTableProps } from './types';
 
@@ -21,9 +20,9 @@ function EstadoBadge({ estado }: { estado: string }) {
   const config = configs[estado as keyof typeof configs] || configs.pending;
   
   return (
-    <Badge className={`${config.color} text-xs px-2 py-0.5 font-medium`}>
+    <span className={`inline-flex items-center rounded-md border ${config.color} text-xs px-2 py-0.5 font-medium pointer-events-none`}>
       {config.label}
-    </Badge>
+    </span>
   );
 }
 
@@ -71,12 +70,20 @@ export function UserManagementTable({
   };
 
   return (
-    <>
-      {/* Tabla Desktop */}
-      <div className="hidden lg:block overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
+    <div className="space-y-3">
+      {/* Wrapper con altura controlada - Responsive y adaptativo */}
+      <div className={`
+        overflow-y-auto rounded-lg border border-gray-200 shadow-sm
+        ${pagination 
+          ? 'max-h-[450px] sm:max-h-[500px] lg:max-h-[550px]' 
+          : 'max-h-[400px] sm:max-h-[500px] md:max-h-[600px] lg:max-h-[calc(100vh-20rem)]'
+        }
+      `}>
+        {/* Tabla Desktop */}
+        <div className="hidden lg:block">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+              <tr>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
                 Usuario
               </th>
@@ -87,6 +94,9 @@ export function UserManagementTable({
               )}
               {actions.showView && (
                 <>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                    Rol
+                  </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
                     Puesto
                   </th>
@@ -118,7 +128,7 @@ export function UserManagementTable({
               const estado = normalizeEstado(user.estado);
               
               return (
-                <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={user.id}>
                   <td className="px-4 py-4">
                     <div>
                       <div className="text-sm font-medium text-gray-900">
@@ -150,9 +160,14 @@ export function UserManagementTable({
                     </>
                   )}
                   
-                  {/* Establecimiento: Puesto + Departamento */}
+                  {/* Establecimiento: Rol + Puesto + Departamento */}
                   {actions.showView && (
                     <>
+                      <td className="px-4 py-4">
+                        <Badge variant="outline" className="text-xs">
+                          {user.rol || 'Sin rol'}
+                        </Badge>
+                      </td>
                       <td className="px-4 py-4">
                         <div className="text-sm text-gray-600">
                           {user.puesto || '-'}
@@ -193,7 +208,7 @@ export function UserManagementTable({
                       {actions.showView && onView && (
                         <button
                           onClick={() => onView(user.id)}
-                          className="p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-indigo-600 hover:text-white transition-colors"
+                          className="p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
                           title={actions.viewLabel || 'Ver perfil'}
                         >
                           <Eye className="w-4 h-4" />
@@ -270,10 +285,19 @@ export function UserManagementTable({
                     {user.rol}
                   </Badge>
                 )}
-                {actions.showView && user.puesto && (
-                  <Badge variant="outline" className="text-xs">
-                    {user.puesto}
-                  </Badge>
+                {actions.showView && (
+                  <>
+                    {user.rol && (
+                      <Badge variant="outline" className="text-xs">
+                        {user.rol}
+                      </Badge>
+                    )}
+                    {user.puesto && (
+                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                        {user.puesto}
+                      </Badge>
+                    )}
+                  </>
                 )}
                 <EstadoBadge estado={estado} />
               </div>
@@ -347,77 +371,73 @@ export function UserManagementTable({
           );
         })}
       </div>
+      </div>
 
-      {/* Paginación */}
-      {pagination && pagination.totalPages > 1 && (
-        <div className="bg-gray-50 border-t border-gray-200 px-4 py-3 sm:px-6 mt-4 rounded-b-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex-1 flex justify-between sm:hidden">
-              <Button
-                onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
-                disabled={pagination.currentPage <= 1}
-                className="relative inline-flex items-center px-3 py-1 text-sm font-medium rounded-lg text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                ← Anterior
-              </Button>
-              <span className="text-sm text-gray-700 flex items-center">
-                {pagination.currentPage} / {pagination.totalPages}
-              </span>
-              <Button
-                onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
-                disabled={pagination.currentPage >= pagination.totalPages}
-                className="relative inline-flex items-center px-3 py-1 text-sm font-medium rounded-lg text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Siguiente →
-              </Button>
-            </div>
-            <div className="hidden sm:flex sm:items-center sm:justify-between sm:w-full">
-              <div>
-                <p className="text-sm text-gray-600">
-                  Página <span className="font-medium text-gray-900">{pagination.currentPage}</span> de{' '}
-                  <span className="font-medium text-gray-900">{pagination.totalPages}</span>
-                </p>
-              </div>
-              <div className="flex items-center gap-1">
-                <Button
-                  onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
-                  disabled={pagination.currentPage <= 1}
-                  className="inline-flex items-center px-2 py-1 text-sm font-medium rounded-lg text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  ←
-                </Button>
+      {/* Paginación estilo TailAdmin - compacta y en español */}
+      {pagination && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 py-2">
+          {/* Info de registros */}
+          <div className="text-sm text-gray-600">
+            Mostrando {Math.min((pagination.currentPage - 1) * pagination.itemsPerPage + 1, pagination.totalItems)} a{' '}
+            {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} de{' '}
+            {pagination.totalItems} registros
+          </div>
+          
+          {/* Controles de paginación */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
+              disabled={pagination.currentPage <= 1}
+              className="inline-flex items-center justify-center w-8 h-8 text-sm font-medium rounded text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              ‹
+            </button>
+            
+            {/* Números de página */}
+            {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+              .filter(pageNum => {
+                // Mostrar primera, última, actual y 2 alrededor de la actual
+                if (pageNum === 1 || pageNum === pagination.totalPages) return true;
+                if (pageNum >= pagination.currentPage - 1 && pageNum <= pagination.currentPage + 1) return true;
+                return false;
+              })
+              .map((pageNum, idx, arr) => {
+                // Agregar puntos suspensivos si hay saltos
+                const prev = arr[idx - 1];
+                const showDots = prev && pageNum > prev + 1;
                 
-                {Array.from({ length: Math.min(3, pagination.totalPages) }, (_, i) => {
-                  const pageNum = Math.max(1, Math.min(pagination.totalPages - 2, pagination.currentPage - 1)) + i;
-                  if (pageNum > pagination.totalPages) return null;
-                  
-                  return (
-                    <Button
-                      key={pageNum}
+                return (
+                  <div key={pageNum} className="flex items-center gap-1">
+                    {showDots && (
+                      <span className="inline-flex items-center justify-center w-8 h-8 text-gray-400">
+                        ...
+                      </span>
+                    )}
+                    <button
                       onClick={() => pagination.onPageChange(pageNum)}
-                      className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-lg border ${
-                        pagination.currentPage === pageNum
-                          ? 'bg-blue-600 border-blue-600 text-white'
-                          : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+                      className={`inline-flex items-center justify-center w-8 h-8 text-sm font-medium rounded transition-colors ${
+                        pageNum === pagination.currentPage
+                          ? 'bg-blue-600 text-white border border-blue-600'
+                          : 'text-gray-600 bg-white border border-gray-300 hover:bg-gray-50'
                       }`}
                     >
                       {pageNum}
-                    </Button>
-                  );
-                })}
-                
-                <Button
-                  onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
-                  disabled={pagination.currentPage >= pagination.totalPages}
-                  className="inline-flex items-center px-2 py-1 text-sm font-medium rounded-lg text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  →
-                </Button>
-              </div>
-            </div>
+                    </button>
+                  </div>
+                );
+              })
+            }
+            
+            <button
+              onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
+              disabled={pagination.currentPage >= pagination.totalPages}
+              className="inline-flex items-center justify-center w-8 h-8 text-sm font-medium rounded text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              ›
+            </button>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

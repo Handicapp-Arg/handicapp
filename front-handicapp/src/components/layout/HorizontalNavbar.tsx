@@ -151,7 +151,7 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
         path = '/admin/configuracion';
         break;
       case 'establecimiento':
-        path = '/establecimiento/perfil';
+        path = '/establecimiento/configuracion';
         break;
       case 'capataz':
         path = '/capataz/perfil';
@@ -173,9 +173,8 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
   };
 
   return (
-    <header className="sticky top-0 z-30 px-3 sm:px-4 lg:px-6 pt-4">
-      <div className="bg-white rounded-2xl shadow-lg backdrop-blur-sm bg-white/95 border border-slate-100">
-        <div className="flex items-center justify-between h-16 sm:h-18 lg:h-20 px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-30 bg-white border-b border-slate-200 shadow-sm">
+      <div className="flex items-center justify-between h-16 sm:h-18 lg:h-20 px-4 sm:px-6 lg:px-8">
         {/* Left Side - Menu Button, Collapse Button & Breadcrumb */}
         <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 min-w-0 flex-1">
           {/* Mobile Menu Button */}
@@ -340,7 +339,10 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
             >
               <Avatar className="h-8 w-8 sm:h-9 sm:w-9 ring-2 ring-slate-200">
                 <AvatarFallback className="bg-[#1e293b] text-white text-xs sm:text-sm font-medium">
-                  {user?.nombre?.[0]}{user?.apellido?.[0]}
+                  {user?.rol?.clave === 'establecimiento' && user?.establecimiento_nombre
+                    ? user.establecimiento_nombre.substring(0, 2).toUpperCase()
+                    : `${user?.nombre?.[0] || ''}${user?.apellido?.[0] || ''}`
+                  }
                 </AvatarFallback>
               </Avatar>
               <div className="text-left hidden lg:block min-w-0">
@@ -348,7 +350,11 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                   {isLoading ? 'Cargando...' : user?.rol?.nombre || 'Usuario'}
                 </p>
                 <p className="text-xs text-slate-500 truncate max-w-32">
-                  {isLoading ? '' : (user?.nombre && user?.apellido ? `${user.nombre} ${user.apellido}` : '')}
+                  {isLoading ? '' : (
+                    user?.rol?.clave === 'establecimiento' && user?.establecimiento_nombre
+                      ? user.establecimiento_nombre
+                      : (user?.nombre && user?.apellido ? `${user.nombre} ${user.apellido}` : '')
+                  )}
                 </p>
               </div>
               <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 flex-shrink-0 hidden lg:block ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -360,7 +366,10 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                 {/* User Info */}
                 <div className="px-4 py-3 border-b border-slate-100">
                   <p className="text-sm font-semibold text-slate-900 truncate">
-                    {user?.nombre && user?.apellido ? `${user.nombre} ${user.apellido}` : 'Usuario'}
+                    {user?.rol?.clave === 'establecimiento' && user?.establecimiento_nombre
+                      ? user.establecimiento_nombre
+                      : (user?.nombre && user?.apellido ? `${user.nombre} ${user.apellido}` : 'Usuario')
+                    }
                   </p>
                   <p className="text-xs text-slate-500 truncate mt-0.5">
                     {user?.rol?.nombre || 'Rol no definido'}
@@ -396,15 +405,6 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
           </div>
         </div>
       </div>
-      </div>
-
-      {/* Overlay para cerrar dropdown - COMENTADO porque bloquea todos los clicks en la página */}
-      {/* {isDropdownOpen && (
-        <div
-          className="fixed inset-0 z-30"
-          onClick={() => setIsDropdownOpen(false)}
-        />
-      )} */}
     </header>
   );
 }

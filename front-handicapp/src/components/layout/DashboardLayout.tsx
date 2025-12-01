@@ -59,8 +59,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         />
 
         {/* Main Content Area */}
-        <div className={`flex flex-col flex-1 min-w-0 transition-all duration-300 bg-slate-50 ${
-          sidebarCollapsed ? 'lg:ml-24' : 'lg:ml-80'
+        <div className={`flex flex-col flex-1 min-w-0 transition-all duration-300 ${
+          sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-72'
         }`}>
           {/* Top Navbar - Navbar Horizontal */}
           <HorizontalNavbar 
@@ -70,7 +70,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           />
 
           {/* Page Content */}
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 overflow-y-auto bg-slate-50">
             <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
               {children}
             </div>

@@ -52,8 +52,7 @@ export default function VeterinarioReportesPage() {
       
       toast.dismiss();
       toast.success(`Reporte ${formato.toUpperCase()} generado exitosamente`);
-    } catch (error) {
-      console.error('Error generando reporte:', error);
+    } catch {
       toast.dismiss();
       toast.error('Error al generar el reporte');
     } finally {

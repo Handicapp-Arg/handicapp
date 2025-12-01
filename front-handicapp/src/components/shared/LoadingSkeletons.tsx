@@ -6,7 +6,6 @@ export function MapLoadingSkeleton() {
     <div className="w-full h-[600px] bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center">
       <LoadingSpinnerCard 
         label="Cargando mapa..." 
-        variant="success"
       />
     </div>
   );

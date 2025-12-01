@@ -63,6 +63,7 @@ export const updateUserSchema = z.object({
   apellido: z.string().min(2, "Apellido debe tener al menos 2 caracteres").max(80).optional(),
   email: z.string().email("Formato de email inválido").optional(),
   telefono: z.string().max(40).optional().nullable(),
+  documento: z.string().max(50).optional().nullable(),
   ubicacion: z.string().max(150).optional().nullable(),
 });
 

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useStats } from '@/lib/hooks/useStats';
 import { useCaballos } from '@/lib/hooks/useCaballosQuery';
 import { useEventos } from '@/lib/hooks/useEventosQuery';
+import toast from 'react-hot-toast';
 import {
   FileText,
   FileSpreadsheet,
@@ -72,7 +73,7 @@ export default function PropietarioReportesPage() {
     // Simulación de generación
     setTimeout(() => {
       setGenerando(false);
-      console.log(`Reporte ${tipo} en formato ${formato} generado`);
+      toast.success(`Reporte ${tipo} en formato ${formato} generado`);
     }, 2000);
   };
 

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/authService';
+import { UserService } from '../services/userService';
 import { ResponseHelper } from '../utils/response';
 import { asyncHandler } from '../utils/errors';
 import { LoginData, AuthenticatedRequest } from '../types';
@@ -320,6 +321,13 @@ export class AuthController {
       return ResponseHelper.unauthorized(res, 'Usuario no autenticado');
     }
 
-    return ResponseHelper.success(res, user, 'Perfil obtenido exitosamente');
+    // Recargar usuario desde la base de datos para obtener datos actualizados
+    const result = await UserService.getUserById(user.id.toString());
+    
+    if (!result.success || !result.data) {
+      return ResponseHelper.notFound(res, 'Usuario no encontrado');
+    }
+
+    return ResponseHelper.success(res, result.data, 'Perfil obtenido exitosamente');
   });
 }

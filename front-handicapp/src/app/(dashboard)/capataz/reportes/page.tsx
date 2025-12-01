@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import toast from 'react-hot-toast';
 import {
   FileText,
   FileSpreadsheet,
@@ -57,7 +58,7 @@ export default function CapatazReportesPage() {
   ];
 
   const handleGenerateReport = (tipo: ReportType, formato: 'pdf' | 'excel') => {
-    console.log(`Generando reporte ${tipo} en formato ${formato}`);
+    toast.success(`Reporte ${tipo} en formato ${formato} generado`);
   };
 
   return (

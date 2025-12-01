@@ -27,24 +27,24 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
   const [formData, setFormData] = useState({
     nombre: establecimiento?.nombre || '',
     cuit: establecimiento?.cuit || '',
-    direccion_calle: establecimiento?.direccion || (establecimiento as any)?.direccion_calle || '',
-    direccion_numero: (establecimiento as any)?.direccion_numero || '',
-    direccion_complemento: (establecimiento as any)?.direccion_complemento || '',
-    codigo_postal: (establecimiento as any)?.codigo_postal || '',
-    ciudad: (establecimiento as any)?.ciudad || '',
-    provincia: (establecimiento as any)?.provincia || '',
-    pais: (establecimiento as any)?.pais || '',
-    latitud: (establecimiento as any)?.latitud || undefined,
-    longitud: (establecimiento as any)?.longitud || undefined,
-    descripcion: (establecimiento as any)?.descripcion || '',
+    direccion_calle: establecimiento?.direccion_calle || '',
+    direccion_numero: establecimiento?.direccion_numero || '',
+    direccion_complemento: establecimiento?.direccion_complemento || '',
+    codigo_postal: establecimiento?.codigo_postal || '',
+    ciudad: establecimiento?.ciudad || '',
+    provincia: establecimiento?.provincia || '',
+    pais: establecimiento?.pais || '',
+    latitud: establecimiento?.latitud || undefined,
+    longitud: establecimiento?.longitud || undefined,
+    descripcion: establecimiento?.descripcion || '',
     telefono: establecimiento?.telefono || '',
     email: establecimiento?.email || '',
-    tipo_establecimiento: (establecimiento as any)?.tipo_establecimiento || 'mixto',
-    estado: (establecimiento as any)?.estado || 'activo',
-    superficie_hectareas: (establecimiento as any)?.superficie_hectareas || '',
-    cantidad_boxes: (establecimiento as any)?.cantidad_boxes || '',
-    servicios: (establecimiento as any)?.servicios || [],
-    disciplina_principal: (establecimiento as any)?.disciplina_principal || '',
+    tipo_establecimiento: establecimiento?.tipo_establecimiento || 'mixto',
+    estado: establecimiento?.estado || 'activo',
+    superficie_hectareas: establecimiento?.superficie_hectareas || '',
+    cantidad_boxes: establecimiento?.cantidad_boxes || '',
+    servicios: establecimiento?.servicios || [],
+    disciplina_principal: establecimiento?.disciplina_principal || '',
     // Campos del usuario administrador (solo para creación)
     admin_email: '',
     admin_password: '',
@@ -52,7 +52,7 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
     admin_apellido: ''
   });
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | number | string[] | undefined) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -80,7 +80,7 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
 
     try {
       // Limpiar datos: convertir strings vacíos a undefined y números a números
-      const cleanData: any = {
+      const cleanData: Record<string, unknown> = {
         nombre: formData.nombre || undefined,
         cuit: formData.cuit || undefined,
         direccion_calle: formData.direccion_calle || undefined,
@@ -117,26 +117,27 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
         result = await establecimientoService.update(establecimiento.id, cleanData);
       } else {
         // Creando nuevo establecimiento - incluir datos de admin
-        const createData = {
+        result = await establecimientoService.create({
           ...cleanData,
           admin_email: formData.admin_email || undefined,
           admin_password: formData.admin_password || undefined,
           admin_nombre: formData.admin_nombre || undefined,
           admin_apellido: formData.admin_apellido || undefined,
-        };
-        result = await establecimientoService.create(createData);
+        } as Parameters<typeof establecimientoService.create>[0]);
       }
 
       onSave?.(result);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Extraer el mensaje de error más específico
       let errorMessage = 'Error al guardar el establecimiento';
       
-      console.log('Error completo:', err);
-      console.log('Error data:', err.data);
+      const error = err as { data?: { errors?: unknown[]; message?: string; error?: string }; message?: string };
       
-      if (err.data) {
-        const data = err.data;
+      console.log('Error completo:', error);
+      console.log('Error data:', error.data);
+      
+      if (error.data) {
+        const data = error.data;
         // El backend envía: { success: false, message: "...", errors: ["error1", "error2"] }
         if (data.errors && Array.isArray(data.errors)) {
           // Si errors es un array de strings (formato del backend)
@@ -144,22 +145,26 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
             errorMessage = data.errors.join(', ');
           } else {
             // Si errors es un array de objetos (formato alternativo)
-            errorMessage = data.errors.map((e: any) => {
+            errorMessage = data.errors.map((e: unknown) => {
               if (typeof e === 'string') return e;
-              return e.path ? `${e.path}: ${e.msg || e.message}` : e.msg || e.message;
+              const errObj = e as { path?: string; msg?: string; message?: string };
+              return errObj.path ? `${errObj.path}: ${errObj.msg || errObj.message}` : errObj.msg || errObj.message;
             }).join(', ');
           }
         } else if (data.message) {
           errorMessage = data.message;
           // Si hay errors además del message, agregarlos
-          if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
-            errorMessage += ': ' + data.errors.join(', ');
+          if (data.errors && Array.isArray(data.errors)) {
+            const errors = data.errors as string[];
+            if (errors.length > 0) {
+              errorMessage += ': ' + errors.join(', ');
+            }
           }
         } else if (data.error) {
           errorMessage = data.error;
         }
-      } else if (err.message) {
-        errorMessage = err.message;
+      } else if (error.message) {
+        errorMessage = error.message;
       }
       
       setError(errorMessage);

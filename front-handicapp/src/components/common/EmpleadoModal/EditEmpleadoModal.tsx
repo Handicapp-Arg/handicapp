@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Edit } from 'lucide-react';
 import {
   Dialog,
@@ -10,7 +10,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToaster } from '@/components/ui/toaster';
-import type { Empleado, CrearEmpleadoDTO } from '@/lib/gestionPersonalService';
+import type { Empleado, CrearEmpleadoDTO, Departamento, Puesto } from '@/lib/gestionPersonalService';
+import { gestionPersonalService } from '@/lib/gestionPersonalService';
 
 interface Role {
   id: number;
@@ -46,27 +47,74 @@ export function EditEmpleadoModal({
     documento: '',
     rol_id: 5,
     fecha_ingreso: new Date().toISOString().split('T')[0],
-    departamento: 'Operaciones',
-    puesto: 'Auxiliar',
   });
   const [loading, setLoading] = useState(false);
+  const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
+  const [puestos, setPuestos] = useState<Puesto[]>([]);
+  const [puestosFiltrados, setPuestosFiltrados] = useState<Puesto[]>([]);
+  
+  // Usar useRef para mantener el documento sin disparar re-renders
+  const documentoRef = useRef<string>('');
 
-  // Update form data when empleado changes
+  // Cargar departamentos y puestos al abrir el modal
   useEffect(() => {
-    if (empleado) {
+    if (isOpen) {
+      loadDepartamentosYPuestos();
+    }
+  }, [isOpen]);
+
+  // Filtrar puestos cuando cambia el departamento
+  useEffect(() => {
+    if (formData.departamento_id) {
+      const filtered = puestos.filter(p => p.departamento_id === formData.departamento_id);
+      setPuestosFiltrados(filtered);
+      // Si el puesto seleccionado no pertenece al nuevo departamento, limpiarlo
+      if (formData.puesto_id && !filtered.find(p => p.id === formData.puesto_id)) {
+        setFormData(prev => ({ ...prev, puesto_id: undefined }));
+      }
+    } else {
+      setPuestosFiltrados(puestos);
+    }
+  }, [formData.departamento_id, puestos, formData.puesto_id]);
+
+  const loadDepartamentosYPuestos = async () => {
+    try {
+      const [depts, psts] = await Promise.all([
+        gestionPersonalService.getDepartamentos(),
+        gestionPersonalService.getPuestos()
+      ]);
+      setDepartamentos(depts);
+      setPuestos(psts);
+      setPuestosFiltrados(psts);
+    } catch (error) {
+      console.error('Error cargando departamentos y puestos:', error);
+    }
+  };
+
+  // Update form data when empleado changes or modal opens
+  useEffect(() => {
+    if (empleado && isOpen) {
+      // Si el empleado tiene documento, actualizar la referencia
+      if (empleado.documento) {
+        documentoRef.current = empleado.documento;
+      }
+      
+      // Usar el documento del empleado o el que está en la referencia
+      const docValue = empleado.documento || documentoRef.current || '';
+      
       setFormData({
         nombre: empleado.nombre,
         apellido: empleado.apellido,
         email: empleado.email,
         telefono: empleado.telefono || '',
-        documento: empleado.documento || '',
+        documento: docValue,
         rol_id: empleado.rol_id,
         fecha_ingreso: empleado.fecha_ingreso,
-        departamento: empleado.departamento || 'Operaciones',
-        puesto: empleado.puesto || 'Auxiliar',
+        departamento_id: empleado.departamento_id,
+        puesto_id: empleado.puesto_id,
       });
     }
-  }, [empleado]);
+  }, [empleado, isOpen]);
 
   const handleSubmit = async () => {
     // Check if empleado exists
@@ -93,26 +141,34 @@ export function EditEmpleadoModal({
       
       if (success) {
         toast('Empleado actualizado correctamente', 'success');
+        
+        // Actualizar la referencia con el nuevo documento
+        if (formData.documento) {
+          documentoRef.current = formData.documento;
+        }
+        
         onEmpleadoUpdated();
         onClose();
       } else {
         toast('Error al actualizar empleado', 'error');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating empleado:', error);
       
       // HttpError del backend: error.data contiene { success, message, errors? }
       let errorMessage = 'Error al actualizar empleado';
       
-      if (error?.data) {
-        if (error.data.message) {
-          errorMessage = error.data.message;
+      const err = error as { data?: { message?: string; errors?: string[] }; message?: string };
+      
+      if (err?.data) {
+        if (err.data.message) {
+          errorMessage = err.data.message;
         }
-        if (error.data.errors && Array.isArray(error.data.errors) && error.data.errors.length > 0) {
-          errorMessage += ': ' + error.data.errors.join(', ');
+        if (err.data.errors && Array.isArray(err.data.errors) && err.data.errors.length > 0) {
+          errorMessage += ': ' + err.data.errors.join(', ');
         }
-      } else if (error?.message) {
-        errorMessage = error.message;
+      } else if (err?.message) {
+        errorMessage = err.message;
       }
       
       toast(errorMessage, 'error');
@@ -186,21 +242,34 @@ export function EditEmpleadoModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium">Departamento</label>
-              <input
-                type="text"
-                value={formData.departamento}
-                onChange={(e) => setFormData({ ...formData, departamento: e.target.value })}
+              <select
+                value={formData.departamento_id || ''}
+                onChange={(e) => setFormData({ ...formData, departamento_id: e.target.value ? Number(e.target.value) : undefined })}
                 className="w-full mt-1 px-3 py-2 border rounded-lg"
-              />
+              >
+                <option value="">Seleccionar departamento</option>
+                {departamentos.map((dept) => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.nombre}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="text-sm font-medium">Puesto</label>
-              <input
-                type="text"
-                value={formData.puesto}
-                onChange={(e) => setFormData({ ...formData, puesto: e.target.value })}
+              <select
+                value={formData.puesto_id || ''}
+                onChange={(e) => setFormData({ ...formData, puesto_id: e.target.value ? Number(e.target.value) : undefined })}
                 className="w-full mt-1 px-3 py-2 border rounded-lg"
-              />
+                disabled={!formData.departamento_id}
+              >
+                <option value="">Seleccionar puesto</option>
+                {puestosFiltrados.map((puesto) => (
+                  <option key={puesto.id} value={puesto.id}>
+                    {puesto.nombre}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <div>

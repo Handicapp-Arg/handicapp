@@ -9,6 +9,8 @@ import { logger } from '../utils/logger';
 // Importar todos los modelos
 import { User } from "./User";
 import { Role } from "./roles";
+import { Departamento } from "./Departamento";
+import { Puesto } from "./Puesto";
 import { Establecimiento } from "./Establecimiento";
 import { Caballo } from "./Caballo";
 import { MembresiaUsuarioEstablecimiento } from "./MembresiaUsuarioEstablecimiento";
@@ -35,6 +37,29 @@ export function initializeModels(sequelize: Sequelize) {
     nombre: { type: DataTypes.STRING(80), allowNull: false },
     creado_el: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
   }, { sequelize, tableName: "roles", timestamps: false });
+
+  Departamento.init({
+    id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    nombre: { type: DataTypes.STRING(100), allowNull: false, unique: true },
+    descripcion: { type: DataTypes.TEXT, allowNull: true },
+    activo: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+    creado_el: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+    actualizado_el: { type: DataTypes.DATE, allowNull: true },
+  }, { sequelize, tableName: "departamentos", timestamps: false });
+
+  Puesto.init({
+    id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    nombre: { type: DataTypes.STRING(100), allowNull: false },
+    descripcion: { type: DataTypes.TEXT, allowNull: true },
+    departamento_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: { model: 'departamentos', key: 'id' }
+    },
+    activo: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+    creado_el: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+    actualizado_el: { type: DataTypes.DATE, allowNull: true },
+  }, { sequelize, tableName: "puestos", timestamps: false });
 
   User.init(
     {
@@ -106,6 +131,29 @@ export function initializeModels(sequelize: Sequelize) {
         set(value: string | null) {
           this.setDataValue("telefono", value?.trim() || null);
         },
+      },
+      documento: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        set(value: string | null) {
+          this.setDataValue("documento", value?.trim() || null);
+        },
+      },
+      departamento_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'departamentos',
+          key: 'id'
+        }
+      },
+      puesto_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'puestos',
+          key: 'id'
+        }
       },
       ubicacion: {
         type: DataTypes.STRING(150),
@@ -217,6 +265,18 @@ export function initializeModels(sequelize: Sequelize) {
   // 1. Usuario ↔ Rol (muchos a uno)
   User.belongsTo(Role, { foreignKey: "rol_id", as: "rol" });
   Role.hasMany(User, { foreignKey: "rol_id", as: "usuarios" });
+
+  // 1.5. Usuario ↔ Departamento (muchos a uno)
+  User.belongsTo(Departamento, { foreignKey: "departamento_id", as: "departamento" });
+  Departamento.hasMany(User, { foreignKey: "departamento_id", as: "usuarios" });
+
+  // 1.6. Usuario ↔ Puesto (muchos a uno)
+  User.belongsTo(Puesto, { foreignKey: "puesto_id", as: "puesto" });
+  Puesto.hasMany(User, { foreignKey: "puesto_id", as: "usuarios" });
+
+  // 1.7. Puesto ↔ Departamento (muchos a uno)
+  Puesto.belongsTo(Departamento, { foreignKey: "departamento_id", as: "departamento" });
+  Departamento.hasMany(Puesto, { foreignKey: "departamento_id", as: "puestos" });
 
   // 2. Usuario ↔ Establecimiento (muchos a muchos via MembresiaUsuarioEstablecimiento)
   // NOTA: Comentado temporalmente - se usará para sistema de membresías en producción
@@ -474,6 +534,10 @@ const db = {
   
   // Reseñas
   EstablecimientoResena,
+  
+  // Departamentos y Puestos
+  Departamento,
+  Puesto,
   
   // Enums para uso en servicios
   EstadoUsuario,

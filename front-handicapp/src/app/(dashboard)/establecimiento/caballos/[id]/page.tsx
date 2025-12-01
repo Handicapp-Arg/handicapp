@@ -7,7 +7,8 @@ import { useToaster } from "@/components/ui/toaster";
 import CaballoFicha from "@/components/caballos/CaballoFicha";
 import AdjuntosList from "@/components/adjuntos/AdjuntosList";
 import PropietariosList from "@/components/propietarios/PropietariosList";
-import { ArrowPathIcon as RefreshCw, ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, ArrowPathIcon as RefreshCw } from "@heroicons/react/24/outline";
+import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 export default function CaballoDetallePage() {
   const params = useParams();
@@ -65,14 +66,7 @@ export default function CaballoDetallePage() {
   }, [params?.id]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-4" />
-          <p className="text-gray-600">Cargando información del caballo...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinnerFullPage label="Cargando información del caballo..." />;
   }
 
   if (!caballo) {

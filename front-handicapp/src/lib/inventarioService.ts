@@ -64,6 +64,7 @@ export interface ActualizarProductoDTO {
   descripcion?: string;
   categoria_id?: number;
   unidad_medida?: 'unidad' | 'kg' | 'litro' | 'metro' | 'caja' | 'bolsa';
+  stock_actual?: number;
   stock_minimo?: number;
   stock_maximo?: number;
   precio_unitario?: number;

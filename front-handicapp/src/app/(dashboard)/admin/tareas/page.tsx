@@ -1,148 +1,25 @@
 'use client';
 
-import { useStats } from '@/lib/hooks/useStats';
-import { TareaKanban } from '@/components/dashboard/TareaKanban';
 import { SimpleAdminOnly } from '@/components/common/SimplePermissionGuard';
-import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ClipboardList, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { TareaKanban } from '@/components/dashboard/TareaKanban';
+import { useTasks } from '@/lib/hooks/useTasks';
 import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
-import { useEffect, useState } from 'react';
-import { tareaService, type Tarea } from '@/lib/services/tareaService';
 
-export default function TareasPage() {
-  const { stats, loading } = useStats();
-  const [tareas, setTareas] = useState<Tarea[]>([]);
-  const [loadingTareas, setLoadingTareas] = useState(true);
+export default function AdminTareasPage() {
+  const { tasks, loading } = useTasks({ autoLoad: true });
 
-  useEffect(() => {
-    const fetchTareas = async () => {
-      try {
-        setLoadingTareas(true);
-        const response: any = await tareaService.getAll({ page: 1, limit: 500 });
-        const tareasData = response?.data?.tareas || response?.tareas || response?.data || response || [];
-        setTareas(Array.isArray(tareasData) ? tareasData : []);
-      } catch (error) {
-        console.error('Error loading tareas:', error);
-        setTareas([]);
-      } finally {
-        setLoadingTareas(false);
-      }
-    };
-
-    fetchTareas();
-  }, []);
-
-  if (loading || loadingTareas) {
+  if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinnerFullPage label="Cargando..." variant="primary" />
+        <LoadingSpinnerFullPage label="Cargando tareas..." variant="primary" />
       </div>
     );
   }
 
   return (
     <SimpleAdminOnly>
-      <div className="mx-auto">
-        <div className="relative overflow-hidden mb-8 rounded-2xl">
-          <div className="absolute inset-0 bg-[#0f172a]"></div>
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-60"></div>
-          <div className="absolute top-0 right-1/4 w-64 h-64 bg-slate-600/30 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-gray-500/20 rounded-full blur-3xl"></div>
-          
-          <div className="relative z-10 px-6 sm:px-8 lg:px-12 py-6">
-            <div className="mb-6">
-              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 leading-tight">
-                Gestión de Tareas
-              </h1>
-              <p className="text-sm sm:text-base text-white/70">
-                Asigna, supervisa y gestiona las tareas diarias del establecimiento
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardDescription className="text-[10px] font-semibold text-orange-300 uppercase tracking-wider">
-                      Total Tareas
-                    </CardDescription>
-                    <div className="p-1.5 rounded-lg bg-orange-500/20">
-                      <ClipboardList className="w-3 h-3 text-orange-300" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pb-3">
-                  <p className="text-2xl font-bold text-white tabular-nums">{stats.tareas?.total || 0}</p>
-                  <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
-                    Todas
-                  </Badge>
-                </CardContent>
-              </Card>
-
-              <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardDescription className="text-[10px] font-semibold text-amber-300 uppercase tracking-wider">
-                      Pendientes
-                    </CardDescription>
-                    <div className="p-1.5 rounded-lg bg-amber-500/20">
-                      <Clock className="w-3 h-3 text-amber-300" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pb-3">
-                  <p className="text-2xl font-bold text-white tabular-nums">{stats.tareas?.pendientes || 0}</p>
-                  <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
-                    Por realizar
-                  </Badge>
-                </CardContent>
-              </Card>
-
-              <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardDescription className="text-[10px] font-semibold text-green-300 uppercase tracking-wider">
-                      Completadas
-                    </CardDescription>
-                    <div className="p-1.5 rounded-lg bg-green-500/20">
-                      <CheckCircle2 className="w-3 h-3 text-green-300" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pb-3">
-                  <p className="text-2xl font-bold text-white tabular-nums">{stats.tareas?.completadas || 0}</p>
-                  <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
-                    Finalizadas
-                  </Badge>
-                </CardContent>
-              </Card>
-
-              <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardDescription className="text-[10px] font-semibold text-red-300 uppercase tracking-wider">
-                      En Progreso
-                    </CardDescription>
-                    <div className="p-1.5 rounded-lg bg-red-500/20">
-                      <AlertTriangle className="w-3 h-3 text-red-300" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pb-3">
-                  <p className="text-2xl font-bold text-white tabular-nums">{stats.tareas?.enProgreso || 0}</p>
-                  <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
-                    En ejecución
-                  </Badge>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-          <TareaKanban tareas={tareas} />
-        </div>
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+        <TareaKanban tareas={tasks} />
       </div>
     </SimpleAdminOnly>
   );

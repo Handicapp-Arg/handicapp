@@ -34,7 +34,7 @@ const sizeClasses = {
 };
 
 const colorClasses = {
-  primary: 'border-[#0f172a] border-t-transparent',
+  primary: 'border-blue-600 border-t-transparent',
   secondary: 'border-slate-400 border-t-transparent',
   white: 'border-white border-t-transparent',
   brand: 'border-[#af936f] border-t-transparent',
@@ -44,7 +44,7 @@ const colorClasses = {
 };
 
 const labelColorClasses = {
-  primary: 'text-slate-700',
+  primary: 'text-blue-700',
   secondary: 'text-slate-600',
   white: 'text-white',
   brand: 'text-[#af936f]',
