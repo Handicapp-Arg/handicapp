@@ -80,6 +80,18 @@ router.put(
   TareaController.cambiarEstado
 );
 
+/**
+ * @route   POST /api/v1/tareas/:id/crear-evento
+ * @desc    Crear evento a partir de una tarea
+ * @access  Usuario asignado, Admin, Creador de la tarea
+ */
+router.post(
+  '/:id/crear-evento',
+  paramValidations.id,
+  requirePermission('tasks:write'),
+  TareaController.crearEvento
+);
+
 // ====================================
 // CRUD ESPECÍFICO (DESPUÉS DE RUTAS ESPECÍFICAS)
 // ====================================

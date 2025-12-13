@@ -5,10 +5,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, CheckCircle2, Clock, FileText } from 'lucide-react';
+import { X, CheckCircle2, Clock, FileText, Calendar } from 'lucide-react';
 import { tareaService, Tarea } from '@/lib/services/tareaService';
 import { showError, showSuccess } from '@/lib/utils/errorHandler';
 import { LoadingSpinnerInline } from '@/components/ui/loading-spinner';
+import { useRouter } from 'next/navigation';
 
 interface TareaCompletarModalProps {
   tarea: Tarea;
@@ -18,23 +19,52 @@ interface TareaCompletarModalProps {
 }
 
 export function TareaCompletarModal({ tarea, isOpen, onClose, onSuccess }: TareaCompletarModalProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [observaciones, setObservaciones] = useState('');
   const [tiempoReal, setTiempoReal] = useState<string>(
     tarea.tiempo_estimado_minutos?.toString() || ''
   );
+  const [crearEvento, setCrearEvento] = useState(false);
+
+  // Tipos de tareas que pueden convertirse en eventos
+  const tiposConvertiblesAEvento = ['entrenamiento', 'veterinaria', 'alimentacion'];
+  const puedeCrearEvento = tiposConvertiblesAEvento.includes(tarea.tipo) && tarea.caballo_id;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
       setLoading(true);
+      
+      // 1. Completar la tarea
       await tareaService.complete(
         tarea.id,
         observaciones || undefined,
         tiempoReal ? parseInt(tiempoReal) : undefined
       );
+      
       showSuccess('tarea', 'completed');
+
+      // 2. Si el usuario eligió crear evento, crearlo
+      if (crearEvento && puedeCrearEvento) {
+        try {
+          const evento = await tareaService.crearEvento(tarea.id, {
+            hora_inicio: new Date().toTimeString().slice(0, 5),
+            ubicacion: tarea.ubicacion
+          });
+          
+          showSuccess('evento', 'created');
+          
+          // Redirigir a la vista de eventos o al evento creado
+          // router.push(`/propietario/eventos?highlight=${evento.data.id}`);
+        } catch (error: any) {
+          // No mostramos error crítico, solo advertencia
+          console.warn('No se pudo crear el evento:', error);
+          showError(error, 'evento', 'create_failed');
+        }
+      }
+
       onSuccess();
       onClose();
     } catch (error: any) {
@@ -135,6 +165,33 @@ export function TareaCompletarModal({ tarea, isOpen, onClose, onSuccess }: Tarea
                 Opcional: Agrega cualquier observación o nota importante
               </p>
             </div>
+
+            {/* Opción de crear evento - Solo para tareas convertibles */}
+            {puedeCrearEvento && (
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={crearEvento}
+                    onChange={(e) => setCrearEvento(e.target.checked)}
+                    disabled={loading}
+                    className="mt-0.5 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-900">
+                        Registrar como evento en el historial
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-blue-700">
+                      Se creará automáticamente un evento de tipo "{tarea.tipo}" para el caballo, 
+                      que quedará registrado en su historial médico/deportivo.
+                    </p>
+                  </div>
+                </label>
+              </div>
+            )}
 
             {/* Alerta */}
             <div className="p-4 bg-green-50 border border-green-200 rounded-lg">

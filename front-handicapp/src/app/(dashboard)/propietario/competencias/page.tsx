@@ -9,12 +9,38 @@ import { Trophy, Award, Target, TrendingUp } from 'lucide-react';
 import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
 export default function PropietarioCompetenciasPage() {
-  const { data: eventosResponse, isLoading: loadingEventos } = useEventos({ search: 'competencia', page: 1, limit: 50 });
+  // Filtrar eventos que sean de tipo competencia/carrera/torneo
+  // Usamos un filtro más específico en lugar de búsqueda de texto
+  const { data: eventosResponse, isLoading: loadingEventos } = useEventos({ 
+    page: 1, 
+    limit: 100 
+  });
   const { data: caballosResponse, isLoading: loadingCaballos } = useCaballos({ page: 1, limit: 100 });
 
   const eventos = useMemo(() => {
     const data = (eventosResponse as { data?: any[] })?.data || [];
-    return Array.isArray(data) ? data : [];
+    const allEventos = Array.isArray(data) ? data : [];
+    
+    // Filtrar eventos que sean competencias basándose en el tipo_evento
+    // Buscar por palabras clave en el nombre del tipo de evento o en la clave
+    return allEventos.filter((e: any) => {
+      const tipoNombre = e.tipo_evento?.nombre?.toLowerCase() || '';
+      const tipoClave = e.tipo_evento?.clave?.toLowerCase() || '';
+      const titulo = e.titulo?.toLowerCase() || '';
+      
+      // Palabras clave relacionadas con competencias
+      const palabrasCompetencia = [
+        'competencia', 'competición', 'carrera', 'torneo', 
+        'concurso', 'copa', 'campeonato', 'premio', 'derby',
+        'gran premio', 'clasico', 'handicap'
+      ];
+      
+      return palabrasCompetencia.some(palabra => 
+        tipoNombre.includes(palabra) || 
+        tipoClave.includes(palabra) ||
+        titulo.includes(palabra)
+      );
+    });
   }, [eventosResponse]);
 
   const caballos = useMemo(() => {

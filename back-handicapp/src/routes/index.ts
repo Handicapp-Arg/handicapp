@@ -17,6 +17,7 @@ import { inventarioRoutes } from './inventarioRoutes';
 import { config } from '../config/config';
 import { Router as ExpressRouter2 } from 'express';
 import { UploadController, uploader } from '../controllers/uploadController';
+import { webContactRoutes } from './webContactRoutes';
 
 const router: ExpressRouter = Router();
 
@@ -67,6 +68,9 @@ router.use('/auditoria', auditoriaRoutes);
 const uploadRouter: ExpressRouter2 = Router();
 uploadRouter.post('/image', uploader.single('file'), UploadController.uploadImage);
 router.use('/uploads', uploadRouter);
+
+// Web contact routes
+router.use('/web-contacts', webContactRoutes);
 
 export { router as apiRoutes };
 
