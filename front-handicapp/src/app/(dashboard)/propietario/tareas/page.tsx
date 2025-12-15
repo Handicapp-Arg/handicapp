@@ -1,3 +1,4 @@
+
 'use client';
 
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
