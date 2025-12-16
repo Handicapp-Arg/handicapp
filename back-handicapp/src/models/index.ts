@@ -27,6 +27,7 @@ import { PushSubscription } from "./PushSubscription";
 import { EstadoUsuario } from "./enums";
 import { Producto, Categoria, Proveedor, Movimiento } from "./inventario";
 import { EstablecimientoResena } from "./EstablecimientoResena";
+import { WebContact } from "./WebContact";
 
 // Función para inicializar modelos
 export function initializeModels(sequelize: Sequelize) {
@@ -541,6 +542,7 @@ const db = {
   
   // Enums para uso en servicios
   EstadoUsuario,
+  WebContact,
 };
 
 export { db };

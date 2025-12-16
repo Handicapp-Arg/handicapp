@@ -195,6 +195,27 @@ class TareaService {
     const response = await ApiClient.makeRequest(`${this.baseUrl}/productivity?${params}`) as any;
     return response;
   }
+
+  /**
+   * Crear evento a partir de una tarea completada
+   */
+  async crearEvento(
+    id: number, 
+    datosAdicionales?: {
+      costo_monto?: string;
+      costo_moneda?: string;
+      hora_inicio?: string;
+      hora_fin?: string;
+      ubicacion?: string;
+      resultado?: string;
+    }
+  ): Promise<any> {
+    const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}/crear-evento`, {
+      method: 'POST',
+      body: JSON.stringify(datosAdicionales || {})
+    }) as any;
+    return response;
+  }
 }
 
 export const tareaService = new TareaService();

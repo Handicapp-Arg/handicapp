@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useStats } from '@/lib/hooks/useStats';
 import { TareaKanban } from '@/components/dashboard/TareaKanban';
-import { SimpleRoleGuard roles={["capataz"]} } from '@/components/common/SimplePermissionGuard';
+import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ClipboardList, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
@@ -144,6 +145,6 @@ export default function TareasPage() {
           <TareaKanban tareas={tareas} />
         </div>
       </div>
-    </SimpleRoleGuard roles={["capataz"]}>
+    </SimpleRoleGuard>
   );
 }

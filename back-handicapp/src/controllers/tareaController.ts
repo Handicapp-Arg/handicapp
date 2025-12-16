@@ -478,4 +478,43 @@ export class TareaController {
     // No implementado aún en el servicio. Evitar errores de compilación.
     res.status(501).json(ApiResponse.error('No implementado'));
   }
+
+  // ====================================
+  // CONVERSIÓN A EVENTO
+  // ====================================
+
+  /**
+   * Crear evento a partir de una tarea completada
+   * POST /api/v1/tareas/:id/crear-evento
+   * Roles: usuario asignado, admin, creador de la tarea
+   */
+  static async crearEvento(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const tareaId = parseInt((req.params['id'] as string) || '');
+      const usuarioId = req.user!.id;
+      const datosAdicionales = req.body;
+
+      if (isNaN(tareaId)) {
+        res.status(400).json(ApiResponse.error('ID de tarea inválido'));
+        return;
+      }
+
+      const result = await TareaService.crearEventoDesdeTarea(
+        tareaId,
+        usuarioId,
+        datosAdicionales
+      );
+
+      if (!result.success || !result.data) {
+        res.status(400).json(ApiResponse.error(result.error || 'No se pudo crear el evento'));
+        return;
+      }
+
+      logger.info('Evento creado desde tarea', { usuarioId, tareaId, eventoId: result.data.id });
+      res.json(ApiResponse.success(result.data, result.message || 'Evento creado exitosamente'));
+    } catch (error) {
+      logger.error('Error creando evento desde tarea', { error });
+      res.status(500).json(ApiResponse.error('Error interno del servidor'));
+    }
+  }
 }

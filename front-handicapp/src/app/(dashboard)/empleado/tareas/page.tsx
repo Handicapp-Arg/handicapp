@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useStats } from '@/lib/hooks/useStats';
 import { TareaKanban } from '@/components/dashboard/TareaKanban';
-import { SimpleRoleGuard roles={["empleado"]} } from '@/components/common/SimplePermissionGuard';
+import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ClipboardList, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
@@ -36,7 +37,7 @@ export default function TareasPage() {
   if (loading || loadingTareas) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinnerFullPage label="Cargando..." variant="default" />
+        <LoadingSpinnerFullPage label="Cargando..." variant="primary" />
       </div>
     );
   }
@@ -144,6 +145,6 @@ export default function TareasPage() {
           <TareaKanban tareas={tareas} />
         </div>
       </div>
-    </SimpleRoleGuard roles={["empleado"]}>
+    </SimpleRoleGuard>
   );
 }

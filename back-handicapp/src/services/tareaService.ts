@@ -9,9 +9,12 @@ import { User } from '../models/User';
 import { Establecimiento } from '../models/Establecimiento';
 import { Caballo } from '../models/Caballo';
 import { PropietarioCaballo } from '../models/PropietarioCaballo';
+import { Evento } from '../models/Evento';
+import { TipoEvento } from '../models/TipoEvento';
 import { ServiceResponse, PaginationQuery } from '../types';
-import { TipoTarea, EstadoTarea } from '../models/enums';
+import { TipoTarea, EstadoTarea, EstadoValidacionEvento } from '../models/enums';
 import { logger } from '../utils/logger';
+
 
 interface CreateTareaData {
   establecimiento_id: number;
@@ -912,6 +915,118 @@ export class TareaService {
       return {
         success: false,
         error: 'Error al obtener estadísticas de tareas',
+      };
+    }
+  }
+
+  /**
+   * Crear un evento a partir de una tarea completada
+   * Mapea los campos de la tarea al formato de evento
+   */
+  static async crearEventoDesdeTarea(
+    tareaId: number,
+    usuarioId: number,
+    datosAdicionales?: {
+      costo_monto?: string;
+      costo_moneda?: string;
+      hora_inicio?: string;
+      hora_fin?: string;
+      ubicacion?: string;
+      resultado?: string;
+    }
+  ): Promise<ServiceResponse<any>> {
+    try {
+      // 1. Obtener la tarea
+      const tarea = await Tarea.findByPk(tareaId, {
+        include: [
+          { model: Caballo, as: 'caballo', required: false },
+        ]
+      });
+
+      if (!tarea) {
+        return { success: false, error: 'Tarea no encontrada' };
+      }
+
+      // 2. Validar que la tarea tenga caballo asociado (los eventos requieren caballo)
+      if (!tarea.caballo_id) {
+        return { 
+          success: false, 
+          error: 'La tarea debe estar asociada a un caballo para crear un evento' 
+        };
+      }
+
+      // 3. Mapear tipo de tarea a tipo de evento (buscar en tipos_evento)
+      const tipoEventoMap: Record<string, string> = {
+        'salud': 'consulta_veterinaria',
+        'entrenamiento': 'entrenamiento',
+        'ejercicio': 'ejercicio',
+        'alimentacion': 'alimentacion',
+        'aseo_caballo': 'aseo',
+      };
+
+      const claveEvento = tipoEventoMap[tarea.tipo] || 'otro';
+      
+      const tipoEvento = await TipoEvento.findOne({ 
+        where: { clave: claveEvento } 
+      });
+
+      if (!tipoEvento) {
+        return { 
+          success: false, 
+          error: `No se encontró tipo de evento para "${claveEvento}"` 
+        };
+      }
+
+      // 4. Crear el evento con datos de la tarea
+      const eventoData = {
+        caballo_id: tarea.caballo_id,
+        tipo_evento_id: tipoEvento.id,
+        fecha_evento: tarea.fecha_vencimiento || new Date(),
+        titulo: tarea.titulo,
+        descripcion: tarea.notas || tarea.titulo,
+        establecimiento_id: tarea.establecimiento_id,
+        creado_por_usuario_id: usuarioId,
+        rol_autor: null, // se puede obtener del usuario si es necesario
+        estado_validacion: EstadoValidacionEvento.approved,
+        estado: 'completado',
+        es_publico: false,
+        requiere_validacion: false,
+        // Datos adicionales opcionales
+        costo_monto: datosAdicionales?.costo_monto || null,
+        costo_moneda: datosAdicionales?.costo_moneda || 'ARS',
+        hora_inicio: datosAdicionales?.hora_inicio || null,
+        hora_fin: datosAdicionales?.hora_fin || null,
+        ubicacion: datosAdicionales?.ubicacion || null,
+      };
+
+      const evento = await Evento.create(eventoData as any);
+
+      // 5. Cargar relaciones para retornar objeto completo
+      const eventoCompleto = await Evento.findByPk(evento.id, {
+        include: [
+          { model: Caballo, as: 'caballo', attributes: ['id', 'nombre', 'raza', 'sexo'] },
+          { model: TipoEvento, as: 'tipo_evento', attributes: ['id', 'nombre', 'clave'] },
+          { model: User, as: 'creado_por', attributes: ['id', 'nombre', 'apellido'] },
+        ]
+      });
+
+      logger.info('Evento creado desde tarea', { 
+        tareaId, 
+        eventoId: evento.id, 
+        usuarioId 
+      });
+
+      return {
+        success: true,
+        data: eventoCompleto,
+        message: 'Evento creado exitosamente desde la tarea'
+      };
+
+    } catch (error) {
+      logger.error('Error al crear evento desde tarea', { error, tareaId, usuarioId });
+      return {
+        success: false,
+        error: 'Error al crear evento desde la tarea'
       };
     }
   }

@@ -72,6 +72,24 @@ export default function LoginPage() {
     }
   }, [verified, mounted, toast]);
 
+  // Auto-dismiss error messages after 5 seconds
+  useEffect(() => {
+    const hasErrors = fieldErrors.general || fieldErrors.verification || fieldErrors.email || fieldErrors.password;
+    
+    if (hasErrors) {
+      console.log('⏱️ Error detectado, se limpiará en 5 segundos:', fieldErrors);
+      const timer = setTimeout(() => {
+        console.log('🧹 Limpiando errores...');
+        setFieldErrors({});
+      }, 5000);
+
+      return () => {
+        console.log('🚫 Timer cancelado');
+        clearTimeout(timer);
+      };
+    }
+  }, [fieldErrors.general, fieldErrors.verification, fieldErrors.email, fieldErrors.password]);
+
   const onResend = async () => {
     if (!emailParam) {
       toast('Ingresá tu email y reintentá', 'warning');
@@ -260,7 +278,7 @@ export default function LoginPage() {
             </div>
 
             {/* Mensaje de error general */}
-            {(fieldErrors.general || authError || fieldErrors.verification) && (
+            {(fieldErrors.general || fieldErrors.verification) && (
               <div className={`rounded-xl p-4 border-2 ${
                 fieldErrors.verification 
                   ? 'bg-blue-50 border-blue-300' 
@@ -284,7 +302,7 @@ export default function LoginPage() {
                     <p className={`${
                       fieldErrors.verification ? 'text-blue-800' : 'text-red-800'
                     } text-sm font-medium leading-relaxed`}>
-                      {fieldErrors.verification || fieldErrors.general || authError}
+                      {fieldErrors.verification || fieldErrors.general}
                     </p>
                     {fieldErrors.verification && (
                       <button
