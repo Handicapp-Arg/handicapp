@@ -2,43 +2,53 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
-import { notificacionService } from '@/lib/services/notificacionService';
+import { notificacionService, type Notificacion } from '@/lib/services/notificacionService';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Bell, CheckCircle, Trash2, Info, AlertTriangle, XCircle } from 'lucide-react';
 import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
 
-interface Notificacion {
-  id: number;
-  tipo: 'info' | 'success' | 'warning' | 'error';
-  titulo: string;
-  mensaje: string;
-  leido: boolean;
-  fecha_creacion: string;
-}
-
 const getTipoIcon = (tipo: string) => {
   switch (tipo) {
-    case 'success':
+    case 'tarea':
       return <CheckCircle className="w-5 h-5 text-green-600" />;
-    case 'warning':
+    case 'recordatorio':
       return <AlertTriangle className="w-5 h-5 text-amber-600" />;
-    case 'error':
+    case 'caballo':
       return <XCircle className="w-5 h-5 text-red-600" />;
-    default:
+    case 'evento':
       return <Info className="w-5 h-5 text-blue-600" />;
+    default:
+      return <Bell className="w-5 h-5 text-gray-600" />;
+  }
+};
+
+const getTipoPuntoColor = (tipo: string) => {
+  switch (tipo) {
+    case 'tarea':
+      return 'bg-green-600';
+    case 'recordatorio':
+      return 'bg-amber-600';
+    case 'caballo':
+      return 'bg-red-600';
+    case 'evento':
+      return 'bg-blue-600';
+    default:
+      return 'bg-gray-600';
   }
 };
 
 const getTipoColor = (tipo: string) => {
   switch (tipo) {
-    case 'success':
+    case 'tarea':
       return 'bg-green-50';
-    case 'warning':
+    case 'recordatorio':
       return 'bg-amber-50';
-    case 'error':
+    case 'caballo':
       return 'bg-red-50';
-    default:
+    case 'evento':
       return 'bg-blue-50';
+    default:
+      return 'bg-gray-50';
   }
 };
 
@@ -57,7 +67,7 @@ export default function EstablecimientoNotificacionesPage() {
     try {
       setLoading(true);
       const data = await notificacionService.obtenerNotificaciones();
-      const notificacionesArray = Array.isArray(data) ? data : (data as any)?.data || [];
+      const notificacionesArray = Array.isArray(data) ? data : (data as { data?: typeof data })?.data || [];
       setNotificaciones(notificacionesArray);
     } catch (error) {
       console.error('Error fetching notificaciones:', error);
@@ -96,17 +106,17 @@ export default function EstablecimientoNotificacionesPage() {
 
   const stats = useMemo(() => ({
     total: notificaciones.length,
-    noLeidas: notificaciones.filter(n => !n.leido).length,
-    leidas: notificaciones.filter(n => n.leido).length,
+    noLeidas: notificaciones.filter(n => !n.leida).length,
+    leidas: notificaciones.filter(n => n.leida).length,
     hoy: notificaciones.filter(n => {
       const today = new Date().toDateString();
-      return new Date(n.fecha_creacion).toDateString() === today;
+      return new Date(n.creado_el).toDateString() === today;
     }).length,
   }), [notificaciones]);
 
   const filteredNotificaciones = notificaciones.filter(n => {
-    if (filter === 'no_leidas') return !n.leido;
-    if (filter === 'leidas') return n.leido;
+    if (filter === 'no_leidas') return !n.leida;
+    if (filter === 'leidas') return n.leida;
     return true;
   });
 
@@ -152,7 +162,7 @@ export default function EstablecimientoNotificacionesPage() {
                 {stats.noLeidas > 0 && (
                   <button
                     onClick={handleMarkAllAsRead}
-                    className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors whitespace-nowrap"
+                    className="px-4 py-2 text-sm font-medium text-white bg-[#0f172a] hover:bg-[#1e293b] rounded-lg transition-all whitespace-nowrap shadow-sm"
                   >
                     Marcar todas como leídas
                   </button>
@@ -168,14 +178,18 @@ export default function EstablecimientoNotificacionesPage() {
                       setFilter('todas');
                       setCurrentPage(1);
                     }}
-                    className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                    className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 transition-all whitespace-nowrap ${
                       filter === 'todas'
-                        ? 'border-blue-600 text-blue-600'
-                        : 'border-transparent text-gray-600 hover:text-gray-900'
+                        ? 'border-[#0f172a] text-[#0f172a]'
+                        : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
                     }`}
                   >
                     Todas
-                    <span className="ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-700">
+                    <span className={`ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 text-xs rounded-full ${
+                      filter === 'todas' 
+                        ? 'bg-[#0f172a]/10 text-[#0f172a]' 
+                        : 'bg-gray-100 text-gray-700'
+                    }`}>
                       {stats.total}
                     </span>
                   </button>
@@ -184,15 +198,19 @@ export default function EstablecimientoNotificacionesPage() {
                       setFilter('no_leidas');
                       setCurrentPage(1);
                     }}
-                    className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                    className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 transition-all whitespace-nowrap ${
                       filter === 'no_leidas'
-                        ? 'border-blue-600 text-blue-600'
-                        : 'border-transparent text-gray-600 hover:text-gray-900'
+                        ? 'border-[#0f172a] text-[#0f172a]'
+                        : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
                     }`}
                   >
                     Sin leer
                     {stats.noLeidas > 0 && (
-                      <span className="ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 font-semibold">
+                      <span className={`ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 text-xs rounded-full font-semibold ${
+                        filter === 'no_leidas'
+                          ? 'bg-[#0f172a]/10 text-[#0f172a]'
+                          : 'bg-[#0f172a]/10 text-[#0f172a]'
+                      }`}>
                         {stats.noLeidas}
                       </span>
                     )}
@@ -202,14 +220,18 @@ export default function EstablecimientoNotificacionesPage() {
                       setFilter('leidas');
                       setCurrentPage(1);
                     }}
-                    className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                    className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 transition-all whitespace-nowrap ${
                       filter === 'leidas'
-                        ? 'border-blue-600 text-blue-600'
-                        : 'border-transparent text-gray-600 hover:text-gray-900'
+                        ? 'border-[#0f172a] text-[#0f172a]'
+                        : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
                     }`}
                   >
                     Leídas
-                    <span className="ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-700">
+                    <span className={`ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 text-xs rounded-full ${
+                      filter === 'leidas'
+                        ? 'bg-[#0f172a]/10 text-[#0f172a]'
+                        : 'bg-gray-100 text-gray-700'
+                    }`}>
                       {stats.leidas}
                     </span>
                   </button>
@@ -221,7 +243,7 @@ export default function EstablecimientoNotificacionesPage() {
                   <select
                     value={itemsPerPage}
                     onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-                    className="border border-gray-300 rounded px-1.5 sm:px-2 py-1 text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    className="border border-gray-300 rounded px-1.5 sm:px-2 py-1 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#0f172a] focus:border-[#0f172a] bg-white"
                   >
                     <option value={5}>5</option>
                     <option value={10}>10</option>
@@ -234,69 +256,69 @@ export default function EstablecimientoNotificacionesPage() {
             </div>
           </CardHeader>
           <CardContent className="px-4 sm:px-6">
-            <div className="divide-y divide-gray-100">
+            <div className="space-y-2">
               {notificacionesPaginadas.map((notif) => (
                 <div
                   key={notif.id}
-                  className={`py-4 flex gap-4 transition-colors ${
-                    !notif.leido 
-                      ? 'bg-blue-50/50 hover:bg-blue-50 border-l-2 border-l-blue-600 pl-3' 
-                      : 'hover:bg-gray-50 pl-4'
+                  className={`group relative rounded-lg border transition-all duration-200 ${
+                    !notif.leida 
+                      ? 'bg-gradient-to-r from-[#0f172a]/5 to-transparent border-[#0f172a]/20 hover:border-[#0f172a]/40 hover:shadow-md' 
+                      : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm'
                   }`}
                 >
-                  {/* Indicador de no leído */}
-                  <div className="flex-shrink-0 pt-1">
-                    {!notif.leido ? (
-                      <div className="w-2 h-2 rounded-full bg-blue-600"></div>
-                    ) : (
-                      <div className="w-2 h-2"></div>
-                    )}
-                  </div>
+                  <div className="p-4 flex gap-3">
+                    {/* Indicador de no leído (más pequeño) */}
+                    <div className="flex-shrink-0 pt-1.5">
+                      {!notif.leida && (
+                        <div className={`w-1.5 h-1.5 rounded-full ${getTipoPuntoColor(notif.tipo)}`}></div>
+                      )}
+                    </div>
 
-                  {/* Icono del tipo */}
-                  <div className={`flex-shrink-0 w-10 h-10 rounded-lg ${getTipoColor(notif.tipo)} flex items-center justify-center`}>
-                    {getTipoIcon(notif.tipo)}
-                  </div>
+                    {/* Icono del tipo */}
+                    <div className={`flex-shrink-0 w-10 h-10 rounded-lg ${getTipoColor(notif.tipo)} flex items-center justify-center transition-transform group-hover:scale-105`}>
+                      {getTipoIcon(notif.tipo)}
+                    </div>
 
-                  {/* Contenido */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <h3 className={`text-sm font-semibold ${!notif.leido ? 'text-gray-900' : 'text-gray-700'}`}>
-                          {notif.titulo}
-                        </h3>
-                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                          {notif.mensaje}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-2">
-                          {new Date(notif.fecha_creacion).toLocaleString('es-AR', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
-                      </div>
+                    {/* Contenido */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className={`text-sm font-semibold leading-tight ${!notif.leida ? 'text-gray-900' : 'text-gray-700'}`}>
+                            {notif.titulo}
+                          </h3>
+                          <p className="text-sm text-gray-600 mt-1.5 line-clamp-2 leading-relaxed">
+                            {notif.mensaje}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-2">
+                            {new Date(notif.creado_el).toLocaleString('es-AR', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
 
-                      {/* Acciones */}
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        {!notif.leido && (
+                        {/* Acciones (aparecen en hover) */}
+                        <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {!notif.leida && (
+                            <button
+                              onClick={() => handleMarkAsRead(notif.id)}
+                              className="p-2 rounded-lg hover:bg-[#0f172a]/10 text-[#0f172a] transition-all hover:scale-110"
+                              title="Marcar como leída"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </button>
+                          )}
                           <button
-                            onClick={() => handleMarkAsRead(notif.id)}
-                            className="p-2 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors"
-                            title="Marcar como leída"
+                            onClick={() => handleDelete(notif.id)}
+                            className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-all hover:scale-110"
+                            title="Eliminar"
                           >
-                            <CheckCircle className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
-                        )}
-                        <button
-                          onClick={() => handleDelete(notif.id)}
-                          className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"
-                          title="Eliminar"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -329,7 +351,7 @@ export default function EstablecimientoNotificacionesPage() {
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
                     Anterior
                   </button>
@@ -351,10 +373,10 @@ export default function EstablecimientoNotificacionesPage() {
                         <button
                           key={pageNumber}
                           onClick={() => handlePageChange(pageNumber)}
-                          className={`w-8 h-8 text-sm rounded-lg transition-colors ${
+                          className={`w-8 h-8 text-sm rounded-lg transition-all ${
                             currentPage === pageNumber
-                              ? 'bg-blue-600 text-white'
-                              : 'border border-gray-300 hover:bg-gray-50'
+                              ? 'bg-[#0f172a] text-white shadow-sm'
+                              : 'border border-gray-300 hover:bg-gray-50 hover:border-[#0f172a]/30'
                           }`}
                         >
                           {pageNumber}
@@ -366,7 +388,7 @@ export default function EstablecimientoNotificacionesPage() {
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
                     Siguiente
                   </button>
