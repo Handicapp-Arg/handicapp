@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { WebContactController } from '../controllers/webContactController';
 import { requireAuth } from '../middleware/auth';
 
-const router = Router();
+const router: Router = Router();
 
 // Ruta pública para recibir mensajes desde la web
 router.post('/', WebContactController.create);
