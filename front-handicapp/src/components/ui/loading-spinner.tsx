@@ -1,8 +1,8 @@
 /**
  * LoadingSpinner - Sistema unificado de loading para toda la aplicación
- * @description Componente único y consistente que reemplaza todos los spinners dispersos
+ * @description Componente simple y funcional
  * @author HandicApp Team
- * @version 2.0.0
+ * @version 3.0.0
  */
 
 import React from 'react';
@@ -62,7 +62,7 @@ export function LoadingSpinner({
   className,
   fullScreen = false,
 }: LoadingSpinnerProps) {
-  const content = (
+  return (
     <div className={cn(
       'flex flex-col items-center justify-center gap-4',
       fullScreen && 'min-h-screen',
@@ -70,7 +70,7 @@ export function LoadingSpinner({
     )}>
       {withBlur ? (
         <div className="relative inline-block">
-          <div className="absolute inset-0 bg-[#af936f]/20 rounded-full blur-2xl animate-pulse"></div>
+          <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-2xl animate-pulse"></div>
           <div className={cn(
             'relative rounded-full animate-spin',
             sizeClasses[size],
@@ -100,8 +100,6 @@ export function LoadingSpinner({
       )}
     </div>
   );
-
-  return content;
 }
 
 /**
@@ -111,7 +109,7 @@ export function LoadingSpinner({
 export function LoadingSpinnerFullPage({ 
   label = 'Cargando...', 
   description,
-  variant = 'primary' 
+  variant = 'primary'
 }: { 
   label?: string; 
   description?: string;

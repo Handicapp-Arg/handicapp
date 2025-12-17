@@ -12,7 +12,6 @@ import {
   BarChart3,
   FileText,
   Building2,
-  User,
   ClipboardList,
   Stethoscope,
   Calendar,
@@ -30,12 +29,15 @@ const ROLE_MENUS = {
     { name: 'Dashboard', href: '/admin', icon: Home },
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
     { name: 'Usuarios', href: '/admin/users', icon: Users },
-    { name: 'Roles', href: '/admin/roles', icon: Users },
+    // TODO: Roles deshabilitado temporalmente - En desarrollo
+    // { name: 'Roles', href: '/admin/roles', icon: Users },
     { name: 'Establecimientos', href: '/admin/establecimientos', icon: Building2 },
     { name: 'Caballos', href: '/admin/caballos', icon: ClipboardList },
     { name: 'Eventos', href: '/admin/eventos', icon: Calendar },
     { name: 'Tareas', href: '/admin/tareas', icon: FileText },
-    { name: 'Auditoría', href: '/admin/auditoria', icon: FileText },
+    { name: 'Notificaciones', href: '/admin/notificaciones', icon: Bell },
+    // TODO: Auditoría deshabilitada temporalmente - En revisión
+    // { name: 'Auditoría', href: '/admin/auditoria', icon: FileText },
     { name: 'Configuración', href: '/admin/configuracion', icon: Settings },
   ],
   establecimiento: [
