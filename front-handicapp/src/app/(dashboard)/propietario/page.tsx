@@ -17,7 +17,9 @@ import {
   Heart, 
   Activity,
   FileText,
-  Building2
+  Building2,
+  CheckSquare,
+  Calendar
 } from 'lucide-react';
 
 export default function PropietarioDashboard() {
@@ -93,6 +95,14 @@ export default function PropietarioDashboard() {
       count: stats.caballos?.total || 0,
     },
     {
+      title: 'Actividades',
+      description: 'Ver el historial de actividades de tus caballos',
+      href: '/propietario/eventos',
+      icon: CheckSquare,
+      colorScheme: 'indigo',
+      count: stats.eventos?.total || 0,
+    },
+    {
       title: 'Salud',
       description: 'Historial médico y control veterinario',
       href: '/propietario/salud',
@@ -102,7 +112,7 @@ export default function PropietarioDashboard() {
     {
       title: 'Competencias',
       description: 'Gestionar eventos y competencias',
-      href: '/propietario/competencias',
+      href: '/propietario/eventos',
       icon: Trophy,
       colorScheme: 'yellow',
     },
@@ -125,7 +135,7 @@ export default function PropietarioDashboard() {
       description: 'Estadísticas e informes',
       href: '/propietario/reportes',
       icon: FileText,
-      colorScheme: 'purple',
+      colorScheme: 'pink',
     },
   ];
 

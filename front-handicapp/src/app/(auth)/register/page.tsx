@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import ApiClient from '@/lib/services/apiClient';
 import { LOGOS } from '@/lib/constants/logos';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, User, Mail, Check, X } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -17,6 +17,7 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,8 +62,14 @@ export default function RegisterPage() {
       return;
     }
 
+    // Si todas las validaciones pasan, mostrar el modal de confirmación
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmRegistration = async () => {
     try {
       setLoading(true);
+      setShowConfirmModal(false);
       
       await ApiClient.register({
         nombre: firstName.trim(),
@@ -240,9 +247,77 @@ export default function RegisterPage() {
               disabled={loading}
               className="w-full bg-[#1e293b] text-white font-semibold py-3.5 rounded-xl hover:bg-[#0f172a] hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
+              {loading ? 'Creando cuenta...' : 'Revisar y Crear Cuenta'}
             </button>
           </form>
+
+          {/* Confirmation Modal */}
+          {showConfirmModal && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-auto">
+                <div className="p-6">
+                  {/* Header */}
+                  <div className="text-center mb-6">
+                    <div className="w-16 h-16 bg-[#af936f]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Check className="w-8 h-8 text-[#af936f]" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">
+                      Confirmar Registro
+                    </h3>
+                    <p className="text-slate-600 text-sm">
+                      Por favor verifica que los datos sean correctos antes de crear tu cuenta
+                    </p>
+                  </div>
+
+                  {/* Data Review */}
+                  <div className="space-y-4 mb-6">
+                    <div className="bg-slate-50 rounded-xl p-4 space-y-3">
+                      <div className="flex items-start gap-3">
+                        <User className="w-5 h-5 text-[#af936f] mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-slate-700">Nombre completo</p>
+                          <p className="text-slate-900">{firstName.trim()} {lastName.trim()}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start gap-3">
+                        <Mail className="w-5 h-5 text-[#af936f] mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-slate-700">Correo electrónico</p>
+                          <p className="text-slate-900">{email.trim()}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+                      <p className="text-blue-800 text-sm">
+                        <strong>Importante:</strong> Recibirás un correo de verificación en {email.trim()} para activar tu cuenta.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowConfirmModal(false)}
+                      className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <X className="w-4 h-4" />
+                      Editar datos
+                    </button>
+                    <button
+                      onClick={handleConfirmRegistration}
+                      disabled={loading}
+                      className="flex-1 px-4 py-3 bg-[#1e293b] text-white rounded-xl font-medium hover:bg-[#0f172a] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      <Check className="w-4 h-4" />
+                      {loading ? 'Creando...' : 'Confirmar'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Footer */}
           <div className="mt-8 text-center">

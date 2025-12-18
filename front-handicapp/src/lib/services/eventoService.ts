@@ -18,6 +18,7 @@ export interface Evento {
   validado: boolean;
   costo?: number;
   adjuntos?: string[];
+  origen_tarea_id?: number; // Para eventos auto-generados desde tareas
   creado_por_usuario_id: number;
   validado_por_usuario_id?: number;
   creado_el: string;
