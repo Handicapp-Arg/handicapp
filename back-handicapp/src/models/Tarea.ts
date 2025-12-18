@@ -13,6 +13,8 @@ interface TareaAttrs {
   creado_por_usuario_id: number;
   estado: EstadoTarea;
   fecha_vencimiento: Date | null;
+  prioridad: string | null;
+  evento_generado_id: number | null;
   creado_el: Date;
   actualizado_el: Date | null;
 }
@@ -26,6 +28,8 @@ type TareaCreation = Optional<
   | "asignado_a_usuario_id"
   | "estado"
   | "fecha_vencimiento"
+  | "prioridad"
+  | "evento_generado_id"
   | "creado_el"
   | "actualizado_el"
 >;
@@ -41,6 +45,8 @@ export class Tarea extends Model<TareaAttrs, TareaCreation> implements TareaAttr
   public creado_por_usuario_id!: number;
   public estado!: EstadoTarea;
   public fecha_vencimiento!: Date | null;
+  public prioridad!: string | null;
+  public evento_generado_id!: number | null;
   public creado_el!: Date;
   public actualizado_el!: Date | null;
 }
@@ -65,6 +71,15 @@ Tarea.init(
       defaultValue: EstadoTarea.open,
     },
     fecha_vencimiento: { type: DataTypes.DATE, allowNull: true },
+    prioridad: { 
+      type: DataTypes.STRING(20), 
+      allowNull: true, 
+      defaultValue: 'media',
+      validate: {
+        isIn: [['baja', 'media', 'alta', 'critica']]
+      }
+    },
+    evento_generado_id: { type: DataTypes.INTEGER, allowNull: true },
     creado_el: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
     actualizado_el: { type: DataTypes.DATE, allowNull: true },
   },

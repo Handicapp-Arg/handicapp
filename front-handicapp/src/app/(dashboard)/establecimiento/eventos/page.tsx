@@ -1,31 +1,39 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
-import { EventoList } from '@/components/dashboard';
+import { CalendarioEventos } from '@/components/dashboard/CalendarioEventos';
+import { EventoForm } from '@/components/dashboard/EventoForm';
 import { useEventos } from '@/lib/hooks';
-import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, CheckCircle, XCircle, TrendingUp } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import type { Evento } from '@/lib/services/eventoService';
+
+interface EventoWithTarea extends Evento {
+  originado_de_tarea_id?: number;
+}
 
 export default function EstablecimientoEventosPage() {
-  const { data: eventos = [], isLoading: loading } = useEventos({ page: 1, limit: 500 });
+  const { data: eventos = [], isLoading: loading, refetch } = useEventos({ page: 1, limit: 500 });
+  const [showForm, setShowForm] = useState(false);
+  const [selectedEvento, setSelectedEvento] = useState<EventoWithTarea | null>(null);
+
+  const eventosArray = useMemo(() => {
+    return Array.isArray(eventos) ? eventos : (eventos as { data?: EventoWithTarea[] })?.data || [];
+  }, [eventos]);
 
   const eventosStats = useMemo(() => {
-    const eventosArray = Array.isArray(eventos) 
-      ? eventos 
-      : (eventos as any)?.data || [];
     
     const now = new Date();
     
     const total = eventosArray.length;
-    const proximos = eventosArray.filter((e: any) => new Date(e.fecha) > now && e.estado !== 'cancelado').length;
-    const completados = eventosArray.filter((e: any) => e.estado === 'completado').length;
-    const cancelados = eventosArray.filter((e: any) => e.estado === 'cancelado').length;
+    const proximos = eventosArray.filter((e: EventoWithTarea) => new Date(e.fecha_evento) > now && e.estado !== 'cancelado').length;
+    const completados = eventosArray.filter((e: EventoWithTarea) => e.estado === 'completado').length;
+    const cancelados = eventosArray.filter((e: EventoWithTarea) => e.estado === 'cancelado').length;
+    const autoGenerados = eventosArray.filter((e: EventoWithTarea) => e.originado_de_tarea_id).length;
 
-    return { total, proximos, completados, cancelados };
-  }, [eventos]);
+    return { total, proximos, completados, cancelados, autoGenerados };
+  }, [eventosArray]);
 
   if (loading) {
     return (
@@ -38,125 +46,70 @@ export default function EstablecimientoEventosPage() {
   return (
     <SimpleRoleGuard roles={['establecimiento']}>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30">
-        <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
+        <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6">
           
-          {/* Hero Section */}
-          <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 mb-6 sm:mb-8 shadow-2xl">
-            <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,transparent,black)]"></div>
-            <div className="absolute top-0 right-0 -mt-4 -mr-4 w-48 h-48 sm:w-72 sm:h-72 bg-emerald-500/20 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-48 h-48 sm:w-72 sm:h-72 bg-green-500/20 rounded-full blur-3xl"></div>
-            
-            <div className="relative px-4 sm:px-6 md:px-8 py-6 sm:py-8 md:py-12">
-              <div className="flex items-center justify-between">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                    <div className="p-2 sm:p-3 bg-emerald-500/10 backdrop-blur-sm rounded-xl sm:rounded-2xl border border-emerald-500/20 flex-shrink-0">
-                      <Calendar className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-emerald-400" />
-                    </div>
-                    <div className="min-w-0">
-                      <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-0.5 sm:mb-1 truncate">Gestión de Eventos</h1>
-                      <p className="text-xs sm:text-sm md:text-base text-slate-300 truncate">Organiza y monitorea eventos del establecimiento</p>
-                    </div>
+          {/* Header Moderno */}
+          <div className="mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">
+                      Calendario de Eventos
+                    </h1>
+                    <p className="text-sm text-slate-600 mt-0.5">
+                      Planifica y gestiona todas las actividades
+                    </p>
                   </div>
                 </div>
+                
+                {/* Info badge - Visible en todas las pantallas */}
+                {eventosStats.autoGenerados > 0 && (
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 border border-purple-200 rounded-lg text-xs sm:text-sm text-purple-700 mt-2">
+                    <Sparkles className="w-4 h-4 flex-shrink-0" />
+                    <span>
+                      <span className="font-semibold">{eventosStats.autoGenerados}</span> eventos creados automáticamente desde tareas
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
-            {/* Total Eventos */}
-            <div className="group relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-3 sm:p-4 md:p-6 shadow-xl hover:shadow-2xl transition-all duration-300">
-              <div className="absolute inset-0 bg-grid-white/5"></div>
-              <div className="absolute top-0 right-0 w-20 h-20 sm:w-32 sm:h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-all"></div>
-              
-              <div className="relative">
-                <div className="flex items-center justify-between mb-2 sm:mb-3 md:mb-4">
-                  <Calendar className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-purple-400 flex-shrink-0" />
-                  <Badge variant="secondary" className="bg-white/5 text-white border-white/10 backdrop-blur-sm text-[10px] sm:text-xs px-1.5 sm:px-2">
-                    Total
-                  </Badge>
-                </div>
-                <div className="space-y-0.5 sm:space-y-1">
-                  <p className="text-[10px] sm:text-xs md:text-sm font-medium text-slate-300 truncate">Total Eventos</p>
-                  <p className="text-xl sm:text-2xl md:text-3xl font-bold text-white">{eventosStats.total}</p>
-                  <p className="text-[10px] sm:text-xs text-slate-400 hidden sm:block">En el sistema</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Próximos */}
-            <div className="group relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-3 sm:p-4 md:p-6 shadow-xl hover:shadow-2xl transition-all duration-300">
-              <div className="absolute inset-0 bg-grid-white/5"></div>
-              <div className="absolute top-0 right-0 w-20 h-20 sm:w-32 sm:h-32 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all"></div>
-              
-              <div className="relative">
-                <div className="flex items-center justify-between mb-2 sm:mb-3 md:mb-4">
-                  <Clock className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-blue-400 flex-shrink-0" />
-                  <Badge variant="secondary" className="bg-white/5 text-white border-white/10 backdrop-blur-sm text-[10px] sm:text-xs px-1.5 sm:px-2">
-                    Próximos
-                  </Badge>
-                </div>
-                <div className="space-y-0.5 sm:space-y-1">
-                  <p className="text-[10px] sm:text-xs md:text-sm font-medium text-slate-300 truncate">Programados</p>
-                  <p className="text-xl sm:text-2xl md:text-3xl font-bold text-white">{eventosStats.proximos}</p>
-                  <p className="text-[10px] sm:text-xs text-slate-400 hidden sm:block">Por realizar</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Completados */}
-            <div className="group relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-3 sm:p-4 md:p-6 shadow-xl hover:shadow-2xl transition-all duration-300">
-              <div className="absolute inset-0 bg-grid-white/5"></div>
-              <div className="absolute top-0 right-0 w-20 h-20 sm:w-32 sm:h-32 bg-green-500/10 rounded-full blur-2xl group-hover:bg-green-500/20 transition-all"></div>
-              
-              <div className="relative">
-                <div className="flex items-center justify-between mb-2 sm:mb-3 md:mb-4">
-                  <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-green-400 flex-shrink-0" />
-                  <Badge variant="secondary" className="bg-white/5 text-white border-white/10 backdrop-blur-sm text-[10px] sm:text-xs px-1.5 sm:px-2">
-                    {((eventosStats.completados / eventosStats.total) * 100 || 0).toFixed(0)}%
-                  </Badge>
-                </div>
-                <div className="space-y-0.5 sm:space-y-1">
-                  <p className="text-[10px] sm:text-xs md:text-sm font-medium text-slate-300 truncate">Completados</p>
-                  <p className="text-xl sm:text-2xl md:text-3xl font-bold text-white">{eventosStats.completados}</p>
-                  <p className="text-[10px] sm:text-xs text-slate-400 hidden sm:block">Finalizados con éxito</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Cancelados */}
-            <div className="group relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-3 sm:p-4 md:p-6 shadow-xl hover:shadow-2xl transition-all duration-300">
-              <div className="absolute inset-0 bg-grid-white/5"></div>
-              <div className="absolute top-0 right-0 w-20 h-20 sm:w-32 sm:h-32 bg-red-500/10 rounded-full blur-2xl group-hover:bg-red-500/20 transition-all"></div>
-              
-              <div className="relative">
-                <div className="flex items-center justify-between mb-2 sm:mb-3 md:mb-4">
-                  <XCircle className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-red-400 flex-shrink-0" />
-                  <Badge variant="secondary" className="bg-white/5 text-white border-white/10 backdrop-blur-sm text-[10px] sm:text-xs px-1.5 sm:px-2">
-                    Cancelados
-                  </Badge>
-                </div>
-                <div className="space-y-0.5 sm:space-y-1">
-                  <p className="text-[10px] sm:text-xs md:text-sm font-medium text-slate-300 truncate">Cancelados</p>
-                  <p className="text-xl sm:text-2xl md:text-3xl font-bold text-white">{eventosStats.cancelados}</p>
-                  <p className="text-[10px] sm:text-xs text-slate-400 hidden sm:block">No realizados</p>
-                </div>
-              </div>
-            </div>
+          {/* Calendario de Eventos */}
+          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-4 sm:p-6">
+            <CalendarioEventos 
+              eventos={eventosArray}
+              onCreateEvento={() => {
+                setSelectedEvento(null);
+                setShowForm(true);
+              }}
+              onEventoClick={(evento) => {
+                setSelectedEvento(evento as EventoWithTarea);
+                setShowForm(true);
+              }}
+            />
           </div>
 
-          {/* Eventos List */}
-          <Card className="rounded-2xl shadow-xl border-slate-200">
-            <CardHeader>
-              <CardDescription>
-                Lista completa de eventos del establecimiento
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <EventoList />
-            </CardContent>
-          </Card>
+          {/* Modal de formulario */}
+          <EventoForm
+            isOpen={showForm}
+            onClose={() => {
+              setShowForm(false);
+              setSelectedEvento(null);
+            }}
+            evento={selectedEvento}
+            onSuccess={() => {
+              setShowForm(false);
+              setSelectedEvento(null);
+              refetch();
+            }}
+          />
         </div>
       </div>
     </SimpleRoleGuard>

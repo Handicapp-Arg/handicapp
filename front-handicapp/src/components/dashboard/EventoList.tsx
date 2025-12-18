@@ -28,7 +28,7 @@ export function EventoList() {
   const [showForm, setShowForm] = useState(false);
   const [selectedEventoId, setSelectedEventoId] = useState<number | null>(null);
   const { isAuthenticated, isLoading: authLoading } = useAuthNew();
-  const { canCreateEvents, canDeleteEvents, getUserRole } = usePermissions();
+  const { canCreateEvents, canDeleteEvents } = usePermissions();
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -210,6 +210,12 @@ export function EventoList() {
                          evento.prioridad === 'alta' ? 'Alta' :
                          evento.prioridad === 'media' ? 'Media' : 'Baja'}
                       </span>
+                      {(evento as any).originado_de_tarea_id && (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          Auto-generado
+                        </span>
+                      )}
                     </div>
                   </div>
                   

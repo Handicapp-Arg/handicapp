@@ -6,6 +6,7 @@
 import { Op } from 'sequelize';
 import { Tarea } from '../models/Tarea';
 import { User } from '../models/User';
+import { Role } from '../models/roles';
 import { Establecimiento } from '../models/Establecimiento';
 import { Caballo } from '../models/Caballo';
 import { PropietarioCaballo } from '../models/PropietarioCaballo';
@@ -14,6 +15,7 @@ import { TipoEvento } from '../models/TipoEvento';
 import { ServiceResponse, PaginationQuery } from '../types';
 import { TipoTarea, EstadoTarea, EstadoValidacionEvento } from '../models/enums';
 import { logger } from '../utils/logger';
+import { TareaEventoMapper } from './tareaEventoMapper';
 
 
 interface CreateTareaData {
@@ -24,6 +26,7 @@ interface CreateTareaData {
   notas?: string;
   asignado_a_usuario_id?: number;
   fecha_vencimiento?: Date;
+  prioridad?: string;
 }
 
 interface UpdateTareaData extends Partial<CreateTareaData> {
@@ -238,9 +241,70 @@ export class TareaService {
         ? `${tarea.notas ? tarea.notas + '\n' : ''}Completada por ${actorUserId}: ${observaciones}`
         : tarea.notas;
 
+      // Actualizar el estado de la tarea
       await tarea.update({ estado: EstadoTarea.done, notas, actualizado_el: new Date() });
+
+      // ============================================================================
+      // 🎯 AUTO-GENERACIÓN DE EVENTO (Si la tarea está vinculada a un caballo)
+      // ============================================================================
+      if (tarea.caballo_id && TareaEventoMapper.debeGenerarEvento(tarea.tipo, tarea.caballo_id)) {
+        try {
+          logger.info(`🔄 Generando evento automático para tarea completada ID: ${tarea.id}`);
+
+          // Obtener el tipo de evento correspondiente
+          const tipoEventoId = await TareaEventoMapper.obtenerTipoEventoId(tarea.tipo);
+
+          if (tipoEventoId) {
+            // Obtener información del usuario que completa (para rol_autor)
+            const usuario = await User.findByPk(actorUserId, {
+              include: [{ model: Role, as: 'rol', attributes: ['nombre'] }]
+            });
+
+            const rolAutor = usuario?.rol?.nombre || 'establecimiento';
+
+            // Crear el evento automáticamente
+            const evento = await Evento.create({
+              caballo_id: tarea.caballo_id,
+              tipo_evento_id: tipoEventoId,
+              fecha_evento: new Date(), // Fecha de completado
+              titulo: tarea.titulo,
+              descripcion: TareaEventoMapper.generarDescripcionEvento({
+                titulo: tarea.titulo,
+                notas: tarea.notas,
+                tipo: tarea.tipo,
+                asignado_a_usuario_id: tarea.asignado_a_usuario_id
+              }),
+              establecimiento_id: tarea.establecimiento_id,
+              creado_por_usuario_id: actorUserId,
+              rol_autor: rolAutor,
+              estado: 'completado',
+              prioridad: TareaEventoMapper.mapearPrioridad(tarea.prioridad),
+              es_publico: true, // ✅ Visible para el propietario
+              requiere_validacion: false,
+              estado_validacion: EstadoValidacionEvento.approved,
+              originado_de_tarea_id: tarea.id
+            });
+
+            // Vincular la tarea con el evento generado
+            await tarea.update({ evento_generado_id: evento.id });
+
+            logger.info(`✅ Evento automático creado: ID ${evento.id} para tarea ${tarea.id}`);
+            
+            // TODO: Enviar notificación al propietario del caballo
+            // await NotificacionService.notificarNuevoEvento(tarea.caballo_id, evento.id);
+          } else {
+            logger.warn(`⚠️ No se pudo obtener tipo de evento para tarea tipo: ${tarea.tipo}`);
+          }
+        } catch (eventoError) {
+          // No fallar la completación de la tarea si falla la creación del evento
+          logger.error('❌ Error al generar evento automático:', eventoError);
+          logger.info('✅ Tarea completada exitosamente (sin evento automático)');
+        }
+      }
+
       return { success: true, data: tarea };
     } catch (error) {
+      logger.error('❌ Error al completar tarea:', error);
       return { success: false, error: 'Error al completar tarea' };
     }
   }

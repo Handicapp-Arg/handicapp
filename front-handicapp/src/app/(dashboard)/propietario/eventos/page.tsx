@@ -31,11 +31,17 @@ export default function EventosPage() {
           <div className="relative z-10 px-6 sm:px-8 lg:px-12 py-6">
             <div className="mb-6">
               <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 leading-tight">
-                Gestión de Eventos
+                Historial de Eventos
               </h1>
               <p className="text-sm sm:text-base text-white/70">
-                Administra eventos médicos, competencias y actividades programadas
+                Registro completo de todas las actividades, cuidados y eventos de tus caballos
               </p>
+              <div className="mt-3 flex items-center gap-2 text-xs text-emerald-200 bg-emerald-500/10 px-3 py-2 rounded-lg border border-emerald-500/20 backdrop-blur-sm w-fit">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Aquí verás tanto eventos programados como actividades completadas automáticamente por el personal</span>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

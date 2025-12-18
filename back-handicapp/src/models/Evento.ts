@@ -25,6 +25,7 @@ interface EventoAttrs {
   prioridad: string | null;
   es_publico: boolean;
   requiere_validacion: boolean;
+  originado_de_tarea_id: number | null;
   // Timestamps
   creado_el: Date;
   actualizado_el: Date | null;
@@ -50,6 +51,7 @@ type EventoCreate = Optional<
   | "prioridad"
   | "es_publico"
   | "requiere_validacion"
+  | "originado_de_tarea_id"
   | "creado_el"
   | "actualizado_el"
   | "eliminado_el"
@@ -77,6 +79,7 @@ export class Evento extends Model<EventoAttrs, EventoCreate> implements EventoAt
   public prioridad!: string | null;
   public es_publico!: boolean;
   public requiere_validacion!: boolean;
+  public originado_de_tarea_id!: number | null;
   public creado_el!: Date;
   public actualizado_el!: Date | null;
   public eliminado_el!: Date | null;
@@ -109,6 +112,7 @@ Evento.init(
     prioridad: { type: DataTypes.STRING(20), allowNull: true, defaultValue: 'media' },
     es_publico: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
     requiere_validacion: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+    originado_de_tarea_id: { type: DataTypes.INTEGER, allowNull: true },
     creado_el: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
     actualizado_el: { type: DataTypes.DATE, allowNull: true },
     eliminado_el: { type: DataTypes.DATE, allowNull: true },

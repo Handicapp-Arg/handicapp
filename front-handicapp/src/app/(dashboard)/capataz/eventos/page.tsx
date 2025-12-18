@@ -54,8 +54,14 @@ export default function CapatazEventosPage() {
                       <Calendar className="w-8 h-8 text-orange-400" />
                     </div>
                     <div>
-                      <h1 className="text-3xl font-bold text-white mb-1">Gestión de Eventos</h1>
-                      <p className="text-slate-300">Organiza y monitorea eventos del establecimiento</p>
+                      <h1 className="text-3xl font-bold text-white mb-1">Calendario de Eventos</h1>
+                      <p className="text-slate-300">Planifica actividades importantes con fecha y hora específica</p>
+                      <div className="mt-2 flex items-center gap-2 text-xs text-orange-200 bg-orange-500/10 px-3 py-1.5 rounded-lg border border-orange-500/20 backdrop-blur-sm w-fit">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Incluye eventos manuales y auto-generados al completar tareas</span>
+                      </div>
                     </div>
                   </div>
                 </div>

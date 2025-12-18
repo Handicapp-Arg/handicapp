@@ -2,6 +2,7 @@ export { CaballoList } from './CaballoList';
 export { CaballoForm } from './CaballoForm';
 export { EventoList } from './EventoList';
 export { EventoForm } from './EventoForm';
+export { CalendarioEventos } from './CalendarioEventos';
 export { TareaList } from './TareaList';
 export { TareaForm } from './TareaForm';
 export { TareaKanban } from './TareaKanban';
