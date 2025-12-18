@@ -12,7 +12,13 @@ export class InventarioController {
   /**
    * Helper para obtener el establecimiento del usuario
    */
-  private static async getEstablecimientoId(usuarioId: number): Promise<number | null> {
+  private static async getEstablecimientoId(usuarioId: number, user?: any): Promise<number | null> {
+    // Primero intentar usar el establecimiento_id directo del usuario
+    if (user && user.establecimiento_id) {
+      return user.establecimiento_id;
+    }
+    
+    // Fallback: buscar en la tabla de membresías
     const membresia = await MembresiaUsuarioEstablecimiento.findOne({
       where: { usuario_id: usuarioId },
       order: [['creado_el', 'DESC']],
@@ -26,7 +32,7 @@ export class InventarioController {
       const usuario = req.user!;
       const { categoria_id, proveedor_id, estado, stock_bajo, busqueda } = req.query;
 
-      const establecimientoId = await InventarioController.getEstablecimientoId(usuario.id);
+      const establecimientoId = await InventarioController.getEstablecimientoId(usuario.id, usuario);
       if (!establecimientoId) {
         res.status(403).json(ApiResponse.error('Usuario no asociado a un establecimiento'));
         return;

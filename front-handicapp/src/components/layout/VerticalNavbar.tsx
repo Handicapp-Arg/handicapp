@@ -169,14 +169,18 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
                     alt="HandicApp Icon" 
                     width={48} 
                     height={48}
+                    priority={true}
                     className="object-contain flex-shrink-0"
+                    style={{ aspectRatio: '1' }}
                   />
                   <Image 
                     src={LOGOS.TEXT_BROWN}
                     alt="HandicApp" 
                     width={140} 
                     height={28}
+                    priority={true}
                     className="object-contain flex-shrink-0 brightness-0 invert"
+                    style={{ aspectRatio: '5' }}
                   />
                 </div>
               ) : (
@@ -185,7 +189,9 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
                   alt="HandicApp" 
                   width={44} 
                   height={44}
+                  priority={true}
                   className="object-contain"
+                  style={{ aspectRatio: '1' }}
                 />
               )}
             </div>
@@ -264,6 +270,7 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
                 width={48} 
                 height={48}
                 className="object-contain flex-shrink-0"
+                style={{ aspectRatio: '1' }}
               />
               <Image 
                 src={LOGOS.TEXT_BROWN}
@@ -271,6 +278,7 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
                 width={140} 
                 height={28}
                 className="object-contain flex-shrink-0 brightness-0 invert"
+                style={{ aspectRatio: '5' }}
               />
             </div>
             

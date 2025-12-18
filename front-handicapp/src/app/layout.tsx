@@ -60,6 +60,11 @@ export default function RootLayout({
         {/* Preconnect para optimización */}
         <link rel="preconnect" href="https://res.cloudinary.com" />
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+        
+        {/* Favicons */}
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/logos/logo-mobile.svg" />
+        <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}>
         <RootErrorBoundary showDetails={process.env.NODE_ENV === 'development'}>
