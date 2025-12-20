@@ -2,19 +2,10 @@
 
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { notificacionService } from '@/lib/services/notificacionService';
+import { notificacionService, type Notificacion } from '@/lib/services/notificacionService';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Bell, CheckCircle, Trash2, Info, AlertTriangle, XCircle } from 'lucide-react';
 import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
-
-interface Notificacion {
-  id: number;
-  tipo: 'info' | 'success' | 'warning' | 'error';
-  titulo: string;
-  mensaje: string;
-  leido: boolean;
-  fecha_creacion: string;
-}
 
 const getTipoIcon = (tipo: string) => {
   switch (tipo) {
@@ -53,7 +44,7 @@ export function NotificacionesPage() {
     queryKey: ['notificaciones'],
     queryFn: async () => {
       const data = await notificacionService.obtenerNotificaciones();
-      const notificacionesArray = Array.isArray(data) ? data : (data as any)?.data || [];
+      const notificacionesArray = Array.isArray(data) ? data : (data as { data?: Notificacion[] })?.data || [];
       return notificacionesArray as Notificacion[];
     },
     refetchOnWindowFocus: true,
@@ -98,17 +89,17 @@ export function NotificacionesPage() {
 
   const stats = useMemo(() => ({
     total: notificaciones.length,
-    noLeidas: notificaciones.filter(n => !n.leido).length,
-    leidas: notificaciones.filter(n => n.leido).length,
+    noLeidas: notificaciones.filter(n => !n.leida).length,
+    leidas: notificaciones.filter(n => n.leida).length,
     hoy: notificaciones.filter(n => {
       const today = new Date().toDateString();
-      return new Date(n.fecha_creacion).toDateString() === today;
+      return new Date(n.creado_el).toDateString() === today;
     }).length,
   }), [notificaciones]);
 
   const filteredNotificaciones = notificaciones.filter(n => {
-    if (filter === 'no_leidas') return !n.leido;
-    if (filter === 'leidas') return n.leido;
+    if (filter === 'no_leidas') return !n.leida;
+    if (filter === 'leidas') return n.leida;
     return true;
   });
 
@@ -240,14 +231,14 @@ export function NotificacionesPage() {
               <div
                 key={notif.id}
                 className={`py-4 flex gap-4 transition-colors ${
-                  !notif.leido 
+                  !notif.leida 
                     ? 'bg-blue-50/50 hover:bg-blue-50 border-l-2 border-l-blue-600 pl-3' 
                     : 'hover:bg-gray-50 pl-4'
                 }`}
               >
                 {/* Indicador de no leído */}
                 <div className="flex-shrink-0 pt-1">
-                  {!notif.leido ? (
+                  {!notif.leida ? (
                     <div className="w-2 h-2 rounded-full bg-blue-600"></div>
                   ) : (
                     <div className="w-2 h-2"></div>
@@ -263,14 +254,14 @@ export function NotificacionesPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <h3 className={`text-sm font-semibold ${!notif.leido ? 'text-gray-900' : 'text-gray-700'}`}>
+                      <h3 className={`text-sm font-semibold ${!notif.leida ? 'text-gray-900' : 'text-gray-700'}`}>
                         {notif.titulo}
                       </h3>
                       <p className="text-sm text-gray-600 mt-1 line-clamp-2">
                         {notif.mensaje}
                       </p>
                       <p className="text-xs text-gray-400 mt-2">
-                        {new Date(notif.fecha_creacion).toLocaleString('es-AR', {
+                        {new Date(notif.creado_el).toLocaleString('es-AR', {
                           day: 'numeric',
                           month: 'short',
                           year: 'numeric',
@@ -282,7 +273,7 @@ export function NotificacionesPage() {
 
                     {/* Acciones */}
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      {!notif.leido && (
+                      {!notif.leida && (
                         <button
                           onClick={() => handleMarkAsRead(notif.id)}
                           className="p-2 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors"
