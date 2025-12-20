@@ -44,16 +44,14 @@ export default function PropietarioTareasPage() {
             </div>
             <div className="ml-3">
               <p className="text-sm text-blue-700">
-                Aquí puedes solicitar atención o servicios para tus caballos. El equipo del establecimiento se encargará de ejecutarlas y actualizarás sobre su progreso.
+                Aquí puedes solicitar atención o servicios para tus caballos. El equipo del establecimiento se encargará de ejecutarlas y actualizar sobre su progreso.
               </p>
             </div>
           </div>
         </div>
 
         {/* Kanban Board */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-          <TareaKanban tareas={tasks} onRefresh={loadTasks} />
-        </div>
+        <TareaKanban tareas={tasks} onRefresh={loadTasks} />
       </div>
     </SimpleRoleGuard>
   );

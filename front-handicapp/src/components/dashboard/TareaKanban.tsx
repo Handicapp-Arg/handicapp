@@ -334,16 +334,18 @@ export function TareaKanban({ tareas: tareasProp, onRefresh }: TareaKanbanProps)
   };
 
   return (
-    <div className="w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-0">
-      {/* Título fuera del contenedor */}
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">{getKanbanTitle()}</h2>
-      </div>
-
+    <div className="w-full max-w-[1920px] mx-auto">
       {/* Kanban Board - Contenedor unificado con header integrado */}
-      <div className="bg-white rounded-lg border border-stroke overflow-hidden w-full">
-        {/* Header con tabs y botón */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-4 sm:px-6 py-4 border-b border-stroke">
+      <div className="bg-white rounded-lg border border-stroke overflow-hidden w-full shadow-sm">
+        {/* Header con título, tabs y botón */}
+        <div className="border-b border-stroke">
+          {/* Título */}
+          <div className="px-4 sm:px-6 pt-4 pb-3">
+            <h2 className="text-xl font-semibold text-gray-900">{getKanbanTitle()}</h2>
+          </div>
+          
+          {/* Tabs y botones */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-4 sm:px-6 pb-4">
           {/* Tabs - Scroll horizontal en móvil */}
           <div className="flex items-center gap-1 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
             <button
@@ -432,6 +434,7 @@ export function TareaKanban({ tareas: tareasProp, onRefresh }: TareaKanbanProps)
               </button>
             )}
           </div>
+        </div>
         </div>
 
         {/* Panel de filtros (si está abierto) */}
