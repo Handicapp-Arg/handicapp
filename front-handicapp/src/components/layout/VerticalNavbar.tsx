@@ -152,12 +152,12 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
       <div className={`hidden lg:flex lg:flex-col lg:fixed transition-all duration-300 ${
         isCollapsed ? 'lg:w-20' : 'lg:w-72'
       } lg:left-0 lg:top-0 lg:bottom-0 z-30`}>
-        <div className="flex flex-col h-full bg-[#0f172a] border-r border-white/10 shadow-lg"
+        <div className="flex flex-col h-full bg-[#0f172a] shadow-lg"
              style={{
                boxShadow: '4px 0 6px -1px rgba(0, 0, 0, 0.1)'
              }}>
           {/* Logo/Header */}
-          <div className="relative h-16 sm:h-18 lg:h-20 border-b border-white/10 flex-shrink-0">
+          <div className="relative h-16 sm:h-18 lg:h-20 flex-shrink-0">
             <div className="flex items-center justify-center h-full px-4">
               {!isCollapsed ? (
                 <div className="flex items-center gap-3">
