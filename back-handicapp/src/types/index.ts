@@ -139,7 +139,7 @@ export interface CreateTareaData {
   titulo: string;
   descripcion: string;
   fechaVencimiento: Date;
-  prioridad?: 'baja' | 'media' | 'alta' | 'urgente';
+  prioridad?: 'baja' | 'media' | 'alta' | 'critica';
   estado?: 'pendiente' | 'en_progreso' | 'completada' | 'cancelada' | 'vencida';
   asignadoAUsuarioId?: number;
   caballoId?: number;

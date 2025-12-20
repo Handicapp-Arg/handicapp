@@ -84,58 +84,37 @@ export default function PropietarioDashboard() {
     },
   ];
 
-  // Acciones principales
+  // Acciones principales - Simplificadas y enfocadas en el flujo del propietario
   const actions: ActionCardProps[] = [
     {
       title: 'Mis Caballos',
-      description: 'Ver y administrar tus caballos',
+      description: 'Ver y administrar toda la información de tus caballos',
       href: '/propietario/caballos',
       icon: Sparkles,
       colorScheme: 'blue',
       count: stats.caballos?.total || 0,
     },
     {
-      title: 'Actividades',
-      description: 'Ver el historial de actividades de tus caballos',
+      title: 'Historial de Actividades',
+      description: 'Ver todos los eventos y actividades registradas',
       href: '/propietario/eventos',
       icon: CheckSquare,
       colorScheme: 'indigo',
       count: stats.eventos?.total || 0,
     },
     {
-      title: 'Salud',
-      description: 'Historial médico y control veterinario',
-      href: '/propietario/salud',
-      icon: Stethoscope,
-      colorScheme: 'teal',
-    },
-    {
-      title: 'Competencias',
-      description: 'Gestionar eventos y competencias',
-      href: '/propietario/eventos',
-      icon: Trophy,
-      colorScheme: 'yellow',
-    },
-    {
-      title: 'Entrenamiento',
-      description: 'Ver progreso y rutinas',
-      href: '/propietario/entrenamiento',
-      icon: Activity,
-      colorScheme: 'cyan',
-    },
-    {
       title: 'Establecimientos',
-      description: 'Gestionar ubicaciones',
+      description: 'Ver dónde están alojados tus caballos',
       href: '/propietario/establecimientos',
       icon: Building2,
       colorScheme: 'green',
     },
     {
-      title: 'Reportes',
-      description: 'Estadísticas e informes',
+      title: 'Reportes y Estadísticas',
+      description: 'Análisis detallados y reportes de rendimiento',
       href: '/propietario/reportes',
       icon: FileText,
-      colorScheme: 'pink',
+      colorScheme: 'purple',
     },
   ];
 
@@ -164,10 +143,10 @@ export default function PropietarioDashboard() {
                 variant: 'primary',
               },
               {
-                label: 'Control de Salud',
-                href: '/propietario/salud',
+                label: 'Ver Historial',
+                href: '/propietario/eventos',
                 variant: 'secondary',
-                icon: Stethoscope,
+                icon: Calendar,
               },
             ]}
           />

@@ -1,159 +1,111 @@
 /**
  * Task Types - Sistema de tipos centralizado para tareas
  * Siguiendo principios SOLID y DRY
+ * Normalizado en español para consistencia con backend
  */
 
-// Estado de tarea normalizado para UI
-export type TaskStatus = 'open' | 'in_progress' | 'completed' | 'cancelled';
+// Import y re-export de tipos desde tareaService para consistencia
+import type { Tarea } from '@/lib/services/tareaService';
+export type { Tarea };
 
-// Estado de tarea del backend
-export type TaskBackendStatus = 'pendiente' | 'en_progreso' | 'completada' | 'cancelada';
+// Estado de tarea
+export type EstadoTarea = 'pendiente' | 'en_progreso' | 'completada' | 'cancelada' | 'vencida';
 
 // Prioridad de tarea
-export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type PrioridadTarea = 'baja' | 'media' | 'alta' | 'critica';
 
 // Vista del Kanban
-export type TaskView = 'all' | 'open' | 'in_progress' | 'completed';
-
-// Interfaz principal de tarea
-export interface Task {
-  id: number;
-  titulo: string;
-  descripcion?: string;
-  estado: TaskBackendStatus;
-  estadoNormalizado?: TaskStatus; // Campo calculado para UI
-  prioridad?: TaskPriority;
-  tipo?: string;
-  fecha_inicio?: string;
-  fecha_fin?: string;
-  fecha_vencimiento?: string;
-  ubicacion?: string;
-  notas?: string;
-  asignado_a?: number;
-  creado_por?: number;
-  establecimiento_id?: number;
-  caballo_id?: number;
-  usuario?: {
-    id: number;
-    nombre: string;
-    apellido: string;
-  };
-  caballo?: {
-    id: number;
-    nombre: string;
-  };
-  created_at?: string;
-  updated_at?: string;
-}
+export type VistaKanban = 'todas' | 'pendiente' | 'en_progreso' | 'completada';
 
 // Filtros de búsqueda
-export interface TaskFilters {
-  search?: string;
-  status?: TaskStatus | 'all';
-  priority?: TaskPriority;
-  assignedTo?: number;
-  dateFrom?: string;
-  dateTo?: string;
+export interface FiltrosTarea {
+  busqueda?: string;
+  estado?: EstadoTarea | 'todas';
+  prioridad?: PrioridadTarea;
+  asignado_a?: number;
+  fecha_desde?: string;
+  fecha_hasta?: string;
 }
 
 // Estadísticas de tareas
-export interface TaskStats {
+export interface EstadisticasTarea {
   total: number;
-  open: number;
-  inProgress: number;
-  completed: number;
-  cancelled: number;
+  pendientes: number;
+  en_progreso: number;
+  completadas: number;
+  canceladas: number;
 }
 
-// Props para componentes
-export interface TaskManagerProps {
-  initialTasks?: Task[];
-  onTaskCreate?: (task: Task) => void;
-  onTaskUpdate?: (task: Task) => void;
-  onTaskDelete?: (taskId: number) => void;
-  canCreate?: boolean;
-  canEdit?: boolean;
-  canDelete?: boolean;
-  compact?: boolean;
+// Props para componentes de tareas
+export interface TareaManagerProps {
+  tareasIniciales?: Tarea[];
+  alCrear?: (tarea: Tarea) => void;
+  alActualizar?: (tarea: Tarea) => void;
+  alEliminar?: (tareaId: number) => void;
+  puedeCrear?: boolean;
+  puedeEditar?: boolean;
+  puedeEliminar?: boolean;
+  compacto?: boolean;
 }
-
-// Mapeo de estados
-export const TASK_STATUS_MAP: Record<TaskBackendStatus, TaskStatus> = {
-  'pendiente': 'open',
-  'en_progreso': 'in_progress',
-  'completada': 'completed',
-  'cancelada': 'cancelled'
-};
-
-export const TASK_STATUS_REVERSE_MAP: Record<TaskStatus, TaskBackendStatus> = {
-  'open': 'pendiente',
-  'in_progress': 'en_progreso',
-  'completed': 'completada',
-  'cancelled': 'cancelada'
-};
 
 // Labels para UI
-export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
-  'open': 'Abiertas',
-  'in_progress': 'En Progreso',
-  'completed': 'Completadas',
-  'cancelled': 'Canceladas'
+export const ETIQUETAS_ESTADO: Record<EstadoTarea, string> = {
+  'pendiente': 'Pendiente',
+  'en_progreso': 'En Progreso',
+  'completada': 'Completada',
+  'cancelada': 'Cancelada',
+  'vencida': 'Vencida'
 };
 
-export const TASK_VIEW_LABELS: Record<TaskView, string> = {
-  'all': 'Todas',
-  'open': 'Abiertas',
-  'in_progress': 'En Progreso',
-  'completed': 'Completadas'
+export const ETIQUETAS_VISTA: Record<VistaKanban, string> = {
+  'todas': 'Todas',
+  'pendiente': 'Pendiente',
+  'en_progreso': 'En Progreso',
+  'completada': 'Completada'
+};
+
+export const ETIQUETAS_PRIORIDAD: Record<PrioridadTarea, string> = {
+  'baja': 'Baja',
+  'media': 'Media',
+  'alta': 'Alta',
+  'critica': 'Crítica'
 };
 
 // Colores para estados
-export const TASK_STATUS_COLORS: Record<TaskStatus, {
+export const COLORES_ESTADO: Record<EstadoTarea, {
   bg: string;
   text: string;
   border: string;
   icon: string;
 }> = {
-  'open': {
+  'pendiente': {
     bg: 'bg-blue-50',
     text: 'text-blue-700',
     border: 'border-blue-200',
     icon: 'text-blue-500'
   },
-  'in_progress': {
+  'en_progreso': {
     bg: 'bg-amber-50',
     text: 'text-amber-700',
     border: 'border-amber-200',
     icon: 'text-amber-500'
   },
-  'completed': {
+  'completada': {
     bg: 'bg-green-50',
     text: 'text-green-700',
     border: 'border-green-200',
     icon: 'text-green-500'
   },
-  'cancelled': {
+  'cancelada': {
     bg: 'bg-gray-50',
     text: 'text-gray-700',
     border: 'border-gray-200',
     icon: 'text-gray-500'
+  },
+  'vencida': {
+    bg: 'bg-red-50',
+    text: 'text-red-700',
+    border: 'border-red-200',
+    icon: 'text-red-500'
   }
 };
-
-// Utilidades
-export function normalizeTaskStatus(status: string | undefined): TaskStatus {
-  if (!status) return 'open';
-  const normalized = status.toLowerCase() as TaskBackendStatus;
-  return TASK_STATUS_MAP[normalized] || 'open';
-}
-
-export function denormalizeTaskStatus(status: TaskStatus): TaskBackendStatus {
-  return TASK_STATUS_REVERSE_MAP[status];
-}
-
-export function normalizeTask(task: any): Task {
-  return {
-    ...task,
-    estadoNormalizado: normalizeTaskStatus(task.estado)
-  };
-}

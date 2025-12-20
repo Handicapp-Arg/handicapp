@@ -22,8 +22,6 @@ import {
   Calendar,
   X,
   Bell,
-  Trophy,
-  Activity,
   Package,
   CreditCard,
   type LucideIcon
@@ -60,12 +58,14 @@ const ROLE_MENUS = {
   ],
   propietario: [
     { name: 'Dashboard', href: '/propietario', icon: Home },
+    { name: 'Notificaciones', href: '/propietario/notificaciones', icon: Bell },
     { name: 'Mis Caballos', href: '/propietario/caballos', icon: ClipboardList },
-    { name: 'Competencias', href: '/propietario/competencias', icon: Trophy },
-    { name: 'Histórico', href: '/propietario/historico', icon: Activity },
+    { name: 'Mis Solicitudes', href: '/propietario/tareas', icon: FileText },
+    { name: 'Establecimientos', href: '/propietario/establecimientos', icon: Building2 },
     { name: 'Calendario', href: '/propietario/eventos', icon: Calendar },
-    { name: 'Facturación', href: '/propietario/facturacion', icon: CreditCard },
     { name: 'Reportes', href: '/propietario/reportes', icon: BarChart3 },
+    { name: 'Configuración', href: '/propietario/configuracion', icon: Settings },
+    { name: 'Suscripciones', href: '/propietario/suscripciones', icon: CreditCard },
   ],
   capataz: [
     { name: 'Dashboard', href: '/capataz', icon: Home },

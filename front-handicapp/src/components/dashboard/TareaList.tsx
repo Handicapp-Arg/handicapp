@@ -3,8 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthNew } from '@/lib/hooks/useAuthNew';
 import { tareaService, type Tarea } from '@/lib/services/tareaService';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { TareaForm } from './TareaForm';
 import { usePermissions } from '@/lib/hooks/usePermissions';
 import { LoadingSpinnerCard } from '@/components/ui/loading-spinner';
@@ -13,19 +11,16 @@ import {
   Search, 
   Edit2, 
   Trash2, 
-  CheckCircle2, 
-  Clock, 
+  CheckCircle2,
   MapPin, 
   User, 
   Calendar,
   FileText,
   Timer,
-  AlertCircle,
   ChevronLeft,
   ChevronRight,
   Sparkles
 } from 'lucide-react';
-import { logger } from '@/lib/utils/logger';
 
 interface TareaListProps {
   tareasProp?: Tarea[];
@@ -40,7 +35,7 @@ export function TareaList({ tareasProp }: TareaListProps) {
   const [showForm, setShowForm] = useState(false);
   const [selectedTarea, setSelectedTarea] = useState<Tarea | null>(null);
   const { isAuthenticated, isLoading: authLoading } = useAuthNew();
-  const { canCreateTasks, canDeleteTasks, hasPermission, getUserRole } = usePermissions();
+  const { canCreateTasks, canDeleteTasks, hasPermission } = usePermissions();
 
   useEffect(() => {
     // Si se pasan tareas como prop, usar esas
@@ -144,7 +139,7 @@ export function TareaList({ tareasProp }: TareaListProps) {
     
     switch (prioridad.toLowerCase()) {
       case 'alta':
-      case 'urgente':
+      case 'critica':
         return 'bg-red-100 text-red-800';
       case 'media':
         return 'bg-yellow-100 text-yellow-800';
@@ -247,7 +242,7 @@ export function TareaList({ tareasProp }: TareaListProps) {
             >
               {/* Barra de color según prioridad */}
               <div className={`absolute top-0 left-0 w-1 h-full ${
-                tarea.prioridad?.toLowerCase() === 'alta' || tarea.prioridad?.toLowerCase() === 'urgente' 
+                tarea.prioridad?.toLowerCase() === 'alta' || tarea.prioridad?.toLowerCase() === 'critica' 
                   ? 'bg-red-500' 
                   : tarea.prioridad?.toLowerCase() === 'media' 
                   ? 'bg-yellow-500' 
@@ -267,7 +262,7 @@ export function TareaList({ tareasProp }: TareaListProps) {
                     </span>
                     {tarea.prioridad && (
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${getPriorityColor(tarea.prioridad)}`}>
-                        {tarea.prioridad === 'urgente' ? 'Urgente' : 
+                        {tarea.prioridad === 'critica' ? 'Crítica' : 
                          tarea.prioridad === 'alta' ? 'Alta' :
                          tarea.prioridad === 'media' ? 'Media' : 'Baja'}
                       </span>
@@ -402,7 +397,7 @@ export function TareaList({ tareasProp }: TareaListProps) {
       <TareaForm
         isOpen={showForm}
         onClose={() => setShowForm(false)}
-        tarea={selectedTarea}
+        tarea={selectedTarea || undefined}
         onSuccess={handleFormSuccess}
       />
     </div>

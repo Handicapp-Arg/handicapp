@@ -697,16 +697,17 @@ export const tareaValidations = {
       .withMessage('Título es requerido y debe tener entre 2 y 200 caracteres'),
     
     body('descripcion')
+      .optional({ checkFalsy: true })
       .isString()
       .trim()
-      .isLength({ min: 5, max: 1000 })
-      .withMessage('Descripción es requerida y debe tener entre 5 y 1000 caracteres'),
+      .isLength({ min: 1, max: 1000 })
+      .withMessage('Descripción debe tener entre 1 y 1000 caracteres'),
     
     commonValidations.fecha('fechaVencimiento'),
     
     body('prioridad')
       .optional()
-      .isIn(['baja', 'media', 'alta', 'urgente'])
+      .isIn(['baja', 'media', 'alta', 'critica'])
       .withMessage('Prioridad debe ser válida'),
     
     body('estado')
@@ -765,24 +766,17 @@ export const tareaValidations = {
       .withMessage('Título debe tener entre 2 y 200 caracteres'),
     
     body('descripcion')
-      .optional({ values: 'falsy' }) // Permite null, undefined, ''
+      .optional({ checkFalsy: true })
       .isString()
       .trim()
-      .custom((value) => {
-        // Si tiene valor, debe tener entre 5 y 1000 caracteres
-        if (value && value.length > 0) {
-          if (value.length < 5 || value.length > 1000) {
-            throw new Error('Descripción debe tener entre 5 y 1000 caracteres');
-          }
-        }
-        return true;
-      }),
+      .isLength({ min: 1, max: 1000 })
+      .withMessage('Descripción debe tener entre 1 y 1000 caracteres'),
     
     commonValidations.fechaOpcional('fechaVencimiento'),
     
     body('prioridad')
       .optional()
-      .isIn(['baja', 'media', 'alta', 'urgente'])
+      .isIn(['baja', 'media', 'alta', 'critica'])
       .withMessage('Prioridad debe ser válida'),
     
     body('estado')

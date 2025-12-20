@@ -15,7 +15,7 @@ export interface EventoProximo {
   descripcion: string;
   fecha_evento: string;
   tipo: string;
-  prioridad: 'baja' | 'media' | 'alta' | 'urgente';
+  prioridad: 'baja' | 'media' | 'alta' | 'critica';
   caballo?: {
     id: number;
     nombre: string;

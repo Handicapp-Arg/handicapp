@@ -51,6 +51,22 @@ export class Tarea extends Model<TareaAttrs, TareaCreation> implements TareaAttr
   public actualizado_el!: Date | null;
 }
 
+// Mapeo bidireccional entre estados de base de datos (inglés) y API (español)
+const ESTADO_DB_TO_API: Record<string, string> = {
+  'open': 'pendiente',
+  'in_progress': 'en_progreso',
+  'done': 'completada',
+  'cancelled': 'cancelada'
+};
+
+const ESTADO_API_TO_DB: Record<string, string> = {
+  'pendiente': 'open',
+  'en_progreso': 'in_progress',
+  'completada': 'done',
+  'cancelada': 'cancelled',
+  'vencida': 'open' // vencida se trata como pendiente en DB
+};
+
 Tarea.init(
   {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
@@ -69,6 +85,16 @@ Tarea.init(
       type: DataTypes.ENUM(...Object.values(EstadoTarea)),
       allowNull: false,
       defaultValue: EstadoTarea.open,
+      get() {
+        const rawValue = this.getDataValue('estado');
+        // Traducir de inglés (DB) a español (API)
+        return ESTADO_DB_TO_API[rawValue] || rawValue;
+      },
+      set(value: string) {
+        // Traducir de español (API) a inglés (DB)
+        const dbValue = ESTADO_API_TO_DB[value] || value;
+        this.setDataValue('estado', dbValue as EstadoTarea);
+      }
     },
     fecha_vencimiento: { type: DataTypes.DATE, allowNull: true },
     prioridad: { 

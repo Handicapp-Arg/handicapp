@@ -13,6 +13,7 @@ import qrCodeRoutes from './qrCodeRoutes';
 import auditoriaRoutes from './auditoriaRoutes';
 import { notificacionRoutes } from './notificacionRoutes';
 import pushRoutes from './pushRoutes';
+import notificacionCronRoutes from './notificacionCronRoutes';
 import { inventarioRoutes } from './inventarioRoutes';
 import { config } from '../config/config';
 import { Router as ExpressRouter2 } from 'express';
@@ -48,11 +49,14 @@ router.use('/tareas', tareaRoutes);
 
 // Inventario routes (Establecimiento)
 router.use('/establecimiento/inventario', inventarioRoutes);
-
 // Notification routes
 router.use('/notificaciones', notificacionRoutes);
 
+// Cron notification routes (testing - admin only)
+router.use('/cron', notificacionCronRoutes);
+
 // Push notification routes
+router.use('/push', pushRoutes);
 router.use('/push', pushRoutes);
 
 // Document management routes

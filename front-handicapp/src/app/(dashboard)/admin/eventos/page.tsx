@@ -1,15 +1,38 @@
-'use client';
+﻿'use client';
 
-import { useStats } from '@/lib/hooks/useStats';
-import { EventoList } from '@/components/dashboard/EventoList';
+import React, { useMemo, useState } from 'react';
 import { SimpleAdminOnly } from '@/components/common/SimplePermissionGuard';
-import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { CalendarioEventos } from '@/components/dashboard/CalendarioEventos';
+import { EventoForm } from '@/components/dashboard/EventoForm';
+import { useEventos } from '@/lib/hooks';
+import { Sparkles } from 'lucide-react';
 import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import type { Evento } from '@/lib/services/eventoService';
 
-export default function EventosPage() {
-  const { stats, loading } = useStats();
+interface EventoWithTarea extends Evento {
+  originado_de_tarea_id?: number;
+}
+
+export default function AdminEventosPage() {
+  const { data: eventos = [], isLoading: loading, refetch } = useEventos({ page: 1, limit: 500 });
+  const [showForm, setShowForm] = useState(false);
+  const [selectedEvento, setSelectedEvento] = useState<EventoWithTarea | null>(null);
+
+  const eventosArray = useMemo(() => {
+    return Array.isArray(eventos) ? eventos : (eventos as { data?: EventoWithTarea[] })?.data || [];
+  }, [eventos]);
+
+  const eventosStats = useMemo(() => {
+    const now = new Date();
+    
+    const total = eventosArray.length;
+    const proximos = eventosArray.filter((e: EventoWithTarea) => new Date(e.fecha_evento) > now && e.estado !== 'cancelado').length;
+    const completados = eventosArray.filter((e: EventoWithTarea) => e.estado === 'completado').length;
+    const cancelados = eventosArray.filter((e: EventoWithTarea) => e.estado === 'cancelado').length;
+    const autoGenerados = eventosArray.filter((e: EventoWithTarea) => e.originado_de_tarea_id).length;
+
+    return { total, proximos, completados, cancelados, autoGenerados };
+  }, [eventosArray]);
 
   if (loading) {
     return (
@@ -21,105 +44,67 @@ export default function EventosPage() {
 
   return (
     <SimpleAdminOnly>
-      <div className="mx-auto">
-        <div className="relative overflow-hidden mb-8 rounded-2xl">
-          <div className="absolute inset-0 bg-[#0f172a]"></div>
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-60"></div>
-          <div className="absolute top-0 right-1/4 w-64 h-64 bg-slate-600/30 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-gray-500/20 rounded-full blur-3xl"></div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-slate-50/30">
+        <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6">
           
-          <div className="relative z-10 px-6 sm:px-8 lg:px-12 py-6">
-            <div className="mb-6">
-              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 leading-tight">
-                Gestión de Eventos
-              </h1>
-              <p className="text-sm sm:text-base text-white/70">
-                Administra eventos médicos, competencias y actividades programadas
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardDescription className="text-[10px] font-semibold text-purple-300 uppercase tracking-wider">
-                      Total Eventos
-                    </CardDescription>
-                    <div className="p-1.5 rounded-lg bg-purple-500/20">
-                      <Calendar className="w-3 h-3 text-purple-300" />
-                    </div>
+          <div className="mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-slate-600 to-slate-700 shadow-lg">
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
                   </div>
-                </CardHeader>
-                <CardContent className="pb-3">
-                  <p className="text-2xl font-bold text-white tabular-nums">{stats.eventos?.total || 0}</p>
-                  <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
-                    Registrados
-                  </Badge>
-                </CardContent>
-              </Card>
-
-              <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardDescription className="text-[10px] font-semibold text-blue-300 uppercase tracking-wider">
-                      Programados
-                    </CardDescription>
-                    <div className="p-1.5 rounded-lg bg-blue-500/20">
-                      <Clock className="w-3 h-3 text-blue-300" />
-                    </div>
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">
+                      Gestión de Eventos
+                    </h1>
+                    <p className="text-sm text-slate-600 mt-0.5">
+                      Vista completa de todos los eventos del sistema
+                    </p>
                   </div>
-                </CardHeader>
-                <CardContent className="pb-3">
-                  <p className="text-2xl font-bold text-white tabular-nums">{stats.eventos?.programados || 0}</p>
-                  <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
-                    Próximos
-                  </Badge>
-                </CardContent>
-              </Card>
-
-              <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardDescription className="text-[10px] font-semibold text-green-300 uppercase tracking-wider">
-                      Completados
-                    </CardDescription>
-                    <div className="p-1.5 rounded-lg bg-green-500/20">
-                      <CheckCircle className="w-3 h-3 text-green-300" />
-                    </div>
+                </div>
+                
+                {eventosStats.autoGenerados > 0 && (
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 border border-purple-200 rounded-lg text-xs sm:text-sm text-purple-700 mt-2">
+                    <Sparkles className="w-4 h-4 flex-shrink-0" />
+                    <span>
+                      <span className="font-semibold">{eventosStats.autoGenerados}</span> eventos generados automáticamente
+                    </span>
                   </div>
-                </CardHeader>
-                <CardContent className="pb-3">
-                  <p className="text-2xl font-bold text-white tabular-nums">{stats.eventos?.completados || 0}</p>
-                  <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
-                    Finalizados
-                  </Badge>
-                </CardContent>
-              </Card>
-
-              <Card className="relative overflow-hidden border-white/10 bg-white/5 backdrop-blur-sm">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardDescription className="text-[10px] font-semibold text-amber-300 uppercase tracking-wider">
-                      Urgentes
-                    </CardDescription>
-                    <div className="p-1.5 rounded-lg bg-amber-500/20">
-                      <AlertCircle className="w-3 h-3 text-amber-300" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pb-3">
-                  <p className="text-2xl font-bold text-white tabular-nums">{stats.eventos?.urgentes || 0}</p>
-                  <Badge variant="secondary" className="mt-1 text-[10px] bg-white/10 text-white/80 border-white/20">
-                    Requieren atención
-                  </Badge>
-                </CardContent>
-              </Card>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-          <EventoList />
+          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-4 sm:p-6">
+            <CalendarioEventos 
+              eventos={eventosArray}
+              onCreateEvento={() => {
+                setSelectedEvento(null);
+                setShowForm(true);
+              }}
+              onEventoClick={(evento) => {
+                setSelectedEvento(evento as EventoWithTarea);
+                setShowForm(true);
+              }}
+            />
+          </div>
+
+          <EventoForm
+            isOpen={showForm}
+            onClose={() => {
+              setShowForm(false);
+              setSelectedEvento(null);
+            }}
+            evento={selectedEvento}
+            onSuccess={() => {
+              setShowForm(false);
+              setSelectedEvento(null);
+              refetch();
+            }}
+          />
         </div>
       </div>
     </SimpleAdminOnly>

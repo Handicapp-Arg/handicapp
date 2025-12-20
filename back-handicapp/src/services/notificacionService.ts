@@ -58,8 +58,11 @@ export enum TipoNotificacion {
   
   TAREA_CREADA = 'tarea.creada',
   TAREA_ASIGNADA = 'tarea.asignada',
+  TAREA_ACTUALIZADO = 'tarea.actualizado',
   TAREA_COMPLETADA = 'tarea.completada',
+  TAREA_CANCELADA = 'tarea.cancelada',
   TAREA_VENCIDA = 'tarea.vencida',
+  TAREA_PROXIMA_VENCER = 'tarea.proxima_vencer',
   
   CABALLO_CREADO = 'caballo.creado',
   CABALLO_ACTUALIZADO = 'caballo.actualizado',

@@ -166,6 +166,19 @@ class NotificacionService {
   }
 
   /**
+   * Obtener contador de notificaciones no leídas (directo desde endpoint)
+   */
+  async obtenerContadorNoLeidas(): Promise<number> {
+    try {
+      const response = await ApiClient.makeRequest(`${this.baseUrl}/contador`) as any;
+      return response.data || response.count || response || 0;
+    } catch (error) {
+      console.error('Error al obtener contador de notificaciones:', error);
+      return 0;
+    }
+  }
+
+  /**
    * Crear una notificación de prueba (solo desarrollo)
    */
   async crearNotificacionPrueba(tipo: Notificacion['tipo'], titulo: string, mensaje: string): Promise<Notificacion> {

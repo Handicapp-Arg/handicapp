@@ -16,6 +16,7 @@ import { ServiceResponse, PaginationQuery } from '../types';
 import { TipoTarea, EstadoTarea, EstadoValidacionEvento } from '../models/enums';
 import { logger } from '../utils/logger';
 import { TareaEventoMapper } from './tareaEventoMapper';
+import { NotificacionService, TipoNotificacion } from './notificacionService';
 
 
 interface CreateTareaData {
@@ -299,6 +300,29 @@ export class TareaService {
           // No fallar la completación de la tarea si falla la creación del evento
           logger.error('❌ Error al generar evento automático:', eventoError);
           logger.info('✅ Tarea completada exitosamente (sin evento automático)');
+        }
+      }
+
+      // 🔔 Notificar al creador de la tarea (si es diferente de quien la completó)
+      if (tarea.creado_por_usuario_id && tarea.creado_por_usuario_id !== actorUserId) {
+        try {
+          const completadoPor = await User.findByPk(actorUserId, {
+            attributes: ['nombre', 'apellido']
+          });
+          const nombreCompleto = completadoPor ? `${completadoPor.nombre} ${completadoPor.apellido}` : 'Un usuario';
+          
+          await NotificacionService.crear({
+            usuario_id: tarea.creado_por_usuario_id,
+            tipo: TipoNotificacion.TAREA_COMPLETADA,
+            titulo: 'Tarea completada',
+            mensaje: `${nombreCompleto} ha completado la tarea: "${tarea.titulo}"`,
+            tarea_id: tarea.id,
+            importante: false,
+            url: `/tareas/${tarea.id}`
+          });
+          logger.info(`🔔 Notificación enviada: Tarea completada a creador ${tarea.creado_por_usuario_id}`);
+        } catch (notifError: any) {
+          logger.error('Error al enviar notificación de tarea completada:', notifError.message);
         }
       }
 
@@ -626,6 +650,24 @@ export class TareaService {
         estado: EstadoTarea.open,
       });
 
+      // 🔔 Notificar al usuario asignado (si existe y es diferente del creador)
+      if (data.asignado_a_usuario_id && data.asignado_a_usuario_id !== creadoPorUserId) {
+        try {
+          await NotificacionService.crear({
+            usuario_id: data.asignado_a_usuario_id,
+            tipo: TipoNotificacion.TAREA_ASIGNADA,
+            titulo: 'Nueva tarea asignada',
+            mensaje: `Se te ha asignado la tarea: "${data.titulo}"`,
+            tarea_id: tarea.id,
+            importante: data.prioridad === 'critica' || data.prioridad === 'alta',
+            url: `/tareas/${tarea.id}`
+          });
+          logger.info(`🔔 Notificación enviada: Tarea asignada a usuario ${data.asignado_a_usuario_id}`);
+        } catch (notifError: any) {
+          logger.error('Error al enviar notificación de tarea asignada:', notifError.message);
+        }
+      }
+
       return {
         success: true,
         data: tarea,
@@ -687,10 +729,102 @@ export class TareaService {
         };
       }
 
+      // 🔔 Detectar si cambia el usuario asignado
+      const asignadoAnterior = tareaRaw.asignado_a_usuario_id;
+      const nuevoAsignado = data.asignado_a_usuario_id;
+      const cambiaAsignado = nuevoAsignado !== undefined && nuevoAsignado !== asignadoAnterior;
+
       await tarea.update({
         ...data,
         actualizado_el: new Date(),
       });
+
+      // 🔔 Notificar al nuevo usuario asignado
+      if (cambiaAsignado && nuevoAsignado && nuevoAsignado !== userId) {
+        try {
+          await NotificacionService.crear({
+            usuario_id: nuevoAsignado,
+            tipo: TipoNotificacion.TAREA_ASIGNADA,
+            titulo: 'Tarea reasignada',
+            mensaje: `Se te ha asignado la tarea: "${tarea.titulo}"`,
+            tarea_id: tarea.id,
+            importante: tarea.prioridad === 'critica' || tarea.prioridad === 'alta',
+            url: `/tareas/${tarea.id}`
+          });
+          logger.info(`🔔 Notificación enviada: Tarea reasignada a usuario ${nuevoAsignado}`);
+        } catch (notifError: any) {
+          logger.error('Error al enviar notificación de tarea reasignada:', notifError.message);
+        }
+      }
+
+      // 🔔 Detectar cambios importantes
+      const cambiosImportantes = data.estado || data.prioridad || cambiaAsignado;
+      
+      if (cambiosImportantes) {
+        const editor = await User.findByPk(userId, { attributes: ['nombre', 'apellido'] });
+        const nombreEditor = editor ? `${editor.nombre} ${editor.apellido}` : 'Un usuario';
+
+        // 🔔 1. Notificar al CREADOR (si no es quien editó)
+        if (tarea.creado_por_usuario_id && tarea.creado_por_usuario_id !== userId) {
+          try {
+            await NotificacionService.crear({
+              usuario_id: tarea.creado_por_usuario_id,
+              tipo: TipoNotificacion.TAREA_ACTUALIZADO,
+              titulo: 'Tarea actualizada',
+              mensaje: `${nombreEditor} ha actualizado la tarea: "${tarea.titulo}"`,
+              tarea_id: tarea.id,
+              importante: false,
+              url: `/tareas/${tarea.id}`
+            });
+            logger.info(`🔔 Notificación enviada: Tarea actualizada a creador ${tarea.creado_por_usuario_id}`);
+          } catch (notifError: any) {
+            logger.error('Error al enviar notificación de tarea actualizada:', notifError.message);
+          }
+        }
+
+        // 🔔 2. Notificar al USUARIO ASIGNADO (si existe, no es quien editó, y no es reasignación)
+        if (tarea.asignado_a_usuario_id && 
+            tarea.asignado_a_usuario_id !== userId && 
+            !cambiaAsignado) {
+          try {
+            let mensajeDetalle = `${nombreEditor} ha actualizado la tarea: "${tarea.titulo}"`;
+            
+            // Personalizar mensaje según el tipo de cambio
+            if (data.estado) {
+              const estadoMap: Record<string, string> = {
+                'open': 'Pendiente',
+                'in_progress': 'En Progreso',
+                'done': 'Completada',
+                'cancelled': 'Cancelada'
+              };
+              const estadoTexto = estadoMap[data.estado as string] || data.estado;
+              mensajeDetalle = `${nombreEditor} cambió el estado a "${estadoTexto}" en la tarea: "${tarea.titulo}"`;
+            } else if (data.prioridad) {
+              const prioridadMap: Record<string, string> = {
+                'baja': 'Baja',
+                'media': 'Media',
+                'alta': 'Alta',
+                'critica': 'Crítica'
+              };
+              const prioridadTexto = prioridadMap[data.prioridad as string] || data.prioridad;
+              mensajeDetalle = `${nombreEditor} cambió la prioridad a "${prioridadTexto}" en la tarea: "${tarea.titulo}"`;
+            }
+
+            await NotificacionService.crear({
+              usuario_id: tarea.asignado_a_usuario_id,
+              tipo: TipoNotificacion.TAREA_ACTUALIZADO,
+              titulo: 'Tarea actualizada',
+              mensaje: mensajeDetalle,
+              tarea_id: tarea.id,
+              importante: data.prioridad === 'critica' || data.prioridad === 'alta',
+              url: `/tareas/${tarea.id}`
+            });
+            logger.info(`🔔 Notificación enviada: Tarea actualizada a asignado ${tarea.asignado_a_usuario_id}`);
+          } catch (notifError: any) {
+            logger.error('Error al enviar notificación de tarea actualizada:', notifError.message);
+          }
+        }
+      }
 
       return {
         success: true,
@@ -719,7 +853,30 @@ export class TareaService {
       if (userRole !== 'admin' && tarea.creado_por_usuario_id !== userId) {
         return { success: false, error: 'Sin permisos para eliminar' };
       }
+      
       await tarea.update({ estado: EstadoTarea.cancelled, actualizado_el: new Date() });
+
+      // 🔔 Notificar al usuario asignado que la tarea fue cancelada
+      if (tarea.asignado_a_usuario_id && tarea.asignado_a_usuario_id !== userId) {
+        try {
+          const cancelador = await User.findByPk(userId, { attributes: ['nombre', 'apellido'] });
+          const nombreCancelador = cancelador ? `${cancelador.nombre} ${cancelador.apellido}` : 'Un usuario';
+          
+          await NotificacionService.crear({
+            usuario_id: tarea.asignado_a_usuario_id,
+            tipo: TipoNotificacion.TAREA_CANCELADA,
+            titulo: 'Tarea cancelada',
+            mensaje: `${nombreCancelador} ha cancelado la tarea: "${tarea.titulo}"`,
+            tarea_id: tarea.id,
+            importante: false,
+            url: `/tareas/${tarea.id}`
+          });
+          logger.info(`🔔 Notificación enviada: Tarea cancelada a usuario ${tarea.asignado_a_usuario_id}`);
+        } catch (notifError: any) {
+          logger.error('Error al enviar notificación de tarea cancelada:', notifError.message);
+        }
+      }
+
       return { success: true, data: true };
     } catch (error) {
       return { success: false, error: 'Error al eliminar tarea' };
@@ -731,10 +888,19 @@ export class TareaService {
     tareaId: number,
     nuevoEstado: EstadoTarea,
     userId: number,
-    userRole?: string
+    userRole?: string,
+    userEstablecimientoId?: number
   ): Promise<ServiceResponse<Tarea>> {
     try {
-      const tarea = await Tarea.findByPk(tareaId);
+      const tarea = await Tarea.findByPk(tareaId, {
+        include: [
+          {
+            model: User,
+            as: 'creado_por',
+            attributes: ['id', 'establecimiento_id']
+          }
+        ]
+      });
       
       if (!tarea) {
         logger.warn(`Tarea ${tareaId} no encontrada`);
@@ -744,24 +910,20 @@ export class TareaService {
         };
       }
 
+      // Si la tarea no tiene establecimiento_id, usar el del creador
+      const creador = tarea.get('creado_por') as any;
+      const tareaEstablecimientoId = tarea.establecimiento_id || (creador?.establecimiento_id);
+
       // Admin puede cambiar cualquier tarea
       const isAdmin = userRole === 'admin';
       const isCreator = tarea.creado_por_usuario_id === userId;
       const isAssigned = tarea.asignado_a_usuario_id === userId;
+      const isFromSameEstablecimiento = userEstablecimientoId && 
+                                         tareaEstablecimientoId === userEstablecimientoId &&
+                                         (userRole === 'establecimiento' || userRole === 'capataz');
 
-      // Verificar permisos: admin, creador o asignado pueden cambiar estado
-      logger.info('Verificando permisos cambio estado', {
-        tareaId,
-        userId,
-        userRole,
-        creador: tarea.creado_por_usuario_id,
-        asignado: tarea.asignado_a_usuario_id,
-        isAdmin,
-        isCreator,
-        isAssigned
-      });
-
-      if (!isAdmin && !isCreator && !isAssigned) {
+      // Verificar permisos: admin, creador, asignado o del mismo establecimiento pueden cambiar estado
+      if (!isAdmin && !isCreator && !isAssigned && !isFromSameEstablecimiento) {
         logger.warn(`Usuario ${userId} sin permisos para modificar tarea ${tareaId}`);
         return {
           success: false,

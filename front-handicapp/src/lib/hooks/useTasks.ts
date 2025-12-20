@@ -4,63 +4,62 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { tareaService } from '@/lib/services/tareaService';
+import { tareaService, type Tarea } from '@/lib/services/tareaService';
 import { 
-  Task, 
-  TaskStatus, 
-  TaskView, 
-  TaskFilters, 
-  TaskStats,
-  normalizeTask
+  EstadoTarea, 
+  VistaKanban, 
+  FiltrosTarea, 
+  EstadisticasTarea
 } from '@/types/task.types';
 import toast from 'react-hot-toast';
 
 interface UseTasksOptions {
   autoLoad?: boolean;
-  filters?: TaskFilters;
+  filters?: FiltrosTarea;
 }
 
 interface UseTasksReturn {
   // Estado
-  tasks: Task[];
+  tasks: Tarea[];
   loading: boolean;
   error: string | null;
-  stats: TaskStats;
+  stats: EstadisticasTarea;
   
   // Acciones
   loadTasks: () => Promise<void>;
-  createTask: (task: Partial<Task>) => Promise<Task | null>;
-  updateTask: (id: number, updates: Partial<Task>) => Promise<Task | null>;
+  createTask: (task: Partial<Tarea>) => Promise<Tarea | null>;
+  updateTask: (id: number, updates: Partial<Tarea>) => Promise<Tarea | null>;
   deleteTask: (id: number) => Promise<boolean>;
-  updateTaskStatus: (id: number, status: TaskStatus) => Promise<Task | null>;
+  updateTaskStatus: (id: number, status: EstadoTarea) => Promise<Tarea | null>;
   
   // Filtros
-  filterTasks: (filters: TaskFilters) => Task[];
-  getTasksByStatus: (status: TaskStatus) => Task[];
-  getTasksByView: (view: TaskView) => Task[];
+  filterTasks: (filters: FiltrosTarea) => Tarea[];
+  getTasksByStatus: (status: EstadoTarea) => Tarea[];
+  getTasksByView: (view: VistaKanban) => Tarea[];
   
   // Utilidades
   refreshTasks: () => Promise<void>;
 }
 
 export function useTasks(options: UseTasksOptions = {}): UseTasksReturn {
-  const { autoLoad = true, filters: initialFilters } = options;
+  const { autoLoad = true } = options;
   
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Tarea[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<TaskFilters>(initialFilters || {});
 
   // Calcular estadísticas
-  const stats = useMemo<TaskStats>(() => {
+  const stats = useMemo<EstadisticasTarea>(() => {
     const total = tasks.length;
-    const open = tasks.filter(t => t.estadoNormalizado === 'open').length;
-    const inProgress = tasks.filter(t => t.estadoNormalizado === 'in_progress').length;
-    const completed = tasks.filter(t => t.estadoNormalizado === 'completed').length;
-    const cancelled = tasks.filter(t => t.estadoNormalizado === 'cancelled').length;
+    const pendientes = tasks.filter(t => t.estado === 'pendiente').length;
+    const en_progreso = tasks.filter(t => t.estado === 'en_progreso').length;
+    const completadas = tasks.filter(t => t.estado === 'completada').length;
+    const canceladas = tasks.filter(t => t.estado === 'cancelada').length;
 
-    return { total, open, inProgress, completed, cancelled };
+    return { total, pendientes, en_progreso, completadas, canceladas };
   }, [tasks]);
+
+  // El backend devuelve estados en español directamente
 
   // Cargar tareas
   const loadTasks = useCallback(async () => {
@@ -68,16 +67,13 @@ export function useTasks(options: UseTasksOptions = {}): UseTasksReturn {
       setLoading(true);
       setError(null);
       
-      const response: any = await tareaService.getAll({ page: 1, limit: 500 });
-      const tasksData = response?.data?.tareas || response?.tareas || response?.data || response || [];
+      const response = await tareaService.getAll({ page: 1, limit: 500 });
+      const tareasData = response.data;
       
-      const normalizedTasks = Array.isArray(tasksData)
-        ? tasksData.map(normalizeTask)
-        : [];
-      
-      setTasks(normalizedTasks);
-    } catch (err: any) {
-      const errorMessage = err?.message || 'Error al cargar tareas';
+      // El backend ya devuelve los estados en español
+      setTasks(tareasData);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Error al cargar tareas';
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -86,34 +82,32 @@ export function useTasks(options: UseTasksOptions = {}): UseTasksReturn {
   }, []);
 
   // Crear tarea
-  const createTask = useCallback(async (taskData: Partial<Task>): Promise<Task | null> => {
+  const createTask = useCallback(async (taskData: any): Promise<Tarea | null> => {
     try {
       const newTask = await tareaService.create(taskData as any);
-      const normalized = normalizeTask(newTask);
       
-      setTasks(prev => [...prev, normalized]);
+      setTasks(prev => [...prev, newTask]);
       toast.success('Tarea creada exitosamente');
       
-      return normalized;
+      return newTask;
     } catch (err) {
-      const errorMessage = (err as Error)?.message || 'Error al crear tarea';
+      const errorMessage = err instanceof Error ? err.message : 'Error al crear tarea';
       toast.error(errorMessage);
       return null;
     }
   }, []);
 
   // Actualizar tarea
-  const updateTask = useCallback(async (id: number, updates: Partial<Task>): Promise<Task | null> => {
+  const updateTask = useCallback(async (id: number, updates: Partial<Tarea>): Promise<Tarea | null> => {
     try {
-      const updated = await tareaService.update(id, updates as any);
-      const normalized = normalizeTask(updated);
+      const updated = await tareaService.update(id, updates);
       
-      setTasks(prev => prev.map(t => t.id === id ? normalized : t));
+      setTasks(prev => prev.map(t => t.id === id ? updated : t));
       toast.success('Tarea actualizada exitosamente');
       
-      return normalized;
+      return updated;
     } catch (err) {
-      const errorMessage = (err as Error)?.message || 'Error al actualizar tarea';
+      const errorMessage = err instanceof Error ? err.message : 'Error al actualizar tarea';
       toast.error(errorMessage);
       return null;
     }
@@ -126,24 +120,24 @@ export function useTasks(options: UseTasksOptions = {}): UseTasksReturn {
       setTasks(prev => prev.filter(t => t.id !== id));
       toast.success('Tarea eliminada exitosamente');
       return true;
-    } catch (err: any) {
-      const errorMessage = err?.message || 'Error al eliminar tarea';
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Error al eliminar tarea';
       toast.error(errorMessage);
       return false;
     }
   }, []);
 
   // Actualizar solo el estado
-  const updateTaskStatus = useCallback(async (id: number, status: TaskStatus): Promise<Task | null> => {
-    return updateTask(id, { estadoNormalizado: status });
+  const updateTaskStatus = useCallback(async (id: number, status: EstadoTarea): Promise<Tarea | null> => {
+    return updateTask(id, { estado: status });
   }, [updateTask]);
 
   // Filtrar tareas
-  const filterTasks = useCallback((filterOptions: TaskFilters): Task[] => {
+  const filterTasks = useCallback((filterOptions: FiltrosTarea): Tarea[] => {
     let filtered = [...tasks];
 
-    if (filterOptions.search) {
-      const search = filterOptions.search.toLowerCase();
+    if (filterOptions.busqueda) {
+      const search = filterOptions.busqueda.toLowerCase();
       filtered = filtered.filter(t => 
         t.titulo?.toLowerCase().includes(search) ||
         t.descripcion?.toLowerCase().includes(search) ||
@@ -151,37 +145,37 @@ export function useTasks(options: UseTasksOptions = {}): UseTasksReturn {
       );
     }
 
-    if (filterOptions.status && filterOptions.status !== 'all') {
-      filtered = filtered.filter(t => t.estadoNormalizado === filterOptions.status);
+    if (filterOptions.estado && filterOptions.estado !== 'todas') {
+      filtered = filtered.filter(t => t.estado === filterOptions.estado);
     }
 
-    if (filterOptions.priority) {
-      filtered = filtered.filter(t => t.prioridad === filterOptions.priority);
+    if (filterOptions.prioridad) {
+      filtered = filtered.filter(t => t.prioridad === filterOptions.prioridad);
     }
 
-    if (filterOptions.assignedTo) {
-      filtered = filtered.filter(t => t.asignado_a === filterOptions.assignedTo);
+    if (filterOptions.asignado_a) {
+      filtered = filtered.filter(t => t.asignado_a === filterOptions.asignado_a);
     }
 
     return filtered;
   }, [tasks]);
 
   // Obtener tareas por estado
-  const getTasksByStatus = useCallback((status: TaskStatus): Task[] => {
-    return tasks.filter(t => t.estadoNormalizado === status);
+  const getTasksByStatus = useCallback((status: EstadoTarea): Tarea[] => {
+    return tasks.filter(t => t.estado === status);
   }, [tasks]);
 
   // Obtener tareas por vista
-  const getTasksByView = useCallback((view: TaskView): Task[] => {
+  const getTasksByView = useCallback((view: VistaKanban): Tarea[] => {
     switch (view) {
-      case 'all':
+      case 'todas':
         return tasks;
-      case 'open':
-        return tasks.filter(t => t.estadoNormalizado === 'open');
-      case 'in_progress':
-        return tasks.filter(t => t.estadoNormalizado === 'in_progress');
-      case 'completed':
-        return tasks.filter(t => t.estadoNormalizado === 'completed');
+      case 'pendiente':
+        return tasks.filter(t => t.estado === 'pendiente');
+      case 'en_progreso':
+        return tasks.filter(t => t.estado === 'en_progreso');
+      case 'completada':
+        return tasks.filter(t => t.estado === 'completada');
       default:
         return tasks;
     }

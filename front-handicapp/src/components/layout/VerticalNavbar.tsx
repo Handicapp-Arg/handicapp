@@ -17,7 +17,6 @@ import {
   Calendar,
   X,
   Bell,
-  Trophy,
   Activity,
   Package,
   CreditCard
@@ -86,15 +85,13 @@ const ROLE_MENUS = {
   propietario: [
     { name: 'Dashboard', href: '/propietario', icon: Home },
     { name: 'Notificaciones', href: '/propietario/notificaciones', icon: Bell },
-    { name: 'Establecimientos', href: '/propietario/establecimientos', icon: Building2 },
     { name: 'Mis Caballos', href: '/propietario/caballos', icon: ClipboardList },
-    { name: 'Salud', href: '/propietario/salud', icon: Stethoscope },
-    { name: 'Competencias', href: '/propietario/competencias', icon: Trophy },
-    { name: 'Entrenamiento', href: '/propietario/entrenamiento', icon: Activity },
-    { name: 'Historial', href: '/propietario/eventos', icon: Calendar },
+    { name: 'Mis Solicitudes', href: '/propietario/tareas', icon: FileText },
+    { name: 'Establecimientos', href: '/propietario/establecimientos', icon: Building2 },
+    { name: 'Calendario', href: '/propietario/eventos', icon: Calendar },
     { name: 'Reportes', href: '/propietario/reportes', icon: BarChart3 },
     { name: 'Configuración', href: '/propietario/configuracion', icon: Settings },
-  { name: 'Suscripciones', href: '/propietario/suscripciones', icon: CreditCard },
+    { name: 'Suscripciones', href: '/propietario/suscripciones', icon: CreditCard },
   ],
 };
 

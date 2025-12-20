@@ -5,7 +5,7 @@ export interface Tarea {
   titulo: string;
   descripcion?: string;
   tipo: 'alimentacion' | 'limpieza' | 'entrenamiento' | 'mantenimiento' | 'veterinaria' | 'administrativa' | 'otro';
-  prioridad: 'baja' | 'media' | 'alta' | 'urgente';
+  prioridad: 'baja' | 'media' | 'alta' | 'critica';
   estado: 'pendiente' | 'en_progreso' | 'completada' | 'cancelada' | 'vencida';
   fecha_vencimiento?: string;
   tiempo_estimado_minutos?: number;
@@ -31,8 +31,8 @@ export interface CreateTareaData {
   titulo: string;
   descripcion?: string;
   tipo: 'alimentacion' | 'limpieza' | 'entrenamiento' | 'mantenimiento' | 'veterinaria' | 'administrativa' | 'otro';
-  prioridad: 'baja' | 'media' | 'alta' | 'urgente';
-  estado?: 'pendiente' | 'en_progreso' | 'completada' | 'cancelada';
+  prioridad: 'baja' | 'media' | 'alta' | 'critica';
+  estado?: 'pendiente' | 'en_progreso' | 'completada' | 'cancelada' | 'vencida';
   fecha_vencimiento?: string;
   tiempo_estimado_minutos?: number;
   ubicacion?: string;
@@ -61,6 +61,14 @@ export interface TareaFilters {
 class TareaService {
   private baseUrl = '/tareas';
 
+  // Mapear respuesta del backend (notas -> descripcion)
+  private mapBackendTarea(tarea: any): Tarea {
+    return {
+      ...tarea,
+      descripcion: tarea.notas || tarea.descripcion // Backend usa 'notas', frontend usa 'descripcion'
+    };
+  }
+
   async getAll(filters: TareaFilters = {}): Promise<{ data: Tarea[], total: number, page: number, limit: number }> {
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([key, value]) => {
@@ -70,12 +78,16 @@ class TareaService {
     });
 
     const response = await ApiClient.makeRequest(`${this.baseUrl}?${params}`) as any;
+    // Mapear todas las tareas
+    if (response.data && Array.isArray(response.data)) {
+      response.data = response.data.map((tarea: any) => this.mapBackendTarea(tarea));
+    }
     return response;
   }
 
   async getById(id: number): Promise<Tarea> {
     const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}`) as any;
-    return response;
+    return this.mapBackendTarea(response);
   }
 
   async create(data: CreateTareaData): Promise<Tarea> {
@@ -98,15 +110,16 @@ class TareaService {
       method: 'POST',
       body: JSON.stringify(backendData)
     }) as any;
-    return response;
+    return this.mapBackendTarea(response);
   }
 
   async update(id: number, data: Partial<CreateTareaData>): Promise<Tarea> {
+    // El backend se encarga de mapear descripcion a notas
     const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data)
     }) as any;
-    return response;
+    return this.mapBackendTarea(response);
   }
 
   async delete(id: number): Promise<{ success: boolean }> {
@@ -121,7 +134,7 @@ class TareaService {
       method: 'PUT',
       body: JSON.stringify({ nuevoEstado })
     }) as any;
-    return response;
+    return this.mapBackendTarea(response);
   }
 
   async assign(id: number, usuarioId: number): Promise<Tarea> {
@@ -131,7 +144,7 @@ class TareaService {
         asignado_a_usuario_id: usuarioId
       })
     }) as any;
-    return response;
+    return this.mapBackendTarea(response);
   }
 
   async complete(id: number, observaciones?: string, tiempoRealMinutos?: number): Promise<Tarea> {
@@ -142,7 +155,7 @@ class TareaService {
         tiempo_real_minutos: tiempoRealMinutos
       })
     }) as any;
-    return response;
+    return this.mapBackendTarea(response);
   }
 
   async cancel(id: number, motivo?: string): Promise<Tarea> {
@@ -152,7 +165,7 @@ class TareaService {
         motivo
       })
     }) as any;
-    return response;
+    return this.mapBackendTarea(response);
   }
 
   async getStats(filters: any = {}): Promise<any> {

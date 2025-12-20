@@ -113,7 +113,7 @@ export function TareaCompletarModal({ tarea, isOpen, onClose, onSuccess }: Tarea
                 <span className={`font-medium capitalize ${
                   tarea.prioridad === 'alta' ? 'text-orange-600' :
                   tarea.prioridad === 'media' ? 'text-blue-600' :
-                  tarea.prioridad === 'urgente' ? 'text-red-600' :
+                  tarea.prioridad === 'critica' ? 'text-red-600' :
                   'text-gray-600'
                 }`}>
                   {tarea.prioridad}

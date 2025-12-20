@@ -44,9 +44,9 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'establishments:manage_users', 'establishments:view_stats',
     'horses:read',  // ❌ SIN horses:write - establecimiento NO puede editar caballos
     'horses:view_medical',  // Solo puede VER historial médico
-    'events:read', 'events:write',
+    'events:read', 'events:write', 'events:delete',  // ✅ Control total sobre eventos
     'events:view_reports',
-    'tasks:read', 'tasks:write',
+    'tasks:read', 'tasks:write', 'tasks:delete',  // ✅ Control total sobre tareas
     'tasks:assign', 'tasks:view_all'
   ],
   

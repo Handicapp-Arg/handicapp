@@ -4,6 +4,7 @@ import { logger } from './utils/logger';
 import { initializeApp } from './scripts/init-models';
 import { closeDatabase } from './config/database';
 import { websocketService } from './services/websocketService';
+import { iniciarCronNotificacionesTareas } from './jobs/tareaNotificacionCron';
 import http from 'http';
 
 // Start server with complete initialization
@@ -18,6 +19,10 @@ const startServer = async (): Promise<void> => {
     // Initialize WebSocket server
     websocketService.initialize(httpServer);
     logger.info('🔌 WebSocket server initialized');
+    
+    // Initialize Cron Jobs for notifications
+    iniciarCronNotificacionesTareas();
+    logger.info('⏰ Cron jobs initialized');
     
     // Use Render's PORT env var if available, otherwise fallback to 3000
     const listenPort = process.env['PORT'] ? Number(process.env['PORT']) : 3000;

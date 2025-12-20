@@ -39,14 +39,6 @@ export class TareaController {
       const userRole = req.user!.rol?.clave;
       let userEstablecimientoId = req.user!.establecimiento_id;
 
-      // DEBUG: Log para ver qué está llegando
-      logger.info('DEBUG - Tarea create request:', {
-        body: req.body,
-        userRole,
-        userEstablecimientoId,
-        usuarioId
-      });
-
       // Validaciones básicas
       if (!titulo || !descripcion || !fechaVencimiento) {
         res.status(400).json(ApiResponse.error('Título, descripción y fecha de vencimiento son requeridos'));
@@ -221,6 +213,11 @@ export class TareaController {
         return;
       }
 
+      // Mapear descripcion a notas si viene del frontend
+      if (updateData.descripcion !== undefined && updateData.notas === undefined) {
+        updateData.notas = updateData.descripcion;
+      }
+
       const updateResult = await TareaService.updateTarea(
         tareaId,
         updateData,
@@ -331,6 +328,7 @@ export class TareaController {
   const { nuevoEstado } = req.body;
       const usuarioId = req.user!.id;
       const userRole = req.user!.rol?.clave;
+      const userEstablecimientoId = req.user!.establecimiento_id;
 
       if (isNaN(tareaId) || !nuevoEstado) {
         res.status(400).json(ApiResponse.error('ID de tarea y nuevo estado son requeridos'));
@@ -347,7 +345,8 @@ export class TareaController {
         tareaId,
         nuevoEstado as any,
         usuarioId,
-        userRole
+        userRole,
+        userEstablecimientoId
       );
 
       if (!changeResult.success || !changeResult.data) {
