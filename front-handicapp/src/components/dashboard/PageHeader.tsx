@@ -6,7 +6,6 @@
 import React from 'react';
 import Link from 'next/link';
 import { LucideIcon, ChevronRight } from 'lucide-react';
-import { StatsGrid, StatCard } from './StatsGrid';
 
 export interface Breadcrumb {
   label: string;
@@ -23,15 +22,6 @@ export interface PageHeaderProps {
   /** Icono principal */
   icon?: LucideIcon;
   
-  /** Color scheme (debe coincidir con el rol) */
-  colorScheme?: 'blue' | 'green' | 'purple' | 'orange' | 'teal' | 'red' | 'indigo' | 'pink';
-  
-  /** Stats para mostrar debajo del header */
-  stats?: StatCard[];
-  
-  /** Columnas para las stats (por defecto 4) */
-  statsColumns?: 2 | 3 | 4;
-  
   /** Botones de acción en el header */
   actions?: React.ReactNode;
   
@@ -42,77 +32,25 @@ export interface PageHeaderProps {
   variant?: 'default' | 'compact';
 }
 
-const colorSchemes = {
-  blue: {
-    bg: 'bg-gradient-to-br from-blue-500 to-cyan-500',
-    iconBg: 'bg-blue-500',
-    textLight: 'text-blue-100',
-    orb1: 'bg-blue-600/20',
-    orb2: 'bg-cyan-500/20',
-  },
-  green: {
-    bg: 'bg-gradient-to-br from-emerald-500 to-teal-500',
-    iconBg: 'bg-emerald-500',
-    textLight: 'text-emerald-100',
-    orb1: 'bg-emerald-600/20',
-    orb2: 'bg-teal-500/20',
-  },
-  purple: {
-    bg: 'bg-gradient-to-br from-violet-500 to-purple-500',
-    iconBg: 'bg-violet-500',
-    textLight: 'text-violet-100',
-    orb1: 'bg-violet-600/20',
-    orb2: 'bg-purple-500/20',
-  },
-  orange: {
-    bg: 'bg-gradient-to-br from-orange-500 to-amber-500',
-    iconBg: 'bg-orange-500',
-    textLight: 'text-orange-100',
-    orb1: 'bg-orange-600/20',
-    orb2: 'bg-amber-500/20',
-  },
-  teal: {
-    bg: 'bg-gradient-to-br from-teal-500 to-cyan-500',
-    iconBg: 'bg-teal-500',
-    textLight: 'text-teal-100',
-    orb1: 'bg-teal-600/20',
-    orb2: 'bg-cyan-500/20',
-  },
-  red: {
-    bg: 'bg-gradient-to-br from-red-500 to-rose-500',
-    iconBg: 'bg-red-500',
-    textLight: 'text-red-100',
-    orb1: 'bg-red-600/20',
-    orb2: 'bg-rose-500/20',
-  },
-  indigo: {
-    bg: 'bg-gradient-to-br from-indigo-500 to-blue-500',
-    iconBg: 'bg-indigo-500',
-    textLight: 'text-indigo-100',
-    orb1: 'bg-indigo-600/20',
-    orb2: 'bg-blue-500/20',
-  },
-  pink: {
-    bg: 'bg-gradient-to-br from-pink-500 to-rose-500',
-    iconBg: 'bg-pink-500',
-    textLight: 'text-pink-100',
-    orb1: 'bg-pink-600/20',
-    orb2: 'bg-rose-500/20',
-  },
+// Tema unificado Navy + Gold para toda la aplicación
+const unifiedTheme = {
+  bg: 'bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0e445d]',
+  iconBg: 'bg-[#af936f]',
+  textLight: 'text-slate-100',
+  textAccent: 'text-[#af936f]',
+  orb1: 'bg-[#0e445d]/30',
+  orb2: 'bg-[#af936f]/10',
 };
 
 export function PageHeader({
   title,
   description,
   icon: Icon,
-  colorScheme = 'blue',
-  stats,
-  statsColumns = 4,
   actions,
   breadcrumbs,
   variant = 'default',
 }: PageHeaderProps) {
-  const colors = colorSchemes[colorScheme];
+  const colors = unifiedTheme;
 
   return (
     <div className="mb-8">
@@ -181,13 +119,6 @@ export function PageHeader({
           </div>
         </div>
       </div>
-
-      {/* Stats Grid */}
-      {stats && stats.length > 0 && (
-        <div className="-mt-4">
-          <StatsGrid stats={stats} columns={statsColumns} />
-        </div>
-      )}
     </div>
   );
 }

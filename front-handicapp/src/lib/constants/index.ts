@@ -75,12 +75,6 @@ export const HTTP_STATUS = {
   INTERNAL_SERVER_ERROR: 500,
 } as const;
 
-export const THEME = {
-  LIGHT: 'light',
-  DARK: 'dark',
-  SYSTEM: 'system',
-} as const;
-
 export const LANGUAGES = {
   ES: 'es',
   EN: 'en',

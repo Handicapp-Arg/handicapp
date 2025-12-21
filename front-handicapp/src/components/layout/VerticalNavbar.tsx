@@ -17,7 +17,6 @@ import {
   Calendar,
   X,
   Bell,
-  Activity,
   Package,
   CreditCard
 } from 'lucide-react';
@@ -64,14 +63,10 @@ const ROLE_MENUS = {
   veterinario: [
     { name: 'Dashboard', href: '/veterinario', icon: Home },
     { name: 'Notificaciones', href: '/veterinario/notificaciones', icon: Bell },
-    { name: 'Caballos', href: '/veterinario/caballos', icon: ClipboardList },
-    { name: 'Consultas', href: '/veterinario/consultas', icon: Stethoscope },
-    { name: 'Tratamientos', href: '/veterinario/tratamientos', icon: Activity },
-    { name: 'Reportes Médicos', href: '/veterinario/reportes-medicos', icon: FileText },
-    { name: 'Estadísticas', href: '/veterinario/estadisticas', icon: BarChart3 },
-    { name: 'Historial Médico', href: '/veterinario/historial', icon: Calendar },
-    { name: 'Eventos Médicos', href: '/veterinario/eventos', icon: Calendar },
-    { name: 'Tareas', href: '/veterinario/tareas', icon: FileText },
+    { name: 'Mis Tareas', href: '/veterinario/tareas', icon: FileText },
+    { name: 'Pacientes', href: '/veterinario/caballos', icon: ClipboardList },
+    { name: 'Atención Médica', href: '/veterinario/consultas', icon: Stethoscope },
+    { name: 'Calendario', href: '/veterinario/eventos', icon: Calendar },
     { name: 'Reportes', href: '/veterinario/reportes', icon: BarChart3 },
     { name: 'Configuración', href: '/veterinario/configuracion', icon: Settings },
   ],
