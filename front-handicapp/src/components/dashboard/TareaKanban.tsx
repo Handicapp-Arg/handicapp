@@ -351,10 +351,7 @@ export function TareaKanban({ tareas: tareasProp, onRefresh }: TareaKanbanProps)
 
   // Determinar título según el rol del usuario
   const getKanbanTitle = () => {
-    if (user?.rol?.clave === 'propietario') {
-      return 'Mis Solicitudes';
-    }
-    return 'Kanban de Tareas';
+    return 'Mis Tareas';
   };
 
   return (
