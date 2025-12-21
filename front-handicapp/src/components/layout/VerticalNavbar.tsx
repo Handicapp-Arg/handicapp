@@ -152,12 +152,24 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
       <div className={`hidden lg:flex lg:flex-col lg:fixed transition-all duration-300 ${
         isCollapsed ? 'lg:w-20' : 'lg:w-72'
       } lg:left-0 lg:top-0 lg:bottom-0 z-30`}>
-        <div className="flex flex-col h-full bg-[#0f172a] shadow-lg"
-             style={{
-               boxShadow: '4px 0 6px -1px rgba(0, 0, 0, 0.1)'
-             }}>
+        <div 
+          className="flex flex-col h-full relative overflow-hidden"
+          style={{
+            background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)',
+            boxShadow: '4px 0 24px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.05)'
+          }}
+        >
+          {/* Glassmorphism overlay */}
+          <div 
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: 'linear-gradient(135deg, rgba(14, 68, 93, 0.15) 0%, rgba(255, 255, 255, 0) 100%)',
+              backdropFilter: 'blur(10px)'
+            }}
+          />
+          
           {/* Logo/Header */}
-          <div className="relative h-16 sm:h-18 lg:h-20 flex-shrink-0">
+          <div className="relative h-16 sm:h-18 lg:h-20 flex-shrink-0 border-b border-white/10">
             <div className="flex items-center justify-center h-full px-4">
               {!isCollapsed ? (
                 <div className="flex items-center gap-3">
@@ -167,18 +179,20 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
                     width={48} 
                     height={48}
                     priority={true}
-                    className="object-contain flex-shrink-0"
+                    className="object-contain flex-shrink-0 drop-shadow-lg"
                     style={{ aspectRatio: '1' }}
                   />
-                  <Image 
-                    src={LOGOS.TEXT_BROWN}
-                    alt="HandicApp" 
-                    width={140} 
-                    height={28}
-                    priority={true}
-                    className="object-contain flex-shrink-0 brightness-0 invert"
-                    style={{ aspectRatio: '5' }}
-                  />
+                  <h1 
+                    className="text-white drop-shadow-lg select-none"
+                    style={{ 
+                      fontFamily: 'var(--font-outfit), Outfit, sans-serif',
+                      fontSize: '20px',
+                      fontWeight: 700,
+                      letterSpacing: '1.5px'
+                    }}
+                  >
+                    Handicapp
+                  </h1>
                 </div>
               ) : (
                 <Image 
@@ -187,7 +201,7 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
                   width={44} 
                   height={44}
                   priority={true}
-                  className="object-contain"
+                  className="object-contain drop-shadow-lg"
                   style={{ aspectRatio: '1' }}
                 />
               )}
@@ -195,17 +209,34 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
           </div>
 
           {/* Navigation Menu */}
-          <nav className={`flex-1 px-3 py-6 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent hover:scrollbar-thumb-white/30 ${
+          <nav className={`flex-1 px-3 py-6 space-y-1.5 overflow-y-auto relative ${
             isCollapsed ? 'overflow-x-hidden' : ''
           }`}
           style={{
             scrollbarWidth: 'thin',
-            scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent'
+            scrollbarColor: 'rgba(255, 255, 255, 0.3) transparent'
           }}>
+            {/* Custom scrollbar styles */}
+            <style jsx>{`
+              nav::-webkit-scrollbar {
+                width: 6px;
+              }
+              nav::-webkit-scrollbar-track {
+                background: transparent;
+              }
+              nav::-webkit-scrollbar-thumb {
+                background: rgba(255, 255, 255, 0.2);
+                border-radius: 3px;
+              }
+              nav::-webkit-scrollbar-thumb:hover {
+                background: rgba(255, 255, 255, 0.3);
+              }
+            `}</style>
+            
             {/* Label MENU */}
             {!isCollapsed && (
-              <div className="px-3 py-2 mb-2">
-                <span className="text-xs font-semibold text-white/40 uppercase tracking-wider">
+              <div className="px-3 py-2 mb-3">
+                <span className="text-xs font-semibold text-white/50 uppercase tracking-widest">
                   Menú
                 </span>
               </div>
@@ -224,23 +255,36 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
                   <Link
                     href={item.href}
                     className={`
-                      flex items-center py-2.5 rounded-lg transition-smooth
-                      ${isCollapsed ? 'px-2 justify-center' : 'px-3 gap-3'}
+                      flex items-center py-3 rounded-xl transition-all duration-300
+                      ${isCollapsed ? 'px-2 justify-center' : 'px-4 gap-3'}
                       ${isActive
-                        ? 'bg-[#af936f] text-white shadow-md shadow-[#af936f]/20'
-                        : 'text-white/70 hover:text-white hover:bg-white/10'
+                        ? 'bg-[#af936f] text-white shadow-lg'
+                        : 'text-white/80 hover:text-white hover:bg-white/10 hover:backdrop-blur-sm'
                       }
                     `}
+                    style={isActive ? {
+                      boxShadow: '0 4px 14px rgba(175, 147, 111, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+                    } : {}}
                     title={isCollapsed ? item.name : undefined}
                   >
-                    <Icon className={`w-6 h-6 flex-shrink-0 ${isActive ? 'text-white' : ''}`} />
+                    <Icon className={`flex-shrink-0 transition-all duration-300 ${
+                      isActive ? 'w-6 h-6 text-white drop-shadow-md' : 'w-5 h-5 text-white/80'
+                    }`} />
                     {!isCollapsed && (
-                      <span className="truncate font-medium text-[15px]">{item.name}</span>
+                      <span className={`truncate font-medium transition-all duration-300 ${
+                        isActive ? 'text-[15px] text-white' : 'text-[14px] text-white/80'
+                      }`}>
+                        {item.name}
+                      </span>
+                    )}
+                    {/* Active indicator */}
+                    {isActive && !isCollapsed && (
+                      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white shadow-lg" />
                     )}
                   </Link>
                   {/* Tooltip para modo colapsado */}
                   {isCollapsed && (
-                    <div className="absolute left-full top-1/2 transform -translate-y-1/2 ml-2 px-3 py-2 bg-[#1e293b] text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-smooth z-50 whitespace-nowrap border border-white/10 shadow-lg">
+                    <div className="absolute left-full top-1/2 transform -translate-y-1/2 ml-3 px-3 py-2 bg-[#1e293b] text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 whitespace-nowrap shadow-xl border border-white/10">
                       {item.name}
                       <div className="absolute top-1/2 left-0 transform -translate-y-1/2 -translate-x-full border-4 border-transparent border-r-[#1e293b]"></div>
                     </div>
@@ -253,10 +297,24 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
       </div>
 
       {/* Mobile Sidebar */}
-      <div className={`
-        fixed inset-y-0 left-0 z-50 w-72 bg-[#0f172a] border-r border-white/10 shadow-2xl transform transition-smooth lg:hidden
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
+      <div 
+        className={`
+          fixed inset-y-0 left-0 z-50 w-72 shadow-2xl transform transition-all duration-300 lg:hidden
+          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}
+        style={{
+          background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)'
+        }}
+      >
+        {/* Glassmorphism overlay */}
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'linear-gradient(135deg, rgba(14, 68, 93, 0.15) 0%, rgba(255, 255, 255, 0) 100%)',
+            backdropFilter: 'blur(10px)'
+          }}
+        />
+        
         {/* Mobile Header */}
         <div className="relative h-16 sm:h-18 lg:h-20 border-b border-white/10">
           <div className="flex items-center justify-between h-full px-4">
@@ -266,38 +324,58 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
                 alt="HandicApp Icon" 
                 width={48} 
                 height={48}
-                className="object-contain flex-shrink-0"
+                className="object-contain flex-shrink-0 drop-shadow-lg"
                 style={{ aspectRatio: '1' }}
               />
-              <Image 
-                src={LOGOS.TEXT_BROWN}
-                alt="HandicApp" 
-                width={140} 
-                height={28}
-                className="object-contain flex-shrink-0 brightness-0 invert"
-                style={{ aspectRatio: '5' }}
-              />
+              <h1 
+                className="text-white drop-shadow-lg select-none"
+                style={{ 
+                  fontFamily: 'var(--font-outfit), Outfit, sans-serif',
+                  fontSize: '20px',
+                  fontWeight: 700,
+                  letterSpacing: '1.5px'
+                }}
+              >
+                HANDICAPP
+              </h1>
             </div>
             
             <button
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-white/10 transition-smooth touch-manipulation flex-shrink-0"
+              className="p-2 rounded-lg hover:bg-white/10 transition-all duration-300 touch-manipulation flex-shrink-0 relative z-10"
               aria-label="Cerrar menú"
             >
-              <X className="h-5 w-5 text-white/70" />
+              <X className="h-5 w-5 text-white/90" />
             </button>
           </div>
         </div>
 
         {/* Mobile Navigation */}
-        <nav className="flex-1 px-3 pt-6 pb-4 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent hover:scrollbar-thumb-white/30"
+        <nav className="flex-1 px-3 pt-6 pb-4 space-y-1.5 overflow-y-auto relative"
         style={{
           scrollbarWidth: 'thin',
-          scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent'
+          scrollbarColor: 'rgba(255, 255, 255, 0.3) transparent'
         }}>
+          {/* Custom scrollbar */}
+          <style jsx>{`
+            nav::-webkit-scrollbar {
+              width: 6px;
+            }
+            nav::-webkit-scrollbar-track {
+              background: transparent;
+            }
+            nav::-webkit-scrollbar-thumb {
+              background: rgba(255, 255, 255, 0.2);
+              border-radius: 3px;
+            }
+            nav::-webkit-scrollbar-thumb:hover {
+              background: rgba(255, 255, 255, 0.3);
+            }
+          `}</style>
+          
           {/* Label MENU */}
-          <div className="px-3 py-2 mb-2">
-            <span className="text-xs font-semibold text-white/40 uppercase tracking-wider">
+          <div className="px-3 py-2 mb-3">
+            <span className="text-xs font-semibold text-white/50 uppercase tracking-widest">
               Menú
             </span>
           </div>
@@ -316,15 +394,27 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
                 href={item.href}
                 onClick={onClose}
                 className={`
-                  flex items-center px-3 py-2.5 gap-3 rounded-lg transition-smooth touch-manipulation
+                  flex items-center px-4 py-3 gap-3 rounded-xl transition-all duration-300 touch-manipulation relative
                   ${isActive
-                    ? 'bg-[#af936f] text-white shadow-md shadow-[#af936f]/20'
-                    : 'text-white/70 hover:text-white hover:bg-white/10'
+                    ? 'bg-[#af936f] text-white shadow-lg'
+                    : 'text-white/80 hover:text-white hover:bg-white/10 hover:backdrop-blur-sm'
                   }
                 `}
+                style={isActive ? {
+                  boxShadow: '0 4px 14px rgba(175, 147, 111, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+                } : {}}
               >
-                <Icon className={`w-6 h-6 flex-shrink-0 ${isActive ? 'text-white' : ''}`} />
-                <span className="truncate font-medium text-[15px]">{item.name}</span>
+                <Icon className={`flex-shrink-0 transition-all duration-300 ${
+                  isActive ? 'w-6 h-6 text-white drop-shadow-md' : 'w-5 h-5 text-white/80'
+                }`} />
+                <span className={`truncate font-medium transition-all duration-300 ${
+                  isActive ? 'text-[15px] text-white' : 'text-[14px] text-white/80'
+                }`}>
+                  {item.name}
+                </span>
+                {isActive && (
+                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white shadow-lg" />
+                )}
               </Link>
             );
           })}

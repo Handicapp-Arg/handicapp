@@ -7,6 +7,11 @@
 /* Theme tokens as CSS variables */
 @layer base {
   :root {
+    /* Fuentes */
+    --font-geist-sans: var(--font-geist-sans);
+    --font-geist-mono: var(--font-geist-mono);
+    --font-outfit: var(--font-outfit);
+    
     /* Base Colors - Nueva Paleta HandicApp 2.0 */
     --background: 0 0% 100%; /* Blanco #ffffff */
     --foreground: 215 43% 11%; /* Dark #0f172a */
@@ -73,37 +78,6 @@
     --earth: 40 3% 85%; /* Light */
   }
 
-  .dark {
-    /* Dark mode - Colores adaptados */
-    --background: 215 43% 8%; /* Dark más suave */
-    --foreground: 0 0% 95%; /* Blanco suave */
-    
-    --primary: 215 31% 25%; /* Primary más claro en dark */
-    --primary-foreground: 0 0% 100%; /* Blanco */
-    
-    --secondary: 17 24% 60%; /* Secondary más claro */
-    --secondary-foreground: 215 43% 11%; /* Dark */
-    
-    --accent: 36 28% 65%; /* Info más claro */
-    --accent-foreground: 215 43% 11%; /* Dark */
-    
-    --muted: 215 20% 15%; /* Dark suave */
-    --muted-foreground: 40 3% 75%; /* Light */
-    
-    --card: 215 30% 12%; /* Dark card */
-    --card-foreground: 0 0% 95%; /* Blanco suave */
-    
-    --popover: 215 30% 12%; /* Dark */
-    --popover-foreground: 0 0% 95%; /* Blanco suave */
-    
-    --destructive: 2 95% 55%; /* Danger más claro */
-    --destructive-foreground: 0 0% 100%; /* Blanco */
-    
-    --border: 215 20% 20%; /* Dark borde */
-    --input: 215 20% 20%; /* Dark input */
-    --ring: 30 38% 50%; /* Información */
-  }
-
   * {
     @apply border-border;
   }
@@ -118,29 +92,77 @@
 }
 
 @layer utilities {
+  /* Glassmorphism moderno */
   .glass {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
   }
   
-  .glass-dark {
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+  .glass-strong {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(16px) saturate(200%);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
   }
   
+  /* Hover effects modernos */
   .hover-lift {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   .hover-lift:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06);
   }
   
+  .hover-scale {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .hover-scale:hover {
+    transform: scale(1.02);
+  }
+  
+  /* Transiciones suaves */
   .transition-smooth {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .transition-fast {
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Gradientes modernos tech - Colores de la web */
+  .gradient-navy {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  }
+  
+  .gradient-navy-cyan {
+    background: linear-gradient(135deg, #0f172a 0%, #0e445d 100%);
+  }
+  
+  .gradient-gold {
+    background: linear-gradient(135deg, #af936f 0%, #8f7657 100%);
+  }
+  
+  .gradient-navy-light {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.1) 0%, rgba(14, 68, 93, 0.1) 100%);
+  }
+  
+  .text-gradient-navy {
+    background: linear-gradient(135deg, #0f172a 0%, #0e445d 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #af936f 0%, #8f7657 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   /* Animaciones modernas para modales y transiciones */
