@@ -2,158 +2,351 @@
 
 import React from 'react';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
-import { DashboardHero } from '@/components/dashboard/DashboardHero';
-import { StatsGrid, StatCard } from '@/components/dashboard/StatsGrid';
-import { ActionGrid, ActionCardProps } from '@/components/dashboard/ActionCard';
-import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import { useStats } from '@/lib/hooks/useStats';
 import { useEventosProximos } from '@/lib/hooks/useEventosProximos';
-import { getRoleInfo } from '@/lib/design-tokens';
-import { Users, Activity, Wrench, Calendar, FileText, Circle, Package } from 'lucide-react';
+import { useAuthNew } from '@/lib/hooks/useAuthNew';
+import { 
+  Users, 
+  Wrench, 
+  Calendar, 
+  FileText, 
+  Circle, 
+  Package, 
+  Plus,
+  CheckCircle2,
+  Clock,
+  ArrowRight
+} from 'lucide-react';
 import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import Link from 'next/link';
 
 export default function EstablecimientoDashboard() {
   const { stats, loading } = useStats();
   const { eventos } = useEventosProximos({ limit: 5 });
-  const roleInfo = getRoleInfo('establecimiento');
+  const { user } = useAuthNew();
 
   if (loading) {
     return <LoadingSpinnerFullPage label="Cargando..." />;
   }
 
-  // Stats principales
-  const dashboardStats: StatCard[] = [
-    {
-      label: 'Caballos',
-      value: stats.caballos?.activos || 0,
-      icon: Circle,
-      color: 'success',
-      badges: [{ label: `${stats.caballos?.total || 0} total`, variant: 'secondary' }],
-    },
-    {
-      label: 'Personal',
-      value: stats.empleados?.activos || 0,
-      icon: Users,
-      color: 'primary',
-      badges: [{ label: `${stats.empleados?.total || 0} total`, variant: 'secondary' }],
-    },
-    {
-      label: 'Inventario',
-      value: stats.inventario?.total || 0,
-      icon: Package,
-      color: 'warning',
-      badges: [{ label: `${stats.inventario?.stockBajo || 0} stock bajo`, variant: 'outline' }],
-    },
-    {
-      label: 'Tareas Pendientes',
-      value: stats.tareas?.pendientes || 0,
-      icon: Activity,
-      color: 'danger',
-      badges: [{ label: `${stats.tareas?.completadas || 0} completadas`, variant: 'outline' }],
-    },
-  ];
-
-  // Acciones principales
-  const actions: ActionCardProps[] = [
-    {
-      title: 'Caballos',
-      description: 'Administrar caballos del establecimiento',
-      href: '/establecimiento/caballos',
-      icon: Circle,
-      colorScheme: 'green',
-      count: stats.caballos?.total || 0,
-    },
-    {
-      title: 'Personal',
-      description: 'Gestionar empleados',
-      href: '/establecimiento/personal',
-      icon: Users,
-      colorScheme: 'blue',
-      count: stats.empleados?.total || 0,
-      badge: stats.empleados?.activos ? { 
-        label: `${stats.empleados.activos} activos`, 
-        variant: 'default' 
-      } : undefined,
-    },
-    {
-      title: 'Inventario',
-      description: 'Productos y stock',
-      href: '/establecimiento/inventario',
-      icon: Package,
-      colorScheme: 'yellow',
-      count: stats.inventario?.total || 0,
-      badge: stats.inventario?.stockBajo ? { 
-        label: `${stats.inventario.stockBajo} stock bajo`, 
-        variant: 'destructive' 
-      } : undefined,
-    },
-    {
-      title: 'Tareas',
-      description: 'Mantenimiento y programación',
-      href: '/establecimiento/tareas',
-      icon: Wrench,
-      colorScheme: 'orange',
-      badge: stats.tareas?.pendientes ? { 
-        label: `${stats.tareas.pendientes} pendientes`, 
-        variant: 'destructive' 
-      } : undefined,
-    },
-    {
-      title: 'Eventos',
-      description: 'Calendario y competencias',
-      href: '/establecimiento/eventos',
-      icon: Calendar,
-      colorScheme: 'purple',
-    },
-    {
-      title: 'Reportes',
-      description: 'Estadísticas e informes',
-      href: '/establecimiento/reportes',
-      icon: FileText,
-      colorScheme: 'teal',
-    },
-  ];
+  const establecimientoNombre = user?.establecimiento_nombre || 'Establecimiento';
+  const today = new Date().toLocaleDateString('es-AR', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
 
   return (
     <SimpleRoleGuard roles={['establecimiento']}>
-      <div className="min-h-screen bg-gray-50">
-        <DashboardHero
-          title={roleInfo.title}
-          description="Gestión integral del establecimiento"
-          roleEmoji={roleInfo.emoji}
-          colorScheme="green"
-          ctaButtons={[
-            {
-              label: 'Ver Tareas',
-              href: '/establecimiento/tareas',
-              variant: 'primary',
-            },
-            {
-              label: 'Ver Caballos',
-              href: '/establecimiento/caballos',
-              variant: 'secondary',
-            },
-          ]}
-        />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+        {/* Header Hero con efectos visuales */}
+        <div className="relative bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] border-b border-slate-800 shadow-xl overflow-hidden">
+          {/* Efectos de fondo animados */}
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#0e445d] rounded-full blur-3xl animate-pulse"></div>
+            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[#af936f] rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+          </div>
+          
+          {/* Líneas decorativas */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#af936f] to-transparent"></div>
+            <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#0e445d] to-transparent"></div>
+          </div>
 
-        <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
-          <StatsGrid stats={dashboardStats} columns={4} />
+          <div className="relative px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 
+                  className="text-2xl sm:text-4xl text-white mb-2 drop-shadow-lg animate-fade-in"
+                  style={{ 
+                    fontFamily: 'var(--font-outfit), Outfit, sans-serif',
+                    fontWeight: 700,
+                    letterSpacing: '-0.5px',
+                    textShadow: '0 0 30px rgba(175, 147, 111, 0.5)'
+                  }}
+                >
+                  Bienvenido, {establecimientoNombre}
+                </h1>
+                <p className="text-sm sm:text-base text-slate-300 capitalize flex items-center gap-2 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+                  <Calendar className="h-4 w-4" />
+                  {today}
+                </p>
+              </div>
+              <div className="flex items-center gap-3 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                <Link
+                  href="/establecimiento/tareas"
+                  className="group relative px-5 py-3 bg-gradient-to-r from-[#af936f] to-[#8f7657] text-white text-sm font-semibold rounded-lg overflow-hidden transition-all duration-200 flex items-center gap-2"
+                >
+                  {/* Efecto de brillo en hover */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 group-hover:animate-shine"></div>
+                  <Plus className="h-5 w-5 relative z-10" />
+                  <span className="relative z-10">Nueva Tarea</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl shadow-lg">
-                  <Activity className="w-5 h-5 text-white" />
+        {/* Contenido Principal */}
+        <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          {/* Métricas con gradientes y sombras */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+            {/* Caballos */}
+            <div className="group bg-gradient-to-br from-white to-emerald-50 rounded-2xl border border-emerald-100 p-6 hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-lg group-hover:shadow-emerald-500/50 transition-shadow">
+                  <Circle className="h-6 w-6 text-white" />
                 </div>
-                Panel de Control
-              </h2>
-              <ActionGrid actions={actions} columns={2} />
+                <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-3 py-1.5 rounded-full">
+                  {stats.caballos?.activos || 0} activos
+                </span>
+              </div>
+              <p className="text-4xl font-bold text-slate-900 mb-1" style={{ fontFamily: 'var(--font-outfit)' }}>
+                {stats.caballos?.total || 0}
+              </p>
+              <p className="text-sm font-medium text-slate-600">Caballos</p>
             </div>
 
-            <DashboardSidebar 
-              role="establecimiento"
-              eventos={eventos}
-            />
+            {/* Personal */}
+            <div className="group bg-gradient-to-br from-white to-blue-50 rounded-2xl border border-blue-100 p-6 hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg group-hover:shadow-blue-500/50 transition-shadow">
+                  <Users className="h-6 w-6 text-white" />
+                </div>
+                <span className="text-xs font-semibold text-blue-700 bg-blue-100 px-3 py-1.5 rounded-full">
+                  {stats.empleados?.activos || 0} activos
+                </span>
+              </div>
+              <p className="text-4xl font-bold text-slate-900 mb-1" style={{ fontFamily: 'var(--font-outfit)' }}>
+                {stats.empleados?.total || 0}
+              </p>
+              <p className="text-sm font-medium text-slate-600">Personal</p>
+            </div>
+
+            {/* Inventario */}
+            <div className="group bg-gradient-to-br from-white to-amber-50 rounded-2xl border border-amber-100 p-6 hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-lg group-hover:shadow-amber-500/50 transition-shadow">
+                  <Package className="h-6 w-6 text-white" />
+                </div>
+                {(stats.inventario?.stockBajo || 0) > 0 && (
+                  <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-3 py-1.5 rounded-full animate-pulse">
+                    {stats.inventario?.stockBajo} bajo
+                  </span>
+                )}
+              </div>
+              <p className="text-4xl font-bold text-slate-900 mb-1" style={{ fontFamily: 'var(--font-outfit)' }}>
+                {stats.inventario?.total || 0}
+              </p>
+              <p className="text-sm font-medium text-slate-600">Productos</p>
+            </div>
+
+            {/* Tareas */}
+            <div className="group bg-gradient-to-br from-white to-red-50 rounded-2xl border border-red-100 p-6 hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-lg group-hover:shadow-red-500/50 transition-shadow">
+                  <Wrench className="h-6 w-6 text-white" />
+                </div>
+                {(stats.tareas?.pendientes || 0) > 0 && (
+                  <span className="text-xs font-semibold text-red-700 bg-red-100 px-3 py-1.5 rounded-full animate-pulse">
+                    {stats.tareas?.pendientes} pendientes
+                  </span>
+                )}
+              </div>
+              <p className="text-4xl font-bold text-slate-900 mb-1" style={{ fontFamily: 'var(--font-outfit)' }}>
+                {stats.tareas?.completadas || 0}
+              </p>
+              <p className="text-sm font-medium text-slate-600">Completadas</p>
+            </div>
+          </div>
+
+          {/* Acciones Rápidas con mejor diseño */}
+          <div className="mb-8">
+            <h2 className="text-xl font-bold text-slate-900 mb-6" style={{ fontFamily: 'var(--font-outfit)' }}>Acciones Rápidas</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+              <Link
+                href="/establecimiento/caballos"
+                className="group bg-white rounded-xl border-2 border-slate-200 p-5 hover:border-emerald-400 hover:shadow-xl hover:scale-105 transition-all duration-300"
+              >
+                <div className="p-2 bg-emerald-100 rounded-lg mb-3 w-fit group-hover:bg-emerald-500 transition-colors">
+                  <Circle className="h-5 w-5 text-emerald-600 group-hover:text-white transition-colors" />
+                </div>
+                <p className="text-sm font-semibold text-slate-900">Caballos</p>
+              </Link>
+
+              <Link
+                href="/establecimiento/personal"
+                className="group bg-white rounded-xl border-2 border-slate-200 p-5 hover:border-blue-400 hover:shadow-xl hover:scale-105 transition-all duration-300"
+              >
+                <div className="p-2 bg-blue-100 rounded-lg mb-3 w-fit group-hover:bg-blue-500 transition-colors">
+                  <Users className="h-5 w-5 text-blue-600 group-hover:text-white transition-colors" />
+                </div>
+                <p className="text-sm font-semibold text-slate-900">Personal</p>
+              </Link>
+
+              <Link
+                href="/establecimiento/inventario"
+                className="group bg-white rounded-xl border-2 border-slate-200 p-5 hover:border-amber-400 hover:shadow-xl hover:scale-105 transition-all duration-300"
+              >
+                <div className="p-2 bg-amber-100 rounded-lg mb-3 w-fit group-hover:bg-amber-500 transition-colors">
+                  <Package className="h-5 w-5 text-amber-600 group-hover:text-white transition-colors" />
+                </div>
+                <p className="text-sm font-semibold text-slate-900">Inventario</p>
+              </Link>
+
+              <Link
+                href="/establecimiento/tareas"
+                className="group bg-white rounded-xl border-2 border-slate-200 p-5 hover:border-purple-400 hover:shadow-xl hover:scale-105 transition-all duration-300"
+              >
+                <div className="p-2 bg-purple-100 rounded-lg mb-3 w-fit group-hover:bg-purple-500 transition-colors">
+                  <Wrench className="h-5 w-5 text-purple-600 group-hover:text-white transition-colors" />
+                </div>
+                <p className="text-sm font-semibold text-slate-900">Tareas</p>
+              </Link>
+
+              <Link
+                href="/establecimiento/eventos"
+                className="group bg-white rounded-xl border-2 border-slate-200 p-5 hover:border-cyan-400 hover:shadow-xl hover:scale-105 transition-all duration-300"
+              >
+                <div className="p-2 bg-cyan-100 rounded-lg mb-3 w-fit group-hover:bg-cyan-500 transition-colors">
+                  <Calendar className="h-5 w-5 text-cyan-600 group-hover:text-white transition-colors" />
+                </div>
+                <p className="text-sm font-semibold text-slate-900">Eventos</p>
+              </Link>
+
+              <Link
+                href="/establecimiento/reportes"
+                className="group bg-white rounded-xl border-2 border-slate-200 p-5 hover:border-indigo-400 hover:shadow-xl hover:scale-105 transition-all duration-300"
+              >
+                <div className="p-2 bg-indigo-100 rounded-lg mb-3 w-fit group-hover:bg-indigo-500 transition-colors">
+                  <FileText className="h-5 w-5 text-indigo-600 group-hover:text-white transition-colors" />
+                </div>
+                <p className="text-sm font-semibold text-slate-900">Reportes</p>
+              </Link>
+            </div>
+          </div>
+
+          {/* Tareas y Eventos con mejor diseño */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Tareas Pendientes */}
+            <div className="bg-gradient-to-br from-white to-orange-50 rounded-2xl border border-orange-100 p-6 shadow-lg hover:shadow-2xl transition-all duration-300">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg">
+                    <CheckCircle2 className="h-6 w-6 text-white" />
+                  </div>
+                  <h2 className="text-xl font-bold text-slate-900" style={{ fontFamily: 'var(--font-outfit)' }}>
+                    Tareas Pendientes
+                  </h2>
+                </div>
+                <Link 
+                  href="/establecimiento/tareas" 
+                  className="text-sm font-semibold text-[#0e445d] hover:text-[#af936f] flex items-center gap-1 transition-colors"
+                >
+                  Ver todas
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+              
+              {stats.tareas?.pendientes && stats.tareas.pendientes > 0 ? (
+                <div className="space-y-4">
+                  <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl border border-orange-200">
+                    <div className="p-2 bg-orange-500 rounded-lg">
+                      <Clock className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-lg font-bold text-slate-900 mb-1">
+                        {stats.tareas.pendientes} {stats.tareas.pendientes === 1 ? 'tarea' : 'tareas'}
+                      </p>
+                      <p className="text-sm text-slate-600">Requieren tu atención inmediata</p>
+                    </div>
+                  </div>
+                  <Link 
+                    href="/establecimiento/tareas" 
+                    className="block w-full text-center py-3 bg-gradient-to-r from-[#0f172a] to-[#1e293b] text-white font-semibold rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-200"
+                  >
+                    Gestionar tareas
+                  </Link>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="p-4 bg-emerald-100 rounded-full w-fit mx-auto mb-4">
+                    <CheckCircle2 className="h-12 w-12 text-emerald-600" />
+                  </div>
+                  <p className="text-lg font-semibold text-slate-900 mb-1">¡Todo al día!</p>
+                  <p className="text-sm text-slate-500">No hay tareas pendientes</p>
+                </div>
+              )}
+            </div>
+
+            {/* Próximos Eventos */}
+            <div className="bg-gradient-to-br from-white to-blue-50 rounded-2xl border border-blue-100 p-6 shadow-lg hover:shadow-2xl transition-all duration-300">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
+                    <Calendar className="h-6 w-6 text-white" />
+                  </div>
+                  <h2 className="text-xl font-bold text-slate-900" style={{ fontFamily: 'var(--font-outfit)' }}>
+                    Próximos Eventos
+                  </h2>
+                </div>
+                <Link 
+                  href="/establecimiento/eventos" 
+                  className="text-sm font-semibold text-[#0e445d] hover:text-[#af936f] flex items-center gap-1 transition-colors"
+                >
+                  Ver todos
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+              
+              {eventos && eventos.length > 0 ? (
+                <div className="space-y-3">
+                  {eventos.slice(0, 3).map((evento) => (
+                    <div key={evento.id} className="group flex items-start gap-4 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-200 hover:border-blue-400 hover:shadow-lg transition-all duration-200 cursor-pointer">
+                      <div className="p-2 bg-blue-500 rounded-lg group-hover:bg-blue-600 transition-colors">
+                        <Calendar className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-slate-900 truncate mb-1">
+                          {evento.titulo}
+                        </p>
+                        <p className="text-xs text-slate-600 flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {new Date(evento.fecha_evento).toLocaleDateString('es-AR', { 
+                            day: 'numeric', 
+                            month: 'long',
+                            year: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-blue-400 group-hover:text-blue-600 transition-colors" />
+                    </div>
+                  ))}
+                  <Link 
+                    href="/establecimiento/eventos" 
+                    className="block w-full text-center py-3 bg-gradient-to-r from-[#0f172a] to-[#1e293b] text-white font-semibold rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-200 mt-4"
+                  >
+                    Ver calendario completo
+                  </Link>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="p-4 bg-slate-100 rounded-full w-fit mx-auto mb-4">
+                    <Calendar className="h-12 w-12 text-slate-400" />
+                  </div>
+                  <p className="text-lg font-semibold text-slate-900 mb-1">Sin eventos</p>
+                  <p className="text-sm text-slate-500 mb-4">No hay eventos próximos programados</p>
+                  <Link 
+                    href="/establecimiento/eventos" 
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Crear evento
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
