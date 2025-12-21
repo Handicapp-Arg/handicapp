@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useAuthNew } from '@/lib/hooks/useAuthNew';
 import { tareaService } from '@/lib/services/tareaService';
 import { type Tarea, type EstadoTarea, type VistaKanban } from '@/types/task.types';
 import { TareaForm } from './TareaForm';
 import { usePermissions } from '@/lib/hooks/usePermissions';
+import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import {
   Plus,
   Edit2,
@@ -74,6 +75,29 @@ export function TareaKanban({ tareas: tareasProp, onRefresh }: TareaKanbanProps)
     const tareasArray = Array.isArray(tareasProp) ? tareasProp : (tareasProp as { data: Tarea[] })?.data || [];
     setLocalTareas(tareasArray);
   }, [tareasProp]);
+
+  // Función para refrescar tareas silenciosamente (sin toast ni loading)
+  const silentRefresh = useCallback(async () => {
+    try {
+      const response = await tareaService.getAll({ page: 1, limit: 500 });
+      const tareasData = response.data;
+      
+      // Solo actualizar si hay cambios reales
+      if (JSON.stringify(tareasData) !== JSON.stringify(localTareas)) {
+        setLocalTareas(tareasData);
+      }
+    } catch (error) {
+      // Silencioso - no mostrar errores al usuario
+      console.debug('Auto-refresh falló (silencioso):', error);
+    }
+  }, [localTareas]);
+
+  // Auto-refresh cada 60 segundos cuando la pestaña está activa
+  useAutoRefresh(silentRefresh, {
+    interval: 60000, // 1 minuto
+    enabled: true,
+    onlyWhenVisible: true
+  });
 
   // Organizar tareas por estado
   const organizedTareas = useMemo(() => {
@@ -371,7 +395,7 @@ export function TareaKanban({ tareas: tareasProp, onRefresh }: TareaKanbanProps)
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
-              Por Hacer
+              Pendiente
               <span className={`ml-1.5 sm:ml-2 px-1.5 py-0.5 rounded text-xs font-semibold ${
                 activeTab === 'pendiente' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700'
               }`}>
@@ -486,7 +510,7 @@ export function TareaKanban({ tareas: tareasProp, onRefresh }: TareaKanbanProps)
         <div className="grid grid-cols-1 lg:grid-cols-3 divide-x divide-stroke">
           {(activeTab === 'todas' || activeTab === 'pendiente') && (
             <KanbanColumn
-              title="Por Hacer"
+              title="Pendiente"
               icon={Clock}
               tareas={organizedTareas.pendiente}
               estado="pendiente"
@@ -567,7 +591,7 @@ export function TareaKanban({ tareas: tareasProp, onRefresh }: TareaKanbanProps)
                   }`}>
                     {detailTarea.estado === 'completada' ? 'Completada' :
                      detailTarea.estado === 'en_progreso' ? 'En Progreso' :
-                     'Por Hacer'}
+                     'Pendiente'}
                   </span>
                 </div>
 
