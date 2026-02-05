@@ -1,313 +1,247 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { useStats } from '@/lib/hooks/useStats';
 import { useEventosProximos } from '@/lib/hooks/useEventosProximos';
 import { useAuthNew } from '@/lib/hooks/useAuthNew';
-import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { useCaballos } from '@/lib/hooks/useCaballosQuery';
+import { useTareas } from '@/lib/hooks/useTareasQuery';
+import { Loader } from '@/components/ui/loader';
 import { 
   Trophy, 
   Heart, 
-  FileText,
-  Building2,
+  Activity,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
   Calendar,
-  Circle,
   Plus,
-  CheckCircle2,
-  Clock,
   ArrowRight,
-  Star
+  ClipboardList
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function PropietarioDashboard() {
   const { stats, loading } = useStats();
   const { eventos } = useEventosProximos({ limit: 5 });
   const { user } = useAuthNew();
+  const { data: caballosData, isLoading: caballosLoading } = useCaballos({ page: 1, limit: 10 });
+  const { data: tareasData } = useTareas({ estado: undefined, limit: 10 });
 
-  if (loading) {
-    return <LoadingSpinnerFullPage label="Cargando..." />;
+  if (loading || caballosLoading) {
+    return <Loader />;
   }
 
   const propietarioNombre = user?.nombre || 'Propietario';
-  const today = new Date().toLocaleDateString('es-AR', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
+  // Normalizar respuesta de caballos (puede venir en data.caballos o directamente en caballos)
+  const caballos = (caballosData as any)?.data?.caballos || (caballosData as any)?.caballos || [];
+  const tareas = tareasData?.tareas || [];
+  
+  // Filtrar tareas de hoy
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const tareasHoy = tareas.filter(tarea => {
+    if (!tarea.fecha_limite) return false;
+    const fechaTarea = new Date(tarea.fecha_limite);
+    fechaTarea.setHours(0, 0, 0, 0);
+    return fechaTarea.getTime() === hoy.getTime();
   });
+  
+  // TODO: Implementar hook de gastos real
+  const gastos = {
+    mesActual: 125000,
+    mesAnterior: 98000,
+    diferencia: 27.55,
+    tipo: 'aumento' as const
+  };
 
   return (
     <SimpleRoleGuard roles={['propietario']}>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
-        {/* Header Hero - Tema Navy/Gold */}
-        <div className="relative bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] border-b border-slate-800 shadow-xl overflow-hidden">
-          <div className="absolute inset-0 opacity-30">
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#0e445d] rounded-full blur-3xl animate-pulse"></div>
-            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[#af936f] rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-          </div>
+      <div className="min-h-screen bg-white">
+        <div className="max-w-[1600px] mx-auto px-6 lg:px-10 py-8 space-y-12">
           
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#0e445d] to-transparent"></div>
-            <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#af936f] to-transparent"></div>
-          </div>
+          <div className="flex flex-col gap-12">
+            
+            {/* Fila superior: Finanzas y Mis Caballos */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
+               
+               {/* Finanzas */}
+               <section className="flex flex-col h-full">
+                 <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-[19px] font-semibold text-gray-900">Finanzas</h2>
+                    <Link href="/propietario/reportes/gastos" className="text-[14px] font-medium text-gray-500 hover:text-gray-900 transition-colors">Ver detalle</Link>
+                 </div>
+                 
+                 <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 flex-1 flex flex-col justify-center">
+                     <div className="flex justify-between items-start">
+                        <div>
+                            <p className="text-sm text-gray-500 mb-1">Gastos este mes</p>
+                            <h3 className="text-3xl font-bold text-gray-900 tracking-tight">${gastos.mesActual.toLocaleString('es-AR')}</h3>
+                        </div>
+                        <div className="flex items-center gap-1.5 py-1 px-2.5 bg-white rounded-full border border-gray-200 shadow-sm">
+                           {gastos.tipo === 'aumento' ? <TrendingUp className="h-3.5 w-3.5 text-red-500" /> : <TrendingDown className="h-3.5 w-3.5 text-emerald-500" />}
+                           <span className={`text-xs font-semibold ${gastos.tipo === 'aumento' ? 'text-red-500' : 'text-emerald-500'}`}>
+                              {gastos.diferencia}%
+                           </span>
+                        </div>
+                     </div>
+                 </div>
+               </section>
 
-          <div className="relative px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h1 
-                  className="text-2xl sm:text-4xl text-white mb-2 drop-shadow-lg animate-fade-in"
-                  style={{ 
-                    fontFamily: 'var(--font-outfit), Outfit, sans-serif',
-                    fontWeight: 700,
-                    letterSpacing: '-0.5px',
-                    textShadow: '0 0 30px rgba(175, 147, 111, 0.5)'
-                  }}
-                >
-                  Bienvenido, {propietarioNombre}
-                </h1>
-                <p className="text-sm sm:text-base text-slate-300 capitalize flex items-center gap-2 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-                  <Calendar className="h-4 w-4" />
-                  {today}
-                </p>
-              </div>
-              <div className="flex items-center gap-3 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-                <Link
-                  href="/propietario/caballos"
-                  className="group relative px-5 py-3 bg-gradient-to-r from-[#af936f] to-[#8f7657] text-white text-sm font-semibold rounded-lg overflow-hidden transition-all duration-200 flex items-center gap-2"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 group-hover:animate-shine"></div>
-                  <Star className="h-5 w-5 relative z-10" />
-                  <span className="relative z-10">Mis Campeones</span>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Contenido Principal */}
-        <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          {/* Métricas */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-            {/* Caballos */}
-            <div className="group bg-gradient-to-br from-white to-purple-50 rounded-2xl border border-purple-100 p-6 hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg group-hover:shadow-purple-500/50 transition-shadow">
-                  <Circle className="h-6 w-6 text-white" />
-                </div>
-                <span className="text-xs font-semibold text-purple-700 bg-purple-100 px-3 py-1.5 rounded-full">
-                  Total
-                </span>
-              </div>
-              <p className="text-4xl font-bold text-slate-900 mb-1" style={{ fontFamily: 'var(--font-outfit)' }}>
-                {stats.caballos?.total || 0}
-              </p>
-              <p className="text-sm font-medium text-slate-600">Mis Caballos</p>
-            </div>
-
-            {/* Establecimientos */}
-            <div className="group bg-gradient-to-br from-white to-blue-50 rounded-2xl border border-blue-100 p-6 hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg group-hover:shadow-blue-500/50 transition-shadow">
-                  <Building2 className="h-6 w-6 text-white" />
-                </div>
-                <span className="text-xs font-semibold text-blue-700 bg-blue-100 px-3 py-1.5 rounded-full">
-                  Activos
-                </span>
-              </div>
-              <p className="text-4xl font-bold text-slate-900 mb-1" style={{ fontFamily: 'var(--font-outfit)' }}>
-                {stats.establecimientos?.total || 0}
-              </p>
-              <p className="text-sm font-medium text-slate-600">Establecimientos</p>
-            </div>
-
-            {/* Salud */}
-            <div className="group bg-gradient-to-br from-white to-rose-50 rounded-2xl border border-rose-100 p-6 hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-rose-500 to-rose-600 rounded-xl shadow-lg group-hover:shadow-rose-500/50 transition-shadow">
-                  <Heart className="h-6 w-6 text-white" />
-                </div>
-                <span className="text-xs font-semibold text-rose-700 bg-rose-100 px-3 py-1.5 rounded-full">
-                  Estado
-                </span>
-              </div>
-              <p className="text-4xl font-bold text-slate-900 mb-1" style={{ fontFamily: 'var(--font-outfit)' }}>
-                {stats.caballos?.activos || 0}
-              </p>
-              <p className="text-sm font-medium text-slate-600">En Buen Estado</p>
-            </div>
-
-            {/* Eventos */}
-            <div className="group bg-gradient-to-br from-white to-amber-50 rounded-2xl border border-amber-100 p-6 hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-lg group-hover:shadow-amber-500/50 transition-shadow">
-                  <Trophy className="h-6 w-6 text-white" />
-                </div>
-                <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-3 py-1.5 rounded-full">
-                  Próximos
-                </span>
-              </div>
-              <p className="text-4xl font-bold text-slate-900 mb-1" style={{ fontFamily: 'var(--font-outfit)' }}>
-                {eventos.length}
-              </p>
-              <p className="text-sm font-medium text-slate-600">Competencias</p>
-            </div>
-          </div>
-
-          {/* Acciones Rápidas */}
-          <div className="mb-8">
-            <h2 className="text-xl font-bold text-slate-900 mb-6" style={{ fontFamily: 'var(--font-outfit)' }}>Acciones Rápidas</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-              <Link href="/propietario/caballos" className="group bg-white rounded-xl border-2 border-slate-200 p-5 hover:border-purple-400 hover:shadow-xl hover:scale-105 transition-all duration-300">
-                <div className="p-2 bg-purple-100 rounded-lg mb-3 w-fit group-hover:bg-purple-500 transition-colors">
-                  <Circle className="h-5 w-5 text-purple-600 group-hover:text-white transition-colors" />
-                </div>
-                <p className="text-sm font-semibold text-slate-900">Mis Caballos</p>
-              </Link>
-
-              <Link href="/propietario/establecimientos" className="group bg-white rounded-xl border-2 border-slate-200 p-5 hover:border-blue-400 hover:shadow-xl hover:scale-105 transition-all duration-300">
-                <div className="p-2 bg-blue-100 rounded-lg mb-3 w-fit group-hover:bg-blue-500 transition-colors">
-                  <Building2 className="h-5 w-5 text-blue-600 group-hover:text-white transition-colors" />
-                </div>
-                <p className="text-sm font-semibold text-slate-900">Establecimientos</p>
-              </Link>
-
-              <Link href="/propietario/salud" className="group bg-white rounded-xl border-2 border-slate-200 p-5 hover:border-rose-400 hover:shadow-xl hover:scale-105 transition-all duration-300">
-                <div className="p-2 bg-rose-100 rounded-lg mb-3 w-fit group-hover:bg-rose-500 transition-colors">
-                  <Heart className="h-5 w-5 text-rose-600 group-hover:text-white transition-colors" />
-                </div>
-                <p className="text-sm font-semibold text-slate-900">Salud</p>
-              </Link>
-
-              <Link href="/propietario/eventos" className="group bg-white rounded-xl border-2 border-slate-200 p-5 hover:border-amber-400 hover:shadow-xl hover:scale-105 transition-all duration-300">
-                <div className="p-2 bg-amber-100 rounded-lg mb-3 w-fit group-hover:bg-amber-500 transition-colors">
-                  <Trophy className="h-5 w-5 text-amber-600 group-hover:text-white transition-colors" />
-                </div>
-                <p className="text-sm font-semibold text-slate-900">Eventos</p>
-              </Link>
-
-              <Link href="/propietario/reportes" className="group bg-white rounded-xl border-2 border-slate-200 p-5 hover:border-indigo-400 hover:shadow-xl hover:scale-105 transition-all duration-300">
-                <div className="p-2 bg-indigo-100 rounded-lg mb-3 w-fit group-hover:bg-indigo-500 transition-colors">
-                  <FileText className="h-5 w-5 text-indigo-600 group-hover:text-white transition-colors" />
-                </div>
-                <p className="text-sm font-semibold text-slate-900">Reportes</p>
-              </Link>
-            </div>
-          </div>
-
-          {/* Salud y Eventos */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Estado de Salud */}
-            <div className="bg-gradient-to-br from-white to-rose-50 rounded-2xl border border-rose-100 p-6 shadow-lg hover:shadow-2xl transition-all duration-300">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-gradient-to-br from-rose-500 to-rose-600 rounded-xl shadow-lg">
-                    <Heart className="h-6 w-6 text-white" />
-                  </div>
-                  <h2 className="text-xl font-bold text-slate-900" style={{ fontFamily: 'var(--font-outfit)' }}>
-                    Estado de Salud
-                  </h2>
-                </div>
-                <Link href="/propietario/salud" className="text-sm font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1 transition-colors">
-                  Ver detalles
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-              
-              {stats.caballos?.activos && stats.caballos.activos > 0 ? (
-                <div className="space-y-4">
-                  <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-rose-50 to-pink-50 rounded-xl border border-rose-200">
-                    <div className="p-2 bg-emerald-500 rounded-lg">
-                      <CheckCircle2 className="h-5 w-5 text-white" />
+               {/* Mis Caballos */}
+               <section className="flex flex-col h-full xl:border-l xl:border-gray-100 xl:pl-12">
+                 <div className="flex items-center justify-between mb-6">
+                   <h2 className="text-[19px] font-semibold text-gray-900">Mis Caballos</h2>
+                   <Link href="/propietario/caballos" className="text-[14px] font-medium text-gray-500 hover:text-gray-900 transition-colors">Ver todos</Link>
+                 </div>
+                 
+                 <div className="flex-1">
+                 {caballos.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 h-full">
+                        {caballos.slice(0, 3).map((caballo: any) => (
+                          <Link
+                            key={caballo.id}
+                            href={`/propietario/caballos/${caballo.id}`}
+                            className="group relative aspect-[4/5] rounded-xl overflow-hidden bg-gray-100 w-full"
+                          >
+                            {caballo.foto_url ? (
+                                <Image
+                                  src={caballo.foto_url}
+                                  alt={caballo.nombre}
+                                  fill
+                                  className="object-cover transition-transform duration-700 group-hover:scale-110"
+                                />
+                              ) : (
+                                <div className="flex items-center justify-center h-full bg-gray-100">
+                                  <Heart className="h-8 w-8 text-gray-300" />
+                                </div>
+                              )}
+                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 pt-12">
+                                <h3 className="text-white font-medium text-sm truncate">{caballo.nombre}</h3>
+                                <p className="text-white/70 text-xs truncate">{caballo.raza || 'Sin raza'}</p>
+                            </div>
+                          </Link>
+                        ))}
+                        <Link
+                            href="/propietario/caballos/nuevo"
+                            className="aspect-[4/5] rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 hover:border-gray-900 hover:text-gray-900 transition-all group bg-transparent w-full"
+                        >
+                            <Plus className="h-8 w-8 mb-2 group-hover:scale-110 transition-transform" />
+                            <span className="text-xs font-medium uppercase tracking-wide">Agregar</span>
+                        </Link>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-lg font-bold text-slate-900 mb-1">
-                        {stats.caballos.activos} {stats.caballos.activos === 1 ? 'caballo' : 'caballos'}
-                      </p>
-                      <p className="text-sm text-slate-600">En excelente estado</p>
+                  ) : (
+                    <div className="py-12 text-center border border-gray-100 rounded-2xl bg-gray-50 h-[300px] flex flex-col items-center justify-center">
+                      <p className="text-gray-500 mb-4 text-sm">Aún no tienes caballos registrados</p>
+                      <Link href="/propietario/caballos/nuevo" className="inline-flex items-center justify-center px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
+                        Registrar primer caballo
+                      </Link>
                     </div>
-                  </div>
-                  <Link href="/propietario/salud" className="block w-full text-center py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white font-semibold rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-200">
-                    Ver detalles médicos
-                  </Link>
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="p-4 bg-slate-100 rounded-full w-fit mx-auto mb-4">
-                    <Heart className="h-12 w-12 text-slate-400" />
-                  </div>
-                  <p className="text-lg font-semibold text-slate-900 mb-1">Sin caballos</p>
-                  <p className="text-sm text-slate-500 mb-4">Agrega tus primeros caballos</p>
-                  <Link href="/propietario/caballos" className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500 text-white text-sm font-semibold rounded-lg hover:bg-purple-600 transition-colors">
-                    <Plus className="h-4 w-4" />
-                    Agregar caballo
-                  </Link>
-                </div>
-              )}
+                  )}
+                 </div>
+               </section>
             </div>
 
-            {/* Próximos Eventos */}
-            <div className="bg-gradient-to-br from-white to-amber-50 rounded-2xl border border-amber-100 p-6 shadow-lg hover:shadow-2xl transition-all duration-300">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-lg">
-                    <Trophy className="h-6 w-6 text-white" />
+            {/* Fila inferior: Reporte Diario y Próximos Eventos */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
+
+               {/* Reporte Diario */}
+               <section className="flex flex-col h-full">
+                  <div className="flex items-center justify-between mb-6">
+                     <h2 className="text-[19px] font-semibold text-gray-900">Reporte Diario</h2>
+                     <span className="text-sm text-gray-500">{new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
                   </div>
-                  <h2 className="text-xl font-bold text-slate-900" style={{ fontFamily: 'var(--font-outfit)' }}>
-                    Próximas Competencias
-                  </h2>
-                </div>
-                <Link href="/propietario/eventos" className="text-sm font-semibold text-amber-600 hover:text-amber-700 flex items-center gap-1 transition-colors">
-                  Ver todos
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-              
-              {eventos && eventos.length > 0 ? (
-                <div className="space-y-3">
-                  {eventos.slice(0, 3).map((evento) => (
-                    <div key={evento.id} className="group flex items-start gap-4 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl border border-amber-200 hover:border-amber-400 hover:shadow-lg transition-all duration-200 cursor-pointer">
-                      <div className="p-2 bg-amber-500 rounded-lg group-hover:bg-amber-600 transition-colors">
-                        <Trophy className="h-5 w-5 text-white" />
+                  
+                  <div className="flex-1">
+                  {tareasHoy.length > 0 ? (
+                      <div className="space-y-3">
+                         {tareasHoy.slice(0, 4).map((tarea: any) => (
+                            <div key={tarea.id} className="group flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:border-gray-300 transition-all bg-white hover:shadow-sm">
+                              <div className={`mt-1.5 w-2.5 h-2.5 rounded-full flex-shrink-0 ${tarea.estado === 'completada' ? 'bg-emerald-500' : 'bg-blue-500'}`}></div>
+                              <div className="flex-1 min-w-0">
+                                 <div className="flex justify-between items-start">
+                                    <h3 className="text-[15px] font-medium text-gray-900 group-hover:text-black transition-colors">{tarea.titulo}</h3>
+                                    <span className="text-xs font-mono text-gray-400 bg-gray-50 px-2 py-1 rounded-md ml-2">
+                                        {tarea.fecha_limite ? new Date(tarea.fecha_limite).toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'}) : '--:--'}
+                                    </span>
+                                 </div>
+                                 <p className="text-[13px] text-gray-500 mt-1 flex items-center gap-1.5">
+                                    <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                                    {tarea.caballo?.nombre || 'General'}
+                                 </p>
+                              </div>
+                            </div>
+                         ))}
+                         <div className="pt-2">
+                            <Link href="/propietario/tareas" className="text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center gap-2 transition-colors">
+                                Ver todas las tareas <ArrowRight className="h-3.5 w-3.5" />
+                            </Link>
+                         </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-slate-900 truncate mb-1">
-                          {evento.titulo}
-                        </p>
-                        <p className="text-xs text-slate-600 flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {new Date(evento.fecha_evento).toLocaleDateString('es-AR', { 
-                            day: 'numeric', 
-                            month: 'long',
-                            year: 'numeric'
-                          })}
-                        </p>
+                  ) : (
+                      <div className="p-10 border border-dashed border-gray-200 rounded-2xl text-center bg-gray-50/50 h-full flex flex-col justify-center items-center">
+                         <ClipboardList className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                         <p className="text-gray-900 font-medium text-sm">Todo al día</p>
+                         <p className="text-gray-500 text-sm mt-1">No hay tareas pendientes para hoy</p>
                       </div>
-                      <ArrowRight className="h-4 w-4 text-amber-400 group-hover:text-amber-600 transition-colors" />
-                    </div>
-                  ))}
-                  <Link href="/propietario/eventos" className="block w-full text-center py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-200 mt-4">
-                    Ver calendario completo
-                  </Link>
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="p-4 bg-slate-100 rounded-full w-fit mx-auto mb-4">
-                    <Trophy className="h-12 w-12 text-slate-400" />
+                  )}
                   </div>
-                  <p className="text-lg font-semibold text-slate-900 mb-1">Sin eventos</p>
-                  <p className="text-sm text-slate-500 mb-4">No hay competencias próximas</p>
-                  <Link href="/propietario/eventos" className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white text-sm font-semibold rounded-lg hover:bg-amber-600 transition-colors">
-                    <Plus className="h-4 w-4" />
-                    Ver calendario
-                  </Link>
-                </div>
-              )}
+               </section>
+
+               {/* Próximos Eventos */}
+               <section className="flex flex-col h-full xl:border-l xl:border-gray-100 xl:pl-12">
+                  <div className="flex items-center justify-between mb-6">
+                     <h2 className="text-[19px] font-semibold text-gray-900">Próximos Eventos</h2>
+                     <Link href="/propietario/eventos" className="text-[14px] font-medium text-gray-500 hover:text-gray-900 transition-colors">Calendario completo</Link>
+                  </div>
+                  
+                  <div className="flex-1">
+                  {eventos && eventos.length > 0 ? (
+                    <div className="space-y-6 relative before:absolute before:left-[19px] before:top-2 before:bottom-4 before:w-[2px] before:bg-gray-100 h-full">
+                       {eventos.slice(0, 4).map((evento: any) => {
+                          const fecha = new Date(evento.fecha_evento);
+                          const esHoy = fecha.toDateString() === new Date().toDateString();
+                          
+                          return (
+                            <div key={evento.id} className="relative pl-12 group">
+                               {/* Timeline dot */}
+                               <div className={`absolute left-0 top-1 w-10 h-10 rounded-full border-4 border-white flex items-center justify-center font-bold text-xs shadow-sm z-10 ${esHoy ? 'bg-black text-white' : 'bg-gray-100 text-gray-500'}`}>
+                                    {fecha.getDate()}
+                               </div>
+                               
+                               <Link href={`/propietario/eventos/${evento.id}`} className="block group-hover:translate-x-1 transition-transform duration-300">
+                                   <div className="flex justify-between items-start">
+                                       <div>
+                                           <h3 className="text-[15px] font-semibold text-gray-900">{evento.titulo}</h3>
+                                           <p className="text-[13px] text-gray-500 mt-0.5">{fecha.toLocaleDateString('es-AR', { month: 'long', weekday: 'long' })}</p>
+                                       </div>
+                                       <div className="px-2.5 py-1 rounded-md bg-gray-50 text-[11px] uppercase tracking-wider font-semibold text-gray-500 border border-gray-100">
+                                          {evento.tipo_evento?.nombre || 'Evento'}
+                                       </div>
+                                   </div>
+                               </Link>
+                            </div>
+                          )
+                       })}
+                    </div>
+                  ) : (
+                    <div className="p-8 border border-gray-100 rounded-2xl text-center bg-gray-50/50 h-full flex flex-col justify-center items-center">
+                       <Calendar className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                       <p className="text-gray-500 text-sm">No hay eventos próximos en agenda</p>
+                    </div>
+                  )}
+                  </div>
+               </section>
+            
             </div>
+
           </div>
+
         </div>
       </div>
     </SimpleRoleGuard>
   );
 }
+
