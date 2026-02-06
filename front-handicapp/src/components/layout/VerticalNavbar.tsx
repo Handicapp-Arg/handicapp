@@ -17,8 +17,7 @@ import {
   Calendar,
   X,
   Bell,
-  Package,
-  CreditCard
+  Package
 } from 'lucide-react';
 
 // Definir los menús por rol con estructura clara
@@ -81,12 +80,10 @@ const ROLE_MENUS = {
     { name: 'Dashboard', href: '/propietario', icon: Home },
     { name: 'Notificaciones', href: '/propietario/notificaciones', icon: Bell },
     { name: 'Mis Caballos', href: '/propietario/caballos', icon: ClipboardList },
-    { name: 'Mis Solicitudes', href: '/propietario/tareas', icon: FileText },
     { name: 'Establecimientos', href: '/propietario/establecimientos', icon: Building2 },
     { name: 'Calendario', href: '/propietario/eventos', icon: Calendar },
     { name: 'Reportes', href: '/propietario/reportes', icon: BarChart3 },
     { name: 'Configuración', href: '/propietario/configuracion', icon: Settings },
-    { name: 'Suscripciones', href: '/propietario/suscripciones', icon: CreditCard },
   ],
 };
 
@@ -251,34 +248,44 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
                     href={item.href}
                     className={`
                       flex items-center py-3 rounded-xl transition-all duration-300
-                      ${isCollapsed ? 'px-2 justify-center' : 'px-4 gap-3'}
-                      ${isActive
-                        ? 'bg-[#af936f] text-white shadow-lg'
-                        : 'text-white/80 hover:text-white hover:bg-white/10 hover:backdrop-blur-sm'
+                      ${isActive 
+                        ? 'bg-white/10 text-white shadow-lg backdrop-blur-sm border border-white/10' 
+                        : 'text-slate-300 hover:bg-white/5 hover:text-white'
                       }
+                      ${isCollapsed ? 'justify-center px-0' : 'px-4'}
                     `}
-                    style={isActive ? {
-                      boxShadow: '0 4px 14px rgba(175, 147, 111, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
-                    } : {}}
-                    title={isCollapsed ? item.name : undefined}
+                    title={isCollapsed ? item.name : ''}
                   >
-                    <Icon className={`flex-shrink-0 transition-all duration-300 ${
-                      isActive ? 'w-6 h-6 text-white drop-shadow-md' : 'w-5 h-5 text-white/80'
-                    }`} />
+                    {/* Active Glow Effect */}
+                    {isActive && (
+                      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-900/40 to-[#af936f]/10 blur-sm -z-10"></div>
+                    )}
+
+                    <Icon 
+                      size={20} 
+                      className={`
+                        flex-shrink-0 transition-transform duration-300 group-hover:scale-110
+                        ${isActive ? 'text-[#af936f]' : 'text-slate-400 group-hover:text-white'}
+                        ${isCollapsed ? '' : 'mr-3'}
+                      `}
+                    />
+                    
                     {!isCollapsed && (
-                      <span className={`truncate font-medium transition-all duration-300 ${
-                        isActive ? 'text-[15px] text-white' : 'text-[14px] text-white/80'
-                      }`}>
+                      <span className={`text-sm font-medium tracking-wide ${isActive ? 'font-semibold text-white' : ''}`}>
                         {item.name}
                       </span>
                     )}
-                    {/* Active indicator */}
-                    {isActive && !isCollapsed && (
-                      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white shadow-lg" />
+                    
+                    {/* Hover arrow */}
+                    {!isCollapsed && !isActive && (
+                      <div className="absolute right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-[-10px] group-hover:translate-x-0">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#af936f] shadow-[0_0_8px_rgba(175,147,111,0.8)]"></div>
+                      </div>
                     )}
                   </Link>
-                  {/* Tooltip para modo colapsado */}
-                  {isCollapsed && (
+
+                   {/* Tooltip para modo colapsado */}
+                   {isCollapsed && (
                     <div className="absolute left-full top-1/2 transform -translate-y-1/2 ml-3 px-3 py-2 bg-[#1e293b] text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 whitespace-nowrap shadow-xl border border-white/10">
                       {item.name}
                       <div className="absolute top-1/2 left-0 transform -translate-y-1/2 -translate-x-full border-4 border-transparent border-r-[#1e293b]"></div>
@@ -391,24 +398,27 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
                 className={`
                   flex items-center px-4 py-3 gap-3 rounded-xl transition-all duration-300 touch-manipulation relative
                   ${isActive
-                    ? 'bg-[#af936f] text-white shadow-lg'
+                    ? 'bg-white/10 text-white shadow-lg backdrop-blur-sm border border-white/10'
                     : 'text-white/80 hover:text-white hover:bg-white/10 hover:backdrop-blur-sm'
                   }
                 `}
-                style={isActive ? {
-                  boxShadow: '0 4px 14px rgba(175, 147, 111, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
-                } : {}}
               >
+                {/* Active Glow Effect */}
+                {isActive && (
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-900/40 to-[#af936f]/10 blur-sm -z-10"></div>
+                )}
+                
                 <Icon className={`flex-shrink-0 transition-all duration-300 ${
-                  isActive ? 'w-6 h-6 text-white drop-shadow-md' : 'w-5 h-5 text-white/80'
+                  isActive ? 'w-6 h-6 text-[#af936f] drop-shadow-md' : 'w-5 h-5 text-slate-400'
                 }`} />
                 <span className={`truncate font-medium transition-all duration-300 ${
                   isActive ? 'text-[15px] text-white' : 'text-[14px] text-white/80'
                 }`}>
                   {item.name}
                 </span>
+                
                 {isActive && (
-                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white shadow-lg" />
+                   <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#af936f] shadow-[0_0_8px_rgba(175,147,111,0.8)]"></div>
                 )}
               </Link>
             );
@@ -417,7 +427,7 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
 
         {/* Mobile Footer */}
         <div className="flex-shrink-0 p-4 border-t border-white/10">
-          <div className="text-xs text-center text-muted-foreground">
+          <div className="text-xs text-center text-muted-foreground text-slate-400">
             © 2025 HandicApp
           </div>
         </div>

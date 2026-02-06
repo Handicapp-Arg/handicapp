@@ -1,7 +1,8 @@
-import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 
 export default function LoadingSite() {
-  return <LoadingSpinnerFullPage label="Cargando..." variant="primary" />;
+  return <Loader />;
 }
+
 
 

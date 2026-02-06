@@ -71,9 +71,23 @@ class TareaService {
 
   async getAll(filters: TareaFilters = {}): Promise<{ data: Tarea[], total: number, page: number, limit: number }> {
     const params = new URLSearchParams();
+    
+    // Mapeo de filtros frontend -> backend
+    const mappings: Record<string, string> = {
+      'fecha_desde': 'fechaInicio',
+      'fecha_hasta': 'fechaFin',
+      'tipo': 'categoria',
+      'asignado_a_usuario_id': 'asignado',
+      'caballo_id': 'caballo',
+      'establecimiento_id': 'establecimiento',
+      'creado_por_usuario_id': 'creadoPor'
+    };
+
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== '' && value !== null) {
-        params.append(key, value.toString());
+        // Usar nombre mapeado si existe, sino el original
+        const paramName = mappings[key] || key;
+        params.append(paramName, value.toString());
       }
     });
 

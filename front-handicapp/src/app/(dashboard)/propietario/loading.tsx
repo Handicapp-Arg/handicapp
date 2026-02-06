@@ -1,9 +1,5 @@
-/**
- * Loading UI para rutas de Propietario
- * Se muestra mientras la página se está cargando
- */
-import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 
 export default function PropietarioLoading() {
-  return <LoadingSpinnerFullPage label="Cargando..." variant="success" />;
+  return <Loader />;
 }

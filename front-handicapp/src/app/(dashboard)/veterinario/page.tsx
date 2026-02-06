@@ -5,7 +5,7 @@ import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { useStats } from '@/lib/hooks/useStats';
 import { useEventosProximos } from '@/lib/hooks/useEventosProximos';
 import { useAuthNew } from '@/lib/hooks/useAuthNew';
-import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 import { 
   Stethoscope, 
   Calendar, 
@@ -25,7 +25,7 @@ export default function VeterinarioDashboard() {
   const { user } = useAuthNew();
 
   if (loading) {
-    return <LoadingSpinnerFullPage label="Cargando..." />;
+    return <Loader />;
   }
 
   const veterinarioNombre = user?.nombre || 'Veterinario';
@@ -307,3 +307,4 @@ export default function VeterinarioDashboard() {
     </SimpleRoleGuard>
   );
 }
+

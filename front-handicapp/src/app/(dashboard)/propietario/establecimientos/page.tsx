@@ -10,14 +10,18 @@ import { Building2, MapPin, TrendingUp } from 'lucide-react';
 import { useStats } from '@/lib/hooks/useStats';
 import { useEstablecimientos } from '@/lib/hooks/useEstablecimientosQuery';
 import type { Establecimiento } from '@/lib/services/establecimientoService';
-import { MapLoadingSkeleton } from '@/components/shared/LoadingSkeletons';
-import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 
 // Lazy load del componente de tabs (contiene el mapa pesado)
 const EstablecimientoTabs = dynamic(
 	() => import('@/components/dashboard/EstablecimientoTabs').then(mod => ({ default: mod.EstablecimientoTabs })),
 	{
-		loading: () => <MapLoadingSkeleton />, ssr: false,
+		loading: () => (
+			<div className="w-full h-[600px] bg-slate-100 rounded-lg flex items-center justify-center">
+				<Loader variant="section" />
+			</div>
+		), 
+		ssr: false,
 	}
 );
 
@@ -79,11 +83,7 @@ export default function PropietarioEstablecimientosPage() {
 	if (isLoading) {
 		return (
 			<SimpleRoleGuard roles={['propietario']}>
-				<LoadingSpinnerFullPage 
-					label="Cargando establecimientos..." 
-					description="Buscando tus ubicaciones"
-					variant="success"
-				/>
+				<Loader />
 			</SimpleRoleGuard>
 		);
 	}
@@ -232,9 +232,10 @@ export default function PropietarioEstablecimientosPage() {
 				</div>
 				{/* List Component con Tabs integrados */}
 				<div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-					<EstablecimientoTabs />
+					<EstablecimientoTabs establecimientos={establecimientos} isLoading={establecimientosLoading} />
 				</div>
 			</div>
 		</SimpleRoleGuard>
 	);
 }
+

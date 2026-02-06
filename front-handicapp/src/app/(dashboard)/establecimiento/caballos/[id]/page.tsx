@@ -8,7 +8,7 @@ import CaballoFicha from "@/components/caballos/CaballoFicha";
 import AdjuntosList from "@/components/adjuntos/AdjuntosList";
 import PropietariosList from "@/components/propietarios/PropietariosList";
 import { ArrowLeftIcon, ArrowPathIcon as RefreshCw } from "@heroicons/react/24/outline";
-import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 
 export default function CaballoDetallePage() {
   const params = useParams();
@@ -66,7 +66,7 @@ export default function CaballoDetallePage() {
   }, [params?.id]);
 
   if (loading) {
-    return <LoadingSpinnerFullPage label="Cargando información del caballo..." />;
+    return <Loader />;
   }
 
   if (!caballo) {

@@ -17,7 +17,7 @@ import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Stethoscope, Pill, FileText, Calendar } from 'lucide-react';
-import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 import { Card } from '@/components/ui/card';
 
 // Lazy loading de componentes pesados para optimizar carga inicial

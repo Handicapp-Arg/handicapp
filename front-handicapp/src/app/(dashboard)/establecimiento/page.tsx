@@ -17,7 +17,7 @@ import {
   Clock,
   ArrowRight
 } from 'lucide-react';
-import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 import Link from 'next/link';
 
 export default function EstablecimientoDashboard() {
@@ -26,7 +26,7 @@ export default function EstablecimientoDashboard() {
   const { user } = useAuthNew();
 
   if (loading) {
-    return <LoadingSpinnerFullPage label="Cargando..." />;
+    return <Loader />;
   }
 
   const establecimientoNombre = user?.establecimiento_nombre || 'Establecimiento';
@@ -353,3 +353,4 @@ export default function EstablecimientoDashboard() {
     </SimpleRoleGuard>
   );
 }
+

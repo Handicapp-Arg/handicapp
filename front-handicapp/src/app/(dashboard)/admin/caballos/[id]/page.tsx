@@ -7,7 +7,7 @@ import caballoService, { Caballo, CaballoPedigree } from "@/lib/services/caballo
 import { useToaster } from "@/components/ui/toaster";
 import CaballoFicha from "@/components/caballos/CaballoFicha";
 import PropietariosList from "@/components/propietarios/PropietariosList";
-import { LoadingSpinnerFullPage } from "@/components/ui/loading-spinner";
+import { Loader } from '@/components/ui/loader';
 
 export default function CaballoAdminPerfilPage() {
   const params = useParams();
@@ -60,7 +60,7 @@ export default function CaballoAdminPerfilPage() {
   }, []);
 
   if (loading) {
-    return <LoadingSpinnerFullPage label="Cargando perfil de caballo..." />;
+    return <Loader />;
   }
 
   if (!caballo) {

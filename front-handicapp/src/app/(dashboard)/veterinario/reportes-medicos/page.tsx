@@ -7,7 +7,7 @@ import { caballoService } from '@/lib/services/caballoService';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Download, Activity, Heart, TrendingUp, Stethoscope } from 'lucide-react';
-import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 
 interface Caballo {
   id: number;
@@ -81,7 +81,7 @@ export default function VeterinarioReportesMedicosPage() {
   const selectedCaballoData = caballos.find(c => c.id === selectedCaballo);
 
   if (loading) {
-    return <LoadingSpinnerFullPage label="Cargando..." variant="warning" />;
+    return <Loader />;
   }
 
   return (
@@ -254,7 +254,7 @@ export default function VeterinarioReportesMedicosPage() {
                 <CardContent className="p-6">
                   {loadingReporte ? (
                     <div className="flex items-center justify-center py-12">
-                      <LoadingSpinnerFullPage label="Cargando..." variant="warning" />
+                      <Loader />
                     </div>
                   ) : !reporte ? (
                     <div className="text-center py-12">
@@ -361,3 +361,4 @@ export default function VeterinarioReportesMedicosPage() {
     </SimpleRoleGuard>
   );
 }
+

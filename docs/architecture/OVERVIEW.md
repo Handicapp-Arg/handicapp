@@ -329,13 +329,6 @@ Empleado:
 ❌ Exportación PDF/Excel
 ```
 
-**Suscripciones** (`/propietario/suscripciones`) ❌ 10%
-```typescript
-❌ Planes de suscripción
-❌ Historial de pagos
-❌ Gestión de facturación
-```
-
 ---
 
 #### 👨‍💼 ROL: ADMIN (🔄 40% COMPLETO)
@@ -698,7 +691,6 @@ Tarea N:1 Establecimiento
    - Planificación de recursos
    - Estadísticas operativas
    - Gestión de personal
-   - Facturación y cobros
    ```
 
 ### 🎯 Prioridad BAJA (Capataz/Empleado)
@@ -738,14 +730,6 @@ Tarea N:1 Establecimiento
     - GPS tracking
     - Cámaras de vigilancia
     - Dispensadores automáticos
-    ```
-
-12. **Sistema de Pagos** (Fase 2)
-    ```typescript
-    - Integración con Mercado Pago
-    - Suscripciones mensuales
-    - Facturación electrónica
-    - Reportes financieros
     ```
 
 ---

@@ -15,9 +15,19 @@ import {
   ChevronRight
 } from 'lucide-react';
 
-export function EstablecimientoExplorarView() {
-  const [establecimientos, setEstablecimientos] = useState<Establecimiento[]>([]);
-  const [loading, setLoading] = useState(true);
+interface EstablecimientoExplorarViewProps {
+  /** Datos precargados desde el padre para evitar doble fetch */
+  establecimientos?: Establecimiento[];
+  /** Indica si los datos están cargando en el padre */
+  isLoading?: boolean;
+}
+
+export function EstablecimientoExplorarView({ 
+  establecimientos: establecimientosProp,
+  isLoading: isLoadingProp 
+}: EstablecimientoExplorarViewProps = {}) {
+  const [establecimientos, setEstablecimientos] = useState<Establecimiento[]>(establecimientosProp || []);
+  const [loading, setLoading] = useState(establecimientosProp ? false : true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -28,9 +38,16 @@ export function EstablecimientoExplorarView() {
   });
 
   useEffect(() => {
-    loadEstablecimientos();
+    // Si tenemos datos del padre, usarlos en vez de hacer fetch
+    if (establecimientosProp) {
+      setEstablecimientos(establecimientosProp);
+      setLoading(isLoadingProp || false);
+    } else {
+      // Solo hacer fetch si no hay datos del padre
+      loadEstablecimientos();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, filters.tipo_establecimiento, filters.estado]);
+  }, [currentPage, filters.tipo_establecimiento, filters.estado, establecimientosProp, isLoadingProp]);
 
   const loadEstablecimientos = async () => {
     try {

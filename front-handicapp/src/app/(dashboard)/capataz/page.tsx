@@ -5,7 +5,7 @@ import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { useStats } from '@/lib/hooks/useStats';
 import { useEventosProximos } from '@/lib/hooks/useEventosProximos';
 import { useAuthNew } from '@/lib/hooks/useAuthNew';
-import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 import { 
   Users, 
   ClipboardList, 
@@ -27,7 +27,7 @@ export default function CapatazDashboard() {
   const { user } = useAuthNew();
 
   if (loading) {
-    return <LoadingSpinnerFullPage label="Cargando..." />;
+    return <Loader />;
   }
 
   const capatazNombre = user?.nombre || 'Capataz';
@@ -313,3 +313,4 @@ export default function CapatazDashboard() {
     </SimpleRoleGuard>
   );
 }
+

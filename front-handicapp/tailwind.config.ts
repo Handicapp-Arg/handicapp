@@ -120,6 +120,10 @@ const config: Config = {
             animationTimingFunction: "cubic-bezier(0, 0, 0.2, 1)",
           },
         },
+        "shimmer": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(100%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -128,6 +132,7 @@ const config: Config = {
         "spin": "spin 1s linear infinite",
         "ping": "ping 1s cubic-bezier(0, 0, 0.2, 1) infinite",
         "bounce": "bounce 1s infinite",
+        "shimmer": "shimmer 2s infinite",
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",

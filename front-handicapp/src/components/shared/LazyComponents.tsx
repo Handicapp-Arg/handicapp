@@ -4,14 +4,14 @@
  */
 
 import dynamic from 'next/dynamic';
-import { ChartLoadingSkeleton } from './LoadingSkeletons';
+import { SkeletonPresets } from '@/components/ui/loader';
 
 // Componentes de Charts (Chart.js es pesado) - Lazy loading
 export const LazyLine = dynamic(
   () => import('react-chartjs-2').then((mod) => ({ default: mod.Line })),
   {
     ssr: false,
-    loading: () => <ChartLoadingSkeleton />,
+    loading: () => <SkeletonPresets.Chart />,
   }
 );
 
@@ -19,7 +19,7 @@ export const LazyBar = dynamic(
   () => import('react-chartjs-2').then((mod) => ({ default: mod.Bar })),
   {
     ssr: false,
-    loading: () => <ChartLoadingSkeleton />,
+    loading: () => <SkeletonPresets.Chart />,
   }
 );
 
@@ -27,7 +27,7 @@ export const LazyPie = dynamic(
   () => import('react-chartjs-2').then((mod) => ({ default: mod.Pie })),
   {
     ssr: false,
-    loading: () => <ChartLoadingSkeleton />,
+    loading: () => <SkeletonPresets.Chart />,
   }
 );
 
@@ -35,7 +35,7 @@ export const LazyDoughnut = dynamic(
   () => import('react-chartjs-2').then((mod) => ({ default: mod.Doughnut })),
   {
     ssr: false,
-    loading: () => <ChartLoadingSkeleton />,
+    loading: () => <SkeletonPresets.Chart />,
   }
 );
 

@@ -18,7 +18,7 @@ import {
   Clock
 } from 'lucide-react';
 import { gestionPersonalService, type Empleado } from '@/lib/gestionPersonalService';
-import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 
 export default function EmpleadoDetallePage() {
   const params = useParams();
@@ -44,7 +44,7 @@ export default function EmpleadoDetallePage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinnerFullPage label="Cargando..." />
+        <Loader />
       </div>
     );
   }

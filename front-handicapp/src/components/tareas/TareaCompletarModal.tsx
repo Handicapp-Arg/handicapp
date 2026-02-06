@@ -8,7 +8,7 @@ import React, { useState } from 'react';
 import { X, CheckCircle2, Clock, FileText, Calendar } from 'lucide-react';
 import { tareaService, Tarea } from '@/lib/services/tareaService';
 import { showError, showSuccess } from '@/lib/utils/errorHandler';
-import { LoadingSpinnerInline } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 import { useRouter } from 'next/navigation';
 
 interface TareaCompletarModalProps {
@@ -218,7 +218,7 @@ export function TareaCompletarModal({ tarea, isOpen, onClose, onSuccess }: Tarea
             >
               {loading ? (
                 <>
-                  <LoadingSpinnerInline />
+                  <Loader variant="inline" />
                   Completando...
                 </>
               ) : (

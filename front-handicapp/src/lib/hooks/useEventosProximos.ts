@@ -48,11 +48,25 @@ export function useEventosProximos(options: UseEventosProximosOptions = {}) {
           fecha_desde: today,
         });
 
-        // Filtrar y ordenar eventos futuros
+        // Filtrar y ordenar eventos futuros (incluyendo hoy)
         const eventosFuturos = (response.data || [])
           .filter((evento: EventoProximo) => {
+            // Convertir fechas a objetos Date para comparación segura
             const fechaEvento = new Date(evento.fecha_evento);
-            return fechaEvento >= new Date();
+            const hoy = new Date();
+            // Resetear horas para comparar solo fechas (incluir todo el día de hoy)
+            hoy.setHours(0, 0, 0, 0);
+            
+            // Si el evento tiene hora específica, usémosla, pero si es >= hoy 00:00, entra.
+            // Sin embargo, para eventos pasados de hoy (ej: ayer 23:00) debería haber filtrado el backend.
+            // Para eventos 'de hoy' ya pasados por hora, generalmente queremos verlos igual en "Próximos" si es agenda del día.
+            
+            // Comparación simple de fechas (ignorando hora para inclusion)
+            // Aseguramos que la fecha del evento sea al menos hoy (dia calendario)
+            const eventoDate = new Date(fechaEvento);
+            eventoDate.setHours(0,0,0,0);
+            
+            return eventoDate.getTime() >= hoy.getTime();
           })
           .sort((a: EventoProximo, b: EventoProximo) => {
             return new Date(a.fecha_evento).getTime() - new Date(b.fecha_evento).getTime();

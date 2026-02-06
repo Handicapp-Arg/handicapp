@@ -5,7 +5,7 @@ import { SimpleAdminOnly } from '@/components/common/SimplePermissionGuard';
 import { useStats } from '@/lib/hooks/useStats';
 import { useEventosProximos } from '@/lib/hooks/useEventosProximos';
 import { useAuthNew } from '@/lib/hooks/useAuthNew';
-import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 import { 
   Users, 
   Building2, 
@@ -28,7 +28,7 @@ export default function AdminDashboard() {
   const { user } = useAuthNew();
 
   if (loading) {
-    return <LoadingSpinnerFullPage label="Cargando..." />;
+    return <Loader />;
   }
 
   const adminNombre = user?.nombre || 'Administrador';
@@ -299,3 +299,4 @@ export default function AdminDashboard() {
     </SimpleAdminOnly>
   );
 }
+

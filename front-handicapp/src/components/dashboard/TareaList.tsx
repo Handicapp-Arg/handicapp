@@ -5,7 +5,7 @@ import { useAuthNew } from '@/lib/hooks/useAuthNew';
 import { tareaService, type Tarea } from '@/lib/services/tareaService';
 import { TareaForm } from './TareaForm';
 import { usePermissions } from '@/lib/hooks/usePermissions';
-import { LoadingSpinnerCard } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 import { 
   Plus, 
   Search, 
@@ -170,7 +170,7 @@ export function TareaList({ tareasProp }: TareaListProps) {
   if (loading && tareas.length === 0) {
     return (
       <div className="flex justify-center items-center h-64">
-        <LoadingSpinnerCard label="Cargando tareas..." variant="primary" />
+        <Loader variant="section" />
       </div>
     );
   }
@@ -403,3 +403,4 @@ export function TareaList({ tareasProp }: TareaListProps) {
     </div>
   );
 }
+

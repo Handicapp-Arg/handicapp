@@ -41,9 +41,24 @@ const getTipoLabel = (tipo: string): string => {
 interface TareaKanbanProps {
   tareas: Tarea[] | { data: Tarea[] };
   onRefresh?: () => void;
+  /** Modo compacto para mostrar en tabs de caballo */
+  compactMode?: boolean;
+  /** ID del caballo para filtrar tareas (opcional) */
+  caballoId?: number;
+  /** Mostrar información del caballo en las tarjetas */
+  showCaballoInfo?: boolean;
 }
 
-export function TareaKanban({ tareas: tareasProp, onRefresh }: TareaKanbanProps) {
+export function TareaKanban({ 
+  tareas: tareasProp, 
+  onRefresh,
+  compactMode = false,
+  caballoId, // Reservado para futuro uso (filtrado directo en el componente)
+  showCaballoInfo = true
+}: TareaKanbanProps) {
+  // Nota: caballoId actualmente no se usa ya que el filtro se hace en el componente padre
+  // Se mantiene en la interfaz para futura extensibilidad
+  void caballoId;
   const [searchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [selectedTarea, setSelectedTarea] = useState<Tarea | null>(null);
@@ -232,6 +247,15 @@ export function TareaKanban({ tareas: tareasProp, onRefresh }: TareaKanbanProps)
           )}
         </div>
 
+        {/* Información del caballo (si se debe mostrar) */}
+        {showCaballoInfo && tarea.caballo && (
+          <div className="mb-2">
+            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-[#af936f]/10 text-[#af936f]">
+              🐴 {tarea.caballo.nombre}
+            </span>
+          </div>
+        )}
+
         {/* Descripción en el medio */}
         {tarea.descripcion && (
           <p className="text-xs text-gray-600 line-clamp-2 mb-2.5 leading-relaxed">
@@ -359,13 +383,14 @@ export function TareaKanban({ tareas: tareasProp, onRefresh }: TareaKanbanProps)
       {/* Kanban Board - Contenedor unificado con header integrado */}
       <div className="bg-white rounded-lg border border-stroke overflow-hidden w-full shadow-sm">
         {/* Header con título, tabs y botón */}
-        <div className="border-b border-stroke">
-          {/* Título */}
-          <div className="px-4 sm:px-6 pt-4 pb-3">
-            <h2 className="text-xl font-semibold text-gray-900">{getKanbanTitle()}</h2>
-          </div>
-          
-          {/* Tabs y botones */}
+        {!compactMode && (
+          <div className="border-b border-stroke">
+            {/* Título */}
+            <div className="px-4 sm:px-6 pt-4 pb-3">
+              <h2 className="text-xl font-semibold text-gray-900">{getKanbanTitle()}</h2>
+            </div>
+            
+            {/* Tabs y botones */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-4 sm:px-6 pb-4">
           {/* Tabs - Scroll horizontal en móvil */}
           <div className="flex items-center gap-1 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
@@ -457,9 +482,10 @@ export function TareaKanban({ tareas: tareasProp, onRefresh }: TareaKanbanProps)
           </div>
         </div>
         </div>
+        )}
 
         {/* Panel de filtros (si está abierto) */}
-        {showFilters && (
+        {showFilters && !compactMode && (
           <div className="px-6 py-4 bg-gray-50 border-b border-stroke">
             <div className="flex flex-wrap gap-4">
               <div className="flex-1 min-w-[200px]">

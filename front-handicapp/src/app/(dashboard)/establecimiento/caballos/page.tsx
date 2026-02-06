@@ -9,7 +9,7 @@ import { useEstablecimientos } from '@/lib/hooks';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Circle, Activity, Heart, TrendingUp } from 'lucide-react';
-import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 
 export default function EstablecimientoCaballosPage() {
   const { stats, loading: statsLoading } = useStats();
@@ -41,7 +41,7 @@ export default function EstablecimientoCaballosPage() {
   }, [caballos]);
 
   if (loading || loadingEst) {
-    return <LoadingSpinnerFullPage label="Cargando..." />;
+    return <Loader />;
   }
 
   return (
@@ -171,3 +171,4 @@ export default function EstablecimientoCaballosPage() {
     </SimpleRoleGuard>
   );
 }
+

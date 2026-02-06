@@ -15,7 +15,7 @@ import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { eventoService } from '@/lib/services/eventoService';
 import { caballoService } from '@/lib/services/caballoService';
 import { toast } from 'react-hot-toast';
-import { LoadingSpinnerFullPage, LoadingSpinnerInline } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 
 interface FormData {
   caballo_id: string;
@@ -138,7 +138,7 @@ export default function EditarTratamientoPage() {
   };
 
   if (loadingData) {
-    return <LoadingSpinnerFullPage label="Cargando tratamiento..." variant="warning" />;
+    return <Loader />;
   }
 
   return (

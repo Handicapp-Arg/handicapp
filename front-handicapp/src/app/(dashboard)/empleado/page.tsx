@@ -16,7 +16,7 @@ import {
   Clock,
   ArrowRight
 } from 'lucide-react';
-import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 import Link from 'next/link';
 
 export default function EmpleadoDashboard() {
@@ -25,7 +25,7 @@ export default function EmpleadoDashboard() {
   const { user } = useAuthNew();
 
   if (loading) {
-    return <LoadingSpinnerFullPage label="Cargando..." />;
+    return <Loader />;
   }
 
   const empleadoNombre = user?.nombre || 'Empleado';
@@ -340,3 +340,4 @@ export default function EmpleadoDashboard() {
     </SimpleRoleGuard>
   );
 }
+

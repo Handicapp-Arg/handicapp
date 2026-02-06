@@ -11,7 +11,7 @@ import {
   FileText,
   Clock
 } from 'lucide-react';
-import { LoadingSpinnerInline } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { eventoService } from '@/lib/services/eventoService';
 import { caballoService } from '@/lib/services/caballoService';
@@ -291,7 +291,7 @@ export default function CrearTratamientoPage() {
             >
               {loading ? (
                 <>
-                  <LoadingSpinnerInline />
+                  <Loader variant="inline" />
                   Creando...
                 </>
               ) : (

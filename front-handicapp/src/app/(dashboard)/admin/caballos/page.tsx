@@ -6,7 +6,7 @@ import { SimpleAdminOnly } from '@/components/common/SimplePermissionGuard';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Circle, TrendingUp, Calendar, Heart } from 'lucide-react';
-import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 
 export default function CaballosPage() {
   const { stats, loading } = useStats();
@@ -14,7 +14,7 @@ export default function CaballosPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinnerFullPage label="Cargando..." variant="primary" />
+        <Loader />
       </div>
     );
   }
@@ -127,3 +127,4 @@ export default function CaballosPage() {
     </SimpleAdminOnly>
   );
 }
+

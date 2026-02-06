@@ -18,7 +18,7 @@ import { tareaService, Tarea } from '@/lib/services/tareaService';
 import { caballoService } from '@/lib/services/caballoService';
 import { userService, User as UserType } from '@/lib/services/userService';
 import { toast } from 'react-hot-toast';
-import { LoadingSpinnerCard } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 
 export default function EditarTareaPage() {
   const router = useRouter();
@@ -81,7 +81,7 @@ export default function EditarTareaPage() {
     } catch (error: any) {
       console.error('Error al cargar datos:', error);
       toast.error('Error al cargar la tarea');
-      router.push('/propietario/tareas');
+      router.push('/propietario/caballos');
     } finally {
       setLoadingData(false);
     }
@@ -118,7 +118,7 @@ export default function EditarTareaPage() {
       setLoading(true);
       await tareaService.update(tareaId, formData);
       toast.success('✅ Tarea actualizada exitosamente');
-      router.push('/propietario/tareas');
+      router.push('/propietario/caballos');
     } catch (error: any) {
       console.error('Error al actualizar tarea:', error);
       toast.error(error.message || 'Error al actualizar la tarea');
@@ -129,14 +129,14 @@ export default function EditarTareaPage() {
 
   const handleCancel = () => {
     if (confirm('¿Descartar los cambios?')) {
-      router.push('/propietario/tareas');
+      router.push('/propietario/caballos');
     }
   };
 
   if (loadingData) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <LoadingSpinnerCard label="Cargando tarea..." variant="success" />
+        <Loader variant="section" />
       </div>
     );
   }
@@ -148,10 +148,10 @@ export default function EditarTareaPage() {
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <p className="text-gray-900 font-semibold mb-2">Tarea no encontrada</p>
           <Link
-            href="/propietario/tareas"
+            href="/propietario/caballos"
             className="text-brand-gold hover:text-brand-gold/80"
           >
-            Volver a tareas
+            Volver a Mis Caballos
           </Link>
         </div>
       </div>
@@ -164,7 +164,7 @@ export default function EditarTareaPage() {
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
         <div className="flex items-center gap-4">
           <Link
-            href="/propietario/tareas"
+            href="/propietario/caballos"
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-6 h-6 text-gray-700" />

@@ -6,7 +6,7 @@ import { CalendarioEventos } from '@/components/dashboard/CalendarioEventos';
 import { EventoForm } from '@/components/dashboard/EventoForm';
 import { useEventos } from '@/lib/hooks';
 import { Sparkles } from 'lucide-react';
-import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 import type { Evento } from '@/lib/services/eventoService';
 
 interface EventoWithTarea extends Evento {
@@ -37,7 +37,7 @@ export default function PropietarioEventosPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinnerFullPage label="Cargando..." variant="success" />
+        <Loader />
       </div>
     );
   }
@@ -114,3 +114,4 @@ export default function PropietarioEventosPage() {
     </SimpleRoleGuard>
   );
 }
+

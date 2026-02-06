@@ -8,7 +8,7 @@ import { establecimientoService, type Establecimiento } from '@/lib/services/est
 import { MapPin, Building2, Star, Map as MapIconSolid, LayoutGrid, Phone, Mail, Home } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { LoadingSpinnerCard } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 import type L from 'leaflet';
 
 type ViewMode = 'map' | 'split';
@@ -70,10 +70,20 @@ const MapEventsHandler = dynamic(
   { ssr: false }
 );
 
-export function EstablecimientoMapView() {
+interface EstablecimientoMapViewProps {
+  /** Datos precargados desde el padre para evitar doble fetch */
+  establecimientos?: Establecimiento[];
+  /** Indica si los datos están cargando en el padre */
+  isLoading?: boolean;
+}
+
+export function EstablecimientoMapView({ 
+  establecimientos: establecimientosProp,
+  isLoading: isLoadingProp 
+}: EstablecimientoMapViewProps = {}) {
   const router = useRouter();
-  const [establecimientos, setEstablecimientos] = useState<Establecimiento[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [establecimientos, setEstablecimientos] = useState<Establecimiento[]>(establecimientosProp || []);
+  const [loading, setLoading] = useState(establecimientosProp ? false : true);
   const [error, setError] = useState<string | null>(null);
   const [leafletLoaded, setLeafletLoaded] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('split');
@@ -193,8 +203,16 @@ export function EstablecimientoMapView() {
   }, []);
 
   useEffect(() => {
-    loadEstablecimientos();
-  }, []);
+    // Si tenemos datos del padre, usarlos en vez de hacer fetch
+    if (establecimientosProp) {
+      setEstablecimientos(establecimientosProp);
+      setLoading(isLoadingProp || false);
+    } else {
+      // Solo hacer fetch si no hay datos del padre
+      loadEstablecimientos();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [establecimientosProp, isLoadingProp]);
 
   const loadEstablecimientos = async () => {
     try {
@@ -264,7 +282,7 @@ export function EstablecimientoMapView() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <LoadingSpinnerCard label="Cargando mapa..." />
+        <Loader variant="section" />
       </div>
     );
   }
@@ -481,7 +499,7 @@ export function EstablecimientoMapView() {
               </MapContainer>
             ) : (
               <div className="flex items-center justify-center h-full bg-gray-100 rounded-xl">
-                <LoadingSpinnerCard label="Cargando mapa..." />
+                <Loader variant="section" />
               </div>
             )}
           </div>

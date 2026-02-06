@@ -10,7 +10,7 @@ import {
   Empleado,
 } from '@/lib/gestionPersonalService';
 import { toast } from 'react-hot-toast';
-import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 import { CreateEmpleadoModal, EditEmpleadoModal } from '@/components/common/EmpleadoModal';
 import { 
   UserManagementTable, 
@@ -257,7 +257,7 @@ export default function EstablecimientoPersonalPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinnerFullPage label="Cargando..." />
+        <Loader />
       </div>
     );
   }
@@ -452,3 +452,4 @@ export default function EstablecimientoPersonalPage() {
     </SimpleRoleGuard>
   );
 }
+

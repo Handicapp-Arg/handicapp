@@ -1,4 +1,4 @@
-Ôªø'use client';
+'use client';
 
 import React, { useMemo, useState } from 'react';
 import { SimpleAdminOnly } from '@/components/common/SimplePermissionGuard';
@@ -6,7 +6,7 @@ import { CalendarioEventos } from '@/components/dashboard/CalendarioEventos';
 import { EventoForm } from '@/components/dashboard/EventoForm';
 import { useEventos } from '@/lib/hooks';
 import { Sparkles } from 'lucide-react';
-import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 import type { Evento } from '@/lib/services/eventoService';
 
 interface EventoWithTarea extends Evento {
@@ -37,7 +37,7 @@ export default function AdminEventosPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinnerFullPage label="Cargando..." variant="primary" />
+        <Loader />
       </div>
     );
   }
@@ -58,7 +58,7 @@ export default function AdminEventosPage() {
                   </div>
                   <div>
                     <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">
-                      Gesti√≥n de Eventos
+                      GestiÛn de Eventos
                     </h1>
                     <p className="text-sm text-slate-600 mt-0.5">
                       Vista completa de todos los eventos del sistema
@@ -70,7 +70,7 @@ export default function AdminEventosPage() {
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 border border-purple-200 rounded-lg text-xs sm:text-sm text-purple-700 mt-2">
                     <Sparkles className="w-4 h-4 flex-shrink-0" />
                     <span>
-                      <span className="font-semibold">{eventosStats.autoGenerados}</span> eventos generados autom√°ticamente
+                      <span className="font-semibold">{eventosStats.autoGenerados}</span> eventos generados autom·ticamente
                     </span>
                   </div>
                 )}
@@ -110,3 +110,4 @@ export default function AdminEventosPage() {
     </SimpleAdminOnly>
   );
 }
+

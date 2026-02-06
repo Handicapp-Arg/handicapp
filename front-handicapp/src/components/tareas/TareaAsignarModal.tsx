@@ -9,7 +9,7 @@ import { X, User, Save } from 'lucide-react';
 import { tareaService, Tarea } from '@/lib/services/tareaService';
 import { userService } from '@/lib/services/userService';
 import { showError, showSuccess, showWarning } from '@/lib/utils/errorHandler';
-import { LoadingSpinnerCard, LoadingSpinnerInline } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 
 interface TareaAsignarModalProps {
   tarea: Tarea;
@@ -95,7 +95,7 @@ export function TareaAsignarModal({ tarea, isOpen, onClose, onSuccess }: TareaAs
         <form onSubmit={handleSubmit} className="p-6">
           {loadingUsuarios ? (
             <div className="flex items-center justify-center py-8">
-              <LoadingSpinnerCard label="Cargando usuarios..." />
+              <Loader variant="section" />
             </div>
           ) : (
             <div className="space-y-4">
@@ -163,3 +163,4 @@ export function TareaAsignarModal({ tarea, isOpen, onClose, onSuccess }: TareaAs
     </div>
   );
 }
+

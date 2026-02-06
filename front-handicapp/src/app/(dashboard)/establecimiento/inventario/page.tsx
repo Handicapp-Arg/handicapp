@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Package, TrendingDown, AlertTriangle, DollarSign, Search, Plus, Eye, TrendingUp, Edit, Trash2 } from 'lucide-react';
 import { inventarioService, type Producto } from '@/lib/inventarioService';
 import { toast } from 'react-hot-toast';
-import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 
 export default function EstablecimientoInventarioPage() {
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -145,7 +145,7 @@ export default function EstablecimientoInventarioPage() {
     const total = productos.length;
     const stockBajo = productos.filter(p => p.stock_actual < p.stock_minimo).length;
     
-    // Contar categorías únicas
+    // Contar categor�as �nicas
     const categoriasUnicas = new Set(productos.map(p => p.categoria_id));
     const categorias = categoriasUnicas.size;
     
@@ -189,7 +189,7 @@ export default function EstablecimientoInventarioPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinnerFullPage label="Cargando..." />
+        <Loader />
       </div>
     );
   }
@@ -211,7 +211,7 @@ export default function EstablecimientoInventarioPage() {
             </div>
             <div className="mt-4">
               <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200">
-                En catálogo
+                En cat�logo
               </Badge>
             </div>
           </CardContent>
@@ -230,7 +230,7 @@ export default function EstablecimientoInventarioPage() {
             </div>
             <div className="mt-4">
               <Badge variant="secondary" className="bg-orange-50 text-orange-700 border-orange-200">
-                Requieren reposición
+                Requieren reposici�n
               </Badge>
             </div>
           </CardContent>
@@ -240,7 +240,7 @@ export default function EstablecimientoInventarioPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Categorías</p>
+                <p className="text-gray-600 text-sm font-medium">Categor�as</p>
                 <p className="text-3xl font-bold text-gray-900 mt-1">{stats.categorias}</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
@@ -278,10 +278,10 @@ export default function EstablecimientoInventarioPage() {
       {/* Content Card */}
       <Card className="rounded-lg border border-gray-200 shadow-sm">
         <CardHeader className="px-4 sm:px-6 space-y-4">
-          {/* Título */}
+          {/* T�tulo */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Gestión de Inventario</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Gesti�n de Inventario</h2>
               <p className="text-sm text-gray-600 mt-1">Lista completa de productos en inventario</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -306,7 +306,7 @@ export default function EstablecimientoInventarioPage() {
           <div className="relative">
             <input
               type="text"
-              placeholder="Buscar por nombre o código..."
+              placeholder="Buscar por nombre o c�digo..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -355,10 +355,10 @@ export default function EstablecimientoInventarioPage() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Código</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">C�digo</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Producto</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Stock</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Mínimo</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">M�nimo</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Precio</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Estado</th>
                       <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wide">Acciones</th>
@@ -460,7 +460,7 @@ export default function EstablecimientoInventarioPage() {
                     <p className="text-sm font-semibold text-gray-900">{prod.stock_actual} {prod.unidad_medida}</p>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-2">
-                    <p className="text-[10px] text-gray-500 uppercase">Mínimo</p>
+                    <p className="text-[10px] text-gray-500 uppercase">M�nimo</p>
                     <p className="text-sm font-semibold text-gray-900">{prod.stock_minimo}</p>
                   </div>
                   <div className="bg-emerald-50 rounded-lg p-2">
@@ -533,7 +533,7 @@ export default function EstablecimientoInventarioPage() {
                 <div className="flex items-center gap-1">
                   {Array.from({ length: totalPages }, (_, i) => i + 1)
                     .filter(page => {
-                      // Mostrar primera página, última página, página actual y páginas adyacentes
+                      // Mostrar primera p�gina, �ltima p�gina, p�gina actual y p�ginas adyacentes
                       return page === 1 || 
                              page === totalPages || 
                              Math.abs(page - currentPage) <= 1;
@@ -585,7 +585,7 @@ export default function EstablecimientoInventarioPage() {
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">Código</label>
+                <label className="text-sm font-medium">C�digo</label>
                 <input
                   type="text"
                   value={formData.codigo}
@@ -618,13 +618,13 @@ export default function EstablecimientoInventarioPage() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Descripción</label>
+              <label className="text-sm font-medium">Descripci�n</label>
               <textarea
                 value={formData.descripcion}
                 onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
                 className="w-full mt-1 px-3 py-2 border rounded-lg"
                 rows={3}
-                placeholder="Descripción del producto..."
+                placeholder="Descripci�n del producto..."
               />
             </div>
             <div className="grid grid-cols-4 gap-4">
@@ -649,7 +649,7 @@ export default function EstablecimientoInventarioPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">Stock mínimo</label>
+                <label className="text-sm font-medium">Stock m�nimo</label>
                 <input
                   type="number"
                   value={formData.stock_minimo}
@@ -659,7 +659,7 @@ export default function EstablecimientoInventarioPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">Stock máximo</label>
+                <label className="text-sm font-medium">Stock m�ximo</label>
                 <input
                   type="number"
                   value={formData.stock_maximo}
@@ -699,7 +699,7 @@ export default function EstablecimientoInventarioPage() {
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">Código</label>
+                <label className="text-sm font-medium">C�digo</label>
                 <input
                   type="text"
                   value={formData.codigo}
@@ -732,13 +732,13 @@ export default function EstablecimientoInventarioPage() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Descripción</label>
+              <label className="text-sm font-medium">Descripci�n</label>
               <textarea
                 value={formData.descripcion}
                 onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
                 className="w-full mt-1 px-3 py-2 border rounded-lg"
                 rows={3}
-                placeholder="Descripción del producto..."
+                placeholder="Descripci�n del producto..."
               />
             </div>
             <div className="grid grid-cols-4 gap-4">
@@ -763,7 +763,7 @@ export default function EstablecimientoInventarioPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">Stock mínimo</label>
+                <label className="text-sm font-medium">Stock m�nimo</label>
                 <input
                   type="number"
                   value={formData.stock_minimo}
@@ -773,7 +773,7 @@ export default function EstablecimientoInventarioPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">Stock máximo</label>
+                <label className="text-sm font-medium">Stock m�ximo</label>
                 <input
                   type="number"
                   value={formData.stock_maximo}
@@ -801,22 +801,22 @@ export default function EstablecimientoInventarioPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Confirmación para Eliminar */}
+      {/* Modal de Confirmaci�n para Eliminar */}
       <Dialog open={modalConfirm} onOpenChange={setModalConfirm}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold flex items-center gap-2 text-red-600">
               <Trash2 className="w-6 h-6" />
-              Confirmar Eliminación
+              Confirmar Eliminaci�n
             </DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <p className="text-gray-700">
-              ¿Estás seguro de eliminar el producto{' '}
+              �Est�s seguro de eliminar el producto{' '}
               <span className="font-bold">{productoAEliminar?.nombre}</span>?
             </p>
             <p className="text-sm text-gray-500 mt-2">
-              Esta acción no se puede deshacer. Se perderá toda la información del producto y su historial.
+              Esta acci�n no se puede deshacer. Se perder� toda la informaci�n del producto y su historial.
             </p>
           </div>
           <DialogFooter>
@@ -841,3 +841,4 @@ export default function EstablecimientoInventarioPage() {
     </div>
   );
 }
+

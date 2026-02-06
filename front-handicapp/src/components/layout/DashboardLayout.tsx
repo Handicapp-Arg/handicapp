@@ -42,7 +42,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }, [sidebarOpen]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       {/* Prefetch Manager - Pre-carga rutas comunes */}
       <PrefetchManager role={user?.rol?.clave} />
       
@@ -70,7 +70,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           />
 
           {/* Page Content */}
-          <main className="flex-1 overflow-y-auto bg-slate-50">
+          <main className="flex-1 overflow-y-auto">
             <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
               {children}
             </div>

@@ -5,7 +5,16 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { notificacionService, type Notificacion } from '@/lib/services/notificacionService';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Bell, CheckCircle, Trash2, Info, AlertTriangle, XCircle } from 'lucide-react';
-import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
+
+/**
+ * Página de Notificaciones - Compartida por todos los roles
+ * 
+ * Usa React Query para data fetching (polling cada 10s)
+ * No requiere permisos específicos ya que cada usuario solo ve sus notificaciones
+ * 
+ * @component
+ */
 
 const getTipoIcon = (tipo: string) => {
   switch (tipo) {
@@ -120,15 +129,11 @@ export function NotificacionesPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinnerFullPage label="Cargando notificaciones..." />
-      </div>
-    );
+    return <Loader />;
   }
 
   return (
-    <div className="space-y-6 p-4 sm:p-6">
+    <div className="space-y-6">
       {/* Content Card */}
       <Card className="rounded-lg border border-gray-200 shadow-sm">
         <CardHeader className="px-4 sm:px-6 pb-4">
@@ -370,3 +375,4 @@ export function NotificacionesPage() {
     </div>
   );
 }
+

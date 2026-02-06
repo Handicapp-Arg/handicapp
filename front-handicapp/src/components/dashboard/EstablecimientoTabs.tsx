@@ -5,8 +5,16 @@ import { Building2, Search, MapPin } from 'lucide-react';
 import { EstablecimientoList } from './EstablecimientoList';
 import { EstablecimientoMapView } from './EstablecimientoMapView';
 import { EstablecimientoExplorarView } from './EstablecimientoExplorarView';
+import type { Establecimiento } from '@/lib/services/establecimientoService';
 
-export function EstablecimientoTabs() {
+interface EstablecimientoTabsProps {
+  /** Datos precargados desde el padre para evitar doble fetch */
+  establecimientos?: Establecimiento[];
+  /** Indica si los datos están cargando en el padre */
+  isLoading?: boolean;
+}
+
+export function EstablecimientoTabs({ establecimientos, isLoading }: EstablecimientoTabsProps) {
   const [activeTab, setActiveTab] = useState<'list' | 'explorar' | 'mapa'>('list');
 
   const tabs = [
@@ -47,9 +55,9 @@ export function EstablecimientoTabs() {
 
       {/* Content with padding */}
       <div className="p-6">
-        {activeTab === 'list' && <EstablecimientoList />}
-        {activeTab === 'explorar' && <EstablecimientoExplorarView />}
-        {activeTab === 'mapa' && <EstablecimientoMapView />}
+        {activeTab === 'list' && <EstablecimientoList establecimientos={establecimientos} isLoading={isLoading} />}
+        {activeTab === 'explorar' && <EstablecimientoExplorarView establecimientos={establecimientos} isLoading={isLoading} />}
+        {activeTab === 'mapa' && <EstablecimientoMapView establecimientos={establecimientos} isLoading={isLoading} />}
       </div>
     </div>
   );

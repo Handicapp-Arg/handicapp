@@ -30,11 +30,10 @@ Se realizó una simplificación estratégica del dashboard y navegación del rol
 ├── Entrenamiento ← REDUNDANTE
 ├── Historial
 ├── Reportes
-├── Configuración
-└── Suscripciones
+└── Configuración
 ```
 
-#### ✅ DESPUÉS (8 items - Claro y Enfocado)
+#### ✅ DESPUÉS (7 items - Claro y Enfocado)
 ```
 ├── Dashboard
 ├── Notificaciones  
@@ -42,11 +41,10 @@ Se realizó una simplificación estratégica del dashboard y navegación del rol
 ├── Establecimientos
 ├── Historial ← Consolida Salud, Competencias, Entrenamiento
 ├── Reportes
-├── Configuración
-└── Suscripciones
+└── Configuración
 ```
 
-**Reducción:** 27% menos de opciones (de 11 a 8)
+**Reducción:** 36% menos de opciones (de 11 a 7)
 
 ---
 
@@ -202,7 +200,6 @@ ls front-handicapp/src/app/(dashboard)/propietario
 # notificaciones/
 # perfil/
 # reportes/
-# suscripciones/
 # tareas/
 ```
 

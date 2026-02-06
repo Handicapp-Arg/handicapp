@@ -11,8 +11,9 @@ import AdjuntosList from "@/components/adjuntos/AdjuntosList";
 import QRCodeDisplay from "@/components/qr/QRCodeDisplay";
 import PropietariosList from "@/components/propietarios/PropietariosList";
 import CaballoForm from "@/components/dashboard/CaballoForm";
+import CaballoTareasTab from "@/components/caballos/CaballoTareasTab";
 import { QrCodeIcon, ArrowPathIcon as RefreshCw, ArrowDownTrayIcon as Download, PencilIcon as Edit2, CalendarIcon, ClockIcon } from "@heroicons/react/24/outline";
-import { LoadingSpinnerFullPage } from "@/components/ui/loading-spinner";
+import { Loader } from '@/components/ui/loader';
 
 export default function CaballoDetallePage() {
   const params = useParams();
@@ -26,7 +27,7 @@ export default function CaballoDetallePage() {
   const [loadingEventos, setLoadingEventos] = useState(false);
   const [eventosLoaded, setEventosLoaded] = useState(false);
   const [origin, setOrigin] = useState("");
-  const [activeTab, setActiveTab] = useState<"ficha" | "pedigree" | "historial" | "documentos" | "propietarios">("ficha");
+  const [activeTab, setActiveTab] = useState<"ficha" | "pedigree" | "historial" | "documentos" | "propietarios" | "tareas">("ficha");
   const [showQRModal, setShowQRModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
 
@@ -71,13 +72,13 @@ export default function CaballoDetallePage() {
   const loadEventosDelCaballo = async (caballoId: number) => {
     try {
       setLoadingEventos(true);
-      const response: any = await eventoService.getAll({ 
+      const response = await eventoService.getAll({ 
         page: 1, 
         limit: 50, 
         caballo_id: caballoId 
       });
       
-      const eventosData = response?.data?.eventos || response?.eventos || response?.data || response || [];
+      const eventosData = Array.isArray(response) ? response : response?.data || [];
       const eventosList: Evento[] = Array.isArray(eventosData) ? eventosData : [];
       setEventos(eventosList);
       setEventosLoaded(true);
@@ -134,11 +135,11 @@ export default function CaballoDetallePage() {
 
   return (
     <SimpleRoleGuard roles={["propietario"]} fallback={<div className="p-6">Sin permisos</div>}>
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen">
         <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
         {loading && (
-          <LoadingSpinnerFullPage label="Cargando información del caballo..." />
+          <Loader />
         )}
 
           {!loading && !caballo && (
@@ -164,11 +165,11 @@ export default function CaballoDetallePage() {
 
           {!loading && caballo && (
             <>
-              <div className="space-y-4">
-                {/* Breadcrumb */}
+              <div className="space-y-6">
+                {/* Breadcrumb mejorado */}
                 <button 
                   onClick={() => router.push("/propietario/caballos")} 
-                  className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors text-sm font-medium group"
+                  className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-all duration-200 text-sm font-medium group px-4 py-2 rounded-lg hover:bg-white/60"
                 >
                   <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -176,48 +177,63 @@ export default function CaballoDetallePage() {
                   Volver a Mis Caballos
                 </button>
 
-                {/* Header Compacto */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-                  <div className="px-6 py-4">
+                {/* Header Hero */}
+                <div className="relative overflow-hidden rounded-2xl shadow-2xl">
+                  {/* Background con gradiente */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"></div>
+                  <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-40"></div>
+                  
+                  <div className="relative px-8 py-6">
                     <div className="flex items-start justify-between gap-4">
                       {/* Info Principal */}
-                      <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-slate-900 flex items-center justify-center">
-                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="flex items-center gap-5 flex-1 min-w-0">
+                        <div className="flex-shrink-0 w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/30 ring-4 ring-white/10">
+                          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                           </svg>
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h1 className="text-xl font-bold text-slate-900 truncate">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h1 className="text-3xl font-black text-white truncate bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
                               {caballo.nombre}
                             </h1>
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide shadow-lg ${
                               caballo.estado_global === "activo" 
-                                ? "bg-emerald-100 text-emerald-700" 
+                                ? "bg-emerald-500 text-white ring-2 ring-emerald-300/50" 
                                 : caballo.estado_global === "inactivo" 
-                                ? "bg-amber-100 text-amber-700" 
+                                ? "bg-amber-500 text-white ring-2 ring-amber-300/50" 
                                 : caballo.estado_global === "vendido" 
-                                ? "bg-blue-100 text-blue-700" 
-                                : "bg-slate-100 text-slate-700"
+                                ? "bg-blue-500 text-white ring-2 ring-blue-300/50" 
+                                : "bg-slate-500 text-white ring-2 ring-slate-300/50"
                             }`}>
-                              {caballo.estado_global ? caballo.estado_global.toUpperCase() : "SIN ESTADO"}
+                              {caballo.estado_global || "SIN ESTADO"}
                             </span>
                           </div>
                           
-                          <div className="flex items-center gap-3 text-sm text-slate-600">
+                          <div className="flex items-center gap-4 text-sm text-white/80">
                             {caballo.microchip && (
-                              <span className="font-mono">{caballo.microchip}</span>
+                              <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg backdrop-blur-sm">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                                </svg>
+                                <span className="font-mono font-semibold">{caballo.microchip}</span>
+                              </div>
                             )}
                             {caballo.raza && (
-                              <>
-                                <span className="text-slate-300">•</span>
-                                <span>{caballo.raza}</span>
-                              </>
+                              <div className="flex items-center gap-2">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                </svg>
+                                <span className="font-medium">{caballo.raza}</span>
+                              </div>
                             )}
-                            <span className="text-slate-300">•</span>
-                            <span>{caballo.sexo === "macho" ? "Macho" : caballo.sexo === "hembra" ? "Hembra" : "—"}</span>
+                            <div className="flex items-center gap-2">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                              </svg>
+                              <span className="font-medium">{caballo.sexo === "macho" ? "Macho" : caballo.sexo === "hembra" ? "Hembra" : "—"}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -226,29 +242,32 @@ export default function CaballoDetallePage() {
                       <div className="flex items-center gap-2">
                         <button 
                           onClick={() => setShowQRModal(true)} 
-                          className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                          className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-white/10 backdrop-blur-md border border-white/20 rounded-xl hover:bg-white/20 hover:scale-105 transition-all duration-200 shadow-lg"
+                          title="Ver código QR"
                         >
-                          <QrCodeIcon className="w-4 h-4" />
-                          QR
+                          <QrCodeIcon className="w-5 h-5" />
+                          <span className="hidden sm:inline">QR</span>
                         </button>
                         <button 
                           onClick={() => loadCaballoData(Number(params?.id))} 
                           disabled={loading}
-                          className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+                          className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-white/10 backdrop-blur-md border border-white/20 rounded-xl hover:bg-white/20 hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                          title="Actualizar datos"
                         >
-                          <RefreshCw className="w-4 h-4" />
+                          <RefreshCw className="w-5 h-5" />
                         </button>
                         <button 
                           onClick={exportarFicha}
-                          className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                          className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-white/10 backdrop-blur-md border border-white/20 rounded-xl hover:bg-white/20 hover:scale-105 transition-all duration-200 shadow-lg"
+                          title="Exportar ficha"
                         >
-                          <Download className="w-4 h-4" />
+                          <Download className="w-5 h-5" />
                         </button>
                         <button 
                           onClick={() => setShowEditModal(true)} 
-                          className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-colors"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl hover:from-blue-700 hover:to-purple-700 hover:scale-105 transition-all duration-200 shadow-xl shadow-blue-500/30"
                         >
-                          <Edit2 className="w-4 h-4" />
+                          <Edit2 className="w-5 h-5" />
                           Editar
                         </button>
                       </div>
@@ -257,57 +276,68 @@ export default function CaballoDetallePage() {
                 </div>
 
                 {/* Tabs */}
-                <div className="border-b border-slate-200 bg-white rounded-t-xl">
-                  <nav className="flex gap-1 px-4" aria-label="Tabs">
+                <div className="relative overflow-hidden rounded-xl bg-white/60 backdrop-blur-xl border border-white/20 shadow-xl">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 to-purple-50/50"></div>
+                  <nav className="relative flex gap-2 px-6 py-2" aria-label="Tabs">
                     <button
                       onClick={() => setActiveTab("ficha")}
-                      className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                      className={`relative px-5 py-3 text-sm font-semibold rounded-lg transition-all duration-200 ${
                         activeTab === "ficha"
-                          ? "border-slate-900 text-slate-900"
-                          : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
+                          ? "text-white bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg shadow-blue-500/30"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
                       }`}
                     >
                       Ficha Completa
                     </button>
                     <button
                       onClick={() => setActiveTab("pedigree")}
-                      className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                      className={`relative px-5 py-3 text-sm font-semibold rounded-lg transition-all duration-200 ${
                         activeTab === "pedigree"
-                          ? "border-slate-900 text-slate-900"
-                          : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
+                          ? "text-white bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg shadow-blue-500/30"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
                       }`}
                     >
                       Pedigree
                     </button>
                     <button
                       onClick={() => setActiveTab("historial")}
-                      className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                      className={`relative px-5 py-3 text-sm font-semibold rounded-lg transition-all duration-200 ${
                         activeTab === "historial"
-                          ? "border-slate-900 text-slate-900"
-                          : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
+                          ? "text-white bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg shadow-blue-500/30"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
                       }`}
                     >
                       Historial de Actividades
                     </button>
                     <button
                       onClick={() => setActiveTab("documentos")}
-                      className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                      className={`relative px-5 py-3 text-sm font-semibold rounded-lg transition-all duration-200 ${
                         activeTab === "documentos"
-                          ? "border-slate-900 text-slate-900"
-                          : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
+                          ? "text-white bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg shadow-blue-500/30"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
                       }`}
                     >
                       Documentos
                     </button>
                     <button
                       onClick={() => setActiveTab("propietarios")}
-                      className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                      className={`relative px-5 py-3 text-sm font-semibold rounded-lg transition-all duration-200 ${
                         activeTab === "propietarios"
-                          ? "border-slate-900 text-slate-900"
-                          : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
+                          ? "text-white bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg shadow-blue-500/30"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
                       }`}
                     >
                       Propietarios
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("tareas")}
+                      className={`relative px-5 py-3 text-sm font-semibold rounded-lg transition-all duration-200 ${
+                        activeTab === "tareas"
+                          ? "text-white bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg shadow-blue-500/30"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+                      }`}
+                    >
+                      Tareas Activas
                     </button>
                   </nav>
                 </div>
@@ -322,15 +352,22 @@ export default function CaballoDetallePage() {
                   </div>
                 )}
                 {activeTab === "historial" && (
-                  <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+                  <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/50">
+                    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLW9wYWNpdHk9IjAuMDMiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-40"></div>
+                    
                     {/* Header del Historial */}
-                    <div className="p-6 border-b border-slate-200">
+                    <div className="relative bg-gradient-to-br from-slate-50 to-blue-50/30 p-6 border-b border-slate-200/50">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-lg font-semibold text-slate-900 mb-1">Historial de Actividades</h3>
-                          <p className="text-sm text-slate-600">
-                            Registro completo de actividades, cuidados y eventos de {caballo.nombre}
-                          </p>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                            <CalendarIcon className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-bold text-[#0f172a]">Historial de Actividades</h3>
+                            <p className="text-sm text-slate-600">
+                              Registro completo de actividades, cuidados y eventos de {caballo.nombre}
+                            </p>
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
@@ -339,7 +376,7 @@ export default function CaballoDetallePage() {
                               loadEventosDelCaballo(caballo.id);
                             }}
                             disabled={loadingEventos}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+                            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105"
                           >
                             <RefreshCw className={`w-4 h-4 ${loadingEventos ? 'animate-spin' : ''}`} />
                             {loadingEventos ? 'Cargando...' : 'Actualizar'}
@@ -349,18 +386,23 @@ export default function CaballoDetallePage() {
                     </div>
 
                     {/* Contenido del Historial */}
-                    <div className="p-6">
+                    <div className="relative p-6">
                       {loadingEventos ? (
-                        <div className="flex items-center justify-center py-12">
+                        <div className="flex items-center justify-center py-16">
                           <div className="text-center">
-                            <RefreshCw className="w-8 h-8 text-slate-400 animate-spin mx-auto mb-3" />
-                            <p className="text-slate-600">Cargando historial de eventos...</p>
+                            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                              <RefreshCw className="w-8 h-8 text-white animate-spin" />
+                            </div>
+                            <p className="text-lg font-semibold text-[#0f172a] mb-1">Cargando historial...</p>
+                            <p className="text-sm text-slate-600">Obteniendo eventos registrados</p>
                           </div>
                         </div>
                       ) : eventos.length === 0 ? (
-                        <div className="text-center py-12">
-                          <CalendarIcon className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                          <h4 className="text-lg font-medium text-slate-900 mb-2">Sin eventos registrados</h4>
+                        <div className="text-center py-16">
+                          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-slate-100 to-blue-100 flex items-center justify-center">
+                            <CalendarIcon className="w-10 h-10 text-slate-400" />
+                          </div>
+                          <h4 className="text-xl font-bold text-[#0f172a] mb-2">Sin eventos registrados</h4>
                           <p className="text-slate-600 max-w-md mx-auto">
                             Aún no hay eventos registrados para {caballo.nombre}. 
                             Los eventos aparecerán aquí cuando el personal del establecimiento complete actividades.
@@ -368,77 +410,90 @@ export default function CaballoDetallePage() {
                         </div>
                       ) : (
                         <div className="space-y-4">
-                          <div className="text-sm text-slate-600 mb-4">
-                            Mostrando {eventos.length} evento{eventos.length !== 1 ? 's' : ''} registrado{eventos.length !== 1 ? 's' : ''}
+                          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200/50 rounded-lg">
+                            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                            <span className="text-sm font-semibold text-[#0f172a]">
+                              {eventos.length} evento{eventos.length !== 1 ? 's' : ''} registrado{eventos.length !== 1 ? 's' : ''}
+                            </span>
                           </div>
                           
                           {eventos.map((evento) => (
                             <div
                               key={evento.id}
-                              className={`border rounded-lg p-4 transition-colors ${
+                              className={`group relative border rounded-xl p-5 transition-all duration-300 hover:shadow-xl ${
                                 evento.origen_tarea_id 
-                                  ? "border-blue-200 bg-blue-50 hover:bg-blue-100" 
-                                  : "border-slate-200 hover:bg-slate-50"
+                                  ? "border-blue-300/50 bg-gradient-to-br from-blue-50 to-purple-50/30 hover:border-blue-400" 
+                                  : "border-slate-200/50 bg-gradient-to-br from-slate-50 to-blue-50/20 hover:border-slate-300"
                               }`}
                             >
-                              <div className="flex items-start justify-between gap-4">
+                              <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/0 group-hover:from-[#af936f]/5 group-hover:to-blue-500/5 rounded-xl transition-all duration-300"></div>
+                              
+                              <div className="relative flex items-start justify-between gap-4">
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <h4 className="font-medium text-slate-900 truncate">
+                                  <div className="flex items-center gap-2 mb-3 flex-wrap">
+                                    <h4 className="font-bold text-[#0f172a] text-base truncate">
                                       {evento.titulo}
                                     </h4>
                                     
                                     {/* Indicador de evento auto-generado */}
                                     {evento.origen_tarea_id && (
-                                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                                        🔧 Auto-generado
+                                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-sm">
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                        </svg>
+                                        Auto-generado
                                       </span>
                                     )}
                                     
-                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${
+                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm ${
                                       evento.estado === "completado" 
-                                        ? "bg-green-100 text-green-700" 
+                                        ? "bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-500/30" 
                                         : evento.estado === "programado"
-                                        ? "bg-blue-100 text-blue-700"
+                                        ? "bg-blue-500/10 text-blue-700 ring-1 ring-blue-500/30"
                                         : evento.estado === "cancelado"
-                                        ? "bg-red-100 text-red-700"
-                                        : "bg-slate-100 text-slate-700"
+                                        ? "bg-red-500/10 text-red-700 ring-1 ring-red-500/30"
+                                        : "bg-slate-500/10 text-slate-700 ring-1 ring-slate-500/30"
                                     }`}>
                                       {evento.estado}
                                     </span>
-                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${
+                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm ${
                                       evento.prioridad === "alta" 
-                                        ? "bg-orange-100 text-orange-700" 
+                                        ? "bg-orange-500/10 text-orange-700 ring-1 ring-orange-500/30" 
                                         : evento.prioridad === "critica"
-                                        ? "bg-red-100 text-red-700"
+                                        ? "bg-red-500/10 text-red-700 ring-1 ring-red-500/30"
                                         : evento.prioridad === "media"
-                                        ? "bg-yellow-100 text-yellow-700"
-                                        : "bg-slate-100 text-slate-700"
+                                        ? "bg-yellow-500/10 text-yellow-700 ring-1 ring-yellow-500/30"
+                                        : "bg-slate-500/10 text-slate-700 ring-1 ring-slate-500/30"
                                     }`}>
                                       {evento.prioridad}
                                     </span>
                                   </div>
                                   
                                   {evento.descripcion && (
-                                    <p className="text-sm text-slate-600 mb-2 line-clamp-2">
+                                    <p className="text-sm text-slate-700 mb-3 line-clamp-2 leading-relaxed">
                                       {evento.descripcion}
                                     </p>
                                   )}
                                   
                                   {/* Información adicional para eventos auto-generados */}
                                   {evento.origen_tarea_id && (
-                                    <div className="bg-blue-100 rounded-md p-2 mb-3 border border-blue-200">
-                                      <p className="text-xs text-blue-700">
-                                        💡 <strong>Actividad completada:</strong> Esta entrada fue generada 
-                                        automáticamente al completar una tarea programada por el equipo veterinario.
-                                      </p>
+                                    <div className="bg-gradient-to-r from-blue-100/50 to-purple-100/50 rounded-lg p-3 mb-3 border border-blue-200/50">
+                                      <div className="flex items-start gap-2">
+                                        <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <p className="text-xs text-blue-800 font-medium">
+                                          <strong>Actividad completada:</strong> Esta entrada fue generada 
+                                          automáticamente al completar una tarea programada por el equipo veterinario.
+                                        </p>
+                                      </div>
                                     </div>
                                   )}
                                   
-                                  <div className="flex items-center gap-4 text-xs text-slate-500">
-                                    <div className="flex items-center gap-1">
-                                      <CalendarIcon className="w-3 h-3" />
-                                      <span>
+                                  <div className="flex items-center gap-4 text-xs text-slate-600 flex-wrap">
+                                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/60 rounded-lg border border-slate-200/50">
+                                      <CalendarIcon className="w-3.5 h-3.5 text-[#af936f]" />
+                                      <span className="font-medium">
                                         {new Date(evento.fecha_evento).toLocaleDateString('es-AR', {
                                           year: 'numeric',
                                           month: 'short',
@@ -448,22 +503,25 @@ export default function CaballoDetallePage() {
                                     </div>
                                     
                                     {evento.hora_inicio && (
-                                      <div className="flex items-center gap-1">
-                                        <ClockIcon className="w-3 h-3" />
-                                        <span>{evento.hora_inicio}</span>
+                                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/60 rounded-lg border border-slate-200/50">
+                                        <ClockIcon className="w-3.5 h-3.5 text-blue-500" />
+                                        <span className="font-medium">{evento.hora_inicio}</span>
                                       </div>
                                     )}
                                     
                                     {evento.tipo_evento?.nombre && (
-                                      <div className="flex items-center gap-1">
-                                        <span className="w-2 h-2 rounded-full bg-slate-300"></span>
-                                        <span>{evento.tipo_evento.nombre}</span>
+                                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/60 rounded-lg border border-slate-200/50">
+                                        <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                                        <span className="font-medium">{evento.tipo_evento.nombre}</span>
                                       </div>
                                     )}
                                     
                                     {evento.creado_por && (
-                                      <div className="flex items-center gap-1">
-                                        <span>Registrado por: {evento.creado_por.nombre} {evento.creado_por.apellido}</span>
+                                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/60 rounded-lg border border-slate-200/50">
+                                        <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
+                                        <span className="font-medium">{evento.creado_por.nombre} {evento.creado_por.apellido}</span>
                                       </div>
                                     )}
                                   </div>
@@ -477,13 +535,33 @@ export default function CaballoDetallePage() {
                   </div>
                 )}
                 {activeTab === "documentos" && (
-                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                    <AdjuntosList caballoId={Number(params?.id)} showActions={false} />
+                  <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/50 p-6">
+                    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLW9wYWNpdHk9IjAuMDMiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-40"></div>
+                    <div className="relative">
+                      <AdjuntosList caballoId={Number(params?.id)} showActions={false} />
+                    </div>
                   </div>
                 )}
                 {activeTab === "propietarios" && (
-                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                    <PropietariosList caballoId={Number(params?.id)} />
+                  <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/50 p-6">
+                    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLW9wYWNpdHk9IjAuMDMiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-40"></div>
+                    <div className="relative">
+                      <PropietariosList caballoId={Number(params?.id)} />
+                    </div>
+                  </div>
+                )}
+                {activeTab === "tareas" && (
+                  <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/50 p-6">
+                    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLW9wYWNpdHk9IjAuMDMiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-40"></div>
+                    <div className="relative">
+                      <CaballoTareasTab 
+                        caballoId={Number(params?.id)} 
+                        caballoNombre={caballo.nombre}
+                        onTareaCreated={() => {
+                          // Opcional: refrescar algo si es necesario
+                        }}
+                      />
+                    </div>
                   </div>
                 )}
               </div>

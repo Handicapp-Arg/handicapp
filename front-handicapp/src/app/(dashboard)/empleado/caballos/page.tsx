@@ -7,7 +7,7 @@ import { useCaballos } from '@/lib/hooks';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Circle, Activity, Heart, TrendingUp } from 'lucide-react';
-import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 
 export default function EmpleadoCaballosPage() {
   const { data: caballos = [], isLoading: loading } = useCaballos({ page: 1, limit: 500 });
@@ -28,7 +28,7 @@ export default function EmpleadoCaballosPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinnerFullPage label="Cargando..." variant="warning" />
+        <Loader />
       </div>
     );
   }
@@ -155,3 +155,4 @@ export default function EmpleadoCaballosPage() {
     </SimpleRoleGuard>
   );
 }
+

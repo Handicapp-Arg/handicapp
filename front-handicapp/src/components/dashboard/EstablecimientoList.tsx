@@ -19,16 +19,22 @@ interface EstablecimientoListProps {
   onViewDetails?: (establecimiento: Establecimiento) => void; // Callback opcional para manejar el click en "Ver Detalles"
   onEdit?: (establecimiento: Establecimiento) => void; // Callback opcional para manejar la edición
   detailUrlPrefix?: string; // Prefijo de URL para el detalle (por defecto '/propietario/establecimientos')
+  /** Datos precargados desde el padre para evitar doble fetch */
+  establecimientos?: Establecimiento[];
+  /** Indica si los datos están cargando en el padre */
+  isLoading?: boolean;
 }
 
 export function EstablecimientoList({ 
   showAll = false, 
   onViewDetails,
   onEdit,
-  detailUrlPrefix = '/propietario/establecimientos'
+  detailUrlPrefix = '/propietario/establecimientos',
+  establecimientos: establecimientosProp,
+  isLoading: isLoadingProp
 }: EstablecimientoListProps) {
-  const [establecimientos, setEstablecimientos] = useState<Establecimiento[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [establecimientos, setEstablecimientos] = useState<Establecimiento[]>(establecimientosProp || []);
+  const [loading, setLoading] = useState(establecimientosProp ? false : true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredEstablecimientos, setFilteredEstablecimientos] = useState<Establecimiento[]>([]);
@@ -46,9 +52,16 @@ export function EstablecimientoList({
   };
 
   useEffect(() => {
-    loadEstablecimientos();
+    // Si tenemos datos del padre, usarlos en vez de hacer fetch
+    if (establecimientosProp) {
+      setEstablecimientos(establecimientosProp);
+      setLoading(isLoadingProp || false);
+    } else {
+      // Solo hacer fetch si no hay datos del padre
+      loadEstablecimientos();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters]);
+  }, [filters, establecimientosProp, isLoadingProp]);
 
   useEffect(() => {
     // Asegurar que establecimientos es un array antes de filtrar

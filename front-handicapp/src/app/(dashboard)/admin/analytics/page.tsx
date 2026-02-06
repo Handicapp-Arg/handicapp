@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { SimpleAdminOnly } from '@/components/common/SimplePermissionGuard';
 import { Card, CardContent, CardHeader, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { LoadingSpinnerFullPage } from '@/components/ui/loading-spinner';
+import { Loader } from '@/components/ui/loader';
 import {
   TrendingUp,
   Users,
@@ -77,7 +77,7 @@ export default function AnalyticsPage() {
   };
 
   if (loading) {
-    return <LoadingSpinnerFullPage />;
+    return <Loader />;
   }
 
   if (error || !stats) {
