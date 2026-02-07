@@ -19,6 +19,7 @@ import { config } from '../config/config';
 import { Router as ExpressRouter2 } from 'express';
 import { UploadController, uploader } from '../controllers/uploadController';
 import { webContactRoutes } from './webContactRoutes';
+import propietarioRoutes from './propietario';
 
 const router: ExpressRouter = Router();
 
@@ -75,6 +76,9 @@ router.use('/uploads', uploadRouter);
 
 // Web contact routes
 router.use('/web-contacts', webContactRoutes);
+
+// Propietario (dashboard) routes
+router.use('/propietario', propietarioRoutes);
 
 export { router as apiRoutes };
 

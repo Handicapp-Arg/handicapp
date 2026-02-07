@@ -1,246 +1,219 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { eventoService } from '@/lib/services/eventoService';
-import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
-import { useStats } from '@/lib/hooks/useStats';
-import { useEventosProximos } from '@/lib/hooks/useEventosProximos';
-import { useAuthNew } from '@/lib/hooks/useAuthNew';
-import { useCaballos } from '@/lib/hooks/useCaballosQuery';
-import { useTareas } from '@/lib/hooks/useTareasQuery';
-import { Loader } from '@/components/ui/loader';
-import { 
-  Trophy, 
-  Heart, 
-  Activity,
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
-  Calendar,
-  Plus,
-  ArrowRight,
-  ClipboardList,
-  Check,
-  Sun
-} from 'lucide-react';
-import Link from 'next/link';
-import Image from 'next/image';
+import React, { useEffect, useState } from "react";
+import { Loader } from "@/components/ui/loader";
+import Link from "next/link";
+import Image from "next/image";
+import { TrendingUp, TrendingDown, Heart, Plus, ArrowRight, ClipboardList, Check, Sun, Calendar } from "lucide-react";
+import { SimpleRoleGuard } from "@/components/common/SimplePermissionGuard";
 
 export default function PropietarioDashboard() {
-  const { stats, loading } = useStats();
-  const { eventos } = useEventosProximos({ limit: 5 });
-  const { user } = useAuthNew();
-  const { data: caballosData, isLoading: caballosLoading } = useCaballos({ page: 1, limit: 10 });
-  
-  // Definir rango de fechas para hoy (Asegurando cobertura completa del día en UTC)
-  const hoy = new Date();
-  
-  // Usamos Date.UTC para asegurar que cubrimos desde las 00:00 UTC del día actual
-  // Esto previene que tareas guardadas como "YYYY-MM-DD 00:00:00" queden fuera por offset horario
-  const startOfDay = new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 0, 0, 0));
-  const endOfDay = new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59));
-
-  // Traer tareas específicas de hoy usando el filtro de fecha del backend + Límite ampliado
-  const { data: tareasData } = useTareas({ 
-    limit: 100,
-    fecha_desde: startOfDay.toISOString(),
-    fecha_hasta: endOfDay.toISOString()
-  });
-
-  // Estado para eventos de hoy
-  const [eventosHoy, setEventosHoy] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchEventosHoy = async () => {
-        try {
-            const response = await eventoService.getAll({
-                fecha_desde: startOfDay.toISOString(),
-                fecha_hasta: endOfDay.toISOString(),
-                limit: 100
-            });
-            // Adaptar respuesta que puede venir paginada o directa
-            const loadedEventos = (response as any).data || (Array.isArray(response) ? response : []);
-            setEventosHoy(loadedEventos);
-        } catch (error) {
-            console.error('Error fetching today events:', error);
-        }
-    };
-    
-    // Solo ejecutar si tenemos las fechas definidas
-    if (startOfDay && endOfDay) {
-        fetchEventosHoy();
-    }
-  }, []); // Dependencias vacías para ejecutar al montar, ya que las fechas de hoy son calculadas al inicio
-
-  if (loading || caballosLoading) {
-    return <Loader />;
-  }
-
-  const propietarioNombre = user?.nombre || 'Propietario';
-  // Normalizar respuesta de caballos
-  const caballos = (caballosData as any)?.data?.caballos || (caballosData as any)?.caballos || [];
-  
-  // Las tareas ya vienen filtradas por fecha desde el backend
-  const listaTareas = tareasData?.tareas || [];
-  
-  // Combinar Tareas y Eventos para el Reporte Diario
-  const actividadesHoy = [
-    ...listaTareas.map((t: any) => ({ 
-        ...t, 
-        tipoItem: 'tarea',
-        // Preferir fecha limite, sino vencimiento, sino creado
-        horaRef: t.fecha_limite || t.fecha_vencimiento || t.created_at
-    })),
-    ...eventosHoy.map((e: any) => {
-        // Construir fecha referencia para eventos
-        let refDate = e.fecha_evento;
-        if (e.hora_inicio && e.fecha_evento) {
-            // Si tiene hora, intentar combinar (asumiendo fecha_evento es YYYY-MM-DD o ISO)
-            const datePart = e.fecha_evento.split('T')[0];
-            refDate = `${datePart}T${e.hora_inicio}`;
-        }
-        return {
-            ...e,
-            tipoItem: 'evento',
-            horaRef: refDate
-        };
-    })
-  ].sort((a, b) => {
-      const dateA = new Date(buttonDateSafely(a.horaRef)).getTime();
-      const dateB = new Date(buttonDateSafely(b.horaRef)).getTime();
-      return dateA - dateB;
+    async function fetchData() {
+      try {
+        setLoading(true);
+        setError(null);
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api/v1";
+  const res = await fetch(`${apiBaseUrl}/propietario/dashboard`, {
+    credentials: 'include',
   });
-
-  function buttonDateSafely(dateStr: string) {
-      if (!dateStr) return new Date().toISOString();
-      // Si es solo hora HH:mm:ss, agregar fecha hoy
-      if (dateStr.match(/^\d{2}:\d{2}(:\d{2})?$/)) {
-          return `${new Date().toISOString().split('T')[0]}T${dateStr}`;
-      }
-      return dateStr;
+  if (!res.ok) {
+    let msg = "Error al cargar datos del dashboard";
+    if (res.status === 401) {
+      msg = "No tienes sesión activa. Por favor inicia sesión.";
+    } else if (res.status === 403) {
+      msg = "No tienes permisos para ver este contenido.";
+    } else if (res.status === 404) {
+      msg = "Endpoint no encontrado. Contacta a soporte.";
+    } else if (res.status === 500) {
+      try {
+        const errJson = await res.json();
+        msg = errJson?.error || msg;
+      } catch {}
+    }
+    throw new Error(msg);
   }
-  
-  // TODO: Implementar hook de gastos real
+  const json = await res.json();
+  setData(json);
+      } catch (e: any) {
+        setError(e.message || "Error inesperado");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  if (loading) return <Loader />;
+  if (error) {
+    return (
+      <div className="p-8 text-center">
+        <div className="inline-block bg-red-100 text-red-700 px-4 py-2 rounded-lg border border-red-200 shadow">
+          <strong>Error:</strong> {error}
+        </div>
+      </div>
+    );
+  }
+  if (!data) return null;
+
+
+  // Finanzas
   const gastos = {
-    mesActual: 125000,
-    mesAnterior: 98000,
-    diferencia: 27.55,
-    tipo: 'aumento' as const
+    mesActual: Array.isArray(data.finanzas) ? data.finanzas.reduce((acc: number, g: any) => acc + (g.monto || 0), 0) : 0,
+    mesAnterior: 0,
+    diferencia: 0,
+    tipo: "aumento" as const,
   };
 
+  // Caballos
+  const caballos = Array.isArray(data.caballos) ? data.caballos : [];
+
+  // Tareas
+  const listaTareas = Array.isArray(data.tareas) ? data.tareas : [];
+
+  // Eventos
+  const eventos = Array.isArray(data.eventos) ? data.eventos : [];
+
+  // Reporte Diario: combinar tareas y eventos de hoy
+  const hoy = new Date();
+  const hoyISO = hoy.toISOString().split("T")[0];
+  const actividadesHoy = [
+    ...listaTareas.filter((t: any) => (t.fecha_limite || t.fecha_vencimiento || t.created_at || "").startsWith(hoyISO)).map((t: any) => ({
+      ...t,
+      tipoItem: "tarea",
+      horaRef: t.fecha_limite || t.fecha_vencimiento || t.created_at,
+    })),
+    ...eventos.filter((e: any) => (e.fecha_evento || "").startsWith(hoyISO)).map((e: any) => {
+      let refDate = e.fecha_evento;
+      if (e.hora_inicio && e.fecha_evento) {
+        const datePart = e.fecha_evento.split("T")[0];
+        refDate = `${datePart}T${e.hora_inicio}`;
+      }
+      return {
+        ...e,
+        tipoItem: "evento",
+        horaRef: refDate,
+      };
+    }),
+  ].sort((a, b) => new Date(a.horaRef).getTime() - new Date(b.horaRef).getTime());
+
   return (
-    <SimpleRoleGuard roles={['propietario']}>
+    <SimpleRoleGuard roles={["propietario"]}>
       <div className="max-w-[1600px] mx-auto space-y-12 animate-fade-in">
-          
-          <div className="flex flex-col gap-12">
-            
-            {/* Fila superior: Finanzas y Mis Caballos */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
-               
-               {/* Finanzas */}
-               <section className="flex flex-col h-full">
-                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-[19px] font-semibold text-[#1e293b]">Finanzas</h2>
-                    <Link href="/propietario/reportes/gastos" className="text-[14px] font-medium text-[#af936f] hover:text-[#1e293b] transition-colors">Ver detalle</Link>
-                 </div>
-                 
-                 <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 flex-1 flex flex-col justify-center relative overflow-hidden group">
-                     {/* Background gradient subtle */}
-                     <div className="absolute inset-0 bg-gradient-to-br from-white via-white to-slate-50/80"></div>
-                     
-                     {/* Decorative Circle Blur */}
-                     <div className="absolute -right-6 -top-6 w-32 h-32 bg-blue-50/50 rounded-full blur-2xl group-hover:bg-[#af936f]/10 transition-colors duration-500"></div>
-                     
-                     <div className="flex flex-col h-full relative z-10 justify-between">
-                        <div className="flex justify-between items-start">
-                            <div className="flex flex-col">
-                                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-1">Total Gastos</span>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-2xl text-slate-300 font-light">$</span>
-                                    <h3 className="text-5xl font-bold text-[#1e293b] tracking-tighter">{gastos.mesActual.toLocaleString('es-AR')}</h3>
-                                </div>
-                            </div>
-                            
-                            <div className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl border backdrop-blur-sm ${gastos.tipo === 'aumento' ? 'bg-red-50/50 border-red-100 text-red-600' : 'bg-emerald-50/50 border-emerald-100 text-emerald-600'}`}>
-                               {gastos.tipo === 'aumento' ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-                               <span className="text-xs font-bold">{gastos.diferencia}%</span>
-                            </div>
+        <div className="flex flex-col gap-12">
+          {/* Fila superior: Finanzas y Mis Caballos */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
+            {/* Finanzas */}
+            <section className="flex flex-col h-full">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-[19px] font-semibold text-[#1e293b]">Finanzas</h2>
+                <Link href="/propietario/reportes/gastos" className="text-[14px] font-medium text-[#af936f] hover:text-[#1e293b] transition-colors">Ver detalle</Link>
+              </div>
+              <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 flex-1 flex flex-col justify-center relative overflow-hidden group">
+                {/* Background gradient subtle */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white via-white to-slate-50/80"></div>
+                {/* Decorative Circle Blur */}
+                <div className="absolute -right-6 -top-6 w-32 h-32 bg-blue-50/50 rounded-full blur-2xl group-hover:bg-[#af936f]/10 transition-colors duration-500"></div>
+                <div className="flex flex-col h-full relative z-10 justify-between">
+                  {gastos.mesActual > 0 ? (
+                    <>
+                      <div className="flex justify-between items-start">
+                        <div className="flex flex-col">
+                          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-1">Total Gastos</span>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-2xl text-slate-300 font-light">$</span>
+                            <h3 className="text-5xl font-bold text-[#1e293b] tracking-tighter">{gastos.mesActual.toLocaleString("es-AR")}</h3>
+                          </div>
                         </div>
-
-                        {/* Footer con info extra y visualización */}
-                        <div className="mt-6 pt-4 border-t border-slate-100/80 flex items-end justify-between">
-                            <div>
-                                <p className="text-xs text-slate-400 mb-0.5">vs mes anterior</p>
-                                <p className="text-sm font-medium text-slate-600">${gastos.mesAnterior.toLocaleString('es-AR')}</p>
-                            </div>
-                            {/* Mini Sparkline visual */}
-                            <svg className="w-24 h-8 text-[#af936f]" viewBox="0 0 100 40" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M0 35 C 20 35, 20 10, 40 20 C 60 30, 70 5, 100 15" strokeLinecap="round" vectorEffect="non-scaling-stroke" className="opacity-50 group-hover:opacity-100 transition-opacity" />
-                                <path d="M0 35 C 20 35, 20 10, 40 20 C 60 30, 70 5, 100 15" stroke="url(#gradient)" strokeWidth="0" fill="url(#gradient)" className="opacity-10" />
-                                <defs>
-                                    <linearGradient id="gradient" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="currentColor" />
-                                        <stop offset="100%" stopColor="transparent" />
-                                    </linearGradient>
-                                </defs>
-                            </svg>
+                        <div className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl border backdrop-blur-sm ${gastos.tipo === "aumento" ? "bg-red-50/50 border-red-100 text-red-600" : "bg-emerald-50/50 border-emerald-100 text-emerald-600"}`}>
+                          {gastos.tipo === "aumento" ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                          <span className="text-xs font-bold">{gastos.diferencia}%</span>
                         </div>
-                     </div>
-                 </div>
-               </section>
-
-               {/* Mis Caballos */}
-               <section className="flex flex-col h-full xl:border-l xl:border-slate-100 xl:pl-12">
-                 <div className="flex items-center justify-between mb-6">
-                   <h2 className="text-[19px] font-semibold text-[#1e293b]">Mis Caballos</h2>
-                   <Link href="/propietario/caballos" className="text-[14px] font-medium text-[#af936f] hover:text-[#1e293b] transition-colors">Ver todos</Link>
-                 </div>
-                 
-                 <div className="flex-1">
-                 {caballos.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 h-full">
-                        {caballos.slice(0, 3).map((caballo: any) => (
-                          <Link
-                            key={caballo.id}
-                            href={`/propietario/caballos/${caballo.id}`}
-                            className="group relative aspect-[4/5] rounded-xl overflow-hidden bg-slate-100 w-full shadow-sm hover:shadow-md transition-all"
-                          >
-                            {caballo.foto_url ? (
-                                <Image
-                                  src={caballo.foto_url}
-                                  alt={caballo.nombre}
-                                  fill
-                                  className="object-cover transition-transform duration-700 group-hover:scale-110"
-                                />
-                              ) : (
-                                <div className="flex items-center justify-center h-full bg-slate-50">
-                                  <Heart className="h-8 w-8 text-slate-300" />
-                                </div>
-                              )}
-                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#1e293b] via-[#1e293b]/60 to-transparent p-4 pt-12">
-                                <h3 className="text-white font-medium text-sm truncate">{caballo.nombre}</h3>
-                                <p className="text-white/80 text-xs truncate">{caballo.raza || 'Sin raza'}</p>
-                            </div>
-                          </Link>
-                        ))}
-                        <Link
-                            href="/propietario/caballos/nuevo"
-                            className="aspect-[4/5] rounded-xl border-2 border-dashed border-[#af936f]/20 hover:border-[#af936f] flex flex-col items-center justify-center text-[#af936f] hover:bg-[#af936f]/5 transition-all group w-full"
-                        >
-                            <Plus className="h-8 w-8 mb-2 group-hover:scale-110 transition-transform" />
-                            <span className="text-xs font-bold uppercase tracking-wide">Agregar</span>
-                        </Link>
-                    </div>
+                      </div>
+                      {/* Footer con info extra y visualización */}
+                      <div className="mt-6 pt-4 border-t border-slate-100/80 flex items-end justify-between">
+                        <div>
+                          <p className="text-xs text-slate-400 mb-0.5">vs mes anterior</p>
+                          <p className="text-sm font-medium text-slate-600">${gastos.mesAnterior.toLocaleString("es-AR")}</p>
+                        </div>
+                        {/* Mini Sparkline visual */}
+                        <svg className="w-24 h-8 text-[#af936f]" viewBox="0 0 100 40" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M0 35 C 20 35, 20 10, 40 20 C 60 30, 70 5, 100 15" strokeLinecap="round" vectorEffect="non-scaling-stroke" className="opacity-50 group-hover:opacity-100 transition-opacity" />
+                          <path d="M0 35 C 20 35, 20 10, 40 20 C 60 30, 70 5, 100 15" stroke="url(#gradient)" strokeWidth="0" fill="url(#gradient)" className="opacity-10" />
+                          <defs>
+                            <linearGradient id="gradient" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="currentColor" />
+                              <stop offset="100%" stopColor="transparent" />
+                            </linearGradient>
+                          </defs>
+                        </svg>
+                      </div>
+                    </>
                   ) : (
-                    <div className="py-12 text-center border border-dashed border-slate-200 rounded-2xl bg-slate-50/50 h-[300px] flex flex-col items-center justify-center">
-                      <p className="text-slate-500 mb-4 text-sm">Aún no tienes caballos registrados</p>
-                      <Link href="/propietario/caballos/nuevo" className="inline-flex items-center justify-center px-6 py-2.5 bg-[#1e293b] text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition-colors shadow-lg shadow-blue-900/10">
-                        Registrar primer caballo
-                      </Link>
+                    <div className="flex flex-col items-center justify-center h-full py-8">
+                      <span className="text-slate-400 text-lg">No hay gastos registrados.</span>
                     </div>
                   )}
-                 </div>
-               </section>
+                </div>
+              </div>
+            </section>
+
+
+            {/* Mis Caballos */}
+            <section className="flex flex-col h-full xl:border-l xl:border-slate-100 xl:pl-12">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-[19px] font-semibold text-[#1e293b]">Mis Caballos</h2>
+                <Link href="/propietario/caballos" className="text-[14px] font-medium text-[#af936f] hover:text-[#1e293b] transition-colors">Ver todos</Link>
+              </div>
+              <div className="flex-1">
+                {caballos.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 h-full">
+                    {caballos.slice(0, 3).map((caballo: any) => (
+                      <Link
+                        key={caballo.id}
+                        href={`/propietario/caballos/${caballo.id}`}
+                        className="group relative aspect-[4/5] rounded-xl overflow-hidden bg-slate-100 w-full shadow-sm hover:shadow-md transition-all"
+                      >
+                        {caballo.foto_url ? (
+                          <Image
+                            src={caballo.foto_url}
+                            alt={caballo.nombre}
+                            fill
+                            className="object-cover transition-transform duration-700 group-hover:scale-110"
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-full bg-slate-50">
+                            <Heart className="h-8 w-8 text-slate-300" />
+                          </div>
+                        )}
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#1e293b] via-[#1e293b]/60 to-transparent p-4 pt-12">
+                          <h3 className="text-white font-medium text-sm truncate">{caballo.nombre}</h3>
+                          <p className="text-white/80 text-xs truncate">{caballo.raza || 'Sin raza'}</p>
+                        </div>
+                      </Link>
+                    ))}
+                    <Link
+                      href="/propietario/caballos/nuevo"
+                      className="aspect-[4/5] rounded-xl border-2 border-dashed border-[#af936f]/20 hover:border-[#af936f] flex flex-col items-center justify-center text-[#af936f] hover:bg-[#af936f]/5 transition-all group w-full"
+                    >
+                      <Plus className="h-8 w-8 mb-2 group-hover:scale-110 transition-transform" />
+                      <span className="text-xs font-bold uppercase tracking-wide">Agregar</span>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="py-12 text-center border border-dashed border-slate-200 rounded-2xl bg-slate-50/50 h-[300px] flex flex-col items-center justify-center">
+                    <p className="text-slate-500 mb-4 text-sm">Aún no tienes caballos registrados</p>
+                    <Link href="/propietario/caballos/nuevo" className="inline-flex items-center justify-center px-6 py-2.5 bg-[#1e293b] text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition-colors shadow-lg shadow-blue-900/10">
+                      Registrar primer caballo
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </section>
             </div>
 
             {/* Fila inferior: Reporte Diario y Próximos Eventos */}
