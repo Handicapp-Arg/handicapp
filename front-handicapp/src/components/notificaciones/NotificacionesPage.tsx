@@ -12,10 +12,7 @@ import {
   XCircle, 
   Check, 
   Search,
-  Inbox,
-  Calendar,
-  Filter,
-  MoreVertical
+  Inbox
 } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
 import { formatDistanceToNow, isToday, isYesterday } from 'date-fns';
@@ -139,21 +136,23 @@ export function NotificacionesPage() {
     <div className="max-w-[1600px] mx-auto animate-fade-in space-y-8">
       
       {/* Header / Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-          <div>
+      <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
                 <h1 className="text-[24px] font-semibold text-[#1e293b] tracking-tight">Centro de Notificaciones</h1>
-                <p className="text-slate-500 mt-1">Gestiona las novedades y alertas de tus caballos.</p>
           </div>
-          <div className="w-full sm:w-80">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input 
-                      type="text" 
-                      placeholder="Buscar en notificaciones..." 
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1e293b]/10 focus:border-slate-300 transition-all shadow-sm placeholder:text-slate-400"
-                  />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <p className="text-slate-500">Gestiona las novedades y alertas de tus caballos.</p>
+                <div className="w-full sm:w-96">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input 
+                          type="text" 
+                          placeholder="Buscar en notificaciones..." 
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#af936f]/20 focus:border-[#af936f]/40 transition-all shadow-sm placeholder:text-slate-400"
+                      />
+                    </div>
                 </div>
           </div>
       </div>
@@ -218,7 +217,7 @@ export function NotificacionesPage() {
                     <Loader />
                  </div>
             ) : !hasNotifications ? (
-                <EmptyState filter={filter} />
+                <EmptyState />
             ) : (
                 <div className="space-y-8 animate-fade-in-up">
                     {groupedNotifications.hoy.length > 0 && (
@@ -244,7 +243,16 @@ export function NotificacionesPage() {
 
 // --- Helper Components ---
 
-function SidebarItem({ active, label, count, icon: Icon, onClick, alert }: any) {
+interface SidebarItemProps {
+  active: boolean;
+  label: string;
+  count?: number;
+  icon: React.ComponentType<{ className?: string }>;
+  onClick: () => void;
+  alert?: boolean;
+}
+
+function SidebarItem({ active, label, count, icon: Icon, onClick, alert }: SidebarItemProps) {
     return (
         <button 
             onClick={onClick}
@@ -259,7 +267,7 @@ function SidebarItem({ active, label, count, icon: Icon, onClick, alert }: any) 
                 <Icon className={`w-4 h-4 ${active ? 'text-white' : 'text-slate-400'}`} />
                 <span>{label}</span>
             </div>
-            {count > 0 && (
+            {count !== undefined && count > 0 && (
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full
                     ${alert 
                         ? 'bg-red-500 text-white shadow-sm shadow-red-200' 
@@ -273,7 +281,14 @@ function SidebarItem({ active, label, count, icon: Icon, onClick, alert }: any) 
     )
 }
 
-function NotificationGroup({ title, items, onMarkAsRead, onDelete }: { title: string, items: Notificacion[], onMarkAsRead: any, onDelete: any }) {
+interface NotificationGroupProps {
+  title: string;
+  items: Notificacion[];
+  onMarkAsRead: (id: number) => void;
+  onDelete: (id: number) => void;
+}
+
+function NotificationGroup({ title, items, onMarkAsRead, onDelete }: NotificationGroupProps) {
     return (
         <section>
             <h3 className="text-[19px] font-semibold text-[#1e293b] mb-4 sticky top-20 bg-slate-50/0 backdrop-blur-sm z-10 w-fit px-1 rounded-lg">
@@ -387,7 +402,7 @@ function NotificationItem({ notificacion, onMarkAsRead, onDelete }: { notificaci
     );
 }
 
-function EmptyState({ filter }: { filter: string }) {
+function EmptyState() {
     return (
         <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-slate-200 text-center">
             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">

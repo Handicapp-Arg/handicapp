@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getFinanzasUsuarioYCaballos } from '../services/finanzasService';
+import { getFinanzasUsuarioYCaballos, getGastosStats } from '../services/finanzasService';
 import { CaballoService } from '../services/caballoService';
 import { TareaService } from '../services/tareaService';
 import { getEventosPorUsuarioYCaballos } from '../services/eventoPorUsuarioService';
@@ -24,9 +24,9 @@ export async function propietarioDashboard(req: Request, res: Response) {
   const caballos = caballosResp.success && caballosResp.data && caballosResp.data.caballos ? caballosResp.data.caballos : [];
     const caballoIds = caballos.map((c: any) => c.id);
 
-    // Finanzas (nuevo servicio)
-    const finanzasResp = await getFinanzasUsuarioYCaballos(userId, caballoIds);
-    const finanzas = finanzasResp.success ? finanzasResp.data : [];
+    // Gastos stats optimizado (una sola query)
+    const gastosStatsResp = await getGastosStats(userId, caballoIds);
+    const gastosStats = gastosStatsResp.success ? gastosStatsResp.data : { mesActual: 0, mesAnterior: 0, diferencia: 0, tipo: 'aumento' };
 
     // Tareas (reutilizamos TareaService)
     const tareasResp = await TareaService.getAllTareas({ usuarioId: userId, userRole: 'propietario', limit: 100 });
@@ -37,7 +37,7 @@ export async function propietarioDashboard(req: Request, res: Response) {
     const eventos = eventosResp.success ? eventosResp.data : [];
 
     return res.json({
-      finanzas,
+      gastosStats,
       caballos,
       tareas,
       eventos
