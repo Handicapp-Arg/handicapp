@@ -308,14 +308,6 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
           background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)'
         }}
       >
-        {/* Glassmorphism overlay */}
-        <div 
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: 'linear-gradient(135deg, rgba(14, 68, 93, 0.15) 0%, rgba(255, 255, 255, 0) 100%)',
-            backdropFilter: 'blur(10px)'
-          }}
-        />
         
         {/* Mobile Header */}
         <div className="relative h-16 sm:h-18 lg:h-20 border-b border-white/10">
@@ -424,13 +416,6 @@ export function VerticalNavbar({ isOpen, isCollapsed, onClose }: VerticalNavbarP
             );
           })}
         </nav>
-
-        {/* Mobile Footer */}
-        <div className="flex-shrink-0 p-4 border-t border-white/10">
-          <div className="text-xs text-center text-muted-foreground text-slate-400">
-            © 2025 HandicApp
-          </div>
-        </div>
       </div>
     </>
   );

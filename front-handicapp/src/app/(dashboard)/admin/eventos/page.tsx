@@ -1,4 +1,4 @@
-'use client';
+ï»¿'use client';
 
 import React, { useMemo, useState } from 'react';
 import { SimpleAdminOnly } from '@/components/common/SimplePermissionGuard';
@@ -58,7 +58,7 @@ export default function AdminEventosPage() {
                   </div>
                   <div>
                     <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">
-                      Gestión de Eventos
+                      Gestiï¿½n de Eventos
                     </h1>
                     <p className="text-sm text-slate-600 mt-0.5">
                       Vista completa de todos los eventos del sistema
@@ -70,7 +70,7 @@ export default function AdminEventosPage() {
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 border border-purple-200 rounded-lg text-xs sm:text-sm text-purple-700 mt-2">
                     <Sparkles className="w-4 h-4 flex-shrink-0" />
                     <span>
-                      <span className="font-semibold">{eventosStats.autoGenerados}</span> eventos generados automáticamente
+                      <span className="font-semibold">{eventosStats.autoGenerados}</span> eventos generados automï¿½ticamente
                     </span>
                   </div>
                 )}
