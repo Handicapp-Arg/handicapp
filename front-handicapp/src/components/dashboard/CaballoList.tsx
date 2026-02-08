@@ -225,14 +225,6 @@ export function CaballoList() {
           />
         </div>
 
-        {/* Filtros modernos */}
-        <CaballoFilters
-          activeFilters={[]}
-          onRemoveFilter={() => {}}
-          onClearAll={() => setSelectedEstado('all')}
-          selectedEstado={selectedEstado}
-          onEstadoChange={setSelectedEstado}
-        />
 
         {/* Controles secundarios */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
@@ -245,105 +237,6 @@ export function CaballoList() {
 
           {/* Derecha: Botón crear y vista */}
           <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
-            {/* Botones de exportación */}
-            {caballos.length > 0 && (
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <button
-                  onClick={handleExportPDF}
-                  className="
-                    inline-flex items-center justify-center 
-                    px-2 sm:px-3 py-2 sm:py-2.5 
-                    bg-gradient-to-r from-red-600 to-red-700
-                    text-white rounded-lg sm:rounded-xl 
-                    hover:from-red-700 hover:to-red-800
-                    active:scale-95
-                    transition-all duration-200 
-                    shadow-md hover:shadow-lg hover:shadow-red-500/20
-                    text-xs font-medium
-                  "
-                  title="Descargar PDF"
-                >
-                  <ArrowDownTrayIcon className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1.5" />
-                  <span className="hidden sm:inline">PDF</span>
-                </button>
-                <button
-                  onClick={handleExportExcel}
-                  className="
-                    inline-flex items-center justify-center 
-                    px-2 sm:px-3 py-2 sm:py-2.5 
-                    bg-gradient-to-r from-green-600 to-emerald-700
-                    text-white rounded-lg sm:rounded-xl 
-                    hover:from-green-700 hover:to-emerald-800
-                    active:scale-95
-                    transition-all duration-200 
-                    shadow-md hover:shadow-lg hover:shadow-green-500/20
-                    text-xs font-medium
-                  "
-                  title="Descargar Excel"
-                >
-                  <ArrowDownTrayIcon className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1.5" />
-                  <span className="hidden sm:inline">Excel</span>
-                </button>
-              </div>
-            )}
-            
-            {canManageHorses() && (
-              <button
-                onClick={handleCreateCaballo}
-                className="
-                  flex-1 sm:flex-none inline-flex items-center justify-center 
-                  px-3 sm:px-5 py-2 sm:py-2.5 
-                  bg-gradient-to-r from-slate-900 to-slate-800
-                  text-white rounded-lg sm:rounded-xl 
-                  hover:from-emerald-600 hover:to-green-600
-                  active:scale-95
-                  transition-all duration-300
-                  shadow-lg hover:shadow-xl hover:shadow-emerald-500/20
-                  text-xs sm:text-sm font-semibold
-                  group
-                "
-              >
-                <PlusIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 group-hover:scale-110 group-hover:rotate-90 transition-all duration-300" />
-                <span className="hidden xs:inline">Registrar Caballo</span>
-                <span className="xs:hidden">Nuevo</span>
-              </button>
-            )}
-
-            {/* Selector de vista moderno */}
-            <div className="inline-flex items-center rounded-xl bg-slate-100 p-1 shadow-sm ring-1 ring-slate-200">
-              <button
-                type="button"
-                onClick={() => setViewMode('cards')}
-                className={`
-                  px-3 sm:px-4 py-2 rounded-lg 
-                  text-xs font-semibold 
-                  transition-all duration-200 
-                  ${viewMode === 'cards' 
-                    ? 'bg-gradient-to-r from-slate-900 to-slate-800 text-white shadow-lg' 
-                    : 'text-slate-600 hover:text-slate-900'
-                  } 
-                  whitespace-nowrap
-                `}
-              >
-                Tarjetas
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('table')}
-                className={`
-                  px-3 sm:px-4 py-2 rounded-lg 
-                  text-xs font-semibold 
-                  transition-all duration-200 
-                  ${viewMode === 'table' 
-                    ? 'bg-gradient-to-r from-slate-900 to-slate-800 text-white shadow-lg' 
-                    : 'text-slate-600 hover:text-slate-900'
-                  } 
-                  whitespace-nowrap
-                `}
-              >
-                Tabla
-              </button>
-            </div>
           </div>
         </div>
       </div>

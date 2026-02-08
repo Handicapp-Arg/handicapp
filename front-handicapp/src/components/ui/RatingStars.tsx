@@ -73,7 +73,7 @@ export function RatingStars({
       </div>
       {showNumber && (
         <div className={cn('flex items-center gap-1', textSizeClasses[size])}>
-          <span className="font-semibold text-gray-900">{rating.toFixed(1)}</span>
+          <span className="font-semibold text-gray-900">{Number.isFinite(parseFloat(rating as any)) ? parseFloat(rating as any).toFixed(1) : '0.0'}</span>
           {totalReviews !== undefined && (
             <span className="text-gray-500">({totalReviews})</span>
           )}
