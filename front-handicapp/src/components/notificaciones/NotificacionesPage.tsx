@@ -12,11 +12,19 @@ import {
   XCircle, 
   Check, 
   Search,
-  Inbox
+  Inbox,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
-import { Loader } from '@/components/ui/loader';
 import { formatDistanceToNow, isToday, isYesterday } from 'date-fns';
 import { es } from 'date-fns/locale';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 // --- Types & Constants ---
 
@@ -34,6 +42,9 @@ export function NotificacionesPage() {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<FilterId>('todas');
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState<'reciente' | 'antigua'>('reciente');
+  const ITEMS_PER_PAGE = 15;
 
   // 1. Data Fetching
   const { data: notificaciones = [], isLoading } = useQuery<Notificacion[]>({
@@ -105,8 +116,13 @@ export function NotificacionesPage() {
     if (filter === 'no_leidas') result = result.filter(n => !n.leida);
     if (filter === 'leidas') result = result.filter(n => n.leida);
 
-    return result.sort((a, b) => new Date(b.creado_el).getTime() - new Date(a.creado_el).getTime());
-  }, [notificaciones, filter, searchQuery]);
+    // Ordenar
+    return result.sort((a, b) => {
+      const dateA = new Date(a.creado_el).getTime();
+      const dateB = new Date(b.creado_el).getTime();
+      return sortBy === 'reciente' ? dateB - dateA : dateA - dateB;
+    });
+  }, [notificaciones, filter, searchQuery, sortBy]);
 
   // 4. Grouping by Date (Modern Feed Style)
   const groupedNotifications = useMemo(() => {
@@ -130,28 +146,83 @@ export function NotificacionesPage() {
       return groups;
   }, [filteredNotificaciones]);
 
+  // 5. Paginación
+  const totalNotifications = filteredNotificaciones.length;
+  const totalPages = Math.ceil(totalNotifications / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedNotifications = filteredNotificaciones.slice(startIndex, endIndex);
+
+  // Agrupar notificaciones paginadas
+  const paginatedGroupedNotifications = useMemo(() => {
+      const groups = {
+          hoy: [] as Notificacion[],
+          ayer: [] as Notificacion[],
+          antiguas: [] as Notificacion[]
+      };
+
+      paginatedNotifications.forEach(notif => {
+          const date = new Date(notif.creado_el);
+          if (isToday(date)) {
+              groups.hoy.push(notif);
+          } else if (isYesterday(date)) {
+              groups.ayer.push(notif);
+          } else {
+              groups.antiguas.push(notif);
+          }
+      });
+
+      return groups;
+  }, [paginatedNotifications]);
+
+  // Reset page when filter or search changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, searchQuery]);
+
   const hasNotifications = filteredNotificaciones.length > 0;
 
   return (
     <div className="max-w-[1600px] mx-auto animate-fade-in space-y-8">
       
       {/* Header / Toolbar */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-6">
           <div className="flex items-center justify-between">
                 <h1 className="text-[24px] font-semibold text-[#1e293b] tracking-tight">Centro de Notificaciones</h1>
           </div>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <p className="text-slate-500">Gestiona las novedades y alertas de tus caballos.</p>
-                <div className="w-full sm:w-96">
-                    <div className="relative">
+          
+          {/* Barra de búsqueda y filtros alineados con el Grid principal */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-12 items-end">
+                {/* Descripción alineada con el sidebar (col-span-3) */}
+                <div className="lg:col-span-3">
+                    <p className="text-slate-500 text-sm">Gestiona las novedades y alertas de tus caballos.</p>
+                </div>
+                
+                {/* Herramientas alineadas con el contenido (col-span-9) */}
+                <div className="lg:col-span-9 flex flex-col sm:flex-row gap-4 justify-between sm:items-center">
+                    {/* Buscador más largo (alineado con "Ayer") */}
+                    <div className="relative w-full sm:w-[500px]">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <input 
                           type="text" 
-                          placeholder="Buscar en notificaciones..." 
+                          placeholder="Buscar notificaciones..." 
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#af936f]/20 focus:border-[#af936f]/40 transition-all shadow-sm placeholder:text-slate-400"
+                          className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition-all shadow-sm placeholder:text-slate-400 h-[40px]"
                       />
+                    </div>
+
+                    {/* Ordenar simple a la derecha */}
+                    <div>
+                      <Select value={sortBy} onValueChange={(val: 'reciente' | 'antigua') => setSortBy(val)}>
+                        <SelectTrigger className="w-full sm:w-[160px] h-[40px] rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm focus:ring-slate-900/10 px-3">
+                          <SelectValue placeholder="Ordenar por" />
+                        </SelectTrigger>
+                        <SelectContent align="end" className="rounded-xl border-slate-200 shadow-md bg-white">
+                          <SelectItem value="reciente" className="cursor-pointer">Más recientes</SelectItem>
+                          <SelectItem value="antigua" className="cursor-pointer">Más antiguas</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                 </div>
           </div>
@@ -159,12 +230,73 @@ export function NotificacionesPage() {
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
         
+        {/* MOBILE FILTERS (visible only on small screens) */}
+        <div className="lg:hidden col-span-1 space-y-4">
+            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 scroll-smooth">
+                {[
+                    { id: 'todas', label: 'Todas', count: stats.total },
+                    { id: 'no_leidas', label: 'No leídas', count: stats.noLeidas, alert: stats.noLeidas > 0 },
+                    { id: 'leidas', label: 'Archivadas', count: stats.leidas }
+                ].map((item) => (
+                    <button
+                        key={item.id}
+                        onClick={() => setFilter(item.id as FilterId)}
+                        className={`
+                            whitespace-nowrap flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all flex-shrink-0 border snap-start
+                            ${filter === item.id 
+                                ? item.alert 
+                                    ? 'bg-red-600 border-red-600 text-white shadow-md shadow-red-200' 
+                                    : 'bg-slate-900 border-slate-900 text-white shadow-md shadow-slate-200'
+                                : 'bg-white border-slate-200 text-slate-600 shadow-sm'
+                            }
+                        `}
+                    >
+                        {item.label}
+                        {item.count > 0 && (
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1
+                                ${filter === item.id 
+                                    ? item.alert ? 'bg-white text-red-600' : 'bg-white/20 text-white'
+                                    : item.alert ? 'bg-red-500 text-white' : 'bg-slate-100 text-slate-500'
+                                }
+                            `}>
+                                {item.count}
+                            </span>
+                        )}
+                    </button>
+                ))}
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-1">
+                 <p className="text-sm font-medium text-slate-500 order-2 sm:order-1">
+                    {filter === 'todas' ? 'Mostrando todas' : filter === 'no_leidas' ? 'Solo no leídas' : 'Solo archivadas'}
+                 </p>
+                 <button 
+                    onClick={handleMarkAllAsRead}
+                    disabled={stats.noLeidas === 0}
+                    className="w-full sm:w-auto text-xs font-medium text-slate-700 flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50 order-1 sm:order-2 active:scale-95 transform"
+                 >
+                    <Check className="w-3.5 h-3.5" />
+                    Marcar todo leído
+                </button>
+            </div>
+        </div>
+
         {/* LEFT COMPONENT - Filters (Styled like Dashboard Card) */}
         <div className="hidden lg:block lg:col-span-3 sticky top-4 space-y-6">
             <div className="flex items-center justify-between mb-2 px-1">
                 <h2 className="text-[19px] font-semibold text-[#1e293b]">Bandeja</h2>
             </div>
 
+            {isLoading ? (
+              // Skeleton para sidebar de filtros
+              <div className="bg-white rounded-2xl border border-slate-200/60 p-2 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)]">
+                <div className="space-y-1 animate-pulse">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-10 bg-slate-100 rounded-xl"></div>
+                  ))}
+                </div>
+              </div>
+            ) : (
             <div className="bg-white rounded-2xl border border-slate-200/60 p-2 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)]">
                 <nav className="space-y-1">
                     <SidebarItem 
@@ -191,8 +323,20 @@ export function NotificacionesPage() {
                     />
                 </nav>
             </div>
+            )}
 
             {/* Quick Action Card */}
+            {isLoading ? (
+              // Skeleton para card de acciones
+              <div className="bg-white rounded-2xl border border-slate-200/60 p-6 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)]">
+                <div className="animate-pulse space-y-3">
+                  <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                  <div className="h-3 bg-slate-100 rounded w-full"></div>
+                  <div className="h-3 bg-slate-100 rounded w-5/6"></div>
+                  <div className="h-10 bg-slate-200 rounded-xl mt-4"></div>
+                </div>
+              </div>
+            ) : (
              <div className="bg-white rounded-2xl border border-slate-200/60 p-6 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)]">
                 <h3 className="text-[#1e293b] font-semibold text-[15px] mb-1">Acciones Rápidas</h3>
                 <p className="text-slate-500 text-sm mb-4 leading-relaxed">
@@ -201,37 +345,169 @@ export function NotificacionesPage() {
                 <button 
                     onClick={handleMarkAllAsRead}
                     disabled={stats.noLeidas === 0}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#af936f] text-white text-sm font-medium hover:bg-[#9c8261] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-[#af936f]/20"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
                 >
                     <Check className="w-4 h-4" />
                     Marcar todo leído
                 </button>
             </div>
+            )}
         </div>
 
         {/* CENTER FEED */}
         <div className="lg:col-span-9 space-y-8">
             
             {isLoading ? (
-                 <div className="p-12 flex justify-center">
-                    <Loader />
-                 </div>
+                // Skeleton para notificaciones - estilo Airbnb con cards individuales
+                <div className="space-y-8">
+                  {/* Grupo 1 */}
+                  <section>
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="h-5 bg-slate-100 rounded w-16 animate-pulse"></div>
+                      <div className="h-5 bg-slate-100 rounded-full w-8 animate-pulse"></div>
+                    </div>
+                    <div className="space-y-3">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="bg-white rounded-xl border border-slate-200/60 p-5 pl-6 animate-pulse">
+                          <div className="flex gap-4">
+                            <div className="w-11 h-11 rounded-xl bg-slate-200 flex-shrink-0"></div>
+                            <div className="flex-1 space-y-3">
+                              <div className="space-y-2">
+                                <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                                <div className="h-3 bg-slate-100 rounded w-full"></div>
+                                <div className="h-3 bg-slate-100 rounded w-5/6"></div>
+                              </div>
+                              <div className="flex gap-3 pt-1">
+                                <div className="h-6 bg-slate-100 rounded-md w-20"></div>
+                                <div className="h-3 bg-slate-100 rounded w-24 self-center"></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  {/* Grupo 2 */}
+                  <section>
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="h-5 bg-slate-100 rounded w-20 animate-pulse"></div>
+                      <div className="h-5 bg-slate-100 rounded-full w-8 animate-pulse"></div>
+                    </div>
+                    <div className="space-y-3">
+                      {[1, 2].map((i) => (
+                        <div key={i} className="bg-white rounded-xl border border-slate-200/60 p-5 pl-6 animate-pulse">
+                          <div className="flex gap-4">
+                            <div className="w-11 h-11 rounded-xl bg-slate-200 flex-shrink-0"></div>
+                            <div className="flex-1 space-y-3">
+                              <div className="space-y-2">
+                                <div className="h-4 bg-slate-200 rounded w-2/3"></div>
+                                <div className="h-3 bg-slate-100 rounded w-full"></div>
+                              </div>
+                              <div className="flex gap-3 pt-1">
+                                <div className="h-6 bg-slate-100 rounded-md w-20"></div>
+                                <div className="h-3 bg-slate-100 rounded w-24 self-center"></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </div>
             ) : !hasNotifications ? (
                 <EmptyState />
             ) : (
-                <div className="space-y-8 animate-fade-in-up">
-                    {groupedNotifications.hoy.length > 0 && (
-                        <NotificationGroup title="Hoy" items={groupedNotifications.hoy} onMarkAsRead={handleMarkAsRead} onDelete={handleDelete} />
-                    )}
-                    
-                    {groupedNotifications.ayer.length > 0 && (
-                        <NotificationGroup title="Ayer" items={groupedNotifications.ayer} onMarkAsRead={handleMarkAsRead} onDelete={handleDelete} />
-                    )}
+                <>
+                  <div className="space-y-8 animate-fade-in-up">
+                      {paginatedGroupedNotifications.hoy.length > 0 && (
+                          <NotificationGroup title="Hoy" items={paginatedGroupedNotifications.hoy} onMarkAsRead={handleMarkAsRead} onDelete={handleDelete} />
+                      )}
+                      
+                      {paginatedGroupedNotifications.ayer.length > 0 && (
+                          <NotificationGroup title="Ayer" items={paginatedGroupedNotifications.ayer} onMarkAsRead={handleMarkAsRead} onDelete={handleDelete} />
+                      )}
 
-                    {groupedNotifications.antiguas.length > 0 && (
-                        <NotificationGroup title="Anteriormente" items={groupedNotifications.antiguas} onMarkAsRead={handleMarkAsRead} onDelete={handleDelete} />
-                    )}
-                </div>
+                      {paginatedGroupedNotifications.antiguas.length > 0 && (
+                          <NotificationGroup title="Anteriormente" items={paginatedGroupedNotifications.antiguas} onMarkAsRead={handleMarkAsRead} onDelete={handleDelete} />
+                      )}
+                  </div>
+
+                  {/* Paginador Responsive */}
+                  {totalPages > 1 && (
+                    <div className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-0">
+                      
+                      {/* Info de página (Mobile: Order 2, Desktop: Order 1) */}
+                      <div className="text-sm text-slate-500 order-2 sm:order-1 text-center sm:text-left w-full sm:w-auto">
+                        <span className="hidden sm:inline">Mostrando </span>
+                        <span className="font-medium text-slate-700">{startIndex + 1}-{Math.min(endIndex, totalNotifications)}</span>
+                        <span className="text-slate-400 mx-1">de</span>
+                        <span className="font-medium text-slate-700">{totalNotifications}</span>
+                      </div>
+
+                      {/* Controles (Mobile: Order 1, Desktop: Order 2) */}
+                      <div className="flex items-center gap-2 order-1 sm:order-2 w-full sm:w-auto justify-center">
+                        <button
+                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                          disabled={currentPage === 1}
+                          className="flex items-center gap-2 px-3 py-2 sm:px-4 rounded-xl text-sm font-medium transition-all
+                            disabled:opacity-40 disabled:cursor-not-allowed
+                            bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300
+                            disabled:hover:bg-white disabled:hover:border-slate-200 shadow-sm"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                          <span className="ml-1">Anterior</span>
+                        </button>
+
+                        {/* Números de página (Oculto en móvil muy pequeño si hay muchas páginas) */}
+                        <div className="hidden sm:flex items-center gap-1">
+                          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                            if (
+                              page === 1 ||
+                              page === totalPages ||
+                              (page >= currentPage - 1 && page <= currentPage + 1)
+                            ) {
+                              return (
+                                <button
+                                  key={page}
+                                  onClick={() => setCurrentPage(page)}
+                                  className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl text-sm font-medium transition-all
+                                    ${page === currentPage
+                                      ? 'bg-slate-900 text-white shadow-md'
+                                      : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                                    }
+                                  `}
+                                >
+                                  {page}
+                                </button>
+                              );
+                            } else if (page === currentPage - 2 || page === currentPage + 2) {
+                              return <span key={page} className="text-slate-400 px-1">...</span>;
+                            }
+                            return null;
+                          })}
+                        </div>
+                        
+                        {/* Indicador solo móvil */}
+                        <span className="sm:hidden text-sm font-medium text-slate-700 px-2 bg-slate-100/50 rounded-lg py-1 border border-slate-200/50">
+                            {currentPage} / {totalPages}
+                        </span>
+
+                        <button
+                          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                          disabled={currentPage === totalPages}
+                          className="flex items-center gap-2 px-3 py-2 sm:px-4 rounded-xl text-sm font-medium transition-all
+                            disabled:opacity-40 disabled:cursor-not-allowed
+                            bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300
+                            disabled:hover:bg-white disabled:hover:border-slate-200 shadow-sm"
+                        >
+                          <span className="mr-1">Siguiente</span>
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
             )}
             
         </div>
@@ -258,7 +534,7 @@ function SidebarItem({ active, label, count, icon: Icon, onClick, alert }: Sideb
             onClick={onClick}
             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all
                 ${active 
-                    ? 'bg-[#af936f] text-white font-medium shadow-md shadow-[#af936f]/20' 
+                    ? 'bg-slate-900 text-white font-medium shadow-md' 
                     : 'text-slate-600 hover:bg-slate-50'
                 }
             `}
@@ -291,10 +567,15 @@ interface NotificationGroupProps {
 function NotificationGroup({ title, items, onMarkAsRead, onDelete }: NotificationGroupProps) {
     return (
         <section>
-            <h3 className="text-[19px] font-semibold text-[#1e293b] mb-4 sticky top-20 bg-slate-50/0 backdrop-blur-sm z-10 w-fit px-1 rounded-lg">
-                {title}
-            </h3>
-            <div className="bg-white rounded-2xl border border-slate-200/60 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] overflow-hidden divide-y divide-slate-100">
+            <div className="flex items-center gap-3 mb-5">
+                <h3 className="text-[17px] font-semibold text-[#1e293b]">
+                    {title}
+                </h3>
+                <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2.5 py-0.5 rounded-full">
+                    {items.length}
+                </span>
+            </div>
+            <div className="space-y-3">
                 {items.map(notif => (
                     <NotificationItem key={notif.id} notificacion={notif} onMarkAsRead={onMarkAsRead} onDelete={onDelete} />
                 ))}
@@ -306,13 +587,15 @@ function NotificationGroup({ title, items, onMarkAsRead, onDelete }: Notificatio
 function NotificationItem({ notificacion, onMarkAsRead, onDelete }: { notificacion: Notificacion, onMarkAsRead: (id: number, e?: React.MouseEvent) => void, onDelete: (id: number, e?: React.MouseEvent) => void }) {
     const isUnread = !notificacion.leida;
     
-    // Modern minimal status colors
-    const getStatusColor = (tipo: string) => {
+    // Gradientes modernos para avatares según tipo
+    const getAvatarStyle = (tipo: string, isUnread: boolean) => {
+        if (!isUnread) return 'bg-slate-50 text-slate-300';
+        
         switch(tipo) {
-            case 'success': return 'text-emerald-500 bg-emerald-50';
-            case 'warning': return 'text-amber-500 bg-amber-50';
-            case 'error': return 'text-rose-500 bg-rose-50';
-            default: return 'text-blue-500 bg-blue-50';
+            case 'success': return 'bg-gradient-to-br from-emerald-400 to-emerald-500 text-white';
+            case 'warning': return 'bg-gradient-to-br from-amber-400 to-amber-500 text-white';
+            case 'error': return 'bg-gradient-to-br from-rose-400 to-rose-500 text-white';
+            default: return 'bg-gradient-to-br from-blue-400 to-blue-500 text-white';
         }
     }
 
@@ -326,35 +609,43 @@ function NotificationItem({ notificacion, onMarkAsRead, onDelete }: { notificaci
     }
 
     const StatusIcon = getIcon(notificacion.tipo);
-    const statusClasses = getStatusColor(notificacion.tipo);
+    const avatarClasses = getAvatarStyle(notificacion.tipo, isUnread);
 
     return (
         <div 
             onClick={(e) => isUnread && onMarkAsRead(notificacion.id, e)}
-            className={`group relative p-5 transition-all cursor-pointer hover:bg-slate-50/80
-                ${isUnread ? 'bg-slate-50/40' : 'bg-white'}
+            className={`group relative bg-white rounded-xl border transition-all duration-200 cursor-pointer overflow-hidden
+                ${isUnread 
+                    ? 'border-slate-300 shadow-sm bg-slate-50' 
+                    : 'border-slate-200/60 hover:border-slate-300 hover:shadow-sm'
+                }
             `}
         >
-            {/* Unread Indicator Line */}
+            {/* Barra de estado sutil */}
             {isUnread && (
-                <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-[#af936f] z-10"></div>
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#1e293b]"></div>
             )}
 
-            <div className="flex gap-4">
-                {/* Avatar / Icon */}
-                <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center mt-1 ${isUnread ? statusClasses : 'bg-slate-100 text-slate-400'}`}>
+            <div className="flex gap-4 p-5 pl-6">
+                {/* Avatar con gradiente */}
+                <div className={`flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center shadow-sm ${avatarClasses}`}>
                     <StatusIcon className="w-5 h-5" />
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start gap-2 pr-20 relative">
-                        <h4 className={`text-[15px] leading-tight ${isUnread ? 'font-bold text-[#1e293b]' : 'font-medium text-slate-600'}`}>
-                            {notificacion.titulo}
-                        </h4>
+                    <div className="flex justify-between items-start gap-3">
+                        <div className="flex-1">
+                            <h4 className={`text-[15px] leading-tight mb-1 ${isUnread ? 'font-semibold text-[#1e293b]' : 'font-medium text-slate-600'}`}>
+                                {notificacion.titulo}
+                            </h4>
+                            <p className={`text-[14px] leading-relaxed ${isUnread ? 'text-slate-600' : 'text-slate-500'}`}>
+                                {notificacion.mensaje}
+                            </p>
+                        </div>
                         
-                        {/* Actions Menu (Desktop Hover + Mobile Always) */}
-                        <div className="absolute right-[-10px] -top-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-white/80 backdrop-blur-sm sm:bg-transparent rounded-lg p-1 shadow-sm sm:shadow-none border sm:border-none border-slate-100/50" 
+                        {/* Actions Menu - Minimalista */}
+                        <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" 
                              onClick={(e) => e.stopPropagation()}>
                             {isUnread && (
                                 <button 
@@ -363,7 +654,7 @@ function NotificationItem({ notificacion, onMarkAsRead, onDelete }: { notificaci
                                         e.stopPropagation();
                                         onMarkAsRead(notificacion.id, e);
                                     }}
-                                    className="p-1.5 text-slate-400 hover:text-[#af936f] hover:bg-[#af936f]/10 rounded-lg transition-colors z-20"
+                                    className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all z-20"
                                     title="Marcar leído"
                                 >
                                     <Check className="w-4 h-4" />
@@ -372,27 +663,24 @@ function NotificationItem({ notificacion, onMarkAsRead, onDelete }: { notificaci
                             <button 
                                 onClick={(e) => {
                                     e.preventDefault();
-                                    e.stopPropagation(); // FORCE STOP
+                                    e.stopPropagation();
                                     onDelete(notificacion.id, e);
                                 }}
-                                className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors z-20"
+                                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all z-20"
                                 title="Eliminar"
                             >
                                 <Trash2 className="w-4 h-4" />
                             </button>
                         </div>
                     </div>
-                    
-                    <p className={`text-[14px] mt-1.5 leading-relaxed ${isUnread ? 'text-slate-600 font-medium' : 'text-slate-500'}`}>
-                        {notificacion.mensaje}
-                    </p>
 
-                    <div className="flex items-center gap-3 mt-2.5">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                    {/* Metadata con mejor diseño */}
+                    <div className="flex items-center gap-2.5 mt-3">
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-1 rounded-md bg-slate-100 text-slate-600">
                             {notificacion.tipo || 'General'}
                         </span>
-                        <span className="text-slate-300 text-[10px]">•</span>
-                        <span className="text-[11px] text-slate-400">
+                        <span className="text-slate-300">•</span>
+                        <span className="text-[12px] text-slate-400">
                             {formatDistanceToNow(new Date(notificacion.creado_el), { addSuffix: true, locale: es })}
                         </span>
                     </div>

@@ -340,7 +340,7 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
             >
               <Bell className="h-5 w-5 sm:h-6 sm:w-6" />
               {contador > 0 && (
-                <span className="absolute top-1 right-1 flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-[#af936f] text-[9px] sm:text-[10px] font-bold text-white ring-2 ring-white shadow-sm">
+                <span className="absolute top-1 right-1 flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-red-600 text-[9px] sm:text-[10px] font-bold text-white ring-2 ring-white shadow-sm">
                   {contador > 9 ? '9+' : contador}
                 </span>
               )}
