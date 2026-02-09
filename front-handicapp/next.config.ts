@@ -34,6 +34,10 @@ const nextConfig: NextConfig = {
         hostname: 'handicapp-back.onrender.com',
         pathname: '/uploads/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
     ],
   },
   

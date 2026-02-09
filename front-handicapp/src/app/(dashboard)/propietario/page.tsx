@@ -276,7 +276,27 @@ export default function PropietarioDashboard() {
                   </div>
                   
                   <div className="flex-1 flex flex-col">
-                  {actividadesHoy.length > 0 ? (
+                  {dashboardLoading ? (
+                    <div className="space-y-3 flex-1">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="rounded-xl bg-white border border-slate-200/60 p-4 animate-pulse">
+                          <div className="flex items-start gap-4">
+                            <div className="w-6 h-6 bg-slate-200 rounded-lg flex-shrink-0" />
+                            <div className="flex-1 space-y-3">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="h-4 bg-slate-200 rounded w-2/3" />
+                                <div className="h-4 bg-slate-100 rounded w-12" />
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="h-6 bg-slate-100 rounded-lg w-20" />
+                                <div className="h-3 bg-slate-100 rounded w-24" />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : actividadesHoy.length > 0 ? (
                       <>
                         <div className="space-y-3 flex-1">
                          {actividadesHoy.slice(0, 5).map((item: any) => {
@@ -380,7 +400,27 @@ export default function PropietarioDashboard() {
                   </div>
                   
                   <div className="flex-1 flex flex-col">
-                  {eventos && eventos.length > 0 ? (
+                  {dashboardLoading ? (
+                    <div className="space-y-3 flex-1">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="rounded-xl bg-white border border-slate-200/60 p-4 animate-pulse">
+                          <div className="flex items-start gap-4">
+                            <div className="w-14 h-14 bg-slate-200 rounded-xl flex-shrink-0" />
+                            <div className="flex-1 space-y-3">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="h-4 bg-slate-200 rounded w-3/4" />
+                                <div className="h-4 bg-slate-100 rounded w-12" />
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="h-6 bg-slate-100 rounded-lg w-16" />
+                                <div className="h-3 bg-slate-100 rounded w-20" />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : eventos && eventos.length > 0 ? (
                     <>
                       <div className="space-y-3 flex-1">
                          {eventos.slice(0, 4).map((evento: any) => {
