@@ -81,27 +81,11 @@ export function EstablecimientoMapView({
   establecimientos: establecimientosProp,
   isLoading: isLoadingProp 
 }: EstablecimientoMapViewProps = {}) {
-  // Filtro de cards
-  const [cardFilter, setCardFilter] = useState<'all' | 'verificados' | 'reseñas'>('all');
-  // ...existing code...
-  // ...existing code...
   const router = useRouter();
   const [establecimientos, setEstablecimientos] = useState<Establecimiento[]>(establecimientosProp || []);
-  const filteredEstablecimientos = useMemo<Establecimiento[]>(() => {
-    if (cardFilter === 'verificados') {
-      return establecimientos.filter((e: Establecimiento) => e.verificado);
-    }
-    if (cardFilter === 'reseñas') {
-      return establecimientos.filter((e: Establecimiento) => e.rating_promedio && e.rating_promedio > 0);
-    }
-    return establecimientos;
-  }, [cardFilter, establecimientos]);
   const [loading, setLoading] = useState(establecimientosProp ? false : true);
   const [error, setError] = useState<string | null>(null);
   const [leafletLoaded, setLeafletLoaded] = useState(false);
-  // Eliminar viewMode, solo modo mapa
-  const [selectedEstablecimiento, setSelectedEstablecimiento] = useState<Establecimiento | null>(null);
-  // Centro por defecto en Buenos Aires, Argentina
   const [mapCenter, setMapCenter] = useState<[number, number]>([-34.6037, -58.3816]);
   const [mapZoom, setMapZoom] = useState(11);
   const [shouldAnimateMap, setShouldAnimateMap] = useState(false);
@@ -305,12 +289,6 @@ export function EstablecimientoMapView({
       <div className="flex items-center justify-center py-12">
         <div className="bg-red-50 border border-red-200 rounded-xl p-6 max-w-md">
           <p className="text-red-600 mb-3">{error}</p>
-          <button 
-            onClick={loadEstablecimientos}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-          >
-            Reintentar
-          </button>
         </div>
       </div>
     );
@@ -328,41 +306,42 @@ export function EstablecimientoMapView({
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header con estadísticas eliminado */}
-      <div>
-        {/* Mapa visible arriba */}
-        <div className="h-[700px] relative mt-2 mb-8">
-          {leafletLoaded ? (
-            <MapContainer
-              key={`map-${establecimientos.length}`}
-              center={mapCenter}
-              zoom={mapZoom}
-              scrollWheelZoom={true}
-              style={{ height: '100%', width: '100%' }}
-              className="rounded-xl"
-            >
-              <MapEventsHandler 
-                center={mapCenter} 
-                zoom={mapZoom} 
-                shouldAnimate={shouldAnimateMap}
-                onAnimationComplete={() => setShouldAnimateMap(false)}
-              />
-              <TileLayer
-                attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-                url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-                subdomains="abcd"
-                maxZoom={20}
-              />
-              {/* Sin markers */}
-            </MapContainer>
-          ) : (
-            <div className="flex items-center justify-center h-full bg-gray-100 rounded-xl">
-              <Loader variant="section" />
-            </div>
-          )}
-        </div>
-        {/* Aquí debe ir el grid de cards existente, no se agrega ni modifica */}
+    <div className="flex gap-6 items-start">
+      {/* Cards grid a la izquierda */}
+      <div className="flex-1 min-w-0">
+        {/* Aquí debe ir el grid de cards existente, importado como componente */}
+        {/* <EstablecimientoGrid establecimientos={establecimientos} /> */}
+      </div>
+      {/* Mapa a la derecha, alineado con el grid de cards (no los botones) */}
+      <div className="w-[700px] max-w-full mt-[56px]">
+        {leafletLoaded ? (
+          <MapContainer
+            key={`map-${establecimientos.length}`}
+            center={mapCenter}
+            zoom={mapZoom}
+            scrollWheelZoom={true}
+            style={{ height: '700px', width: '100%' }}
+            className="rounded-xl"
+          >
+            <MapEventsHandler 
+              center={mapCenter} 
+              zoom={mapZoom} 
+              shouldAnimate={shouldAnimateMap}
+              onAnimationComplete={() => setShouldAnimateMap(false)}
+            />
+            <TileLayer
+              attribution='&copy; <a href=\"https://carto.com/\">CARTO</a>'
+              url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+              subdomains="abcd"
+              maxZoom={20}
+            />
+            {/* Sin markers */}
+          </MapContainer>
+        ) : (
+          <div className="flex items-center justify-center h-[700px] bg-gray-100 rounded-xl">
+            <Loader variant="section" />
+          </div>
+        )}
       </div>
     </div>
   );

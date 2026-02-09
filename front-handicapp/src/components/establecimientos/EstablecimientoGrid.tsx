@@ -52,9 +52,6 @@ export function EstablecimientoGrid({
     );
   }
 
-  // Stats para filtros
-  // NOTA: Si tienes stats en el padre, pásalos como props
-  // Ejemplo de stats (puedes reemplazar por los reales):
   const stats = {
     total: establecimientos.length,
     verificados: establecimientos.filter(e => e.verificado).length,
@@ -74,23 +71,23 @@ export function EstablecimientoGrid({
 
   return (
     <>
-      <div className="flex items-center gap-4 mb-6 mt-2 justify-end">
+      <div className="flex items-center gap-4 mb-6 mt-2 justify-start">
         <button
-          className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg transition-colors ${cardFilter === 'all' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-blue-50'}`}
+          className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg transition-colors bg-red-300 ${cardFilter === 'all' ? 'ring-2 ring-red-600' : ''}`}
           onClick={() => setCardFilter('all')}
         >
           <span>{stats.total}</span>
-          <span>establecimientos</span>
+          <span>hola</span>
         </button>
         <button
-          className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg transition-colors ${cardFilter === 'verificados' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-blue-50'}`}
+          className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg transition-colors bg-green-300 ${cardFilter === 'verificados' ? 'ring-2 ring-green-600' : ''}`}
           onClick={() => setCardFilter('verificados')}
         >
           <span>{stats.verificados}</span>
           <span>verificados</span>
         </button>
         <button
-          className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg transition-colors ${cardFilter === 'reseñas' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-blue-50'}`}
+          className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg transition-colors bg-yellow-300 ${cardFilter === 'reseñas' ? 'ring-2 ring-yellow-600' : ''}`}
           onClick={() => setCardFilter('reseñas')}
         >
           <span>{stats.conRating}</span>

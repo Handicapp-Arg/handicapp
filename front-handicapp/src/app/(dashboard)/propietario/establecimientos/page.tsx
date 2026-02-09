@@ -11,7 +11,7 @@ function StatsButtons({ establecimientos }: { establecimientos: any[] }) {
 	const [cardFilter, setCardFilter] = useState<'all' | 'verificados' | 'reseñas'>('all');
 	// NOTA: El filtro no se aplica aquí, solo muestra los botones
 	return (
-		<div className="flex items-center gap-4 mb-6 mt-2 justify-end">
+		<div className="flex items-center gap-4 mb-6 mt-2 justify-start">
 			<button
 				className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg transition-colors ${cardFilter === 'all' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-blue-50'}`}
 				onClick={() => setCardFilter('all')}
