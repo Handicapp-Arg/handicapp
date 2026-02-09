@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { SimpleRoleGuard } from "@/components/common/SimplePermissionGuard";
-import caballoService, { Caballo, CaballoPedigree } from "@/lib/services/caballoService";
+import caballoService, { Caballo } from "@/lib/services/caballoService";
 import { eventoService, type Evento } from "@/lib/services/eventoService";
 import { useToaster } from "@/components/ui/toaster";
 import CaballoFicha from "@/components/caballos/CaballoFicha";
@@ -22,12 +22,11 @@ export default function CaballoDetallePage() {
 
   const [caballo, setCaballo] = useState<Caballo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [pedigree, setPedigree] = useState<CaballoPedigree | null>(null);
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [loadingEventos, setLoadingEventos] = useState(false);
   const [eventosLoaded, setEventosLoaded] = useState(false);
   const [origin, setOrigin] = useState("");
-  const [activeTab, setActiveTab] = useState<"ficha" | "pedigree" | "historial" | "documentos" | "propietarios" | "tareas">("ficha");
+  const [activeTab, setActiveTab] = useState<"ficha" | "historial" | "documentos" | "propietarios" | "tareas">("ficha");
   const [showQRModal, setShowQRModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
 
@@ -37,25 +36,12 @@ export default function CaballoDetallePage() {
       // Resetear estados de eventos cuando cambia el caballo
       setEventos([]);
       setEventosLoaded(false);
-      
       // Cargar caballo principal
       const respCaballo = await caballoService.getById(id);
-      
       // El backend devuelve { success: true, message: "...", data: Caballo }
       const caballoData = (respCaballo as { data?: Caballo })?.data;
-      
       if (caballoData && caballoData.id) {
         setCaballo(caballoData);
-        
-        // Intentar cargar pedigree solo si el caballo se cargó bien
-        try {
-          const respPedigree = await caballoService.getPedigree(id);
-          const pedigreeData = (respPedigree as { data?: CaballoPedigree })?.data;
-          setPedigree(pedigreeData || null);
-        } catch (e) {
-          console.log('⚠️ No se pudo cargar pedigree:', e);
-          setPedigree(null);
-        }
       } else {
         console.error('❌ No se recibió data del caballo');
         toast("No se encontró el caballo", "error");
@@ -290,16 +276,6 @@ export default function CaballoDetallePage() {
                       Ficha Completa
                     </button>
                     <button
-                      onClick={() => setActiveTab("pedigree")}
-                      className={`relative px-5 py-3 text-sm font-semibold rounded-lg transition-all duration-200 ${
-                        activeTab === "pedigree"
-                          ? "text-white bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg shadow-blue-500/30"
-                          : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
-                      }`}
-                    >
-                      Pedigree
-                    </button>
-                    <button
                       onClick={() => setActiveTab("historial")}
                       className={`relative px-5 py-3 text-sm font-semibold rounded-lg transition-all duration-200 ${
                         activeTab === "historial"
@@ -344,13 +320,7 @@ export default function CaballoDetallePage() {
 
               {/* Tab Content */}
               <div id="ficha-caballo">
-                {activeTab === "ficha" && <CaballoFicha caballo={caballo} origin={origin} pedigree={pedigree} />}
-                {activeTab === "pedigree" && (
-                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                    <h3 className="text-lg font-semibold text-slate-900 mb-4">Pedigree</h3>
-                    <p className="text-slate-600">Contenido del pedigree próximamente...</p>
-                  </div>
-                )}
+                {activeTab === "ficha" && <CaballoFicha caballo={caballo} origin={origin} />}
                 {activeTab === "historial" && (
                   <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/50">
                     <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLW9wYWNpdHk9IjAuMDMiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-40"></div>
