@@ -7,16 +7,12 @@ import { CaballoList } from '@/components/dashboard/CaballoList';
 export default function MisCaballosPage() {
   return (
     <SimpleRoleGuard roles={['propietario']}>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Mis Caballos</h1>
-          <p className="text-gray-600">Gestiona tu colección de caballos</p>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-          <CaballoList />
-        </div>
+      <div className="space-y-2 mb-8 max-w-[1600px] mx-auto">
+        <h1 className="text-[24px] font-semibold text-[#1e293b] tracking-tight">Mis Caballos</h1>
+        <p className="text-slate-500 text-sm">Gestiona tu colección de caballos y monitorea su estado.</p>
       </div>
+      
+      <CaballoList />
     </SimpleRoleGuard>
   );
 }

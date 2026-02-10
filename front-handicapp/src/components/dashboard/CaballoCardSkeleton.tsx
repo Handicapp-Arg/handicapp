@@ -6,7 +6,7 @@ export default function CaballoCardSkeleton() {
   return (
     <div className="bg-white rounded-2xl shadow-md overflow-hidden border border-slate-200/80 animate-pulse">
       {/* Skeleton Imagen */}
-      <div className="relative h-64 bg-gradient-to-br from-slate-200 via-slate-100 to-slate-200">
+      <div className="relative aspect-[4/3] bg-gradient-to-br from-slate-200 via-slate-100 to-slate-200">
         {/* Simular gradient orbs */}
         <div className="absolute top-1/4 right-1/4 w-32 h-32 bg-slate-300/30 rounded-full blur-3xl"></div>
         <div className="absolute bottom-1/4 left-1/3 w-24 h-24 bg-slate-300/20 rounded-full blur-2xl"></div>
@@ -51,7 +51,7 @@ export default function CaballoCardSkeleton() {
 
 export function CaballosGridSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-x-6 gap-y-10">
       {Array.from({ length: count }).map((_, i) => (
         <CaballoCardSkeleton key={i} />
       ))}

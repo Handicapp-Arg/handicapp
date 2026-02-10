@@ -213,7 +213,13 @@ export default function PropietarioDashboard() {
                  {caballosLoading ? (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 h-full">
                        {[1, 2, 3, 4].map((i) => (
-                          <div key={i} className="aspect-[4/5] rounded-xl bg-slate-100 animate-pulse" />
+                          <div key={i} className="aspect-[4/5] rounded-xl bg-slate-100 relative overflow-hidden animate-pulse group">
+                              <div className="absolute inset-0 bg-slate-200/20"></div>
+                              <div className="absolute inset-x-0 bottom-0 p-4">
+                                  <div className="h-4 bg-slate-300 rounded-md w-3/4 mb-2"></div>
+                                  <div className="h-3 bg-slate-300 rounded-md w-1/2"></div>
+                              </div>
+                          </div>
                        ))}
                     </div>
                  ) : caballos.length > 0 ? (

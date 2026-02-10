@@ -38,11 +38,23 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotifDropdownOpen, setIsNotifDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Fetch caballos para búsqueda
-  const { data: caballosData, isLoading: searchLoading } = useCaballos({ limit: 100 });
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Fetch caballos para búsqueda - Solo cuando hay texto en la búsqueda y con límite pequeño
+  const { data: caballosData, isLoading: searchLoading } = useCaballos(
+    { limit: 5, search: debouncedSearch },
+    { enabled: debouncedSearch.trim().length > 0 }
+  );
   
   // Normalizar datos de caballos
   type CaballosResponse = { data?: { caballos?: Caballo[] } } | { caballos?: Caballo[] } | { data?: Caballo[] } | Caballo[];
@@ -58,14 +70,8 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
           ? caballosResponse 
           : [];
 
-  // Filtrar caballos según búsqueda
-  const filteredCaballos = searchQuery.trim() 
-    ? caballosList.filter(c => 
-        c.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.microchip?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.raza?.toLowerCase().includes(searchQuery.toLowerCase())
-      ).slice(0, 5) // Máximo 5 resultados
-    : [];
+  // Los resultados ya vienen filtrados del backend
+  const filteredCaballos = caballosList;
 
   // Cerrar dropdown de búsqueda al hacer click afuera
   useEffect(() => {
@@ -263,7 +269,7 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-[#af936f] transition-colors duration-200 pointer-events-none z-10" />
               <input
                 type="text"
-                placeholder="Buscar caballos..."
+                placeholder="Buscar..."
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);

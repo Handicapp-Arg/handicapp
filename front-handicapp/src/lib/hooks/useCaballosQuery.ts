@@ -37,11 +37,12 @@ export const caballosKeys = {
  * Hook para obtener lista de caballos con filtros y paginación
  * Cache: 2 minutos
  */
-export function useCaballos(filters: CaballoFilters = {}) {
+export function useCaballos(filters: CaballoFilters = {}, options: any = {}) {
   return useQuery({
     queryKey: caballosKeys.list(filters),
     queryFn: () => caballoService.getAll(filters),
     staleTime: 2 * 60 * 1000, // 2 minutos
+    ...options
   });
 }
 
