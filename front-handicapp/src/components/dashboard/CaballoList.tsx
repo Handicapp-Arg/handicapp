@@ -11,7 +11,6 @@ import { useRouter } from 'next/navigation';
 import { logger } from '@/lib/utils/logger';
 import CaballoForm from './CaballoForm';
 import CaballoCardModern from './CaballoCardModern';
-import CaballoFilters from './CaballoFilters';
 import { CaballosGridSkeleton } from './CaballoCardSkeleton';
 import { generarReporteCaballosPDF, exportarCaballosExcel } from '@/lib/services/reporteService';
 

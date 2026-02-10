@@ -134,7 +134,7 @@ export default function CaballoCardModern({ caballo, onEdit, onView, onDelete }:
               <DropdownMenuTrigger asChild>
                 <button 
                   onClick={(e) => e.stopPropagation()}
-                  className="p-2 rounded-full bg-black/20 hover:bg-black/40 text-white transition-all backdrop-blur-md border border-white/10 focus:outline-none data-[state=open]:bg-black/50"
+                  className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all backdrop-blur-md border border-white/20 hover:border-white/40 focus:outline-none data-[state=open]:bg-white/20 shadow-sm"
                 >
                   <EllipsisHorizontalIcon className="w-5 h-5" />
                 </button>
@@ -145,7 +145,7 @@ export default function CaballoCardModern({ caballo, onEdit, onView, onDelete }:
                      e.stopPropagation();
                      setIsFavorite(!isFavorite);
                    }}
-                   className="cursor-pointer gap-2"
+                   className="cursor-pointer gap-2 focus:bg-blue-100 focus:text-blue-800"
                 >
                    {isFavorite ? (
                       <>
@@ -168,10 +168,10 @@ export default function CaballoCardModern({ caballo, onEdit, onView, onDelete }:
                       e.stopPropagation();
                       onEdit(caballo);
                     }}
-                    className="cursor-pointer gap-2"
+                    className="cursor-pointer gap-2 focus:bg-blue-100 focus:text-blue-800"
                   >
-                    <PencilIcon className="w-4 h-4 text-slate-500" />
-                    <span className="text-slate-700">Editar</span>
+                    <PencilIcon className="w-4 h-4 text-slate-500 group-focus:text-blue-700" />
+                    <span className="text-slate-700 group-focus:text-blue-800">Editar</span>
                   </DropdownMenuItem>
                 )}
 

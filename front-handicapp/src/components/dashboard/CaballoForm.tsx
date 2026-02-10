@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
@@ -35,6 +34,7 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 import ApiClient from '@/lib/services/apiClient';
+import { ImageCropperDialog } from '@/components/ui/ImageCropperDialog';
 
 interface CaballoFormProps {
   isOpen: boolean;
@@ -52,6 +52,10 @@ export function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoForm
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState("perfil");
+
+  // Estados para el crop de imagen
+  const [showCropper, setShowCropper] = useState(false);
+  const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
 
   // Form data
   const [formData, setFormData] = useState<CreateCaballoData>({
@@ -163,15 +167,30 @@ export function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoForm
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
+    // Leer archivo para mostrar en cropper
+    const reader = new FileReader();
+    reader.addEventListener('load', () => {
+      setTempImageSrc(reader.result as string);
+      setShowCropper(true);
+      // Limpiar input para permitir seleccionar la misma imagen
+      e.target.value = ''; 
+    });
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
     setUploading(true);
     const formDataUpload = new FormData();
+    // Convertir blob a file
+    const file = new File([croppedBlob], "profile_image.jpg", { type: "image/jpeg" });
     formDataUpload.append('file', file);
+    
     try {
-      const res: any = await ApiClient.makeRequest('/upload', {
+      const res: any = await ApiClient.makeRequest('/uploads/image', {
         method: 'POST',
         body: formDataUpload
       });
@@ -180,9 +199,10 @@ export function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoForm
       setPreviewUrl(url);
     } catch (error) {
       console.error('Upload error:', error);
-      setErrors(prev => ({ ...prev, foto_url: 'Error subiendo imagen' }));
+      setErrors(prev => ({ ...prev, foto_url: 'Error subiendo imagen recortada' }));
     } finally {
       setUploading(false);
+      setShowCropper(false);
     }
   };
 
@@ -223,6 +243,17 @@ export function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoForm
   const hembras = caballosPadres.filter(c => c.sexo === 'hembra');
 
   return (
+    <>
+      <ImageCropperDialog
+        isOpen={showCropper}
+        imageSrc={tempImageSrc}
+        aspect={4 / 3} // Landscape/Rectangular para caballos
+        onClose={() => {
+            setShowCropper(false);
+            setTempImageSrc(null);
+        }}
+        onCropComplete={handleCropComplete}
+      />
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="p-0 gap-0 w-full h-full sm:h-[700px] sm:max-w-[900px] sm:rounded-xl bg-white border-none shadow-2xl flex flex-col overflow-hidden">
         
@@ -262,9 +293,9 @@ export function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoForm
                     <TabsContent value="perfil" className="mt-0 h-full focus-visible:outline-none">
                         <div className="flex flex-col sm:flex-row gap-6 pb-4">
                             {/* Columna Foto */}
-                            <div className="w-full sm:w-[180px] shrink-0">
+                            <div className="w-full sm:w-[260px] shrink-0">
                                 <Label className="text-xs font-bold uppercase text-slate-400 mb-2 block tracking-wider">Foto</Label>
-                                <div className="group relative w-full aspect-[3/4] rounded-xl overflow-hidden bg-slate-100 border-2 border-dashed border-slate-200 hover:border-slate-300 transition-all cursor-pointer">
+                                <div className="group relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 border-2 border-dashed border-slate-200 hover:border-slate-300 transition-all cursor-pointer">
                                     {/* ... image upload ... */}
                                     {previewUrl ? (
                                         <div className="relative w-full h-full">
@@ -513,13 +544,13 @@ export function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoForm
 
                 {/* Footer Fijo */}
                 <DialogFooter className="shrink-0 p-5 bg-white border-t border-slate-100 flex flex-col-reverse sm:flex-row gap-3 sm:gap-2">
-                    <Button type="button" variant="ghost" onClick={handleClose} disabled={loading} className="w-full sm:w-auto text-slate-500 hover:text-slate-900">
+                    <Button type="button" variant="outline" onClick={handleClose} disabled={loading} className="w-full sm:w-auto text-slate-700 bg-white border-slate-200 hover:bg-slate-50 hover:text-slate-900 shadow-sm">
                         Cancelar
                     </Button>
                     <Button 
                         type="submit" 
                         disabled={loading || uploading}
-                        className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-900/10 px-8"
+                        className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 px-8 font-medium"
                     >
                         {loading ? 'Guardando...' : (caballo ? 'Guardar Cambios' : 'Crear Caballo')}
                     </Button>
@@ -528,6 +559,7 @@ export function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoForm
         </form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
 
