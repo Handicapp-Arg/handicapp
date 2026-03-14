@@ -55,13 +55,10 @@ export function CreateUserModal({
   const [error, setError] = useState<string>('');
 
   const handleSubmit = async () => {
-    console.log('🔵 handleSubmit called');
-    console.log('📋 formData:', formData);
     setError(''); // Limpiar error previo
-    
+
     // Validations
     if (!formData.nombre || !formData.apellido || !formData.email || !formData.password || !formData.rol_id) {
-      console.log('❌ Campos obligatorios faltantes');
       const errorMsg = 'Por favor completa todos los campos obligatorios';
       setError(errorMsg);
       toast.error(errorMsg);
@@ -69,7 +66,6 @@ export function CreateUserModal({
     }
 
     if (formData.password !== formData.confirmPassword) {
-      console.log('❌ Contraseñas no coinciden');
       const errorMsg = 'Las contraseñas no coinciden';
       setError(errorMsg);
       toast.error(errorMsg);
@@ -81,7 +77,6 @@ export function CreateUserModal({
     //  - Al menos una minúscula, una mayúscula y un número
     const strongPwd = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,128}$/;
     if (!strongPwd.test(formData.password)) {
-      console.log('❌ Contraseña débil');
       const errorMsg = 'La contraseña debe tener entre 8 y 128 caracteres e incluir al menos una minúscula, una mayúscula y un número';
       setError(errorMsg);
       toast.error(errorMsg);
@@ -89,7 +84,6 @@ export function CreateUserModal({
     }
 
     if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      console.log('❌ Email inválido');
       const errorMsg = 'Por favor ingresa un email válido';
       setError(errorMsg);
       toast.error(errorMsg);
@@ -98,8 +92,6 @@ export function CreateUserModal({
 
     try {
       setLoading(true);
-      console.log('🚀 Llamando createUserFn...');
-      
       await createUserFn({
         nombre: formData.nombre,
         apellido: formData.apellido,
@@ -109,7 +101,6 @@ export function CreateUserModal({
         rol_id: parseInt(formData.rol_id),
       });
       
-      console.log('✅ Usuario creado exitosamente');
       toast.success('Usuario creado correctamente');
       onUserCreated();
       onClose();

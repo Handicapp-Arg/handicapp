@@ -10,7 +10,7 @@ import {
   Empleado,
 } from '@/lib/gestionPersonalService';
 import { toast } from 'react-hot-toast';
-import { Loader } from '@/components/ui/loader';
+import TableSkeleton from '@/components/skeletons/TableSkeleton';
 import { CreateEmpleadoModal, EditEmpleadoModal } from '@/components/common/EmpleadoModal';
 import { 
   UserManagementTable, 
@@ -254,13 +254,7 @@ export default function EstablecimientoPersonalPage() {
     deleteLabel: 'Eliminar',
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Loader />
-      </div>
-    );
-  }
+  if (loading) return <TableSkeleton rows={8} columns={4} />;
 
   return (
     <SimpleRoleGuard roles={['establecimiento']}>

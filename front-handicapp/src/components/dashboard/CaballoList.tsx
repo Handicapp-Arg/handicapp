@@ -6,6 +6,7 @@ import { useCaballos, useEliminarCaballo } from '@/lib/hooks';
 import { type Caballo } from '@/lib/services/caballoService';
 // ...existing code...
 import { usePermissions } from '@/lib/hooks/usePermissions';
+import toast from 'react-hot-toast';
 import { PlusIcon, MagnifyingGlassIcon, PencilIcon, EyeIcon, TrashIcon, ArrowDownTrayIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
 import { logger } from '@/lib/utils/logger';
@@ -130,15 +131,33 @@ export function CaballoList() {
   }, [refetch]);
 
   const handleDeleteCaballo = useCallback(async (caballo: Caballo) => {
-    if (window.confirm(`¿Estás seguro de que quieres eliminar el caballo "${caballo.nombre}"?`)) {
-      try {
-        await deleteCaballoMutation.mutateAsync(caballo.id);
-        refetch(); // Recargar lista
-      } catch (error) {
-        console.error('Error deleting caballo:', error);
-        alert('Error al eliminar el caballo');
-      }
-    }
+    toast((t) => (
+      <span className="flex items-center gap-3">
+        <span className="text-sm">¿Eliminar a <strong>{caballo.nombre}</strong>?</span>
+        <button
+          className="px-3 py-1 bg-red-600 text-white text-xs rounded-md font-medium"
+          onClick={async () => {
+            toast.dismiss(t.id);
+            try {
+              await deleteCaballoMutation.mutateAsync(caballo.id);
+              refetch();
+              toast.success(`${caballo.nombre} eliminado correctamente`);
+            } catch (error) {
+              console.error('Error deleting caballo:', error);
+              toast.error('Error al eliminar el caballo');
+            }
+          }}
+        >
+          Eliminar
+        </button>
+        <button
+          className="px-3 py-1 bg-slate-100 text-slate-700 text-xs rounded-md font-medium"
+          onClick={() => toast.dismiss(t.id)}
+        >
+          Cancelar
+        </button>
+      </span>
+    ), { duration: 6000 });
   }, [deleteCaballoMutation, refetch]);
 
   // Exportar reportes
@@ -150,7 +169,7 @@ export function CaballoList() {
       });
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('Error al generar el reporte PDF');
+      toast.error('Error al generar el reporte PDF');
     }
   }, [caballos, getUserRole]);
 
@@ -159,7 +178,7 @@ export function CaballoList() {
       exportarCaballosExcel(caballos);
     } catch (error) {
       console.error('Error generating Excel:', error);
-      alert('Error al generar el archivo Excel');
+      toast.error('Error al generar el archivo Excel');
     }
   }, [caballos]);
 

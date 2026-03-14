@@ -1,3 +1,9 @@
+/**
+ * DatabaseService — Utilidades de bajo nivel para operaciones de base de datos.
+ * Wraper de Sequelize para transacciones, health checks y queries raw.
+ * Nota: No está expuesto via ninguna ruta HTTP — es un helper interno para otros servicios.
+ */
+
 import { sequelize, withTransaction } from '../config/database';
 import { logger } from '../utils/logger';
 import { Transaction, QueryTypes } from 'sequelize';

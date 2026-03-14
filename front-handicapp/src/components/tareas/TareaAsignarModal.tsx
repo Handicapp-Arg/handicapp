@@ -147,7 +147,7 @@ export function TareaAsignarModal({ tarea, isOpen, onClose, onSuccess }: TareaAs
             >
               {loading ? (
                 <>
-                  <LoadingSpinnerInline />
+                  <Loader variant="inline" />
                   Asignando...
                 </>
               ) : (

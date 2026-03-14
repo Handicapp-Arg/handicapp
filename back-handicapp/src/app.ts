@@ -7,9 +7,20 @@ import { config } from './config/config';
 import { config as appConfig } from './config/config';
 import { apiRoutes } from './routes';
 import { errorHandler, notFoundHandler } from './utils/errors';
-import { requestLogger } from './utils/logger';
+import { requestLogger, logger } from './utils/logger';
 
 const app: Express = express();
+
+// 🔒 HTTPS redirect en producción
+app.use((req, res, next) => {
+  if (
+    config.nodeEnv === 'production' &&
+    req.header('x-forwarded-proto') !== 'https'
+  ) {
+    return res.redirect(301, `https://${req.header('host')}${req.url}`);
+  }
+  next();
+});
 
 // 🚀 PERFORMANCE: Gzip/Brotli Compression
 app.use(compression({
@@ -54,7 +65,7 @@ app.use(
       if (allowedOrigins.includes(origin) || config.nodeEnv === 'development') {
         callback(null, true);
       } else {
-        console.warn('❌ CORS bloqueado para origen:', origin);
+        logger.warn({ origin }, 'CORS bloqueado para origen no permitido');
         callback(new Error('No autorizado por CORS'));
       }
     },

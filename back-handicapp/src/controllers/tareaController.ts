@@ -179,14 +179,19 @@ export class TareaController {
         return;
       }
 
-      const tareaResult = await TareaService.getTareaById(tareaId);
+      const tareaResult = await TareaService.getTareaById(
+        tareaId,
+        req.user!.id,
+        req.user!.rol?.clave,
+        (req.user as any)?.establecimiento_id
+      );
 
       if (!tareaResult.success || !tareaResult.data) {
-        res.status(404).json(ApiResponse.error('Tarea no encontrada'));
+        const status = tareaResult.error === 'Sin acceso a esta tarea' ? 403 : 404;
+        res.status(status).json(ApiResponse.error(tareaResult.error || 'Tarea no encontrada'));
         return;
       }
 
-      // Nota: permisos finos se pueden añadir aquí si se requieren
       res.json(ApiResponse.success(tareaResult.data));
 
     } catch (error) {
@@ -407,42 +412,8 @@ export class TareaController {
   }
 
   // ====================================
-  // TAREAS RECURRENTES
-  // ====================================
-
-  /**
-   * Crear tarea recurrente
-   * POST /api/v1/tareas/recurrente
-   * Roles: admin, establecimiento, capataz, veterinario
-   */
-  static async createRecurrente(_req: AuthenticatedRequest, res: Response): Promise<void> {
-    // No implementado aún en el servicio. Evitar errores de compilación.
-    res.status(501).json(ApiResponse.error('No implementado'));
-  }
-
-  // ====================================
   // REPORTES Y DASHBOARDS
   // ====================================
-
-  /**
-   * Obtener tareas pendientes del usuario
-   * GET /api/v1/tareas/mis-tareas?estado=pendiente&prioridad=alta
-   * Roles: todos los autenticados
-   */
-  static async getMisTareas(_req: AuthenticatedRequest, res: Response): Promise<void> {
-    // No implementado aún en el servicio. Evitar errores de compilación.
-    res.status(501).json(ApiResponse.error('No implementado'));
-  }
-
-  /**
-   * Obtener tareas vencidas
-   * GET /api/v1/tareas/vencidas?establecimiento=1
-   * Roles: admin, establecimiento, capataz
-   */
-  static async getTareasVencidas(_req: AuthenticatedRequest, res: Response): Promise<void> {
-    // No implementado aún en el servicio. Evitar errores de compilación.
-    res.status(501).json(ApiResponse.error('No implementado'));
-  }
 
   /**
    * Obtener estadísticas de tareas
@@ -466,16 +437,6 @@ export class TareaController {
       logger.error('Error obteniendo estadísticas de tareas', { error });
       res.status(500).json(ApiResponse.error('Error interno del servidor'));
     }
-  }
-
-  /**
-   * Obtener resumen de productividad
-   * GET /api/v1/tareas/productividad?usuario=123&fechaInicio=2024-01-01&fechaFin=2024-12-31
-   * Roles: admin, el propio usuario
-   */
-  static async getProductividad(_req: AuthenticatedRequest, res: Response): Promise<void> {
-    // No implementado aún en el servicio. Evitar errores de compilación.
-    res.status(501).json(ApiResponse.error('No implementado'));
   }
 
   // ====================================

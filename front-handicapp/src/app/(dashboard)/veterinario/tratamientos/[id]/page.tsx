@@ -19,7 +19,7 @@ import {
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { tratamientoService, Tratamiento } from '@/lib/services/tratamientoService';
 import { toast } from 'react-hot-toast';
-import { Loader } from '@/components/ui/loader';
+import ProfileSkeleton from '@/components/skeletons/ProfileSkeleton';
 
 export default function DetalleTratamientoPage() {
   const router = useRouter();
@@ -100,7 +100,7 @@ export default function DetalleTratamientoPage() {
   };
 
   if (loading) {
-    return <Loader />;
+    return <ProfileSkeleton />;
   }
 
   if (!tratamiento) {

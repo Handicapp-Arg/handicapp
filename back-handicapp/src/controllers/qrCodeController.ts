@@ -40,7 +40,7 @@ export class QRCodeController {
           creado_el: qrCode.creado_el,
           download_url: downloadUrl,
           scan_url: `${process.env['FRONTEND_URL'] || baseUrl}/scan/${qrCode.token}`,
-          // qr_data_url: result.qrDataUrl, // TODO: Habilitar cuando esté implementado
+          qr_data_url: result.qrDataUrl,
         },
       });
     } catch (error: any) {

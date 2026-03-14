@@ -57,7 +57,7 @@ export class AuthController {
 
       if (result.success && result.data) {
         // Login exitoso - limpiar intentos fallidos del usuario
-        clearUserLoginAttempts(loginData.email);
+        await clearUserLoginAttempts(loginData.email);
 
         // Configurar access token como httpOnly cookie
         res.cookie('auth-token', result.data.accessToken, {

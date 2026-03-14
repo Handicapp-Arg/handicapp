@@ -31,9 +31,7 @@ export default function ConsultasTab() {
 
   // Procesar consultas
   const consultas = useMemo(() => {
-    const eventosArray = Array.isArray(eventos) 
-      ? eventos 
-      : (eventos as { data?: Evento[] })?.data || [];
+    const eventosArray = Array.isArray(eventos) ? eventos : [];
     
     return eventosArray.filter((e: Evento) => 
       e.tipo_evento?.nombre?.toLowerCase().includes('consulta') ||

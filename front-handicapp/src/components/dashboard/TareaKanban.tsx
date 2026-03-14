@@ -6,7 +6,7 @@ import { tareaService } from '@/lib/services/tareaService';
 import { type Tarea, type EstadoTarea, type VistaKanban } from '@/types/task.types';
 import { TareaForm } from './TareaForm';
 import { usePermissions } from '@/lib/hooks/usePermissions';
-import { useAutoRefresh } from '@/hooks/useAutoRefresh';
+import { useAutoRefresh } from '@/lib/hooks/useAutoRefresh';
 import {
   Plus,
   Edit2,
@@ -156,18 +156,34 @@ export function TareaKanban({
   };
 
   const handleDeleteTarea = async (id: number | string) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar esta tarea?')) {
-      try {
-        // Asegurar que el ID sea numérico
-        const tareaId = typeof id === 'string' ? parseInt(id.replace(/\D/g, '')) : id;
-        await tareaService.delete(tareaId);
-        setLocalTareas(prev => prev.filter(t => t.id !== id));
-        toast.success('Tarea eliminada correctamente');
-      } catch (error) {
-        console.error('Error deleting tarea:', error);
-        toast.error('Error al eliminar la tarea');
-      }
-    }
+    toast((t) => (
+      <span className="flex items-center gap-3">
+        <span className="text-sm">¿Eliminar esta tarea?</span>
+        <button
+          className="px-3 py-1 bg-red-600 text-white text-xs rounded-md font-medium"
+          onClick={async () => {
+            toast.dismiss(t.id);
+            try {
+              const tareaId = typeof id === 'string' ? parseInt(id.replace(/\D/g, '')) : id;
+              await tareaService.delete(tareaId);
+              setLocalTareas(prev => prev.filter(tarea => tarea.id !== id));
+              toast.success('Tarea eliminada correctamente');
+            } catch (error) {
+              console.error('Error deleting tarea:', error);
+              toast.error('Error al eliminar la tarea');
+            }
+          }}
+        >
+          Eliminar
+        </button>
+        <button
+          className="px-3 py-1 bg-slate-100 text-slate-700 text-xs rounded-md font-medium"
+          onClick={() => toast.dismiss(t.id)}
+        >
+          Cancelar
+        </button>
+      </span>
+    ), { duration: 6000 });
   };
 
   const handleChangeEstado = async (tarea: Tarea, nuevoEstado: EstadoTarea) => {
@@ -231,12 +247,12 @@ export function TareaKanban({
     
     return (
       <div 
-        className="bg-white rounded-lg p-3.5 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer border border-gray-100"
+        className="bg-white rounded-xl p-3.5 hover:shadow-md transition-all duration-200 cursor-pointer border border-slate-200/70 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
         onClick={handleCardClick}
       >
         {/* Header: Título y avatar en la misma línea */}
         <div className="flex items-start justify-between gap-2 mb-2.5">
-          <h4 className="text-sm font-medium text-gray-900 line-clamp-2 leading-snug flex-1">
+          <h4 className="text-sm font-medium text-slate-800 line-clamp-2 leading-snug flex-1">
             {tarea.titulo}
           </h4>
           {/* Avatar del usuario asignado */}
@@ -250,7 +266,7 @@ export function TareaKanban({
         {/* Información del caballo (si se debe mostrar) */}
         {showCaballoInfo && tarea.caballo && (
           <div className="mb-2">
-            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-[#af936f]/10 text-[#af936f]">
+            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-accent/10 text-accent">
               🐴 {tarea.caballo.nombre}
             </span>
           </div>
@@ -258,16 +274,16 @@ export function TareaKanban({
 
         {/* Descripción en el medio */}
         {tarea.descripcion && (
-          <p className="text-xs text-gray-600 line-clamp-2 mb-2.5 leading-relaxed">
+          <p className="text-xs text-slate-500 line-clamp-2 mb-2.5 leading-relaxed">
             {tarea.descripcion}
           </p>
         )}
 
         {/* Footer: Fecha y badge de prioridad */}
-        <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
           {/* Fecha */}
           {tarea.fecha_vencimiento && (
-            <div className="flex items-center gap-1.5 text-xs text-gray-500">
+            <div className="flex items-center gap-1.5 text-xs text-slate-400">
               <Calendar className="h-3.5 w-3.5" />
               <span>{formatDate(tarea.fecha_vencimiento)}</span>
             </div>
@@ -321,9 +337,9 @@ export function TareaKanban({
 
     // Definir color del contador según el estado
     const getBadgeColor = () => {
-      if (estado === 'completada') return 'bg-emerald-100 text-emerald-700';
-      if (estado === 'en_progreso') return 'bg-amber-100 text-amber-700';
-      return 'bg-gray-100 text-gray-700';
+      if (estado === 'completada') return 'bg-emerald-50 text-emerald-700';
+      if (estado === 'en_progreso') return 'bg-amber-50 text-amber-700';
+      return 'bg-slate-100 text-slate-600';
     };
 
     return (
@@ -332,7 +348,7 @@ export function TareaKanban({
         <div className="px-5 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <h3 className="font-semibold text-sm text-gray-900">{title}</h3>
+              <h3 className="font-semibold text-sm text-slate-700">{title}</h3>
               <span className={`${getBadgeColor()} text-xs font-medium px-2.5 py-1 rounded-md`}>
                 {columnTareas.length}
               </span>
@@ -340,13 +356,13 @@ export function TareaKanban({
             {isMobileProp && (
               <button
                 onClick={() => toggleColumn(estado)}
-                className="cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+                className="cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors"
                 type="button"
               >
                 {isExpanded ? (
-                  <ChevronUp className="h-4 w-4 text-gray-400" />
+                  <ChevronUp className="h-4 w-4 text-slate-400" />
                 ) : (
-                  <ChevronDown className="h-4 w-4 text-gray-400" />
+                  <ChevronDown className="h-4 w-4 text-slate-400" />
                 )}
               </button>
             )}
@@ -381,13 +397,13 @@ export function TareaKanban({
   return (
     <div className="w-full max-w-[1920px] mx-auto">
       {/* Kanban Board - Contenedor unificado con header integrado */}
-      <div className="bg-white rounded-lg border border-stroke overflow-hidden w-full shadow-sm">
+      <div className="bg-white rounded-2xl border border-slate-200/70 overflow-hidden w-full shadow-[0_1px_4px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.04)]">
         {/* Header con título, tabs y botón */}
         {!compactMode && (
-          <div className="border-b border-stroke">
+          <div className="border-b border-slate-100">
             {/* Título */}
             <div className="px-4 sm:px-6 pt-4 pb-3">
-              <h2 className="text-xl font-semibold text-gray-900">{getKanbanTitle()}</h2>
+              <h2 className="text-xl font-semibold text-slate-800">{getKanbanTitle()}</h2>
             </div>
             
             {/* Tabs y botones */}
@@ -398,13 +414,13 @@ export function TareaKanban({
               onClick={() => setActiveTab('todas')}
               className={`flex-shrink-0 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
                 activeTab === 'todas'
-                  ? 'bg-primary text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-slate-800 text-white'
+                  : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
               Todas
               <span className={`ml-1.5 sm:ml-2 px-1.5 py-0.5 rounded text-xs font-semibold ${
-                activeTab === 'todas' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700'
+                activeTab === 'todas' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
               }`}>
                 {tabCounts.todas}
               </span>
@@ -413,13 +429,13 @@ export function TareaKanban({
               onClick={() => setActiveTab('pendiente')}
               className={`flex-shrink-0 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
                 activeTab === 'pendiente'
-                  ? 'bg-primary text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-slate-800 text-white'
+                  : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
               Pendiente
               <span className={`ml-1.5 sm:ml-2 px-1.5 py-0.5 rounded text-xs font-semibold ${
-                activeTab === 'pendiente' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700'
+                activeTab === 'pendiente' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
               }`}>
                 {tabCounts.pendiente}
               </span>
@@ -428,13 +444,13 @@ export function TareaKanban({
               onClick={() => setActiveTab('en_progreso')}
               className={`flex-shrink-0 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
                 activeTab === 'en_progreso'
-                  ? 'bg-primary text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-slate-800 text-white'
+                  : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
               En Progreso
               <span className={`ml-1.5 sm:ml-2 px-1.5 py-0.5 rounded text-xs font-semibold ${
-                activeTab === 'en_progreso' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700'
+                activeTab === 'en_progreso' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
               }`}>
                 {tabCounts.en_progreso}
               </span>
@@ -443,13 +459,13 @@ export function TareaKanban({
               onClick={() => setActiveTab('completada')}
               className={`flex-shrink-0 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
                 activeTab === 'completada'
-                  ? 'bg-primary text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-slate-800 text-white'
+                  : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
               Completadas
               <span className={`ml-1.5 sm:ml-2 px-1.5 py-0.5 rounded text-xs font-semibold ${
-                activeTab === 'completada' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700'
+                activeTab === 'completada' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
               }`}>
                 {tabCounts.completada}
               </span>
@@ -460,7 +476,7 @@ export function TareaKanban({
           <div className="flex items-center gap-2 sm:gap-3">
             <button 
               onClick={() => setShowFilters(!showFilters)}
-              className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-white hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-medium rounded-lg border border-gray-300 transition-colors"
+              className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-medium rounded-xl border border-slate-200 transition-colors"
             >
               <SlidersHorizontal className="h-4 w-4" />
               <span className="hidden sm:inline">Filtros y Orden</span>
@@ -470,7 +486,7 @@ export function TareaKanban({
             {canCreateTasks() && (
               <button 
                 onClick={handleCreateTarea}
-                className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-primary hover:bg-primary/90 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors shadow-sm"
+                className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs sm:text-sm font-medium rounded-xl transition-colors"
               >
                 <Plus className="h-4 w-4" />
                 <span className="hidden sm:inline">
@@ -486,11 +502,11 @@ export function TareaKanban({
 
         {/* Panel de filtros (si está abierto) */}
         {showFilters && !compactMode && (
-          <div className="px-6 py-4 bg-gray-50 border-b border-stroke">
+          <div className="px-6 py-4 bg-slate-50 border-b border-slate-100">
             <div className="flex flex-wrap gap-4">
               <div className="flex-1 min-w-[200px]">
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">Prioridad</label>
-                <select className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-white">
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">Prioridad</label>
+                <select className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#af936f]/20 focus:border-[#af936f] outline-none bg-white">
                   <option value="">Todas</option>
                   <option value="critica">Crítica</option>
                   <option value="alta">Alta</option>
@@ -500,16 +516,16 @@ export function TareaKanban({
               </div>
               
               <div className="flex-1 min-w-[200px]">
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">Asignado a</label>
-                <select className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-white">
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">Asignado a</label>
+                <select className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#af936f]/20 focus:border-[#af936f] outline-none bg-white">
                   <option value="">Todos</option>
                   {/* Aquí puedes agregar la lista de usuarios */}
                 </select>
               </div>
               
               <div className="flex-1 min-w-[200px]">
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">Ordenar por</label>
-                <select className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-white">
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">Ordenar por</label>
+                <select className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#af936f]/20 focus:border-[#af936f] outline-none bg-white">
                   <option value="fecha">Fecha de vencimiento</option>
                   <option value="prioridad">Prioridad</option>
                   <option value="titulo">Título</option>
@@ -520,7 +536,7 @@ export function TareaKanban({
               <div className="flex items-end">
                 <button 
                   onClick={() => setShowFilters(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors"
                 >
                   Limpiar filtros
                 </button>
@@ -530,7 +546,7 @@ export function TareaKanban({
         )}
 
         {/* Columnas del Kanban */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 divide-x divide-stroke">
+        <div className="grid grid-cols-1 lg:grid-cols-3 divide-x divide-slate-100">
           {(activeTab === 'todas' || activeTab === 'pendiente') && (
             <KanbanColumn
               title="Pendiente"
@@ -572,13 +588,13 @@ export function TareaKanban({
       {/* Modal de detalles */}
       {showDetailModal && detailTarea && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowDetailModal(false)}>
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             {/* Header del modal */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Detalles de la Tarea</h3>
+            <div className="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-800">Detalles de la Tarea</h3>
               <button
                 onClick={() => setShowDetailModal(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-slate-400 hover:text-slate-600 transition-colors"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -590,15 +606,15 @@ export function TareaKanban({
             <div className="p-6 space-y-6">
               {/* Título */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Título</label>
-                <p className="text-base text-gray-900">{detailTarea.titulo}</p>
+                <label className="block text-sm font-medium text-slate-600 mb-2">Título</label>
+                <p className="text-base text-slate-800">{detailTarea.titulo}</p>
               </div>
 
               {/* Descripción */}
               {detailTarea.descripcion && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{detailTarea.descripcion}</p>
+                  <label className="block text-sm font-medium text-slate-600 mb-2">Descripción</label>
+                  <p className="text-sm text-slate-600 whitespace-pre-wrap">{detailTarea.descripcion}</p>
                 </div>
               )}
 
@@ -606,11 +622,11 @@ export function TareaKanban({
               <div className="grid grid-cols-2 gap-4">
                 {/* Estado */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
+                  <label className="block text-sm font-medium text-slate-600 mb-2">Estado</label>
                   <span className={`inline-block px-3 py-1 rounded-md text-sm font-medium ${
-                    detailTarea.estado === 'completada' ? 'bg-emerald-100 text-emerald-700' :
-                    detailTarea.estado === 'en_progreso' ? 'bg-amber-100 text-amber-700' :
-                    'bg-gray-100 text-gray-700'
+                    detailTarea.estado === 'completada' ? 'bg-emerald-50 text-emerald-700' :
+                    detailTarea.estado === 'en_progreso' ? 'bg-amber-50 text-amber-700' :
+                    'bg-slate-100 text-slate-600'
                   }`}>
                     {detailTarea.estado === 'completada' ? 'Completada' :
                      detailTarea.estado === 'en_progreso' ? 'En Progreso' :
@@ -621,13 +637,13 @@ export function TareaKanban({
                 {/* Prioridad */}
                 {detailTarea.prioridad && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Prioridad</label>
+                    <label className="block text-sm font-medium text-slate-600 mb-2">Prioridad</label>
                     <span className={`inline-block px-3 py-1 rounded-md text-sm font-medium ${
                       detailTarea.prioridad === 'alta' || detailTarea.prioridad === 'critica'
-                        ? 'bg-red-100 text-red-700'
+                        ? 'bg-red-50 text-red-700'
                         : detailTarea.prioridad === 'media'
-                        ? 'bg-amber-100 text-amber-700'
-                        : 'bg-emerald-100 text-emerald-700'
+                        ? 'bg-amber-50 text-amber-700'
+                        : 'bg-emerald-50 text-emerald-700'
                     }`}>
                       {detailTarea.prioridad === 'critica' ? 'Crítica' : 
                        detailTarea.prioridad === 'alta' ? 'Alta' :
@@ -639,36 +655,36 @@ export function TareaKanban({
                 {/* Fecha de vencimiento */}
                 {detailTarea.fecha_vencimiento && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Vencimiento</label>
-                    <p className="text-sm text-gray-900">{formatDate(detailTarea.fecha_vencimiento)}</p>
+                    <label className="block text-sm font-medium text-slate-600 mb-2">Fecha de Vencimiento</label>
+                    <p className="text-sm text-slate-800">{formatDate(detailTarea.fecha_vencimiento)}</p>
                   </div>
                 )}
 
                 {/* Tipo */}
                 {detailTarea.tipo && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
-                    <p className="text-sm text-gray-900">{getTipoLabel(detailTarea.tipo)}</p>
+                    <label className="block text-sm font-medium text-slate-600 mb-2">Tipo</label>
+                    <p className="text-sm text-slate-800">{getTipoLabel(detailTarea.tipo)}</p>
                   </div>
                 )}
 
                 {/* Caballo */}
                 {detailTarea.caballo && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Caballo</label>
-                    <p className="text-sm text-gray-900">{detailTarea.caballo.nombre}</p>
+                    <label className="block text-sm font-medium text-slate-600 mb-2">Caballo</label>
+                    <p className="text-sm text-slate-800">{detailTarea.caballo.nombre}</p>
                   </div>
                 )}
 
                 {/* Asignado a */}
                 {detailTarea.asignado_a && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Asignado a</label>
+                    <label className="block text-sm font-medium text-slate-600 mb-2">Asignado a</label>
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-semibold">
                         {detailTarea.asignado_a.nombre?.charAt(0)?.toUpperCase()}{detailTarea.asignado_a.apellido?.charAt(0)?.toUpperCase()}
                       </div>
-                      <span className="text-sm text-gray-900">{detailTarea.asignado_a.nombre} {detailTarea.asignado_a.apellido}</span>
+                      <span className="text-sm text-slate-800">{detailTarea.asignado_a.nombre} {detailTarea.asignado_a.apellido}</span>
                     </div>
                   </div>
                 )}
@@ -676,21 +692,21 @@ export function TareaKanban({
                 {/* Ubicación */}
                 {detailTarea.ubicacion && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Ubicación</label>
-                    <p className="text-sm text-gray-900">{detailTarea.ubicacion}</p>
+                    <label className="block text-sm font-medium text-slate-600 mb-2">Ubicación</label>
+                    <p className="text-sm text-slate-800">{detailTarea.ubicacion}</p>
                   </div>
                 )}
               </div>
 
               {/* Acciones */}
-              <div className="flex gap-3 pt-4 border-t border-gray-200">
+              <div className="flex gap-3 pt-4 border-t border-slate-100">
                 {canCreateTasks() && (
                   <button
                     onClick={() => {
                       setShowDetailModal(false);
                       handleEditTarea(detailTarea);
                     }}
-                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-white text-sm font-medium rounded-lg transition-colors"
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-sm font-medium rounded-xl transition-colors"
                   >
                     <Edit2 className="h-4 w-4" />
                     Editar Tarea
@@ -702,7 +718,7 @@ export function TareaKanban({
                       setShowDetailModal(false);
                       handleDeleteTarea(detailTarea.id);
                     }}
-                    className="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition-colors"
+                    className="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-xl transition-colors"
                   >
                     Eliminar
                   </button>
@@ -716,7 +732,7 @@ export function TareaKanban({
                           handleChangeEstado(detailTarea, 'en_progreso');
                           setShowDetailModal(false);
                         }}
-                        className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors"
+                        className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-xl transition-colors"
                       >
                         Iniciar
                       </button>
@@ -727,7 +743,7 @@ export function TareaKanban({
                           handleChangeEstado(detailTarea, 'completada');
                           setShowDetailModal(false);
                         }}
-                        className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium rounded-lg transition-colors"
+                        className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium rounded-xl transition-colors"
                       >
                         Completar
                       </button>

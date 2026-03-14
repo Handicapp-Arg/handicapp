@@ -10,7 +10,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Slider } from '@/components/ui/slider' // Necesitare ver si existe Slider, si no input range
 import getCroppedImg from '@/lib/utils/cropImage'
 import { Label } from '@/components/ui/label'
 

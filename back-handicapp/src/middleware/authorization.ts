@@ -208,66 +208,6 @@ export function requirePermission(...requiredPermissions: Permission[]) {
 }
 
 /**
- * Middleware para verificar propiedad de recursos
- * Verifica si el usuario puede acceder a un recurso específico basado en propiedad/membresía
- */
-export function requireResourceAccess(_resourceType: 'establecimiento' | 'caballo' | 'evento' | 'tarea') {
-  return async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
-    try {
-  const userRole = req.user?.rol?.clave as UserRole;
-
-      // Admin siempre tiene acceso
-      if (userRole === 'admin') {
-        next();
-        return;
-      }
-
-      // Obtener ID del recurso desde los parámetros
-  const resourceId = parseInt((req.params['id'] as string) || '');
-
-      if (isNaN(resourceId)) {
-        res.status(400).json(ApiResponse.error('ID de recurso inválido'));
-        return;
-      }
-
-      // Aquí se implementaría la lógica específica de verificación de acceso
-      // Por ahora, permitir acceso si el usuario está autenticado
-      // TODO: Implementar verificación específica de propiedad/membresía
-
-      next();
-    } catch (error) {
-  logger.error('Error en middleware requireResourceAccess:', error);
-      res.status(500).json(ApiResponse.error('Error interno del servidor'));
-    }
-  };
-}
-
-/**
- * Middleware para limitar acceso a usuarios del mismo establecimiento
- */
-export function requireSameEstablishment() {
-  return async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const userRole = req.user?.rol?.clave as UserRole;
-
-      // Admin siempre tiene acceso
-      if (userRole === 'admin') {
-        next();
-        return;
-      }
-
-      // Para otros roles, verificar membresía del establecimiento
-      // TODO: Implementar verificación de membresía
-      
-      next();
-    } catch (error) {
-  logger.error('Error en middleware requireSameEstablishment:', error);
-      res.status(500).json(ApiResponse.error('Error interno del servidor'));
-    }
-  };
-}
-
-/**
  * Utility function para verificar si un usuario tiene un permiso específico
  */
 export function hasPermission(userRole: UserRole, permission: Permission): boolean {

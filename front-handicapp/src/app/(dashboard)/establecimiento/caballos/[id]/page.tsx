@@ -8,7 +8,7 @@ import CaballoFicha from "@/components/caballos/CaballoFicha";
 import AdjuntosList from "@/components/adjuntos/AdjuntosList";
 import PropietariosList from "@/components/propietarios/PropietariosList";
 import { ArrowLeftIcon, ArrowPathIcon as RefreshCw } from "@heroicons/react/24/outline";
-import { Loader } from '@/components/ui/loader';
+import CaballoDetailSkeleton from '@/components/skeletons/CaballoDetailSkeleton';
 
 export default function CaballoDetallePage() {
   const params = useParams();
@@ -35,7 +35,7 @@ export default function CaballoDetallePage() {
           const pedigreeData = (respPedigree as { data?: CaballoPedigree })?.data;
           setPedigree(pedigreeData || null);
         } catch (e) {
-          console.log('⚠️ No se pudo cargar pedigree:', e);
+          // pedigree not critical — silently ignore
           setPedigree(null);
         }
       } else {
@@ -66,7 +66,7 @@ export default function CaballoDetallePage() {
   }, [params?.id]);
 
   if (loading) {
-    return <Loader />;
+    return <CaballoDetailSkeleton />;
   }
 
   if (!caballo) {

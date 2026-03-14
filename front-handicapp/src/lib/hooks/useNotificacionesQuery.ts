@@ -101,20 +101,3 @@ export function useEliminarNotificacion() {
   });
 }
 
-/**
- * Hook para crear una notificación de prueba
- */
-export function useCrearNotificacion() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: {
-      tipo: 'evento' | 'tarea' | 'caballo' | 'sistema' | 'recordatorio';
-      titulo: string;
-      mensaje: string;
-    }) => notificacionService.crearNotificacionPrueba(data.tipo, data.titulo, data.mensaje),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notificacionesKeys.all });
-    },
-  });
-}

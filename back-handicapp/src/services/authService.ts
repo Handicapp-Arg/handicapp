@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import { User } from '../models/User';
 import { Role } from '../models/roles';
 import { config } from '../config/config';
+import { tokenStore } from '../config/redis';
 import { logger } from '../utils/logger';
 import { ServiceResponse } from '../types';
 import { EstadoUsuario } from '../models/enums';
@@ -37,9 +38,6 @@ interface LoginResponse {
   };
   error?: string;
 }
-
-// Store de refresh tokens en memoria (en producción usar Redis)
-const refreshTokenStore = new Map<number, string>();
 
 export class AuthService {
   /**
@@ -283,18 +281,19 @@ export class AuthService {
    * Generar refresh token
    */
   static generateRefreshToken(userId: number): string {
-    const payload = {
-      userId,
-      type: 'refresh'
-    };
-    
+    const payload = { userId, type: 'refresh' };
+
     const refreshToken = (jwt as any).sign(
-      payload, 
-      config.jwt.refreshSecret || config.jwt.secret, 
+      payload,
+      config.jwt.refreshSecret || config.jwt.secret,
       { expiresIn: config.jwt.refreshExpiresIn }
     );
-    
-    refreshTokenStore.set(userId, refreshToken);
+
+    // Persistir en Redis (o fallback memoria en dev)
+    tokenStore.set(userId, refreshToken).catch((err) =>
+      logger.error('Error guardando refresh token:', err)
+    );
+
     return refreshToken;
   }
   
@@ -410,9 +409,9 @@ export class AuthService {
       );
       
       const userId = decoded.userId;
-      
-      // Verificar si el token existe en el store
-      const storedToken = refreshTokenStore.get(userId);
+
+      // Verificar si el token existe en el store (Redis o memoria)
+      const storedToken = await tokenStore.get(userId);
       if (!storedToken || storedToken !== refreshToken) {
         return {
           success: false,
@@ -463,7 +462,7 @@ export class AuthService {
    */
   static async logout(userId: number): Promise<ServiceResponse<void>> {
     try {
-      refreshTokenStore.delete(userId);
+      await tokenStore.del(userId);
       logger.info(`Usuario ${userId} deslogueado`);
       
       return {

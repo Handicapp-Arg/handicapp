@@ -5,11 +5,27 @@ import { useRouter } from 'next/navigation';
 import ApiClient from '@/lib/services/apiClient';
 import { useToaster } from '@/components/ui/toaster';
 import { LOGOS } from '@/lib/constants/logos';
+import { AuthBrandingPanel } from '../_components/AuthBrandingPanel';
+import { FloatingInput } from '../_components/FloatingInput';
+import { ArrowLeft } from 'lucide-react';
+import { z } from 'zod';
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email('Ingresá un email válido').min(1, 'Ingresá tu email'),
+});
+
+const FORM_BG = {
+  backgroundColor: '#ffffff',
+  backgroundImage:
+    'radial-gradient(ellipse at 0% 60%, rgba(175,147,111,0.05) 0%, transparent 55%), radial-gradient(circle, rgba(30,41,59,0.045) 1px, transparent 1px)',
+  backgroundSize: 'auto, 22px 22px',
+};
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [shaking, setShaking] = useState(false);
   const { toast } = useToaster();
   const router = useRouter();
 
@@ -17,7 +33,8 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setError('');
     const normalized = email.trim().toLowerCase();
-    if (!normalized) { setError('Ingresá tu email'); return; }
+    const validation = forgotPasswordSchema.safeParse({ email: normalized });
+    if (!validation.success) { setError(validation.error.issues[0].message); setShaking(true); return; }
     try {
       setLoading(true);
       await ApiClient.sendPasswordReset(normalized);
@@ -25,100 +42,81 @@ export default function ForgotPasswordPage() {
       setTimeout(() => router.push('/login'), 1500);
     } catch (err: any) {
       setError(err?.message || 'No se pudo enviar el email');
+      setShaking(true);
     } finally { setLoading(false); }
   };
 
   return (
     <div className="min-h-screen w-full flex">
-      {/* Left Side - Formulario */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-white lg:px-8">
-        <div className="w-full max-w-md">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">Recuperar Contraseña</h1>
-            <p className="text-slate-600">Te enviaremos un enlace para restablecerla</p>
-          </div>
+      {/* Left — Form */}
+      <div className="flex-1 flex flex-col min-h-screen relative" style={FORM_BG}>
 
-          <form onSubmit={onSubmit} className="space-y-5">
-            {/* Email */}
-            <div>
-              <label className="block text-slate-700 text-sm font-medium mb-2">
-                Correo electrónico
-              </label>
-              <input
-                type="email"
-                name="email"
-                autoComplete="email"
-                autoFocus
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#af936f] focus:border-transparent transition-all"
-                placeholder="tu@email.com"
-              />
-            </div>
-
-            {/* Error Message */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-3">
-                <p className="text-red-600 text-sm">{error}</p>
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#1e293b] text-white font-semibold py-3.5 rounded-xl hover:bg-[#0f172a] hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Enviando...' : 'Enviar Enlace'}
-            </button>
-          </form>
-
-          {/* Footer */}
-          <div className="mt-8 text-center">
-            <button
-              onClick={() => router.push('/login')}
-              className="text-[#af936f] hover:text-[#8f7657] font-semibold transition-colors"
-            >
-              Volver al login
-            </button>
-          </div>
+        {/* Top bar */}
+        <div className="flex items-center px-7 pt-7">
+          <img src={LOGOS.ICON_BROWN} alt="HandicApp" className="h-8 w-8 object-contain"
+            style={{ filter: 'brightness(0)' }}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = LOGOS.FULL_BROWN; }} />
+          <span className="ml-2.5 text-[12px] font-bold tracking-[0.3em] uppercase text-[#1e293b]/70 hidden sm:block">HandicApp</span>
         </div>
-      </div>
 
-      {/* Right Side - Visual/Branding */}
-      <div className="hidden lg:flex lg:flex-1 items-center justify-center p-8">
-        <div className="relative bg-[#0f172a] overflow-hidden rounded-3xl h-full w-full shadow-2xl">
-          {/* Pattern Background */}
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-60"></div>
-          
-          {/* Gradient Orbs */}
-          <div className="absolute top-20 right-20 w-72 h-72 bg-[#0e445d]/30 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-20 left-20 w-64 h-64 bg-[#af936f]/20 rounded-full blur-3xl"></div>
-          
-          {/* Content */}
-          <div className="relative z-10 flex flex-col items-center justify-center w-full h-full px-12 text-center">
-            {/* Logo Icon */}
-            <div className="mb-8">
-              <img
-                src={LOGOS.ICON_WHITE}
-                alt="HandicApp"
-                className="h-32 w-32 object-contain"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).src = LOGOS.FULL_WHITE; }}
-              />
-            </div>
-            
-            {/* Main Message */}
-            <h2 className="text-4xl font-bold text-white mb-4">
-              Recupera tu Acceso
-            </h2>
-            <p className="text-white/70 text-lg max-w-md">
-              No te preocupes, te ayudaremos a recuperar el acceso a tu cuenta de forma segura y rápida.
+        {/* Mobile tagline */}
+        <div className="lg:hidden px-7 pt-3">
+          <p className="text-[10px] tracking-[0.35em] uppercase text-[#af936f]/70 font-semibold">Gestión Ecuestre</p>
+        </div>
+
+        <div className="flex-1 flex items-center justify-center px-6 py-8 lg:px-14">
+          <div className="w-full max-w-[380px]">
+
+            <button onClick={() => router.push('/login')}
+              className="flex items-center gap-1.5 text-[13px] text-slate-400 hover:text-[#1e293b] transition-colors mb-8 group">
+              <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+              Volver
+            </button>
+
+            <div className="auth-fade-up auth-fade-up-1 w-7 h-[3px] rounded-full bg-[#af936f] mb-5" />
+            <h1
+              className="auth-fade-up auth-fade-up-1 font-bold text-[#1e293b] leading-[1.1] mb-3"
+              style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontSize: 'clamp(1.9rem, 4vw, 2.4rem)' }}
+            >
+              Sin problema.
+            </h1>
+            <p className="auth-fade-up auth-fade-up-2 text-[13px] text-slate-400 mb-8 leading-relaxed">
+              Ingresá tu email y te mandamos un enlace para restablecer tu clave.
             </p>
+
+            <form onSubmit={onSubmit} className={`space-y-3.5 ${shaking ? 'auth-shake' : ''}`} onAnimationEnd={() => setShaking(false)}>
+              <div className="auth-fade-up auth-fade-up-3">
+                <FloatingInput
+                  type="email" name="email" autoComplete="email"
+                  label="Correo electrónico"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+
+              {error && (
+                <div className="rounded-xl p-3.5 bg-red-50/70 border border-red-200 text-xs text-red-600">
+                  {error}
+                </div>
+              )}
+
+              <div className="auth-fade-up auth-fade-up-4 pt-1">
+                <button type="submit" disabled={loading}
+                  className="relative w-full overflow-hidden text-white font-semibold py-3.5 rounded-xl text-sm tracking-wide transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
+                  style={{ background: 'linear-gradient(135deg, #1e293b 0%, #1a2535 100%)' }}
+                >
+                  <span className="relative z-10">{loading ? 'Enviando...' : 'Enviar enlace'}</span>
+                  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-[#af936f]/12 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
+
+      {/* Right — Branding */}
+      <AuthBrandingPanel />
     </div>
   );
 }

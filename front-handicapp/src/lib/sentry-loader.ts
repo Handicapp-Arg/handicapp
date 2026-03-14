@@ -1,4 +1,8 @@
 /**
+ * @deprecated ARCHIVO MUERTO — ningún componente lo importa.
+ * Sentry no está instalado en el proyecto (@sentry/nextjs no está en package.json).
+ * Puede eliminarse de forma segura.
+ *
  * Sentry Lazy Loader
  * Carga Sentry de forma asíncrona solo en producción para reducir bundle inicial
  */

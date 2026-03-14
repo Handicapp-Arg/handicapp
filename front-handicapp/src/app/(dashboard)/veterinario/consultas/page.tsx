@@ -14,10 +14,9 @@
 
 import React, { useState, Suspense, lazy } from 'react';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
-import { PageHeader } from '@/components/dashboard/PageHeader';
+import { PageHeader } from '@/components/ui/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Stethoscope, Pill, FileText, Calendar } from 'lucide-react';
-import { Loader } from '@/components/ui/loader';
+import { Stethoscope, Pill, FileText } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 
 // Lazy loading de componentes pesados para optimizar carga inicial
@@ -30,11 +29,10 @@ const HistorialTab = lazy(() => import('@/components/veterinario/HistorialTab'))
  */
 function TabLoadingFallback() {
   return (
-    <div className="flex items-center justify-center py-20">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
-        <p className="text-sm text-slate-500">Cargando información...</p>
-      </div>
+    <div className="space-y-4 py-6">
+      {[1, 2, 3, 4].map(i => (
+        <div key={i} className="h-16 bg-slate-100 rounded-xl animate-pulse" />
+      ))}
     </div>
   );
 }
@@ -51,12 +49,7 @@ export default function AtencionMedicaPage() {
         {/* Page Header */}
         <PageHeader
           title="Atención Médica"
-          description="Gestión integral de consultas, tratamientos e historial clínico"
-          icon={Stethoscope}
-          breadcrumbs={[
-            { label: 'Dashboard', href: '/veterinario' },
-            { label: 'Atención Médica', href: '/veterinario/consultas' },
-          ]}
+          subtitle="Gestión integral de consultas, tratamientos e historial clínico"
         />
 
         {/* Tabs Navigation */}

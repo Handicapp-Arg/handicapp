@@ -5,7 +5,8 @@ import { useState, useMemo } from 'react';
 import ApiClient from '@/lib/services/apiClient';
 import { useToaster } from '@/components/ui/toaster';
 import { LOGOS } from '@/lib/constants/logos';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { AuthBrandingPanel } from '../_components/AuthBrandingPanel';
 
 export default function ResetPasswordPage() {
   const params = useSearchParams();
@@ -22,22 +23,9 @@ export default function ResetPasswordPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
-    if (!token) { 
-      setError('Token inválido o expirado'); 
-      return; 
-    }
-    
-    if (!p1 || p1.length < 8) { 
-      setError('La contraseña debe tener al menos 8 caracteres'); 
-      return; 
-    }
-    
-    if (p1 !== p2) { 
-      setError('Las contraseñas no coinciden'); 
-      return; 
-    }
-    
+    if (!token) { setError('Token inválido o expirado'); return; }
+    if (!p1 || p1.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return; }
+    if (p1 !== p2) { setError('Las contraseñas no coinciden'); return; }
     try {
       setLoading(true);
       await ApiClient.performPasswordReset(token, p1);
@@ -45,146 +33,79 @@ export default function ResetPasswordPage() {
       setTimeout(() => router.push('/login'), 1500);
     } catch (err: any) {
       setError(err?.message || 'No se pudo actualizar la contraseña');
-    } finally { 
-      setLoading(false); 
-    }
+    } finally { setLoading(false); }
   };
 
   return (
     <div className="min-h-screen w-full flex">
-      {/* Left Side - Formulario */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-white lg:px-8">
-        <div className="w-full max-w-md">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">Nueva Contraseña</h1>
-            <p className="text-slate-600">Ingresá tu nueva contraseña para continuar</p>
-          </div>
+      {/* Left — Form side */}
+      <div
+        className="flex-1 flex flex-col min-h-screen relative"
+        style={{
+          backgroundColor: '#ffffff',
+          backgroundImage: 'radial-gradient(circle, rgba(30,41,59,0.055) 1px, transparent 1px)',
+          backgroundSize: '22px 22px',
+        }}
+      >
+        <div className="flex items-center px-7 pt-7">
+          <img src={LOGOS.ICON_BROWN} alt="HandicApp" className="h-7 w-7 object-contain"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = LOGOS.FULL_BROWN; }} />
+        </div>
 
-          <form onSubmit={onSubmit} className="space-y-5">
-            {/* New Password */}
-            <div>
-              <label className="block text-slate-700 text-sm font-medium mb-2">
-                Nueva contraseña
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  autoComplete="new-password"
-                  value={p1}
-                  onChange={(e) => setP1(e.target.value)}
-                  className="w-full px-4 py-3 pr-12 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#af936f] focus:border-transparent transition-all"
-                  placeholder="Mínimo 8 caracteres"
-                  required
+        <div className="flex-1 flex items-center justify-center px-6 py-8 lg:px-14">
+          <div className="w-full max-w-[380px]">
+            <button onClick={() => router.push('/login')} className="flex items-center gap-1.5 text-[13px] text-slate-400 hover:text-[#1e293b] transition-colors mb-8 group">
+              <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+              Volver
+            </button>
+
+            <div className="auth-fade-up auth-fade-up-1 w-7 h-[3px] rounded-full bg-[#af936f] mb-5" />
+            <h1
+              className="auth-fade-up auth-fade-up-1 font-bold text-[#1e293b] leading-[1.1] mb-8"
+              style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontSize: 'clamp(1.9rem, 4vw, 2.4rem)' }}
+            >
+              Nueva clave.
+            </h1>
+
+            <form onSubmit={onSubmit} className="space-y-4">
+              <div className="auth-fade-up auth-fade-up-2 relative">
+                <input type={showPassword ? 'text' : 'password'} name="password" autoComplete="new-password" value={p1} onChange={(e) => setP1(e.target.value)}
+                  className="auth-input w-full px-4 py-3.5 pr-11 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#af936f] transition-all duration-200 text-sm"
+                  placeholder="Nueva contraseña" required
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
-                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none">
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-            </div>
 
-            {/* Confirm Password */}
-            <div>
-              <label className="block text-slate-700 text-sm font-medium mb-2">
-                Confirmar contraseña
-              </label>
-              <div className="relative">
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  name="confirmPassword"
-                  autoComplete="new-password"
-                  value={p2}
-                  onChange={(e) => setP2(e.target.value)}
-                  className="w-full px-4 py-3 pr-12 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#af936f] focus:border-transparent transition-all"
-                  placeholder="Repite tu contraseña"
-                  required
+              <div className="auth-fade-up auth-fade-up-3 relative">
+                <input type={showConfirmPassword ? 'text' : 'password'} name="confirmPassword" autoComplete="new-password" value={p2} onChange={(e) => setP2(e.target.value)}
+                  className="auth-input w-full px-4 py-3.5 pr-11 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#af936f] transition-all duration-200 text-sm"
+                  placeholder="Confirmar contraseña" required
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
-                  aria-label={showConfirmPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
+                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none">
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-            </div>
 
-            {/* Error Message */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-3">
-                <p className="text-red-600 text-sm">{error}</p>
+              {error && <div className="rounded-xl p-3.5 bg-red-50/70 border border-red-200 text-xs text-red-600">{error}</div>}
+
+              <div className="auth-fade-up auth-fade-up-4">
+                <button type="submit" disabled={loading}
+                  className="relative w-full overflow-hidden text-white font-semibold py-3.5 rounded-xl text-sm tracking-wide transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
+                  style={{ background: 'linear-gradient(135deg, #1e293b 0%, #1a2535 100%)' }}
+                >
+                  <span className="relative z-10">{loading ? 'Actualizando...' : 'Guardar nueva clave'}</span>
+                  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-[#af936f]/12 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                </button>
               </div>
-            )}
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#1e293b] text-white font-semibold py-3.5 rounded-xl hover:bg-[#0f172a] hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Actualizando...' : 'Actualizar Contraseña'}
-            </button>
-          </form>
-
-          {/* Footer */}
-          <div className="mt-8 text-center">
-            <button
-              onClick={() => router.push('/login')}
-              className="text-[#af936f] hover:text-[#8f7657] font-semibold transition-colors"
-            >
-              Volver al login
-            </button>
+            </form>
           </div>
         </div>
       </div>
 
-      {/* Right Side - Visual/Branding */}
-      <div className="hidden lg:flex lg:flex-1 items-center justify-center p-8">
-        <div className="relative bg-[#0f172a] overflow-hidden rounded-3xl h-full w-full shadow-2xl">
-          {/* Pattern Background */}
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-60"></div>
-          
-          {/* Gradient Orbs */}
-          <div className="absolute top-20 right-20 w-72 h-72 bg-[#0e445d]/30 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-20 left-20 w-64 h-64 bg-[#af936f]/20 rounded-full blur-3xl"></div>
-          
-          {/* Content */}
-          <div className="relative z-10 flex flex-col items-center justify-center w-full h-full px-12 text-center">
-            {/* Logo Icon */}
-            <div className="mb-8">
-              <img
-                src={LOGOS.ICON_WHITE}
-                alt="HandicApp"
-                className="h-32 w-32 object-contain"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).src = LOGOS.FULL_WHITE; }}
-              />
-            </div>
-            
-            {/* Main Message */}
-            <h2 className="text-4xl font-bold text-white mb-4">
-              Restablecer Contraseña
-            </h2>
-            <p className="text-white/70 text-lg max-w-md">
-              Crea una nueva contraseña segura para proteger tu cuenta y continuar gestionando tu pasión ecuestre.
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* Right — Branding panel */}
+      <AuthBrandingPanel />
     </div>
   );
 }

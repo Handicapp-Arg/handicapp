@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import { UserStatsCards } from '@/components/common/UserManagement';
 import { Shield } from 'lucide-react';
 import ApiClient from '@/lib/services/apiClient';
@@ -23,14 +24,22 @@ export function AdminUserStats() {
         const rolesData = await ApiClient.getRoles();
         const rolesArray = (rolesData as any).data.roles || [];
         
+        const hace30Dias = new Date();
+        hace30Dias.setDate(hace30Dias.getDate() - 30);
+        const nuevos = usersArray.filter((u: any) => {
+          const fecha = u.creado_el || u.created_at;
+          return fecha && new Date(fecha) > hace30Dias;
+        }).length;
+
         setStats({
           total: usersArray.length,
           activos,
           roles: rolesArray.length,
-          nuevos: 0, // TODO: calcular nuevos del mes
+          nuevos,
         });
       } catch (error) {
         console.error('Error fetching stats:', error);
+        toast.error('Error al cargar las estadísticas de usuarios');
       } finally {
         setLoading(false);
       }

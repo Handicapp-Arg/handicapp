@@ -5,6 +5,7 @@ import compression from 'compression';
 import { Request, Response, NextFunction } from 'express';
 import { config } from '../config/config';
 import { RateLimitError } from '../utils/errors';
+import { loginAttemptStore } from '../config/redis';
 
 // CORS configuration
 export const corsOptions: cors.CorsOptions = {
@@ -65,50 +66,46 @@ export const authRateLimiter = rateLimit({
 
 // Rate limiting por usuario (email) para login
 // Previene ataques de fuerza bruta a una cuenta específica desde múltiples IPs
-const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+const LOGIN_WINDOW_MS = 15 * 60 * 1000; // 15 minutos
+const LOGIN_MAX_ATTEMPTS = 10;
 
-export const userLoginRateLimiter = (req: Request, res: Response, next: NextFunction) => {
+export const userLoginRateLimiter = async (req: Request, res: Response, next: NextFunction) => {
   const email = req.body.email?.toLowerCase();
-  
+
   if (!email) {
     return next();
   }
 
   const now = Date.now();
-  const windowMs = 15 * 60 * 1000; // 15 minutos
-  const maxAttempts = 10; // 10 intentos por usuario en 15 minutos
+  const existing = await loginAttemptStore.get(email);
 
-  const userAttempts = loginAttempts.get(email);
-
-  if (userAttempts) {
-    if (now > userAttempts.resetAt) {
+  if (existing) {
+    if (now > existing.resetAt) {
       // Ventana expirada, resetear
-      loginAttempts.set(email, { count: 1, resetAt: now + windowMs });
+      await loginAttemptStore.set(email, { count: 1, resetAt: now + LOGIN_WINDOW_MS }, LOGIN_WINDOW_MS);
       return next();
     }
 
-    if (userAttempts.count >= maxAttempts) {
+    if (existing.count >= LOGIN_MAX_ATTEMPTS) {
       res.status(429).json({
         success: false,
-        message: `Demasiados intentos de login para esta cuenta. Intenta en ${Math.ceil((userAttempts.resetAt - now) / 60000)} minutos.`,
-        code: 'RATE_LIMIT_USER'
+        message: `Demasiados intentos de login para esta cuenta. Intenta en ${Math.ceil((existing.resetAt - now) / 60000)} minutos.`,
+        code: 'RATE_LIMIT_USER',
       });
       return;
     }
 
-    // Incrementar contador
-    userAttempts.count++;
+    await loginAttemptStore.set(email, { count: existing.count + 1, resetAt: existing.resetAt }, existing.resetAt - now);
   } else {
-    // Primer intento
-    loginAttempts.set(email, { count: 1, resetAt: now + windowMs });
+    await loginAttemptStore.set(email, { count: 1, resetAt: now + LOGIN_WINDOW_MS }, LOGIN_WINDOW_MS);
   }
 
   next();
 };
 
 // Limpiar intentos exitosos de login (llamar después de login exitoso)
-export const clearUserLoginAttempts = (email: string) => {
-  loginAttempts.delete(email.toLowerCase());
+export const clearUserLoginAttempts = async (email: string) => {
+  await loginAttemptStore.del(email.toLowerCase());
 };
 
 // Helmet security headers
@@ -116,9 +113,11 @@ export const helmetConfig = helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      frameAncestors: ["'none'"],
     },
   },
   crossOriginEmbedderPolicy: false,

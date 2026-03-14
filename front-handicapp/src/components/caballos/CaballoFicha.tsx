@@ -112,10 +112,9 @@ export default function CaballoFicha({ caballo, origin, pedigree }: CaballoFicha
                  <p className="opacity-70 text-xs mt-0.5">Escanea para ver ficha pública</p>
               </div>
               <div className="bg-white p-2 rounded-lg shadow-sm">
-                 <QrCanvas 
-                    value={`${origin}/public/caballos/${caballo.link_uuid || caballo.id}`} 
-                    size={56} 
-                    fgColor="#1e3a8a"
+                 <QrCanvas
+                    value={`${origin}/public/caballos/${caballo.link_uuid || caballo.id}`}
+                    size={56}
                  />
               </div>
            </div>
@@ -154,8 +153,8 @@ export default function CaballoFicha({ caballo, origin, pedigree }: CaballoFicha
               {/* Lineage */}
               <SectionCard title="Genealogía" icon={TrophyIcon}>
                  <div className="flex flex-col gap-2">
-                    <DetailRow label="Padre" value={caballo.padre || "—"} icon={TrophyIcon} />
-                    <DetailRow label="Madre" value={caballo.madre || "—"} icon={TrophyIcon} />
+                    <DetailRow label="Padre" value={caballo.padre?.nombre || "—"} icon={TrophyIcon} />
+                    <DetailRow label="Madre" value={caballo.madre?.nombre || "—"} icon={TrophyIcon} />
                     <DetailRow label="Abuelo Materno" value={caballo.abuelo_materno || "—"} icon={TrophyIcon} />
                  </div>
               </SectionCard>

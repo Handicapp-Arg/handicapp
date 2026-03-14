@@ -65,14 +65,13 @@ class TareaService {
   private mapBackendTarea(tarea: any): Tarea {
     return {
       ...tarea,
-      descripcion: tarea.notas || tarea.descripcion // Backend usa 'notas', frontend usa 'descripcion'
+      descripcion: tarea.notas || tarea.descripcion,
     };
   }
 
   async getAll(filters: TareaFilters = {}): Promise<{ data: Tarea[], total: number, page: number, limit: number }> {
     const params = new URLSearchParams();
-    
-    // Mapeo de filtros frontend -> backend
+
     const mappings: Record<string, string> = {
       'fecha_desde': 'fechaInicio',
       'fecha_hasta': 'fechaFin',
@@ -80,19 +79,17 @@ class TareaService {
       'asignado_a_usuario_id': 'asignado',
       'caballo_id': 'caballo',
       'establecimiento_id': 'establecimiento',
-      'creado_por_usuario_id': 'creadoPor'
+      'creado_por_usuario_id': 'creadoPor',
     };
 
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== '' && value !== null) {
-        // Usar nombre mapeado si existe, sino el original
         const paramName = mappings[key] || key;
         params.append(paramName, value.toString());
       }
     });
 
     const response = await ApiClient.makeRequest(`${this.baseUrl}?${params}`) as any;
-    // Mapear todas las tareas
     if (response.data && Array.isArray(response.data)) {
       response.data = response.data.map((tarea: any) => this.mapBackendTarea(tarea));
     }
@@ -105,7 +102,6 @@ class TareaService {
   }
 
   async create(data: CreateTareaData): Promise<Tarea> {
-    // Transformar snake_case a camelCase para el backend
     const backendData = {
       titulo: data.titulo,
       descripcion: data.descripcion,
@@ -117,131 +113,75 @@ class TareaService {
       ubicacion: data.ubicacion,
       caballoId: data.caballo_id,
       establecimientoId: data.establecimiento_id,
-      asignadoAUsuarioId: data.asignado_a_usuario_id
+      asignadoAUsuarioId: data.asignado_a_usuario_id,
     };
 
     const response = await ApiClient.makeRequest(this.baseUrl, {
       method: 'POST',
-      body: JSON.stringify(backendData)
+      body: JSON.stringify(backendData),
     }) as any;
     return this.mapBackendTarea(response);
   }
 
   async update(id: number, data: Partial<CreateTareaData>): Promise<Tarea> {
-    // El backend se encarga de mapear descripcion a notas
     const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     }) as any;
     return this.mapBackendTarea(response);
   }
 
   async delete(id: number): Promise<{ success: boolean }> {
-    const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}`, {
-      method: 'DELETE'
-    }) as any;
-    return response;
+    return ApiClient.makeRequest(`${this.baseUrl}/${id}`, { method: 'DELETE' }) as any;
   }
 
   async changeEstado(id: number, nuevoEstado: string): Promise<Tarea> {
     const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}/estado`, {
       method: 'PUT',
-      body: JSON.stringify({ nuevoEstado })
+      body: JSON.stringify({ nuevoEstado }),
     }) as any;
     return this.mapBackendTarea(response);
   }
 
+  // PUT /tareas/:id/asignar — método y nombre correctos según backend
   async assign(id: number, usuarioId: number): Promise<Tarea> {
-    const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}/assign`, {
-      method: 'PATCH',
-      body: JSON.stringify({
-        asignado_a_usuario_id: usuarioId
-      })
+    const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}/asignar`, {
+      method: 'PUT',
+      body: JSON.stringify({ asignadoAUsuarioId: usuarioId }),
     }) as any;
     return this.mapBackendTarea(response);
   }
 
+  // POST /tareas/:id/completar
+  // Backend espera: { observacionesComplecion, tiempoRealMinutos }
   async complete(id: number, observaciones?: string, tiempoRealMinutos?: number): Promise<Tarea> {
-    const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}/complete`, {
-      method: 'PATCH',
-      body: JSON.stringify({
-        observaciones_completado: observaciones,
-        tiempo_real_minutos: tiempoRealMinutos
-      })
-    }) as any;
-    return this.mapBackendTarea(response);
-  }
-
-  async cancel(id: number, motivo?: string): Promise<Tarea> {
-    const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}/cancel`, {
-      method: 'PATCH',
-      body: JSON.stringify({
-        motivo
-      })
-    }) as any;
-    return this.mapBackendTarea(response);
-  }
-
-  async getStats(filters: any = {}): Promise<any> {
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== '' && value !== null) {
-        params.append(key, value.toString());
-      }
-    });
-
-    const response = await ApiClient.makeRequest(`${this.baseUrl}/stats?${params}`) as any;
-    return response;
-  }
-
-  async getOverdue(): Promise<{ data: Tarea[] }> {
-    const response = await ApiClient.makeRequest(`${this.baseUrl}/overdue`) as any;
-    return response;
-  }
-
-  async getByUser(usuarioId: number, filters: any = {}): Promise<{ data: Tarea[] }> {
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== '' && value !== null) {
-        params.append(key, value.toString());
-      }
-    });
-
-    const response = await ApiClient.makeRequest(`${this.baseUrl}/user/${usuarioId}?${params}`) as any;
-    return response;
-  }
-
-  async getProductivity(filters: any = {}): Promise<any> {
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== '' && value !== null) {
-        params.append(key, value.toString());
-      }
-    });
-
-    const response = await ApiClient.makeRequest(`${this.baseUrl}/productivity?${params}`) as any;
-    return response;
-  }
-
-  /**
-   * Crear evento a partir de una tarea completada
-   */
-  async crearEvento(
-    id: number, 
-    datosAdicionales?: {
-      costo_monto?: string;
-      costo_moneda?: string;
-      hora_inicio?: string;
-      hora_fin?: string;
-      ubicacion?: string;
-      resultado?: string;
-    }
-  ): Promise<any> {
-    const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}/crear-evento`, {
+    const response = await ApiClient.makeRequest(`${this.baseUrl}/${id}/completar`, {
       method: 'POST',
-      body: JSON.stringify(datosAdicionales || {})
+      body: JSON.stringify({
+        observacionesComplecion: observaciones,
+        tiempoRealMinutos: tiempoRealMinutos,
+      }),
     }) as any;
-    return response;
+    return this.mapBackendTarea(response);
+  }
+
+  // Cancelar usa cambio de estado — no hay endpoint /cancel en el backend
+  async cancel(id: number): Promise<Tarea> {
+    return this.changeEstado(id, 'cancelada');
+  }
+
+  async crearEvento(id: number, datosAdicionales?: {
+    costo_monto?: string;
+    costo_moneda?: string;
+    hora_inicio?: string;
+    hora_fin?: string;
+    ubicacion?: string;
+    resultado?: string;
+  }): Promise<any> {
+    return ApiClient.makeRequest(`${this.baseUrl}/${id}/crear-evento`, {
+      method: 'POST',
+      body: JSON.stringify(datosAdicionales || {}),
+    }) as any;
   }
 }
 

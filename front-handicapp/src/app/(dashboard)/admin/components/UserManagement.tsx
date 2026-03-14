@@ -90,6 +90,7 @@ export function UserManagement() {
       setTotalItems((data as any).meta?.totalItems || (data as any).data?.totalItems || usersArray.length);
     } catch (error: any) {
       console.error('Error fetching users:', error);
+      toast.error('Error al cargar los usuarios');
       setUsers([]);
     } finally {
       setLoading(false);
@@ -102,7 +103,7 @@ export function UserManagement() {
       setRoles((data as any).data.roles || []);
     } catch (error: any) {
       console.error('Error fetching roles:', error);
-      // No redirigir, solo mostrar error en UI
+      toast.error('Error al cargar los roles');
       setRoles([]);
     }
   };

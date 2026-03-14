@@ -1,6 +1,5 @@
-import { Op } from 'sequelize';
+import { Op, QueryTypes } from 'sequelize';
 import { Gasto } from '../models/Gasto';
-import { ServiceResponse } from '../types';
 import { sequelize } from '../config/database';
 
 export async function getFinanzasUsuarioYCaballos(usuarioId: number, caballoIds: number[]) {
@@ -48,14 +47,6 @@ export async function getGastosStats(usuarioId: number, caballoIds: number[]) {
     const inicioMesAnterior = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
     const finMesAnterior = new Date(ahora.getFullYear(), ahora.getMonth(), 0, 23, 59, 59);
 
-    // Construir condición WHERE
-    const whereConditions: any = {
-      [Op.or]: [
-        { usuario_id: usuarioId },
-        ...(caballoIds.length > 0 ? [{ caballo_id: { [Op.in]: caballoIds } }] : [])
-      ]
-    };
-
     // Una sola query con CASE para calcular ambos meses
     const result = await sequelize.query(`
       SELECT 
@@ -81,7 +72,7 @@ export async function getGastosStats(usuarioId: number, caballoIds: number[]) {
         inicioMesAnterior: inicioMesAnterior.toISOString(),
         finMesAnterior: finMesAnterior.toISOString()
       },
-      type: sequelize.QueryTypes.SELECT
+      type: QueryTypes.SELECT
     });
 
     const stats = result[0] as any;

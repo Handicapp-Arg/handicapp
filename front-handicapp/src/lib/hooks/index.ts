@@ -37,3 +37,8 @@ export * from './useUsuariosQuery';
 
 // Auditoría (Logs del sistema)
 export * from './useAuditoriaQuery';
+
+// WebSocket y tiempo real
+export * from './useWebSocket';
+export * from './useNotifications';
+export * from './useAutoRefresh';

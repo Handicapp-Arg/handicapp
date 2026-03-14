@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { VerticalNavbar } from './VerticalNavbar';
 import { HorizontalNavbar } from './HorizontalNavbar';
+import { BottomNav } from './BottomNav';
 import { PrefetchManager } from './PrefetchManager';
 import { useAuthNew } from '@/lib/hooks/useAuthNew';
 
@@ -45,14 +46,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     <div className="min-h-screen bg-white">
       {/* Prefetch Manager - Pre-carga rutas comunes */}
       <PrefetchManager role={user?.rol?.clave} />
-      
+
       {/* Layout Mobile-First */}
       <div className="flex flex-col h-screen lg:flex-row">
-        
-        {/* OVERLAY COMPLETAMENTE REMOVIDO - Ya no bloquea clics */}
+
+        {/* Mobile overlay — toca fuera del sidebar para cerrarlo */}
+        {sidebarOpen && isMobile && (
+          <div
+            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+            aria-hidden="true"
+          />
+        )}
 
         {/* Sidebar - Navbar Vertical */}
-        <VerticalNavbar 
+        <VerticalNavbar
           isOpen={sidebarOpen}
           isCollapsed={sidebarCollapsed}
           onClose={() => setSidebarOpen(false)}
@@ -71,12 +79,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
           {/* Page Content */}
           <main className="flex-1 overflow-y-auto">
-            <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
+            {/* pb-28 en móvil para que el contenido no quede tapado por el BottomNav */}
+            <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 pb-28 lg:pb-6">
               {children}
             </div>
           </main>
         </div>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <BottomNav onMoreClick={() => setSidebarOpen(!sidebarOpen)} />
     </div>
   );
 }

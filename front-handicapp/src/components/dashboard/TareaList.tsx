@@ -1,64 +1,121 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuthNew } from '@/lib/hooks/useAuthNew';
 import { tareaService, type Tarea } from '@/lib/services/tareaService';
 import { TareaForm } from './TareaForm';
 import { usePermissions } from '@/lib/hooks/usePermissions';
-import { Loader } from '@/components/ui/loader';
-import { 
-  Plus, 
-  Search, 
-  Edit2, 
-  Trash2, 
+import { EmptyState } from '@/components/ui/empty-state';
+import {
+  Plus,
+  Search,
+  Edit2,
+  Trash2,
   CheckCircle2,
-  MapPin, 
-  User, 
+  MapPin,
+  User,
   Calendar,
   FileText,
   Timer,
   ChevronLeft,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Clock,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface TareaListProps {
   tareasProp?: Tarea[];
+}
+
+// Mapea estado/prioridad a clases del design system
+function getStatusClasses(estado?: string) {
+  switch (estado?.toLowerCase()) {
+    case 'completada':  return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+    case 'en_progreso': return 'bg-blue-50 text-blue-700 border border-blue-200';
+    case 'pendiente':   return 'bg-amber-50 text-amber-700 border border-amber-200';
+    case 'cancelada':   return 'bg-slate-100 text-slate-500 border border-slate-200';
+    default:            return 'bg-slate-100 text-slate-500 border border-slate-200';
+  }
+}
+
+function getPriorityClasses(prioridad?: string) {
+  switch (prioridad?.toLowerCase()) {
+    case 'alta':
+    case 'critica': return 'bg-red-50 text-red-700 border border-red-200';
+    case 'media':   return 'bg-amber-50 text-amber-700 border border-amber-200';
+    case 'baja':    return 'bg-emerald-50 text-emerald-600 border border-emerald-200';
+    default:        return 'bg-slate-100 text-slate-500 border border-slate-200';
+  }
+}
+
+function getPriorityBar(prioridad?: string) {
+  switch (prioridad?.toLowerCase()) {
+    case 'alta':
+    case 'critica': return 'bg-red-400';
+    case 'media':   return 'bg-amber-400';
+    default:        return 'bg-emerald-400';
+  }
+}
+
+function getStatusLabel(estado?: string) {
+  const map: Record<string, string> = {
+    pendiente: 'Pendiente', en_progreso: 'En Progreso',
+    completada: 'Completada', cancelada: 'Cancelada',
+  };
+  return estado ? (map[estado] ?? estado) : '-';
+}
+
+function getPriorityLabel(prioridad?: string) {
+  const map: Record<string, string> = {
+    critica: 'Crítica', alta: 'Alta', media: 'Media', baja: 'Baja',
+  };
+  return prioridad ? (map[prioridad] ?? prioridad) : '';
 }
 
 export function TareaList({ tareasProp }: TareaListProps) {
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [selectedTarea, setSelectedTarea] = useState<Tarea | null>(null);
   const { isAuthenticated, isLoading: authLoading } = useAuthNew();
   const { canCreateTasks, canDeleteTasks, hasPermission } = usePermissions();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    // Si se pasan tareas como prop, usar esas
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1);
+    }, 400);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [searchTerm]);
+
+  useEffect(() => {
     if (tareasProp) {
       setTareas(tareasProp);
       setLoading(false);
     } else if (!authLoading && isAuthenticated) {
       fetchTareas();
     }
-  }, [currentPage, searchTerm, authLoading, isAuthenticated, tareasProp]);
+  }, [currentPage, debouncedSearch, authLoading, isAuthenticated, tareasProp]);
 
   const fetchTareas = async () => {
-    if (authLoading || !isAuthenticated || tareasProp) return; // No fetch si hay tareasProp
+    if (authLoading || !isAuthenticated || tareasProp) return;
     try {
       setLoading(true);
-      const response: any = await tareaService.getAll({ page: currentPage, limit: 10, search: searchTerm });
-      const tareasData = response?.data?.tareas || response?.tareas || response?.data || response || [];
+      const response: any = await tareaService.getAll({ page: currentPage, limit: 10, search: debouncedSearch });
+      // Backend retorna: { success, data: Tarea[], meta: { page, limit, total, totalPages } }
+      const tareasData = response?.data;
       const list: Tarea[] = Array.isArray(tareasData) ? tareasData : [];
-      const totalPagesData = response?.meta?.totalPages || response?.data?.totalPages || response?.totalPages || 1;
+      const totalPagesData = response?.meta?.totalPages ?? 1;
       setTareas(list);
       setTotalPages(totalPagesData);
-    } catch (error) {
-      console.error('Error loading tareas:', error);
+    } catch {
       setTareas([]);
       setTotalPages(1);
     } finally {
@@ -66,34 +123,39 @@ export function TareaList({ tareasProp }: TareaListProps) {
     }
   };
 
-  const handleCreateTarea = () => {
-    setSelectedTarea(null);
-    setShowForm(true);
-  };
-
-  const handleEditTarea = (tarea: Tarea) => {
-    setSelectedTarea(tarea);
-    setShowForm(true);
-  };
+  const handleCreateTarea = () => { setSelectedTarea(null); setShowForm(true); };
+  const handleEditTarea = (tarea: Tarea) => { setSelectedTarea(tarea); setShowForm(true); };
 
   const handleDeleteTarea = async (id: number) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar esta tarea?')) {
-      try {
-        await tareaService.delete(id);
-        setTareas(tareas.filter(t => t.id !== id));
-      } catch (error) {
-        console.error('Error deleting tarea:', error);
-        alert('Error al eliminar la tarea');
-      }
-    }
+    toast((t) => (
+      <span className="flex items-center gap-3">
+        <span className="text-sm text-slate-700">¿Eliminar esta tarea?</span>
+        <button
+          className="px-3 py-1 bg-red-600 text-white text-xs rounded-lg font-medium"
+          onClick={async () => {
+            toast.dismiss(t.id);
+            try {
+              await tareaService.delete(id);
+              setTareas(prev => prev.filter(t => t.id !== id));
+              toast.success('Tarea eliminada');
+            } catch {
+              toast.error('Error al eliminar la tarea');
+            }
+          }}
+        >Eliminar</button>
+        <button
+          className="px-3 py-1 bg-slate-100 text-slate-700 text-xs rounded-lg font-medium"
+          onClick={() => toast.dismiss(t.id)}
+        >Cancelar</button>
+      </span>
+    ), { duration: 6000 });
   };
 
   const handleCompleteTask = async (tarea: Tarea) => {
     try {
-      // Crear objeto con todas las propiedades necesarias
       const updateData = {
         titulo: tarea.titulo,
-        descripcion: tarea.descripcion || 'Tarea completada', // Evitar descripción vacía
+        descripcion: tarea.descripcion || 'Tarea completada',
         tipo: tarea.tipo as any,
         prioridad: tarea.prioridad as any,
         fecha_vencimiento: tarea.fecha_vencimiento || '',
@@ -102,198 +164,137 @@ export function TareaList({ tareasProp }: TareaListProps) {
         asignado_a_usuario_id: tarea.asignado_a_usuario_id,
         establecimiento_id: tarea.establecimiento_id,
         tiempo_estimado_minutos: tarea.tiempo_estimado_minutos,
-        ubicacion: tarea.ubicacion
+        ubicacion: tarea.ubicacion,
       };
       await tareaService.update(tarea.id, updateData);
       setTareas(tareas.map(t => t.id === tarea.id ? { ...t, estado: 'completada' } : t));
-    } catch (error) {
-      console.error('Error completing task:', error);
-      alert('Error al completar la tarea');
+      toast.success('Tarea completada');
+    } catch {
+      toast.error('Error al completar la tarea');
     }
   };
 
   const handleFormSuccess = async () => {
-    if (!tareasProp) {
-      await fetchTareas();
-    }
+    if (!tareasProp) await fetchTareas();
   };
 
-  // Aplicar búsqueda solo si no se usan filtros externos (tareasProp)
-  const filteredTareas = !tareasProp 
-    ? tareas.filter(tarea =>
-        tarea.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (tarea.descripcion && tarea.descripcion.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredTareas = !tareasProp
+    ? tareas.filter(t =>
+        t.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (t.descripcion && t.descripcion.toLowerCase().includes(searchTerm.toLowerCase()))
       )
-    : tareas; // Si hay tareasProp, ya vienen filtradas
+    : tareas;
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
 
-  const getPriorityColor = (prioridad: string | undefined) => {
-    if (!prioridad) return 'bg-gray-100 text-gray-800';
-    
-    switch (prioridad.toLowerCase()) {
-      case 'alta':
-      case 'critica':
-        return 'bg-red-100 text-red-800';
-      case 'media':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'baja':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusColor = (estado: string | undefined) => {
-    if (!estado) return 'bg-gray-100 text-gray-800';
-    
-    switch (estado.toLowerCase()) {
-      case 'completada':
-        return 'bg-green-100 text-green-800';
-      case 'en_progreso':
-        return 'bg-blue-100 text-blue-800';
-      case 'pendiente':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'cancelada':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
+  // ─── Loading skeleton ───
   if (loading && tareas.length === 0) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader variant="section" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[1, 2, 3, 4, 5, 6].map(i => (
+          <div key={i} className="bg-white border border-slate-200/70 rounded-2xl p-5 animate-pulse">
+            <div className="h-4 bg-slate-200 rounded-lg w-3/4 mb-3" />
+            <div className="flex gap-2 mb-4">
+              <div className="h-5 bg-slate-100 rounded-lg w-20" />
+              <div className="h-5 bg-slate-100 rounded-lg w-16" />
+            </div>
+            <div className="space-y-2">
+              <div className="h-3 bg-slate-100 rounded w-2/3" />
+              <div className="h-3 bg-slate-100 rounded w-1/2" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      {/* Buscador + Acción - Solo mostrar si no hay tareasProp (filtros externos) */}
+    <div>
+      {/* ─── Toolbar ─── */}
       {!tareasProp && (
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-8">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
             <input
               type="text"
-              placeholder="Buscar por título o descripción..."
+              placeholder="Buscar tarea..."
               value={searchTerm}
-              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#af936f]/30 focus:border-[#af936f]/60 bg-white transition-colors"
             />
           </div>
           {canCreateTasks() && (
-            <button 
+            <button
               onClick={handleCreateTarea}
-              className="inline-flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm text-sm font-semibold whitespace-nowrap"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm whitespace-nowrap active:scale-[0.98]"
             >
-              <Plus className="h-5 w-5 mr-2" />
+              <Plus className="h-4 w-4" />
               Nueva Tarea
             </button>
           )}
         </div>
       )}
 
-      {/* Botón crear tarea cuando hay filtros externos */}
       {tareasProp && canCreateTasks() && (
-        <div className="flex justify-end mb-6">
-          <button 
+        <div className="flex justify-end mb-5">
+          <button
             onClick={handleCreateTarea}
-            className="inline-flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm text-sm font-semibold whitespace-nowrap"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm active:scale-[0.98]"
           >
-            <Plus className="h-5 w-5 mr-2" />
+            <Plus className="h-4 w-4" />
             Nueva Tarea
           </button>
         </div>
       )}
 
-      <div className="max-w-7xl">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTareas.length === 0 ? (
-          <div className="text-center py-16 w-full col-span-full">
-            <div className="text-6xl mb-6">📝</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No hay tareas</h3>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">
-              {searchTerm ? 'No se encontraron tareas que coincidan con tu búsqueda.' : 'Crea tu primera tarea para comenzar.'}
-            </p>
-            {!searchTerm && canCreateTasks() && (
-              <button 
-                onClick={handleCreateTarea}
-                className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
-              >
-                <Plus className="h-5 w-5 mr-2" />
-                Crear Tarea
-              </button>
-            )}
-          </div>
-        ) : (
-          filteredTareas.map((tarea) => (
-            <div 
-              key={tarea.id} 
-              className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-all duration-200 group relative overflow-hidden"
+      {/* ─── Grid ─── */}
+      {filteredTareas.length === 0 ? (
+        <EmptyState
+          icon={FileText}
+          title="No hay tareas"
+          description={searchTerm ? 'Ninguna tarea coincide con tu búsqueda.' : 'Creá tu primera tarea para empezar.'}
+          action={!searchTerm && canCreateTasks() ? { label: 'Crear tarea', onClick: handleCreateTarea } : undefined}
+        />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredTareas.map((tarea) => (
+            <div
+              key={tarea.id}
+              className="bg-white border border-slate-200/70 rounded-2xl p-5 hover:shadow-[0_4px_24px_rgba(0,0,0,0.08)] hover:border-slate-300/60 transition-all duration-200 group relative overflow-hidden"
             >
-              {/* Barra de color según prioridad */}
-              <div className={`absolute top-0 left-0 w-1 h-full ${
-                tarea.prioridad?.toLowerCase() === 'alta' || tarea.prioridad?.toLowerCase() === 'critica' 
-                  ? 'bg-red-500' 
-                  : tarea.prioridad?.toLowerCase() === 'media' 
-                  ? 'bg-yellow-500' 
-                  : 'bg-green-500'
-              }`}></div>
+              {/* Priority bar */}
+              <div className={`absolute top-0 left-0 w-[3px] h-full rounded-l-2xl ${getPriorityBar(tarea.prioridad)}`} />
 
-              {/* Header con título y badges */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1 pr-2">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">{tarea.titulo}</h3>
-                  <div className="flex flex-wrap gap-2">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${getStatusColor(tarea.estado)}`}>
-                      {tarea.estado === 'pendiente' ? 'Pendiente' :
-                       tarea.estado === 'en_progreso' ? 'En Progreso' :
-                       tarea.estado === 'completada' ? 'Completada' :
-                       tarea.estado === 'cancelada' ? 'Cancelada' : tarea.estado}
-                    </span>
-                    {tarea.prioridad && (
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${getPriorityColor(tarea.prioridad)}`}>
-                        {tarea.prioridad === 'critica' ? 'Crítica' : 
-                         tarea.prioridad === 'alta' ? 'Alta' :
-                         tarea.prioridad === 'media' ? 'Media' : 'Baja'}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Botones de acción */}
-                <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              {/* Header */}
+              <div className="flex items-start justify-between gap-2 mb-3">
+                <h3 className="text-[15px] font-semibold text-slate-800 leading-snug line-clamp-2 flex-1">
+                  {tarea.titulo}
+                </h3>
+                {/* Action buttons — visible on hover */}
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
                   {tarea.estado !== 'completada' && hasPermission('tasks:complete') && (
-                    <button 
+                    <button
                       onClick={() => handleCompleteTask(tarea)}
-                      className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                      className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
                       title="Completar"
                     >
                       <CheckCircle2 className="h-4 w-4" />
                     </button>
                   )}
                   {canCreateTasks() && (
-                    <button 
+                    <button
                       onClick={() => handleEditTarea(tarea)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      className="p-1.5 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
                       title="Editar"
                     >
                       <Edit2 className="h-4 w-4" />
                     </button>
                   )}
                   {canDeleteTasks() && (
-                    <button 
+                    <button
                       onClick={() => handleDeleteTarea(tarea.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                       title="Eliminar"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -301,99 +302,100 @@ export function TareaList({ tareasProp }: TareaListProps) {
                   )}
                 </div>
               </div>
-              
-              {/* Descripción */}
+
+              {/* Badges */}
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-semibold ${getStatusClasses(tarea.estado)}`}>
+                  {getStatusLabel(tarea.estado)}
+                </span>
+                {tarea.prioridad && (
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-semibold ${getPriorityClasses(tarea.prioridad)}`}>
+                    {getPriorityLabel(tarea.prioridad)}
+                  </span>
+                )}
+              </div>
+
+              {/* Description */}
               {tarea.descripcion && (
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">{tarea.descripcion}</p>
+                <p className="text-sm text-slate-500 mb-3 line-clamp-2 leading-relaxed">{tarea.descripcion}</p>
               )}
-              
-              {/* Grid de información */}
-              <div className="space-y-2.5 text-sm">
-                <div className="flex items-center text-gray-600">
-                  <FileText className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
-                  <span className="font-medium mr-1">Tipo:</span> 
-                  <span className="capitalize">{tarea.tipo}</span>
-                </div>
-                
+
+              {/* Meta info */}
+              <div className="space-y-1.5 text-xs text-slate-500">
+                {tarea.tipo && (
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                    <span className="capitalize">{tarea.tipo}</span>
+                  </div>
+                )}
                 {tarea.fecha_vencimiento && (
-                  <div className="flex items-center text-gray-600">
-                    <Calendar className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
-                    <span className="font-medium mr-1">Vence:</span> 
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
                     <span>{formatDate(tarea.fecha_vencimiento)}</span>
                   </div>
                 )}
-                
                 {tarea.asignado_a && (
-                  <div className="flex items-center text-gray-600">
-                    <User className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
-                    <span className="font-medium mr-1">Asignado:</span> 
+                  <div className="flex items-center gap-2">
+                    <User className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
                     <span className="truncate">{tarea.asignado_a.nombre} {tarea.asignado_a.apellido}</span>
                   </div>
                 )}
-                
                 {tarea.caballo && (
-                  <div className="flex items-center text-gray-600">
-                    <Sparkles className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
-                    <span className="font-medium mr-1">Caballo:</span> 
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
                     <span className="truncate">{tarea.caballo.nombre}</span>
                   </div>
                 )}
-                
                 {tarea.ubicacion && (
-                  <div className="flex items-center text-gray-600">
-                    <MapPin className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
-                    <span className="font-medium mr-1">Ubicación:</span> 
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
                     <span className="truncate">{tarea.ubicacion}</span>
                   </div>
                 )}
-                
                 {tarea.tiempo_estimado_minutos && (
-                  <div className="flex items-center text-gray-600">
-                    <Timer className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
-                    <span className="font-medium mr-1">Tiempo:</span> 
+                  <div className="flex items-center gap-2">
+                    <Timer className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
                     <span>{tarea.tiempo_estimado_minutos} min</span>
                   </div>
                 )}
               </div>
 
-              {/* Indicador de solo lectura */}
+              {/* Read-only indicator */}
               {!hasPermission('tasks:complete') && !canCreateTasks() && !canDeleteTasks() && (
-                <div className="mt-4 pt-3 border-t border-gray-100">
-                  <span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
-                    Solo lectura
-                  </span>
+                <div className="mt-3 pt-3 border-t border-slate-100">
+                  <span className="text-[11px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-lg">Solo lectura</span>
                 </div>
               )}
             </div>
-          ))
-        )}
+          ))}
         </div>
-      </div>
-      {/* Paginación */}
+      )}
+
+      {/* ─── Pagination ─── */}
       {totalPages > 1 && (
         <div className="flex justify-center items-center gap-3 mt-8">
-          <button 
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
+          <button
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             disabled={currentPage === 1 || loading}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            <ChevronLeft className="h-4 w-4 mr-1" />
+            <ChevronLeft className="h-4 w-4" />
             Anterior
           </button>
-          <span className="text-sm text-gray-600 font-medium">
-            Página {currentPage} de {totalPages}
+          <span className="text-sm text-slate-500 font-medium">
+            {currentPage} / {totalPages}
           </span>
-          <button 
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
+          <button
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages || loading}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Siguiente
-            <ChevronRight className="h-4 w-4 ml-1" />
+            <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       )}
-      
+
       <TareaForm
         isOpen={showForm}
         onClose={() => setShowForm(false)}
@@ -403,4 +405,3 @@ export function TareaList({ tareasProp }: TareaListProps) {
     </div>
   );
 }
-

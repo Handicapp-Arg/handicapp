@@ -266,7 +266,7 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
           {/* Search Bar - Oculto en móviles pequeños, visible desde sm */}
           <div className="hidden sm:flex min-w-0 flex-1 max-w-md relative" ref={searchRef}>
             <div className="relative w-full group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-[#af936f] transition-colors duration-200 pointer-events-none z-10" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-accent transition-colors duration-200 pointer-events-none z-10" />
               <input
                 type="text"
                 placeholder="Buscar..."
@@ -278,7 +278,7 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                 onFocus={() => {
                   if (searchQuery.trim()) setShowSearchResults(true);
                 }}
-                className="w-full h-11 pl-10 pr-4 text-sm bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#af936f]/20 focus:border-[#af936f] transition-all duration-200 placeholder:text-slate-400"
+                className="w-full h-11 pl-10 pr-4 text-sm bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all duration-200 placeholder:text-slate-400"
               />
 
               {/* Dropdown con resultados */}
@@ -304,8 +304,8 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                           onClick={() => handleSelectCaballo(caballo.id)}
                           className="w-full px-4 py-3 flex items-center gap-3 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 group"
                         >
-                          <div className="w-10 h-10 rounded-lg bg-[#1e293b] flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-200">
-                            <Trophy className="h-5 w-5 text-[#af936f]" />
+                          <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-200">
+                            <Trophy className="h-5 w-5 text-accent" />
                           </div>
                           <div className="flex-1 min-w-0 text-left">
                             <p className="text-sm font-medium text-slate-900 truncate">
@@ -316,7 +316,7 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                               {caballo.microchip && ` • ${caballo.microchip}`}
                             </p>
                           </div>
-                          <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-[#af936f] transition-colors flex-shrink-0" />
+                          <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-accent transition-colors flex-shrink-0" />
                         </button>
                       ))}
                     </>
@@ -370,7 +370,7 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                         onClick={async () => {
                           await marcarTodasComoLeidas();
                         }}
-                        className="text-xs font-semibold text-[#af936f] hover:text-[#af936f]/80 flex items-center gap-1 flex-shrink-0 bg-[#af936f]/10 px-2 py-1 rounded-md transition-colors"
+                        className="text-xs font-semibold text-accent hover:text-accent/80 flex items-center gap-1 flex-shrink-0 bg-accent/10 px-2 py-1 rounded-md transition-colors"
                       >
                         <Check className="w-3 h-3" />
                         <span className="hidden xs:inline">Marcar leídas</span>
@@ -415,7 +415,7 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                             }`}
                           >
                             {!notif.leida && (
-                              <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#af936f] rounded-r-full"></div>
+                              <div className="absolute left-0 top-0 bottom-0 w-1 bg-accent rounded-r-full"></div>
                             )}
                             <div className="flex gap-4">
                               <div className={`w-10 h-10 rounded-full ${getBgColorTipo(notif.tipo)} flex items-center justify-center flex-shrink-0 shadow-sm`}>
@@ -457,7 +457,7 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                         setIsNotifDropdownOpen(false);
                         router.push(notificacionesPath);
                       }}
-                      className="w-full flex items-center justify-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#af936f] hover:bg-white transition-all py-2.5 rounded-lg border border-transparent hover:border-slate-100 hover:shadow-sm"
+                      className="w-full flex items-center justify-center gap-2 text-xs font-semibold text-slate-600 hover:text-accent hover:bg-white transition-all py-2.5 rounded-lg border border-transparent hover:border-slate-100 hover:shadow-sm"
                     >
                       Ver historial completo
                       <ArrowRight className="w-3 h-3" />
@@ -476,7 +476,7 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
             >
               <Avatar className="h-9 w-9 sm:h-10 sm:w-10 ring-2 ring-white shadow-sm flex-shrink-0">
                 <AvatarFallback 
-                  className="text-white text-xs sm:text-sm font-bold bg-[#1e293b]"
+                  className="text-white text-xs sm:text-sm font-bold bg-slate-800"
                 >
                   {user?.rol?.clave === 'establecimiento' && user?.establecimiento_nombre
                     ? user.establecimiento_nombre.substring(0, 2).toUpperCase()
@@ -493,9 +493,9 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                   )}
                 </p>
                 <div className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#af936f]"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent"></span>
                   <p className="text-[11px] font-medium text-slate-500 truncate max-w-[120px] uppercase tracking-wide">
-                    {isLoading ? '' : user?.rol?.nombre || 'Rol'}
+                    {isLoading ? '' : user?.rol?.nombre || ''}
                   </p>
                 </div>
               </div>
@@ -529,7 +529,7 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                     }}
                     className="flex items-center w-full px-3 py-2.5 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all duration-200 group"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center mr-3 group-hover:bg-white group-hover:shadow-sm transition-all text-slate-500 group-hover:text-[#af936f]">
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center mr-3 group-hover:bg-white group-hover:shadow-sm transition-all text-slate-500 group-hover:text-accent">
                         <UserCircle className="h-5 w-5" />
                     </div>
                     <span className="font-medium">Mi Perfil</span>
@@ -543,7 +543,7 @@ export function HorizontalNavbar({ onMenuClick, onToggleCollapse, isCollapsed }:
                         }}
                         className="flex items-center w-full px-3 py-2.5 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all duration-200 group"
                      >
-                        <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center mr-3 group-hover:bg-white group-hover:shadow-sm transition-all text-slate-500 group-hover:text-[#af936f]">
+                        <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center mr-3 group-hover:bg-white group-hover:shadow-sm transition-all text-slate-500 group-hover:text-accent">
                            <Settings className="h-5 w-5" />
                         </div>
                         <span className="font-medium">Configuración</span>

@@ -30,7 +30,14 @@ export interface Caballo {
   
   creado_el: string;
   actualizado_el: string | null;
-  
+  link_uuid?: string | null;
+  observaciones?: string | null;
+  abuelo_materno?: string | null;
+
+  // Asociaciones opcionales (formato API expandido)
+  Establecimiento?: { nombre?: string; localidad?: string; [key: string]: unknown } | null;
+  Propietario?: { nombre?: string; apellido?: string; [key: string]: unknown } | null;
+
   // Asociaciones
   padre?: Caballo;
   madre?: Caballo;

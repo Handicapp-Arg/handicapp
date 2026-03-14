@@ -32,6 +32,7 @@ export function useEventos(filters?: any) {
   return useQuery({
     queryKey: eventosKeys.list(filters),
     queryFn: () => eventoService.getAll(filters),
+    select: (response: any): Evento[] => response?.data ?? response ?? [],
     staleTime: 2 * 60 * 1000, // 2 minutos
   });
 }

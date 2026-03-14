@@ -33,6 +33,7 @@ export default function CrearTratamientoPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [caballos, setCaballos] = useState<any[]>([]);
+  const [tipoTratamientoId, setTipoTratamientoId] = useState<number | null>(null);
   const [formData, setFormData] = useState<FormData>({
     caballo_id: '',
     titulo: '',
@@ -47,7 +48,16 @@ export default function CrearTratamientoPage() {
 
   useEffect(() => {
     cargarCaballos();
+    cargarTipoTratamiento();
   }, []);
+
+  const cargarTipoTratamiento = async () => {
+    try {
+      const tipos = await eventoService.getTipos();
+      const tipo = tipos.find(t => t.clave === 'tratamiento_medico');
+      if (tipo) setTipoTratamientoId(tipo.id);
+    } catch { /* continúa sin tipo, el submit lo validará */ }
+  };
 
   const cargarCaballos = async () => {
     try {
@@ -66,12 +76,17 @@ export default function CrearTratamientoPage() {
       return;
     }
 
+    if (!tipoTratamientoId) {
+      toast.error('Error: no se pudo cargar el tipo de tratamiento. Recargá la página.');
+      return;
+    }
+
     try {
       setLoading(true);
 
       const dataToSend = {
         caballo_id: parseInt(formData.caballo_id),
-        tipo_evento_id: 1, // ID para tratamientos médicos
+        tipo_evento_id: tipoTratamientoId,
         titulo: formData.titulo,
         descripcion: formData.descripcion || undefined,
         fecha_evento: formData.fecha_inicio,

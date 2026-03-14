@@ -77,7 +77,7 @@ export default function NuevoCaballoPage() {
         <div className="max-w-3xl mx-auto px-4 py-6">
           <button onClick={() => router.push('/propietario/caballos')} className="text-sm text-gray-600 mb-4">← Volver</button>
           <div className="bg-white rounded-xl border p-6">
-            <h1 className="text-2xl font-bold text-[#0f172a] mb-6">Nuevo Caballo</h1>
+            <h1 className="text-2xl font-bold text-slate-950 mb-6">Nuevo Caballo</h1>
             
             <form onSubmit={onSubmit} className="space-y-8">
               {/* Información Básica */}
@@ -94,7 +94,7 @@ export default function NuevoCaballoPage() {
                       name="nombre" 
                       value={form.nombre} 
                       onChange={onChange} 
-                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#af936f] focus:border-transparent" 
+                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-accent focus:border-transparent" 
                       required 
                       placeholder="Ej: Relámpago"
                     />
@@ -107,7 +107,7 @@ export default function NuevoCaballoPage() {
                       name="sexo" 
                       value={form.sexo} 
                       onChange={onChange} 
-                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#af936f] focus:border-transparent"
+                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-accent focus:border-transparent"
                     >
                       {opts.sexos.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                     </select>
@@ -121,7 +121,7 @@ export default function NuevoCaballoPage() {
                       name="fecha_nacimiento" 
                       value={form.fecha_nacimiento} 
                       onChange={onChange} 
-                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#af936f] focus:border-transparent" 
+                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-accent focus:border-transparent" 
                       required 
                     />
                   </div>
@@ -131,7 +131,7 @@ export default function NuevoCaballoPage() {
                       name="raza" 
                       value={form.raza} 
                       onChange={onChange} 
-                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#af936f] focus:border-transparent" 
+                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-accent focus:border-transparent" 
                       placeholder="Ej: Pura Sangre"
                     />
                   </div>
@@ -141,7 +141,7 @@ export default function NuevoCaballoPage() {
                       name="pelaje" 
                       value={form.pelaje} 
                       onChange={onChange} 
-                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#af936f] focus:border-transparent" 
+                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-accent focus:border-transparent" 
                       placeholder="Ej: Alazán"
                     />
                   </div>
@@ -151,7 +151,7 @@ export default function NuevoCaballoPage() {
                       name="microchip" 
                       value={form.microchip} 
                       onChange={onChange} 
-                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#af936f] focus:border-transparent font-mono" 
+                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-accent focus:border-transparent font-mono" 
                       placeholder="Ej: 1234567890"
                     />
                   </div>
@@ -161,7 +161,7 @@ export default function NuevoCaballoPage() {
                       name="disciplina" 
                       value={form.disciplina} 
                       onChange={onChange} 
-                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#af936f] focus:border-transparent"
+                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-accent focus:border-transparent"
                     >
                       <option value="">Seleccionar...</option>
                       {opts.disciplinas.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
@@ -183,7 +183,7 @@ export default function NuevoCaballoPage() {
                       name="altura" 
                       value={form.altura} 
                       onChange={onChange} 
-                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#af936f] focus:border-transparent" 
+                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-accent focus:border-transparent" 
                       placeholder="Ej: 165"
                       step="0.01"
                       min="0"
@@ -196,7 +196,7 @@ export default function NuevoCaballoPage() {
                       name="peso" 
                       value={form.peso} 
                       onChange={onChange} 
-                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#af936f] focus:border-transparent" 
+                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-accent focus:border-transparent" 
                       placeholder="Ej: 550"
                       step="0.01"
                       min="0"
@@ -219,7 +219,7 @@ export default function NuevoCaballoPage() {
                       name="rp" 
                       value={form.rp} 
                       onChange={onChange} 
-                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#af936f] focus:border-transparent font-mono" 
+                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-accent focus:border-transparent font-mono" 
                       placeholder="Ej: ARG123456"
                     />
                   </div>
@@ -231,7 +231,7 @@ export default function NuevoCaballoPage() {
                       name="sba" 
                       value={form.sba} 
                       onChange={onChange} 
-                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#af936f] focus:border-transparent font-mono" 
+                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-accent focus:border-transparent font-mono" 
                       placeholder="Ej: SBA789"
                     />
                   </div>
@@ -243,7 +243,7 @@ export default function NuevoCaballoPage() {
                       name="adn" 
                       value={form.adn} 
                       onChange={onChange} 
-                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#af936f] focus:border-transparent font-mono" 
+                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-accent focus:border-transparent font-mono" 
                       placeholder="Ej: DNA-XYZ-2024"
                     />
                   </div>
@@ -255,7 +255,7 @@ export default function NuevoCaballoPage() {
                       name="pasaporte" 
                       value={form.pasaporte} 
                       onChange={onChange} 
-                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#af936f] focus:border-transparent font-mono" 
+                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-accent focus:border-transparent font-mono" 
                       placeholder="Ej: PASS-001"
                     />
                   </div>
@@ -267,7 +267,7 @@ export default function NuevoCaballoPage() {
                       name="numero_fei" 
                       value={form.numero_fei} 
                       onChange={onChange} 
-                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#af936f] focus:border-transparent font-mono" 
+                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-accent focus:border-transparent font-mono" 
                       placeholder="Ej: FEI10012345"
                     />
                   </div>
@@ -279,7 +279,7 @@ export default function NuevoCaballoPage() {
                       name="ueln" 
                       value={form.ueln} 
                       onChange={onChange} 
-                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#af936f] focus:border-transparent font-mono" 
+                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-accent focus:border-transparent font-mono" 
                       placeholder="Ej: 528210000123456"
                     />
                   </div>
@@ -298,7 +298,7 @@ export default function NuevoCaballoPage() {
                 <button 
                   type="submit" 
                   disabled={saving} 
-                  className="px-6 py-2.5 rounded-lg bg-[#0f172a] text-white hover:bg-[#0f172a]/90 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-2.5 rounded-lg bg-slate-950 text-white hover:bg-slate-950/90 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {saving ? 'Guardando...' : 'Guardar Caballo'}
                 </button>

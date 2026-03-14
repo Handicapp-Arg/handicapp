@@ -123,30 +123,25 @@ class AuthManager {
     try {
       this.updateState({ isLoading: true, error: null });
 
-      // Verificar si hay datos de autenticación válidos
       const storedData = this.getStoredAuthData();
-      
+
       if (storedData.token && storedData.user) {
-        // Verificar si el token es válido
-        const isValid = await this.verifyToken(storedData.token);
-        
-        if (isValid) {
-          this.updateState({
-            isAuthenticated: true,
-            user: storedData.user,
-            token: storedData.token,
-            isLoading: false,
-            error: null,
-          });
-          
-          // Actualizar cookies
-          this.syncCookies(storedData.token, storedData.user);
-          return;
-        }
+        // Trust local data immediately — don't block the app on a network call
+        this.updateState({
+          isAuthenticated: true,
+          user: storedData.user,
+          token: storedData.token,
+          isLoading: false,
+          error: null,
+        });
+        this.syncCookies(storedData.token, storedData.user);
+
+        // Verify token in background — if invalid, logout silently
+        this.verifyTokenBackground(storedData.token);
+        return;
       }
 
-      // No hay datos válidos
-      this.clearAuthData();
+      // No stored data → not authenticated
       this.updateState({
         isAuthenticated: false,
         user: null,
@@ -154,18 +149,41 @@ class AuthManager {
         isLoading: false,
         error: null,
       });
-      
+
     } catch (error) {
       console.error('Error initializing auth:', error);
-      this.clearAuthData();
       this.updateState({
         isAuthenticated: false,
         user: null,
         token: null,
         isLoading: false,
-        error: 'Error de inicialización',
+        error: null,
       });
     }
+  }
+
+  /**
+   * Verificar token en background sin bloquear la UI.
+   * Solo hace logout si el backend devuelve 401 (token inválido).
+   * Si hay error de red (backend caído), mantiene la sesión activa.
+   */
+  private verifyTokenBackground(token: string): void {
+    this.verifyToken(token)
+      .then((isValid) => {
+        if (!isValid) {
+          this.clearAuthData();
+          this.updateState({
+            isAuthenticated: false,
+            user: null,
+            token: null,
+            isLoading: false,
+            error: null,
+          });
+        }
+      })
+      .catch(() => {
+        // Network error — keep session alive, API interceptors handle 401s
+      });
   }
 
   /**
@@ -331,11 +349,18 @@ class AuthManager {
       });
 
       clearTimeout(timeoutId);
-      return response.ok;
-      
+
+      // Only invalidate on explicit auth failure — not on network/server errors
+      if (response.status === 401 || response.status === 403) {
+        return false;
+      }
+      return true;
+
     } catch (error) {
-      console.warn('Token verification failed:', error);
-      return false;
+      // Network error or timeout — assume token is still valid
+      // API interceptors will catch 401s on actual requests
+      console.warn('Token background verification skipped (network error):', error);
+      return true;
     }
   }
 
@@ -370,14 +395,13 @@ class AuthManager {
       if (typeof window === 'undefined') {
         return;
       }
-      
-      // Guardar en localStorage
-      localStorage.setItem(STORAGE_CONFIG.ACCESS_TOKEN, token);
+
+      // Guardar datos del usuario en localStorage (no el token)
       localStorage.setItem(STORAGE_CONFIG.USER_DATA, JSON.stringify(user));
-      
-      // Sincronizar cookies
+
+      // El token solo se guarda en cookies (no en localStorage por seguridad)
       this.syncCookies(token, user);
-      
+
     } catch (error) {
       console.error('Error saving auth data:', error);
       throw new Error('Error guardando datos de autenticación');
@@ -411,18 +435,19 @@ class AuthManager {
       if (typeof window === 'undefined') {
         return { token: null, user: null };
       }
-      
-      let token = localStorage.getItem(STORAGE_CONFIG.ACCESS_TOKEN);
-      const userData = localStorage.getItem(STORAGE_CONFIG.USER_DATA);
-      // Fallback: si no hay token en storage, intentar leer cookie
-      if (!token && typeof document !== 'undefined') {
+
+      // El token se lee exclusivamente desde cookie (no localStorage)
+      let token: string | null = null;
+      if (typeof document !== 'undefined') {
         const cookies = document.cookie.split(';').map(c => c.trim());
         const authCookie = cookies.find(c => c.startsWith(`${STORAGE_CONFIG.COOKIE_AUTH}=`));
         if (authCookie) {
           token = authCookie.split('=')[1] || null;
         }
       }
-      
+
+      const userData = localStorage.getItem(STORAGE_CONFIG.USER_DATA);
+
       return {
         token,
         user: userData ? JSON.parse(userData) : null,
@@ -443,8 +468,7 @@ class AuthManager {
         return;
       }
       
-      // Limpiar localStorage
-      localStorage.removeItem(STORAGE_CONFIG.ACCESS_TOKEN);
+      // Limpiar localStorage (solo datos de usuario, el token nunca se guardó aquí)
       localStorage.removeItem(STORAGE_CONFIG.USER_DATA);
       localStorage.removeItem(STORAGE_CONFIG.AUTH_STATE);
       

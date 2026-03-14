@@ -133,8 +133,7 @@ export const EstablecimientoForm: React.FC<EstablecimientoFormProps> = ({
       
       const error = err as { data?: { errors?: unknown[]; message?: string; error?: string }; message?: string };
       
-      console.log('Error completo:', error);
-      console.log('Error data:', error.data);
+      // error details handled below
       
       if (error.data) {
         const data = error.data;

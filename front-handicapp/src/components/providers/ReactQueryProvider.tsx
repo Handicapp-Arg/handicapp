@@ -25,24 +25,18 @@ export function ReactQueryProvider({ children }: { children: React.ReactNode }) 
       new QueryClient({
         defaultOptions: {
           queries: {
-            // 🚀 MEJORA: Cache time AUMENTADO para máxima performance
-            staleTime: 60 * 60 * 1000,    // 60 minutos (antes: 30min)
-            gcTime: 2 * 60 * 60 * 1000,   // 2 horas (antes: 60min)
-            
-            // 🚀 MEJORA: Sin retry para ser más rápido
-            retry: 0, // Sin retry (antes: 1)
+            staleTime: 5 * 60 * 1000,     // 5 minutos — balance freshness/performance
+            gcTime: 30 * 60 * 1000,        // 30 minutos en cache antes de liberar memoria
+
+            retry: 1,                       // 1 reintento en errores de red transitorios
             retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-            
-            // Refetch configuration - MÁXIMA PERFORMANCE
-            refetchOnWindowFocus: false, // Desactivado
-            refetchOnReconnect: false,   // Desactivado
-            refetchOnMount: false,       // NO refetch (usar cache siempre)
-            
-            // Network mode - solo hacer requests con red
+
+            refetchOnWindowFocus: false,    // No refetch al cambiar de pestaña (UX intrusivo)
+            refetchOnReconnect: true,       // Sí refetch al reconectar red
+            refetchOnMount: false,          // Usar cache si está fresco
+
             networkMode: 'online',
-            
-            // Error handling
-            throwOnError: false, // No lanzar errores, manejarlos con isError
+            throwOnError: false,
           },
           mutations: {
             // Retry en mutaciones solo si es error de red

@@ -4,8 +4,6 @@ import { Caballo } from '../models/Caballo';
 import { TipoEvento } from '../models/TipoEvento';
 import { User } from '../models/User';
 import { Establecimiento } from '../models/Establecimiento';
-import { ServiceResponse } from '../types';
-
 export async function getEventosPorUsuarioYCaballos(usuarioId: number, caballoIds: number[], limit = 20) {
   try {
     if (!usuarioId && (!caballoIds || caballoIds.length === 0)) {

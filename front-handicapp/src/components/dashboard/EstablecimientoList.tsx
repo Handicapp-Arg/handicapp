@@ -125,11 +125,7 @@ export function EstablecimientoList({
                                 []) as Establecimiento[];
       }
       
-      console.log('📦 Establecimientos cargados:', {
-        count: establecimientosArray.length,
-        establecimientos: establecimientosArray,
-        response: response
-      });
+      // debug logging removed
       setEstablecimientos(Array.isArray(establecimientosArray) ? establecimientosArray : []);
     } catch (err) {
       console.error('❌ Error cargando establecimientos:', err);
@@ -375,16 +371,9 @@ export function EstablecimientoList({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('🔍 Click en Ver Detalles:', { 
-                      tieneCallback: !!onViewDetails, 
-                      establecimientoId: establecimiento.id,
-                      detailUrlPrefix 
-                    });
                     if (onViewDetails) {
-                      console.log('✅ Usando callback onViewDetails');
                       onViewDetails(establecimiento);
                     } else {
-                      console.log('⚠️ No hay callback, redirigiendo a:', `${detailUrlPrefix}/${establecimiento.id}`);
                       window.location.href = `${detailUrlPrefix}/${establecimiento.id}`;
                     }
                   }}

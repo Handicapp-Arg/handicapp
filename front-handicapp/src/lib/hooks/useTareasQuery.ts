@@ -21,12 +21,6 @@ export const tareasKeys = {
   details: () => [...tareasKeys.all, 'detail'] as const,
   detail: (id: number) => [...tareasKeys.details(), id] as const,
   stats: () => [...tareasKeys.all, 'stats'] as const,
-  statsFiltradas: (filtros: Record<string, unknown>) => [...tareasKeys.stats(), filtros] as const,
-  vencidas: () => [...tareasKeys.all, 'vencidas'] as const,
-  porUsuario: (usuarioId: number) => [...tareasKeys.all, 'usuario', usuarioId] as const,
-  productividad: () => [...tareasKeys.all, 'productividad'] as const,
-  productividadFiltrada: (filtros: Record<string, unknown>) => 
-    [...tareasKeys.productividad(), filtros] as const,
 };
 
 // ==================== QUERY HOOKS ====================
@@ -53,61 +47,6 @@ export function useTarea(id: number) {
     queryFn: () => tareaService.getById(id),
     staleTime: 3 * 60 * 1000, // 3 minutos
     enabled: !!id,
-  });
-}
-
-/**
- * Hook para obtener estadísticas de tareas
- * Cache: 2 minutos
- */
-export function useEstadisticasTareas(filtros: Record<string, unknown> = {}) {
-  return useQuery({
-    queryKey: Object.keys(filtros).length > 0 
-      ? tareasKeys.statsFiltradas(filtros)
-      : tareasKeys.stats(),
-    queryFn: () => tareaService.getStats(filtros),
-    staleTime: 2 * 60 * 1000, // 2 minutos
-  });
-}
-
-/**
- * Hook para obtener tareas vencidas
- * Cache: 30 segundos (datos críticos, muy dinámicos)
- * Refetch automático cada 2 minutos
- */
-export function useTareasVencidas() {
-  return useQuery({
-    queryKey: tareasKeys.vencidas(),
-    queryFn: () => tareaService.getOverdue(),
-    staleTime: 30 * 1000, // 30 segundos
-    refetchInterval: 2 * 60 * 1000, // Auto-refetch cada 2 minutos
-  });
-}
-
-/**
- * Hook para obtener tareas de un usuario específico
- * Cache: 1 minuto
- */
-export function useTareasPorUsuario(usuarioId: number, filtros: Record<string, unknown> = {}) {
-  return useQuery({
-    queryKey: tareasKeys.porUsuario(usuarioId),
-    queryFn: () => tareaService.getByUser(usuarioId, filtros),
-    staleTime: 1 * 60 * 1000, // 1 minuto
-    enabled: !!usuarioId,
-  });
-}
-
-/**
- * Hook para obtener métricas de productividad
- * Cache: 5 minutos
- */
-export function useProductividad(filtros: Record<string, unknown> = {}) {
-  return useQuery({
-    queryKey: Object.keys(filtros).length > 0
-      ? tareasKeys.productividadFiltrada(filtros)
-      : tareasKeys.productividad(),
-    queryFn: () => tareaService.getProductivity(filtros),
-    staleTime: 5 * 60 * 1000, // 5 minutos
   });
 }
 
@@ -167,11 +106,9 @@ export function useCrearTarea() {
       queryClient.invalidateQueries({ queryKey: tareasKeys.lists() });
       queryClient.invalidateQueries({ queryKey: tareasKeys.stats() });
       
-      // Si se asignó a un usuario, invalidar sus tareas
+      // Si se asignó a un usuario, invalidar las listas
       if (variables.asignado_a_usuario_id) {
-        queryClient.invalidateQueries({ 
-          queryKey: tareasKeys.porUsuario(variables.asignado_a_usuario_id) 
-        });
+        queryClient.invalidateQueries({ queryKey: tareasKeys.lists() });
       }
     },
   });
@@ -208,7 +145,6 @@ export function useEliminarTarea() {
       queryClient.invalidateQueries({ queryKey: tareasKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: tareasKeys.lists() });
       queryClient.invalidateQueries({ queryKey: tareasKeys.stats() });
-      queryClient.invalidateQueries({ queryKey: tareasKeys.vencidas() });
     },
   });
 }
@@ -226,9 +162,6 @@ export function useAsignarTarea() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: tareasKeys.detail(variables.id) });
       queryClient.invalidateQueries({ queryKey: tareasKeys.lists() });
-      queryClient.invalidateQueries({ 
-        queryKey: tareasKeys.porUsuario(variables.usuarioId) 
-      });
     },
   });
 }
@@ -254,8 +187,6 @@ export function useCompletarTarea() {
       queryClient.invalidateQueries({ queryKey: tareasKeys.detail(variables.id) });
       queryClient.invalidateQueries({ queryKey: tareasKeys.lists() });
       queryClient.invalidateQueries({ queryKey: tareasKeys.stats() });
-      queryClient.invalidateQueries({ queryKey: tareasKeys.vencidas() });
-      queryClient.invalidateQueries({ queryKey: tareasKeys.productividad() });
     },
   });
 }
@@ -268,8 +199,8 @@ export function useCancelarTarea() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, motivo }: { id: number; motivo?: string }) =>
-      tareaService.cancel(id, motivo),
+    mutationFn: ({ id }: { id: number; motivo?: string }) =>
+      tareaService.cancel(id),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: tareasKeys.detail(variables.id) });
       queryClient.invalidateQueries({ queryKey: tareasKeys.lists() });
@@ -316,6 +247,5 @@ export function useInvalidateEstadisticasTareas() {
 
   return () => {
     queryClient.invalidateQueries({ queryKey: tareasKeys.stats() });
-    queryClient.invalidateQueries({ queryKey: tareasKeys.productividad() });
   };
 }

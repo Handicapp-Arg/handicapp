@@ -1,3 +1,10 @@
+/**
+ * diagnose.ts — Script de diagnóstico del sistema.
+ * Ejecutar directamente con: ts-node src/utils/diagnose.ts
+ * No se importa en ningún módulo de producción.
+ * Útil para debugging de configuración y conectividad en entornos nuevos.
+ */
+
 import { checkDatabaseHealth, sequelize } from '../config/database';
 import { logger } from '../utils/logger';
 import { config } from '../config/config';

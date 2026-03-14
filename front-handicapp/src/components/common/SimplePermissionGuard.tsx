@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSimplePermissions } from '@/lib/hooks/useSimplePermissions';
+import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton';
 
 interface SimplePermissionGuardProps {
   children: React.ReactNode;
@@ -10,9 +11,10 @@ interface SimplePermissionGuardProps {
 export const SimplePermissionGuard: React.FC<SimplePermissionGuardProps> = ({
   children,
   roles,
-  fallback = null
+  fallback = null,
 }) => {
-  const { userRole } = useSimplePermissions();
+  const { userRole, isAuthLoading } = useSimplePermissions();
+  if (isAuthLoading) return <DashboardSkeleton />;
   const hasRole = userRole && roles.includes(userRole);
   return hasRole ? <>{children}</> : <>{fallback}</>;
 };
@@ -22,7 +24,8 @@ export const SimpleAdminOnly: React.FC<{
   children: React.ReactNode;
   fallback?: React.ReactNode;
 }> = ({ children, fallback = null }) => {
-  const { isAdmin } = useSimplePermissions();
+  const { isAdmin, isAuthLoading } = useSimplePermissions();
+  if (isAuthLoading) return <DashboardSkeleton />;
   return isAdmin ? <>{children}</> : <>{fallback}</>;
 };
 
@@ -32,7 +35,8 @@ export const SimpleRoleGuard: React.FC<{
   roles: string[];
   fallback?: React.ReactNode;
 }> = ({ children, roles, fallback = null }) => {
-  const { userRole } = useSimplePermissions();
+  const { userRole, isAuthLoading } = useSimplePermissions();
+  if (isAuthLoading) return <DashboardSkeleton />;
   const hasRole = userRole && roles.includes(userRole);
   return hasRole ? <>{children}</> : <>{fallback}</>;
 };

@@ -7,6 +7,17 @@ import { websocketService } from './services/websocketService';
 import { iniciarCronNotificacionesTareas } from './jobs/tareaNotificacionCron';
 import http from 'http';
 
+// Validate email provider at startup (production only)
+if (config.nodeEnv === 'production') {
+  const hasResend = !!config.email.resend.apiKey;
+  const hasSmtp = !!(config.email.smtp.host && config.email.smtp.user && config.email.smtp.pass);
+
+  if (!hasResend && !hasSmtp) {
+    logger.error('❌ No hay proveedor de email configurado. Configure RESEND_API_KEY o SMTP_HOST/SMTP_USER/SMTP_PASS para enviar emails en producción.');
+    process.exit(1);
+  }
+}
+
 // Start server with complete initialization
 const startServer = async (): Promise<void> => {
   try {

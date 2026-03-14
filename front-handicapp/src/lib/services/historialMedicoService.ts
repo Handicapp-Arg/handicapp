@@ -140,11 +140,29 @@ class HistorialMedicoService {
 
   /**
    * Validar evento médico (solo veterinarios)
+   * Cambia estado_validacion a 'approved'
    */
   async validarEvento(eventoId: number, observaciones?: string): Promise<RegistroMedico> {
-    const response = await ApiClient.makeRequest<{ data: RegistroMedico }>(`/eventos/${eventoId}/validar`, {
-      method: 'POST',
-      body: JSON.stringify({ observaciones })
+    const response = await ApiClient.makeRequest<{ data: RegistroMedico }>(`/eventos/${eventoId}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        estado_validacion: 'approved',
+        ...(observaciones && { observaciones })
+      })
+    });
+    return response.data;
+  }
+
+  /**
+   * Rechazar evento médico (solo veterinarios)
+   */
+  async rechazarEvento(eventoId: number, observaciones?: string): Promise<RegistroMedico> {
+    const response = await ApiClient.makeRequest<{ data: RegistroMedico }>(`/eventos/${eventoId}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        estado_validacion: 'rejected',
+        ...(observaciones && { observaciones })
+      })
     });
     return response.data;
   }

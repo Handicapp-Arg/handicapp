@@ -15,6 +15,7 @@ import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import { eventoService } from '@/lib/services/eventoService';
 import { caballoService } from '@/lib/services/caballoService';
 import { toast } from 'react-hot-toast';
+import ProfileSkeleton from '@/components/skeletons/ProfileSkeleton';
 import { Loader } from '@/components/ui/loader';
 
 interface FormData {
@@ -38,6 +39,7 @@ export default function EditarTratamientoPage() {
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [caballos, setCaballos] = useState<any[]>([]);
+  const [tipoTratamientoId, setTipoTratamientoId] = useState<number | null>(null);
   const [formData, setFormData] = useState<FormData>({
     caballo_id: '',
     titulo: '',
@@ -58,10 +60,14 @@ export default function EditarTratamientoPage() {
   const cargarDatos = async () => {
     try {
       setLoadingData(true);
-      const [tratamientoResp, caballosResp] = await Promise.all([
+      const [tratamientoResp, caballosResp, tiposResp] = await Promise.all([
         eventoService.getById(parseInt(tratamientoId)),
-        caballoService.getAll({ limit: 100 })
+        caballoService.getAll({ limit: 100 }),
+        eventoService.getTipos()
       ]);
+
+      const tipoTratamiento = tiposResp.find(t => t.clave === 'tratamiento_medico');
+      if (tipoTratamiento) setTipoTratamientoId(tipoTratamiento.id);
 
       const tratamiento = tratamientoResp as any;
       
@@ -100,7 +106,7 @@ export default function EditarTratamientoPage() {
 
       const dataToSend = {
         caballo_id: parseInt(formData.caballo_id),
-        tipo_evento_id: 1,
+        tipo_evento_id: tipoTratamientoId ?? undefined,
         titulo: formData.titulo,
         descripcion: formData.descripcion || undefined,
         fecha_evento: formData.fecha_inicio,
@@ -138,7 +144,7 @@ export default function EditarTratamientoPage() {
   };
 
   if (loadingData) {
-    return <Loader />;
+    return <ProfileSkeleton />;
   }
 
   return (
@@ -388,7 +394,7 @@ export default function EditarTratamientoPage() {
             >
               {loading ? (
                 <>
-                  <LoadingSpinnerInline />
+                  <Loader variant="inline" />
                   Guardando...
                 </>
               ) : (

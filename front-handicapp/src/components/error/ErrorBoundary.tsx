@@ -2,6 +2,7 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCcw, Home, ChevronDown, ChevronUp } from 'lucide-react';
+import { errorLogger } from '@/lib/errorLogger';
 
 interface Props {
   children: ReactNode;
@@ -47,9 +48,6 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log del error (aquí se integrará con Sentry)
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
-
     // Actualizar state con info del error
     this.setState({
       error,
@@ -61,8 +59,8 @@ export class ErrorBoundary extends Component<Props, State> {
       this.props.onError(error, errorInfo);
     }
 
-    // TODO: Enviar a servicio de logging (Sentry)
-    // logErrorToService(error, errorInfo);
+    // Enviar a Sentry vía errorLogger
+    errorLogger.logComponentError(error, 'ErrorBoundary', { componentStack: errorInfo.componentStack });
   }
 
   handleReset = () => {

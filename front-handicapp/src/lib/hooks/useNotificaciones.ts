@@ -134,24 +134,19 @@ export function useNotificaciones(options: UseNotificacionesOptions = {}): UseNo
       const wsHost = process.env.NEXT_PUBLIC_WS_URL || 'localhost:3001';
       const wsUrl = `${wsProtocol}//${wsHost}?token=${token}`;
 
-      console.log('🔌 Conectando WebSocket...', wsUrl);
-      
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log('✅ WebSocket conectado');
+        // connected
       };
 
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log('📨 Mensaje WebSocket recibido:', data);
 
           // Detectar notificaciones nuevas
           if (data.type === 'notificacion:nueva' || data.event === 'notificacion:nueva') {
-            console.log('🔔 Nueva notificación recibida');
-            
             // Invalidar queries para refrescar datos
             queryClient.invalidateQueries({ queryKey: QUERY_KEYS.notificaciones });
             
@@ -174,13 +169,11 @@ export function useNotificaciones(options: UseNotificacionesOptions = {}): UseNo
       };
 
       ws.onclose = () => {
-        console.log('🔌 WebSocket desconectado');
         wsRef.current = null;
-        
+
         // Reintentar conexión después de 5 segundos
         if (enableWebSocket) {
           reconnectTimeoutRef.current = setTimeout(() => {
-            console.log('🔄 Reintentando conexión WebSocket...');
             connectWebSocket();
           }, 5000);
         }

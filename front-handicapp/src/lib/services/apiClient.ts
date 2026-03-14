@@ -1,43 +1,93 @@
+/**
+ * ApiClient — Cliente HTTP centralizado para HandicApp.
+ * Maneja autenticación JWT (Bearer token desde cookie via AuthManager),
+ * refresh automático de tokens en 401, timeout de 15s, y FormData multipart.
+ * Todos los servicios en lib/services/ deben usar este cliente en lugar de fetch directo.
+ */
+
 'use client';
 import { appConfig } from '@/lib/config';
 import AuthManager from '../auth/AuthManager';
 
 export class ApiClient {
+  private static readonly TIMEOUT_MS = 15_000;
+  private static isRefreshing = false;
+  private static refreshPromise: Promise<void> | null = null;
+
+  private static async doRefresh(): Promise<void> {
+    const response = await fetch(`${appConfig.apiBaseUrl}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Refresh failed');
+    const data = await response.json().catch(() => ({}));
+    const newToken = data.accessToken ?? data.token ?? data.data?.accessToken;
+    const auth = AuthManager.getInstance();
+    const currentUser = auth.getState().user;
+    if (newToken && currentUser) {
+      await auth.setAuthTokens({ accessToken: newToken, refreshToken: '', user: currentUser });
+    }
+  }
+
   private static async request<T>(
-    endpoint: string, 
-    options: RequestInit = {}
+    endpoint: string,
+    options: RequestInit = {},
+    isRetry = false
   ): Promise<T> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), ApiClient.TIMEOUT_MS);
+
     try {
-      // Obtener token del AuthManager (opcional, las cookies HTTP-only funcionan automáticamente)
       const token = AuthManager.getInstance().getAuthToken();
-      
+
       const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
       const headers: HeadersInit = {
         ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
-        // Solo agregar Authorization header si hay token en memoria (opcional)
         ...(token && { 'Authorization': `Bearer ${token}` }),
         ...(options.headers as any),
       };
       const config: RequestInit = {
-        credentials: 'include', // ✅ CRÍTICO: Las cookies httpOnly se envían automáticamente
+        credentials: 'include',
         headers,
+        signal: controller.signal,
         ...options,
       };
 
       const fullUrl = `${appConfig.apiBaseUrl}${endpoint}`;
 
       const response = await fetch(fullUrl, config);
-      
+
       // Manejar errores de autenticación
       if (response.status === 401) {
-        // Si es un endpoint de login/refresh, no intentar renovar
+        // Endpoints de auth nunca se reintentan
         if (endpoint.includes('/auth/login') || endpoint.includes('/auth/refresh')) {
           const errorData = await response.json().catch(() => ({}));
           throw new Error(errorData.message || 'Credenciales inválidas');
         }
 
-        // Token expirado - intentar refresh automático (el interceptor en http.ts lo maneja)
-        // Si llegamos aquí desde apiClient directamente, redirigir a login
+        // Solo intentar refresh una vez — evitar loop infinito
+        if (!isRetry) {
+          try {
+            // Si ya hay un refresh en curso, esperar al mismo
+            if (!ApiClient.isRefreshing) {
+              ApiClient.isRefreshing = true;
+              ApiClient.refreshPromise = ApiClient.doRefresh().finally(() => {
+                ApiClient.isRefreshing = false;
+                ApiClient.refreshPromise = null;
+              });
+            }
+            await ApiClient.refreshPromise;
+            // Reintentar request original con nuevo token
+            return ApiClient.request<T>(endpoint, options, true);
+          } catch {
+            // Refresh falló — sesión realmente expirada
+            if (typeof window !== 'undefined') {
+              window.location.href = '/login';
+            }
+            throw new Error('Sesión expirada. Por favor, volvé a ingresar.');
+          }
+        }
+
         if (typeof window !== 'undefined') {
           window.location.href = '/login';
         }
@@ -49,46 +99,37 @@ export class ApiClient {
         let errorDetails: string[] | undefined;
         try {
           const errorData = await response.json();
-          console.error(`❌ API Error Response:`, errorData);
-          console.error(`❌ Request URL:`, fullUrl);
-          console.error(`❌ Request Method:`, options.method || 'GET');
-          
           if (errorData.message) {
             errorMessage = errorData.message;
           }
-          if (Array.isArray(errorData.errors) && errorData.errors.length) {
-            errorDetails = errorData.errors;
-            // Si hay detalles, agregamos el primero al mensaje para visibilidad inmediata
-            errorMessage = `${errorMessage}${errorDetails ? `: ${errorDetails[0]}` : ''}`;
+          if (Array.isArray(errorData.errors) && errorData.errors.length > 0) {
+            errorDetails = errorData.errors as string[];
+            errorMessage = `${errorMessage}: ${errorDetails[0] ?? ''}`;
           }
-          
-          // Si el errorData está vacío, usar mensaje genérico con más info
           if (Object.keys(errorData).length === 0) {
-            errorMessage = `Error ${response.status}: La solicitud falló. URL: ${endpoint}`;
+            errorMessage = `Error ${response.status}: La solicitud falló`;
           }
-        } catch (e) {
-          console.error(`❌ Could not parse error response:`, e);
-          // If can't parse error response, use default message with more context
-          errorMessage = `Error ${response.status}: ${response.statusText} - ${endpoint}`;
+        } catch {
+          errorMessage = `Error ${response.status}: ${response.statusText}`;
         }
-        
+
         const err = new Error(errorMessage) as Error & { details?: string[] };
         if (errorDetails) err.details = errorDetails;
-        console.error(`❌ Throwing error:`, err);
         throw err;
       }
 
-  // Si no hay contenido, devolver objeto vacío
-  if (response.status === 204) return {} as any;
-  return response.json();
+      if (response.status === 204) return {} as any;
+      return response.json();
     } catch (error) {
-      // Si es un error de red o similar, también verificar autenticación
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-  console.error('Network error:', error);
-        throw new Error('Error de conexión. Verifica tu conexión a internet.');
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        throw new Error('La solicitud tardó demasiado. Verificá tu conexión.');
       }
-      
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Error de conexión. Verificá tu conexión a internet.');
+      }
       throw error;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
@@ -112,9 +153,8 @@ export class ApiClient {
       await this.request('/auth/logout', {
         method: 'POST',
       });
-    } catch (error) {
+    } catch {
       // Ignorar errores en logout, siempre limpiar tokens locales
-  console.warn('Error during logout:', error);
     } finally {
       await AuthManager.getInstance().logout();
     }

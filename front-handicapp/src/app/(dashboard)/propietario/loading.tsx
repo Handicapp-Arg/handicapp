@@ -1,5 +1,5 @@
-import { Loader } from '@/components/ui/loader';
+import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton';
 
 export default function PropietarioLoading() {
-  return <Loader />;
+  return <DashboardSkeleton />;
 }

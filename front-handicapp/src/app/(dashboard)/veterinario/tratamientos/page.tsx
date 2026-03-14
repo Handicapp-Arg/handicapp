@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/
 import { Badge } from '@/components/ui/badge';
 import { Pill, CheckCircle2, Clock, AlertCircle, Search } from 'lucide-react';
 import { Evento } from '@/lib/types';
-import { Loader } from '@/components/ui/loader';
+import CardGridSkeleton from '@/components/skeletons/CardGridSkeleton';
 
 export default function VeterinarioTratamientosPage() {
   const { data: eventos = [], isLoading: loading } = useEventos({ page: 1, limit: 500 });
@@ -16,9 +16,7 @@ export default function VeterinarioTratamientosPage() {
   const [estadoFiltro, setEstadoFiltro] = useState<string>('todos');
 
   const { tratamientos, caballos } = useMemo(() => {
-    const eventosArray = Array.isArray(eventos) 
-      ? eventos 
-      : (eventos as { data?: Evento[] })?.data || [];
+    const eventosArray = Array.isArray(eventos) ? eventos : [];
     
     const caballosArray = Array.isArray(caballosData) 
       ? caballosData 
@@ -46,13 +44,7 @@ export default function VeterinarioTratamientosPage() {
     return matchesSearch && matchesEstado;
   });
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Loader />
-      </div>
-    );
-  }
+  if (loading) return <CardGridSkeleton cards={6} columns={3} />;
 
   return (
     <SimpleRoleGuard roles={['veterinario']}>

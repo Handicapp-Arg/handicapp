@@ -16,11 +16,19 @@ interface EventoFormProps {
   onSuccess: () => void;
 }
 
+// Claves de tipos que requieren permiso veterinario para crear
+const MEDICAL_CLAVES = new Set([
+  'vacunacion', 'desparasitacion', 'examen_veterinario', 'tratamiento_medico',
+  'cirugia', 'herrado', 'odontologia', 'radiografia', 'ecografia',
+  'servicio', 'inseminacion', 'ecografia_gestacion', 'parto', 'destete',
+  'nacimiento', 'muerte'
+]);
+
 interface TipoEvento {
   id: number;
   nombre: string;
-  categoria: string;
-  descripcion: string;
+  clave: string;
+  disciplina?: string | null;
 }
 
 interface Caballo {
@@ -87,7 +95,8 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
         prioridad: evento.prioridad || 'media',
         es_publico: evento.es_publico || false,
         requiere_validacion: evento.requiere_validacion || false,
-        costo: evento.costo
+        costo_monto: evento.costo_monto,
+        costo_moneda: evento.costo_moneda
       });
     } else if (isOpen) {
       // Reset para nuevo evento
@@ -111,27 +120,15 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
 
   const loadTiposEvento = async () => {
     try {
-      // Los tipos de evento ya están seeded en el backend
-      const allTipos: TipoEvento[] = [
-        { id: 1, nombre: 'Vacunación', categoria: 'salud', descripcion: 'Administración de vacunas' },
-        { id: 2, nombre: 'Desparasitación', categoria: 'salud', descripcion: 'Tratamiento antiparasitario' },
-        { id: 3, nombre: 'Revisión Veterinaria', categoria: 'salud', descripcion: 'Examen médico general' },
-        { id: 4, nombre: 'Entrenamiento', categoria: 'deporte', descripcion: 'Sesión de entrenamiento' },
-        { id: 5, nombre: 'Competencia', categoria: 'deporte', descripcion: 'Evento competitivo' },
-        { id: 6, nombre: 'Traslado', categoria: 'logistica', descripcion: 'Transporte del caballo' },
-        { id: 7, nombre: 'Alimentación Especial', categoria: 'nutricion', descripcion: 'Dieta específica' },
-        { id: 8, nombre: 'Herrado', categoria: 'mantenimiento', descripcion: 'Cambio de herraduras' }
-      ];
-      
-      // Filtrar tipos según permisos:
-      // - Veterinario: puede crear todos los tipos
-      // - Otros roles: no pueden crear eventos de salud
-      const filteredTipos = canCreateMedicalEvents() 
-        ? allTipos 
-        : allTipos.filter(tipo => tipo.categoria !== 'salud');
-        
+      const allTipos = await eventoService.getTipos();
+      // Veterinario puede crear todos los tipos; otros roles no pueden crear tipos médicos
+      const filteredTipos = canCreateMedicalEvents()
+        ? allTipos
+        : allTipos.filter(tipo => !MEDICAL_CLAVES.has(tipo.clave));
       setTiposEvento(filteredTipos);
-    } catch (error) {    }
+    } catch {
+      setTiposEvento([]);
+    }
   };
 
   const loadCaballos = async () => {
@@ -181,7 +178,8 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
         prioridad: formData.prioridad,
         es_publico: formData.es_publico,
         requiere_validacion: formData.requiere_validacion,
-        costo: formData.costo
+        costo_monto: formData.costo_monto,
+        costo_moneda: formData.costo_moneda
       };
 
       if (evento) {
@@ -261,7 +259,7 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
                 <option value="">Seleccionar tipo</option>
                 {tiposEvento.map(tipo => (
                   <option key={tipo.id} value={tipo.id}>
-                    {tipo.nombre} ({tipo.categoria})
+                    {tipo.nombre}{tipo.disciplina ? ` (${tipo.disciplina})` : ''}
                   </option>
                 ))}
               </select>

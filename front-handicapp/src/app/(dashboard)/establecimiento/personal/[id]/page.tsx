@@ -18,7 +18,7 @@ import {
   Clock
 } from 'lucide-react';
 import { gestionPersonalService, type Empleado } from '@/lib/gestionPersonalService';
-import { Loader } from '@/components/ui/loader';
+import ProfileSkeleton from '@/components/skeletons/ProfileSkeleton';
 
 export default function EmpleadoDetallePage() {
   const params = useParams();
@@ -42,11 +42,7 @@ export default function EmpleadoDetallePage() {
   }, [params.id]);
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Loader />
-      </div>
-    );
+    return <ProfileSkeleton />;
   }
 
   if (!empleado) {

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getFinanzasUsuarioYCaballos, getGastosStats } from '../services/finanzasService';
+import { getGastosStats } from '../services/finanzasService';
 import { CaballoService } from '../services/caballoService';
 import { TareaService } from '../services/tareaService';
 import { getEventosPorUsuarioYCaballos } from '../services/eventoPorUsuarioService';

@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Building2, MapPin, Phone, Mail, Home, Power, PowerOff, Plus, ArrowLeft, Users } from 'lucide-react';
 import { type Establecimiento, establecimientoService } from '@/lib/services/establecimientoService';
+import toast from 'react-hot-toast';
 
 export default function AdminEstablecimientosPage() {
   const [view, setView] = useState<'list' | 'create' | 'edit' | 'detail'>('list');
@@ -39,7 +40,6 @@ export default function AdminEstablecimientosPage() {
   };
 
   const handleViewDetails = (establecimiento: Establecimiento) => {
-    console.log('🔍 handleViewDetails llamado con:', establecimiento);
     setSelectedEstablecimiento(establecimiento);
     setView('detail');
   };
@@ -62,7 +62,7 @@ export default function AdminEstablecimientosPage() {
       });
     } catch (error) {
       console.error('Error actualizando estado:', error);
-      alert('Error al actualizar el estado del establecimiento');
+      toast.error('Error al actualizar el estado del establecimiento');
     } finally {
       setUpdatingStatus(false);
     }
@@ -72,7 +72,7 @@ export default function AdminEstablecimientosPage() {
     return (
       <SimpleAdminOnly>
         <div className="mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200/70 p-6 sm:p-8">
             <EstablecimientoForm
               onSave={handleSave}
               onCancel={handleCancel}
@@ -87,7 +87,7 @@ export default function AdminEstablecimientosPage() {
     return (
       <SimpleAdminOnly>
         <div className="mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200/70 p-6 sm:p-8">
             <EstablecimientoForm
               establecimiento={selectedEstablecimiento}
               onSave={handleSave}
@@ -104,7 +104,7 @@ export default function AdminEstablecimientosPage() {
     return (
       <SimpleAdminOnly>
         <div className="mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200/70 overflow-hidden">
             {/* Header */}
             <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-6 sm:px-8 py-6">
               <button
@@ -538,11 +538,11 @@ export default function AdminEstablecimientosPage() {
 
   return (
     <SimpleAdminOnly>
-      <div className="min-h-screen bg-slate-50">
-        <div className="mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="mx-auto">
+        <div>
         
         {/* Header compacto */}
-        <div className="bg-[#0f172a] rounded-2xl shadow-xl mb-6 px-6 sm:px-8 py-6">
+        <div className="bg-slate-950 rounded-2xl shadow-xl mb-6 px-6 sm:px-8 py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-white mb-2 leading-tight">

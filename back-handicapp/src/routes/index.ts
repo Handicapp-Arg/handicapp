@@ -16,7 +16,6 @@ import pushRoutes from './pushRoutes';
 import notificacionCronRoutes from './notificacionCronRoutes';
 import { inventarioRoutes } from './inventarioRoutes';
 import { config } from '../config/config';
-import { Router as ExpressRouter2 } from 'express';
 import { UploadController, uploader } from '../controllers/uploadController';
 import { webContactRoutes } from './webContactRoutes';
 import propietarioRoutes from './propietario';
@@ -58,7 +57,6 @@ router.use('/cron', notificacionCronRoutes);
 
 // Push notification routes
 router.use('/push', pushRoutes);
-router.use('/push', pushRoutes);
 
 // Document management routes
 router.use('/adjuntos', adjuntoRoutes);
@@ -70,7 +68,7 @@ router.use('/qr', qrCodeRoutes);
 router.use('/auditoria', auditoriaRoutes);
 
 // Upload routes
-const uploadRouter: ExpressRouter2 = Router();
+const uploadRouter = Router();
 uploadRouter.post('/image', uploader.single('file'), UploadController.uploadImage);
 router.use('/uploads', uploadRouter);
 

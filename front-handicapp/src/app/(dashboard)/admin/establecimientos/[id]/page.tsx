@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Loader } from '@/components/ui/loader';
+import ProfileSkeleton from '@/components/skeletons/ProfileSkeleton';
 import { establecimientoService, type Establecimiento } from '@/lib/services/establecimientoService';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
 import EstablecimientoDetailView from '@/components/dashboard/EstablecimientoDetailView';
@@ -36,7 +36,7 @@ export default function AdminEstablecimientoDetailPage() {
   };
 
   if (loading) {
-    return <Loader />;
+    return <ProfileSkeleton />;
   }
 
   if (error || !establecimiento) {

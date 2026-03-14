@@ -13,7 +13,6 @@ import PropietariosList from "@/components/propietarios/PropietariosList";
 import CaballoForm from "@/components/dashboard/CaballoForm";
 import CaballoTareasTab from "@/components/caballos/CaballoTareasTab";
 import { QrCodeIcon, ArrowPathIcon as RefreshCw, ArrowDownTrayIcon as Download, PencilIcon as Edit2, CalendarIcon, ClockIcon, IdentificationIcon, CheckCircleIcon, UserIcon } from "@heroicons/react/24/outline";
-import { Loader } from '@/components/ui/loader';
 import CaballoDetailSkeleton from "@/components/skeletons/CaballoDetailSkeleton";
 
 export default function CaballoDetallePage() {
@@ -142,7 +141,7 @@ export default function CaballoDetallePage() {
                 <p className="text-gray-600 mb-6">El caballo que buscas no existe o no tienes permisos para verlo</p>
                 <button
                   onClick={() => router.push("/propietario/caballos")}
-                  className="inline-flex items-center px-6 py-3 bg-[#0f172a] text-white rounded-xl hover:bg-[#0f172a]/90 transition-all duration-200 shadow-lg hover:shadow-xl font-medium"
+                  className="inline-flex items-center px-6 py-3 bg-slate-950 text-white rounded-xl hover:bg-slate-950/90 transition-all duration-200 shadow-lg hover:shadow-xl font-medium"
                 >
                   Volver a Mis Caballos
                 </button>
@@ -288,9 +287,10 @@ export default function CaballoDetallePage() {
                     {/* Contenido del Historial */}
                     <div className="relative p-6">
                       {loadingEventos ? (
-                          <div className="py-12 text-center text-slate-400">
-                             <RefreshCw className="w-8 h-8 mx-auto animate-spin mb-3 opacity-50" />
-                             <p>Cargando informacion...</p>
+                          <div className="space-y-3 py-4">
+                            {[1,2,3].map(i => (
+                              <div key={i} className="h-16 bg-slate-100 rounded-xl animate-pulse" />
+                            ))}
                           </div>
                        ) : eventos.length === 0 ? (
                           <div className="py-16 text-center">

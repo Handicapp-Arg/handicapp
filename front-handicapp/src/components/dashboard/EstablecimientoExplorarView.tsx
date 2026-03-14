@@ -81,7 +81,7 @@ export function EstablecimientoExplorarView({
         total = r.pagination?.pages || 1;
       }
       
-      console.log('📦 Explorar - Establecimientos cargados:', establecimientosArray.length);
+      // loaded successfully
       setEstablecimientos(Array.isArray(establecimientosArray) ? establecimientosArray : []);
       setTotalPages(total);
     } catch (err) {

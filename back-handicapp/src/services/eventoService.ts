@@ -11,6 +11,7 @@ import { User } from '../models/User';
 import { Role } from '../models/roles';
 import { Establecimiento } from '../models/Establecimiento';
 import { Adjunto } from '../models/Adjunto';
+import { PropietarioCaballo } from '../models/PropietarioCaballo';
 import { ServiceResponse, PaginationQuery } from '../types';
 import { EstadoValidacionEvento } from '../models/enums';
 
@@ -62,6 +63,8 @@ export class EventoService {
         fechaInicio,
         fechaFin,
         veterinarioId,
+        usuarioId,
+        userRole,
         sortBy = 'fecha_evento',
         sortOrder = 'DESC',
       } = filters || {} as any;
@@ -78,6 +81,24 @@ export class EventoService {
         if (fechaFin) where.fecha_evento[Op.lte] = new Date(fechaFin);
       }
       if (veterinarioId) where.validado_por_usuario_id = veterinarioId;
+
+      // Filtrado por rol — solo si no es admin y no se especificó caballoId/establecimientoId manual
+      if (userRole && userRole !== 'admin' && usuarioId && !caballoId && !establecimientoId) {
+        if (userRole === 'propietario') {
+          const caballosDelPropietario = await PropietarioCaballo.findAll({
+            where: { propietario_usuario_id: usuarioId },
+            attributes: ['caballo_id'],
+          });
+          const ids = caballosDelPropietario.map((p: any) => p.caballo_id);
+          where.caballo_id = { [Op.in]: ids.length > 0 ? ids : [-1] };
+        } else if (['establecimiento', 'capataz', 'empleado', 'veterinario'].includes(userRole)) {
+          const usuario = await User.findByPk(usuarioId, { attributes: ['establecimiento_id'] });
+          const estId = (usuario as any)?.establecimiento_id;
+          const orConditions: any[] = [{ creado_por_usuario_id: usuarioId }];
+          if (estId) orConditions.push({ establecimiento_id: estId });
+          where[Op.or] = orConditions;
+        }
+      }
 
       // 🚀 OPTIMIZACIÓN: Agregar eager loading de Caballo para evitar N+1
       const { count, rows } = await Evento.findAndCountAll({
@@ -242,7 +263,9 @@ export class EventoService {
 
   // Obtener evento por ID
   static async getEventoById(
-    eventoId: number
+    eventoId: number,
+    usuarioId?: number,
+    userRole?: string
   ): Promise<ServiceResponse<Evento>> {
     try {
       const evento = await Evento.findByPk(eventoId, {
@@ -284,21 +307,33 @@ export class EventoService {
       });
 
       if (!evento) {
-        return {
-          success: false,
-          error: 'Evento no encontrado',
-        };
+        return { success: false, error: 'Evento no encontrado' };
       }
 
-      return {
-        success: true,
-        data: evento,
-      };
+      // Validar ownership según rol
+      if (userRole && userRole !== 'admin' && usuarioId) {
+        if (userRole === 'propietario') {
+          const esPropietario = await PropietarioCaballo.findOne({
+            where: { caballo_id: (evento as any).caballo_id, propietario_usuario_id: usuarioId },
+          });
+          if (!esPropietario) {
+            return { success: false, error: 'Sin acceso a este evento' };
+          }
+        } else if (['establecimiento', 'capataz', 'empleado', 'veterinario'].includes(userRole)) {
+          const usuario = await User.findByPk(usuarioId, { attributes: ['establecimiento_id'] });
+          const esCreador = (evento as any).creado_por_usuario_id === usuarioId;
+          const mismoEstablecimiento =
+            (usuario as any)?.establecimiento_id &&
+            (evento as any).establecimiento_id === (usuario as any).establecimiento_id;
+          if (!esCreador && !mismoEstablecimiento) {
+            return { success: false, error: 'Sin acceso a este evento' };
+          }
+        }
+      }
+
+      return { success: true, data: evento };
     } catch (error) {
-      return {
-        success: false,
-        error: 'Error al obtener evento',
-      };
+      return { success: false, error: 'Error al obtener evento' };
     }
   }
 

@@ -4,9 +4,7 @@ import { EstadoQR } from '../models/enums';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import crypto from 'crypto';
-
-// TODO: Instalar qrcode cuando npm install funcione
-// import QRCode from 'qrcode';
+import QRCode from 'qrcode';
 
 interface GenerateQRResult {
   qrCode: CodigoQR;
@@ -44,13 +42,12 @@ export class QRCodeService {
         // Verificar si el QR no ha expirado
         if (!existingQR.expira_el || new Date(existingQR.expira_el) > new Date()) {
           logger.info('QR code activo encontrado', { qrId: existingQR.id });
-          
-          // TODO: Generar imagen del QR code cuando tengamos la dependencia
-          // const qrDataUrl = await this.generateQRImage(existingQR.token);
-          
+
+          const qrDataUrl = await this.generateQRImage(existingQR.token);
+
           return {
             qrCode: existingQR,
-            // qrDataUrl
+            qrDataUrl,
           };
         } else {
           // Marcar como expirado
@@ -87,12 +84,11 @@ export class QRCodeService {
 
     logger.info('QR code creado exitosamente', { qrId: newQR.id, token });
 
-    // TODO: Generar imagen del QR code
-    // const qrDataUrl = await this.generateQRImage(token);
+    const qrDataUrl = await this.generateQRImage(token);
 
     return {
       qrCode: newQR,
-      // qrDataUrl
+      qrDataUrl,
     };
   }
 
@@ -239,27 +235,17 @@ export class QRCodeService {
   }
 
   /**
-   * Generar imagen QR code en formato base64
-   * TODO: Implementar cuando la dependencia qrcode esté instalada
+   * Generar imagen QR code en formato base64 data URL
    */
-  // @ts-ignore - Método reservado para futura implementación
   private static async generateQRImage(token: string): Promise<string> {
     try {
-      // Construir URL completa para escanear
-      // En producción, esto debería ser la URL pública de la app
       const qrUrl = `${process.env['FRONTEND_URL'] || 'https://handicapp.com'}/scan/${token}`;
-
-      // TODO: Descomentar cuando qrcode esté instalado
-      // return await QRCode.toDataURL(qrUrl, {
-      //   errorCorrectionLevel: 'H',
-      //   type: 'image/png',
-      //   width: 512,
-      //   margin: 2,
-      // });
-
-      // Por ahora retornamos la URL como string
-      logger.warn('QR code image generation not implemented yet', { token });
-      return qrUrl;
+      return await QRCode.toDataURL(qrUrl, {
+        errorCorrectionLevel: 'H',
+        type: 'image/png',
+        width: 512,
+        margin: 2,
+      });
     } catch (error: any) {
       logger.error('Error generando imagen QR', { error: error?.message });
       throw error;
@@ -271,17 +257,11 @@ export class QRCodeService {
    */
   static async generateQRBuffer(token: string): Promise<Buffer> {
     const qrUrl = `${process.env['FRONTEND_URL'] || 'https://handicapp.com'}/scan/${token}`;
-
-    // TODO: Descomentar cuando qrcode esté instalado
-    // return await QRCode.toBuffer(qrUrl, {
-    //   errorCorrectionLevel: 'H',
-    //   type: 'png',
-    //   width: 512,
-    //   margin: 2,
-    // });
-
-    // Por ahora retornamos buffer vacío
-    logger.warn('QR code buffer generation not implemented yet', { token });
-    return Buffer.from(qrUrl);
+    return await QRCode.toBuffer(qrUrl, {
+      errorCorrectionLevel: 'H',
+      type: 'png',
+      width: 512,
+      margin: 2,
+    });
   }
 }

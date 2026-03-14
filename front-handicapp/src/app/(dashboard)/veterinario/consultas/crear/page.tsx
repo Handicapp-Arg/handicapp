@@ -31,6 +31,7 @@ export default function CrearConsultaPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [caballos, setCaballos] = useState<any[]>([]);
+  const [tipoConsultaId, setTipoConsultaId] = useState<number | null>(null);
   const [formData, setFormData] = useState<FormData>({
     caballo_id: '',
     titulo: '',
@@ -44,7 +45,16 @@ export default function CrearConsultaPage() {
 
   useEffect(() => {
     cargarCaballos();
+    cargarTipoConsulta();
   }, []);
+
+  const cargarTipoConsulta = async () => {
+    try {
+      const tipos = await eventoService.getTipos();
+      const tipo = tipos.find(t => t.clave === 'examen_veterinario');
+      if (tipo) setTipoConsultaId(tipo.id);
+    } catch { /* continúa sin tipo, el submit lo validará */ }
+  };
 
   const cargarCaballos = async () => {
     try {
@@ -63,12 +73,17 @@ export default function CrearConsultaPage() {
       return;
     }
 
+    if (!tipoConsultaId) {
+      toast.error('Error: no se pudo cargar el tipo de consulta. Recargá la página.');
+      return;
+    }
+
     try {
       setLoading(true);
 
       const dataToSend = {
         caballo_id: parseInt(formData.caballo_id),
-        tipo_evento_id: 2, // ID para consultas médicas
+        tipo_evento_id: tipoConsultaId,
         titulo: formData.titulo,
         descripcion: formData.descripcion || undefined,
         fecha_evento: `${formData.fecha_evento}T${formData.hora}:00`,

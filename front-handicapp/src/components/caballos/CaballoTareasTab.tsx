@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { TareaKanban } from '@/components/dashboard/TareaKanban';
 import { useTasks } from '@/lib/hooks/useTasks';
-import { Loader } from '@/components/ui/loader';
 import { Info, Plus, Filter } from 'lucide-react';
 import type { Tarea } from '@/lib/services/tareaService';
 
@@ -66,7 +65,13 @@ export function CaballoTareasTab({
   };
 
   if (loading) {
-    return <Loader variant="section" />;
+    return (
+      <div className="space-y-3 p-4">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />
+        ))}
+      </div>
+    );
   }
 
   return (

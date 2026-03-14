@@ -87,29 +87,23 @@ export function CreateEmpleadoModal({
   };
 
   const handleSubmit = async () => {
-    console.log('🔍 handleSubmit llamado, formData:', formData);
-    
     // Validations
     if (!formData.nombre?.trim()) {
-      console.log('❌ Validación falló: nombre vacío');
       toast('El nombre es obligatorio', 'error');
       return;
     }
 
     if (!formData.apellido?.trim()) {
-      console.log('❌ Validación falló: apellido vacío');
       toast('El apellido es obligatorio', 'error');
       return;
     }
 
     if (!formData.email?.trim()) {
-      console.log('❌ Validación falló: email vacío');
       toast('El email es obligatorio', 'error');
       return;
     }
 
     if (!formData.documento?.trim()) {
-      console.log('❌ Validación falló: documento vacío');
       toast('El documento es obligatorio', 'error');
       return;
     }

@@ -556,7 +556,10 @@ export class TareaService {
 
   // Obtener tarea por ID
   static async getTareaById(
-    tareaId: number
+    tareaId: number,
+    usuarioId?: number,
+    userRole?: string,
+    userEstablecimientoId?: number
   ): Promise<ServiceResponse<Tarea>> {
     try {
       const tarea = await Tarea.findByPk(tareaId, {
@@ -587,21 +590,39 @@ export class TareaService {
       });
 
       if (!tarea) {
-        return {
-          success: false,
-          error: 'Tarea no encontrada',
-        };
+        return { success: false, error: 'Tarea no encontrada' };
       }
 
-      return {
-        success: true,
-        data: tarea,
-      };
+      // Validar ownership según rol
+      if (userRole && userRole !== 'admin' && usuarioId) {
+        const esCreador = (tarea as any).creado_por_usuario_id === usuarioId;
+        const esAsignado = (tarea as any).asignado_a_usuario_id === usuarioId;
+
+        if (userRole === 'propietario') {
+          if (!esCreador && !esAsignado) {
+            const caballo_id = (tarea as any).caballo_id;
+            if (!caballo_id) return { success: false, error: 'Sin acceso a esta tarea' };
+            const esPropietario = await PropietarioCaballo.findOne({
+              where: { caballo_id, propietario_usuario_id: usuarioId },
+            });
+            if (!esPropietario) return { success: false, error: 'Sin acceso a esta tarea' };
+          }
+        } else if (['establecimiento', 'capataz'].includes(userRole)) {
+          const mismoEstablecimiento =
+            userEstablecimientoId && (tarea as any).establecimiento_id === userEstablecimientoId;
+          if (!esCreador && !esAsignado && !mismoEstablecimiento) {
+            return { success: false, error: 'Sin acceso a esta tarea' };
+          }
+        } else if (['veterinario', 'empleado'].includes(userRole)) {
+          if (!esCreador && !esAsignado) {
+            return { success: false, error: 'Sin acceso a esta tarea' };
+          }
+        }
+      }
+
+      return { success: true, data: tarea };
     } catch (error) {
-      return {
-        success: false,
-        error: 'Error al obtener tarea',
-      };
+      return { success: false, error: 'Error al obtener tarea' };
     }
   }
 

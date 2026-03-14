@@ -5,17 +5,27 @@ import { useRouter } from 'next/navigation';
 import { useAuthNew } from '../../../lib/hooks/useAuthNew';
 import { useSearchParams } from 'next/navigation';
 import { useToaster } from '@/components/ui/toaster';
-import { showError, showSuccess, showInfo } from '@/lib/utils/errorHandler';
+import { showSuccess } from '@/lib/utils/errorHandler';
 import ApiClient from '@/lib/services/apiClient';
 import AuthManager from '@/lib/auth/AuthManager';
 import { LOGOS } from '@/lib/constants/logos';
 import { Eye, EyeOff } from 'lucide-react';
+import { AuthBrandingPanel } from '../_components/AuthBrandingPanel';
+import { FloatingInput } from '../_components/FloatingInput';
+import { loginSchema } from '@/lib/schemas/auth';
 
 type FieldErrors = {
   email?: string;
   password?: string;
   general?: string;
   verification?: string;
+};
+
+const FORM_BG = {
+  backgroundColor: '#ffffff',
+  backgroundImage:
+    'radial-gradient(ellipse at 0% 60%, rgba(175,147,111,0.05) 0%, transparent 55%), radial-gradient(circle, rgba(30,41,59,0.045) 1px, transparent 1px)',
+  backgroundSize: 'auto, 22px 22px',
 };
 
 export default function LoginPage() {
@@ -26,7 +36,8 @@ export default function LoginPage() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
-  
+  const [shaking, setShaking] = useState(false);
+
   const router = useRouter();
   const { login, isLoading: authLoading, error: authError } = useAuthNew();
   const params = useSearchParams();
@@ -39,10 +50,7 @@ export default function LoginPage() {
   const shownInfoRef = useRef(false);
 
   useEffect(() => {
-    // Garantiza que el primer render (SSR y primer render del cliente) sea estable
     setMounted(true);
-    
-    // Cargar email guardado si existe
     const savedEmail = localStorage.getItem('rememberedEmail');
     if (savedEmail) {
       setEmail(savedEmail);
@@ -50,11 +58,8 @@ export default function LoginPage() {
     }
   }, []);
 
-  // Prellenar email si viene en los parámetros
   useEffect(() => {
-    if (emailParam && mounted) {
-      setEmail(emailParam);
-    }
+    if (emailParam && mounted) setEmail(emailParam);
   }, [emailParam, mounted]);
 
   useEffect(() => {
@@ -64,7 +69,6 @@ export default function LoginPage() {
     }
   }, [checkEmail, emailParam, toast]);
 
-  // Mostrar mensaje de éxito si viene de verificación
   useEffect(() => {
     if (verified && !shownInfoRef.current && mounted) {
       shownInfoRef.current = true;
@@ -72,29 +76,16 @@ export default function LoginPage() {
     }
   }, [verified, mounted, toast]);
 
-  // Auto-dismiss error messages after 5 seconds
   useEffect(() => {
     const hasErrors = fieldErrors.general || fieldErrors.verification || fieldErrors.email || fieldErrors.password;
-    
     if (hasErrors) {
-      console.log('⏱️ Error detectado, se limpiará en 5 segundos:', fieldErrors);
-      const timer = setTimeout(() => {
-        console.log('🧹 Limpiando errores...');
-        setFieldErrors({});
-      }, 5000);
-
-      return () => {
-        console.log('🚫 Timer cancelado');
-        clearTimeout(timer);
-      };
+      const timer = setTimeout(() => setFieldErrors({}), 5000);
+      return () => clearTimeout(timer);
     }
   }, [fieldErrors.general, fieldErrors.verification, fieldErrors.email, fieldErrors.password]);
 
   const onResend = async () => {
-    if (!emailParam) {
-      toast('Ingresá tu email y reintentá', 'warning');
-      return;
-    }
+    if (!emailParam) { toast('Ingresá tu email y reintentá', 'warning'); return; }
     try {
       setResending(true);
       await ApiClient.resendVerification(emailParam);
@@ -109,71 +100,43 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFieldErrors({});
-    
-    if (!email || !password) {
-      setFieldErrors({
-        email: !email ? 'Ingresá tu correo electrónico' : undefined,
-        password: !password ? 'Ingresá tu contraseña' : undefined,
-        general: 'Por favor, completá los campos requeridos',
-      });
-      return;
-    }
 
-    const newFieldErrors: FieldErrors = {};
-    if (!/^\S+@\S+\.\S+$/.test(email)) {
-      newFieldErrors.email = 'El formato del correo no es válido';
-    }
-    if (password.length < 6) {
-      newFieldErrors.password = 'La contraseña debe tener al menos 6 caracteres';
-    }
-    if (Object.keys(newFieldErrors).length > 0) {
-      setFieldErrors({
-        ...newFieldErrors,
-        general: 'Revisá los datos ingresados antes de continuar',
+    const validation = loginSchema.safeParse({ email, password });
+    if (!validation.success) {
+      const newFieldErrors: FieldErrors = {};
+      validation.error.issues.forEach(issue => {
+        const field = issue.path[0] as string;
+        if (field === 'email') newFieldErrors.email = issue.message;
+        if (field === 'password') newFieldErrors.password = issue.message;
       });
+      setFieldErrors({ ...newFieldErrors, general: 'Revisá los datos ingresados antes de continuar' });
+      setShaking(true);
       return;
     }
 
     try {
       setIsLoading(true);
       await login(email, password);
-      
-      // Guardar o eliminar email según "Recordarme"
+
       if (rememberMe) {
         localStorage.setItem('rememberedEmail', email);
       } else {
         localStorage.removeItem('rememberedEmail');
       }
-      
-      // Si llegamos aquí, el login fue exitoso
+
       showSuccess('auth', 'login', 'Inicio de sesión exitoso');
       const state = AuthManager.getInstance().getState();
       const roleKey = state.user?.rol?.clave || 'user';
-      
-      // Si hay un redirectTo en los parámetros, usarlo (viene de verificación)
+
       if (redirectTo) {
         router.push(redirectTo);
       } else {
-        // Redirección por rol: admin -> /admin, propietario/u otros -> home
-        if (roleKey === 'admin') {
-          router.push('/admin');
-        } else {
-          router.push('/');
-        }
+        router.push(roleKey === 'admin' ? '/admin' : '/');
       }
     } catch (err) {
-      console.error('🔐 Error de login:', err);
-      
       const errorMessage = err instanceof Error ? err.message : 'Error inesperado al iniciar sesión';
-      const normalizedErrors = normalizeLoginError(errorMessage, email);
-      setFieldErrors(normalizedErrors);
-      
-      // Log para debugging
-      console.error('📋 Detalles del error:', {
-        original: errorMessage,
-        normalized: normalizedErrors,
-        email,
-      });
+      setFieldErrors(normalizeLoginError(errorMessage, email));
+      setShaking(true);
     } finally {
       setIsLoading(false);
     }
@@ -181,219 +144,134 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full flex">
-      {/* Left Side - Formulario */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-white lg:px-8">
-        <div className="w-full max-w-md">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">Iniciar Sesión</h1>
-            <p className="text-slate-600">Ingresa tu correo y contraseña para acceder</p>
+      {/* Left — Form */}
+      <div className="flex-1 flex flex-col min-h-screen relative" style={FORM_BG}>
+
+        {/* Top bar */}
+        <div className="flex items-center justify-between px-7 pt-7">
+          <div className="flex items-center gap-2.5">
+            <img src={LOGOS.ICON_BROWN} alt="HandicApp" className="h-8 w-8 object-contain"
+              style={{ filter: 'brightness(0)' }}
+              onError={(e) => { (e.currentTarget as HTMLImageElement).src = LOGOS.FULL_BROWN; }} />
+            <span className="text-[12px] font-bold tracking-[0.3em] uppercase text-[#1e293b]/70 hidden sm:block">HandicApp</span>
           </div>
+          <button onClick={() => router.push('/register')} className="text-[13px] text-slate-500 hover:text-[#1e293b] transition-colors">
+            Crear cuenta →
+          </button>
+        </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-slate-700 text-sm font-medium mb-2">
-                Correo electrónico
-              </label>
-              <input
-                type="email"
-                name="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (fieldErrors.email || fieldErrors.general) {
-                    setFieldErrors((prev) => ({ ...prev, email: undefined, general: undefined }));
-                  }
-                }}
-                className={`w-full px-4 py-3 bg-white border rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                  fieldErrors.email ? 'border-red-400 focus:ring-red-300' : 'border-slate-200 focus:ring-[#af936f]'
-                }`}
-                placeholder="tu@email.com"
-                required
-              />
-              {fieldErrors.email && (
-                <p className="mt-2 text-sm text-red-600">{fieldErrors.email}</p>
-              )}
-            </div>
+        {/* Mobile tagline */}
+        <div className="lg:hidden px-7 pt-3">
+          <p className="text-[10px] tracking-[0.35em] uppercase text-[#af936f]/70 font-semibold">Gestión Ecuestre</p>
+        </div>
 
-            <div>
-              <label className="block text-slate-700 text-sm font-medium mb-2">
-                Contraseña
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (fieldErrors.password || fieldErrors.general) {
-                      setFieldErrors((prev) => ({ ...prev, password: undefined, general: undefined }));
-                    }
-                  }}
-                  className={`w-full px-4 py-3 pr-12 bg-white border rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                    fieldErrors.password ? 'border-red-400 focus:ring-red-300' : 'border-slate-200 focus:ring-[#af936f]'
-                  }`}
-                  placeholder="••••••••"
+        <div className="flex-1 flex items-center justify-center px-6 py-8 lg:px-14">
+          <div className="w-full max-w-[380px]">
+
+            <div className="auth-fade-up auth-fade-up-1 w-7 h-[3px] rounded-full bg-[#af936f] mb-5" />
+            <h1
+              className="auth-fade-up auth-fade-up-1 font-bold text-[#1e293b] leading-[1.1] mb-8"
+              style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontSize: 'clamp(1.9rem, 4vw, 2.4rem)' }}
+            >
+              Hola de nuevo.
+            </h1>
+
+            <form onSubmit={handleSubmit} className={`space-y-3.5 ${shaking ? 'auth-shake' : ''}`} onAnimationEnd={() => setShaking(false)}>
+              <div className="auth-fade-up auth-fade-up-2">
+                <FloatingInput
+                  type="email" name="email" autoComplete="email"
+                  label="Correo electrónico"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); if (fieldErrors.email || fieldErrors.general) setFieldErrors(p => ({ ...p, email: undefined, general: undefined })); }}
+                  error={!!fieldErrors.email}
                   required
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
-                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
+                {fieldErrors.email && <p className="mt-1.5 text-xs text-red-500 pl-1">{fieldErrors.email}</p>}
+              </div>
+
+              <div className="auth-fade-up auth-fade-up-3">
+                <FloatingInput
+                  type={showPassword ? 'text' : 'password'} name="password" autoComplete="current-password"
+                  label="Contraseña"
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); if (fieldErrors.password || fieldErrors.general) setFieldErrors(p => ({ ...p, password: undefined, general: undefined })); }}
+                  error={!!fieldErrors.password}
+                  required
+                  rightSlot={
+                    <button type="button" onClick={() => setShowPassword(!showPassword)}
+                      className="text-slate-400 hover:text-slate-600 transition-colors focus:outline-none">
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  }
+                />
+                {fieldErrors.password && <p className="mt-1.5 text-xs text-red-500 pl-1">{fieldErrors.password}</p>}
+              </div>
+
+              {/* Remember + forgot */}
+              <div className="auth-fade-up auth-fade-up-4 flex items-center justify-between pt-0.5">
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <button
+                    type="button"
+                    onClick={() => setRememberMe(!rememberMe)}
+                    className="w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all duration-150 focus:outline-none"
+                    style={{ borderColor: rememberMe ? '#af936f' : '#cbd5e1', backgroundColor: rememberMe ? '#af936f' : 'transparent' }}
+                  >
+                    {rememberMe && (
+                      <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+                        <path d="M1 3l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </button>
+                  <span className="text-[13px] text-slate-500 select-none">Recordarme</span>
+                </label>
+                <button type="button" onClick={() => router.push('/forgot-password')}
+                  className="text-[13px] text-[#af936f] hover:text-[#8f7657] font-medium transition-colors">
+                  ¿Olvidaste la clave?
                 </button>
               </div>
-              {fieldErrors.password && (
-                <p className="mt-2 text-sm text-red-600">{fieldErrors.password}</p>
-              )}
-            </div>
 
-            {/* Recordarme */}
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 rounded border-slate-300 text-[#1e293b] focus:ring-[#af936f] focus:ring-offset-0 cursor-pointer"
-                />
-                <span className="text-sm text-slate-600">Recordarme</span>
-              </label>
-              <button
-                type="button"
-                onClick={() => router.push('/forgot-password')}
-                className="text-sm text-[#af936f] hover:text-[#8f7657] font-medium transition-colors"
-              >
-                ¿Olvidaste tu contraseña?
-              </button>
-            </div>
-
-            {/* Mensaje de error general */}
-            {(fieldErrors.general || fieldErrors.verification) && (
-              <div className={`rounded-xl p-4 border-2 ${
-                fieldErrors.verification 
-                  ? 'bg-blue-50 border-blue-300' 
-                  : 'bg-red-50 border-red-300'
-              }`}>
-                <div className="flex items-start gap-3">
-                  <div className={`flex-shrink-0 mt-0.5 ${
-                    fieldErrors.verification ? 'text-blue-600' : 'text-red-600'
-                  }`}>
-                    {fieldErrors.verification ? (
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                      </svg>
-                    ) : (
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <p className={`${
-                      fieldErrors.verification ? 'text-blue-800' : 'text-red-800'
-                    } text-sm font-medium leading-relaxed`}>
-                      {fieldErrors.verification || fieldErrors.general}
-                    </p>
-                    {fieldErrors.verification && (
-                      <button
-                        type="button"
-                        onClick={onResend}
-                        disabled={resending}
-                        className="mt-3 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {resending ? 'Reenviando correo…' : 'Reenviar enlace de verificación'}
-                      </button>
-                    )}
-                  </div>
+              {(fieldErrors.general || fieldErrors.verification) && (
+                <div className={`rounded-xl p-3.5 text-xs leading-relaxed border ${fieldErrors.verification ? 'bg-blue-50/70 border-blue-200 text-blue-700' : 'bg-red-50/70 border-red-200 text-red-600'}`}>
+                  {fieldErrors.verification || fieldErrors.general}
+                  {fieldErrors.verification && (
+                    <button type="button" onClick={onResend} disabled={resending}
+                      className="block mt-1.5 font-semibold underline underline-offset-2 disabled:opacity-50">
+                      {resending ? 'Reenviando…' : 'Reenviar verificación'}
+                    </button>
+                  )}
                 </div>
+              )}
+
+              <div className="auth-fade-up auth-fade-up-5 pt-1">
+                {(() => {
+                  const submitting = mounted && (authLoading || isLoading);
+                  return (
+                    <button type="submit" disabled={submitting}
+                      className="relative w-full overflow-hidden text-white font-semibold py-3.5 rounded-xl text-sm tracking-wide transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
+                      style={{ background: 'linear-gradient(135deg, #1e293b 0%, #1a2535 100%)' }}
+                    >
+                      <span className="relative z-10">{submitting ? 'Entrando...' : 'Ingresar'}</span>
+                      <span className="absolute inset-0 bg-gradient-to-r from-transparent via-[#af936f]/12 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                    </button>
+                  );
+                })()}
+              </div>
+            </form>
+
+            {checkEmail && (
+              <div className="mt-4 p-3.5 bg-sky-50/70 border border-sky-200 rounded-xl text-xs text-sky-700">
+                Revisá tu Spam si no llegó el correo.{' '}
+                <button onClick={onResend} disabled={resending} className="font-semibold underline underline-offset-2 disabled:opacity-50">
+                  {resending ? 'Reenviando…' : 'Reenviar'}
+                </button>
               </div>
             )}
-
-            {(() => {
-              const submitting = mounted && (authLoading || isLoading);
-              return (
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full bg-[#1e293b] text-white font-semibold py-3.5 rounded-xl hover:bg-[#0f172a] hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {submitting ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-                </button>
-              );
-            })()}
-          </form>
-
-          {/* Verificación de email */}
-          {checkEmail && (
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-              <p className="text-blue-800 text-sm mb-2">¿No te llegó el correo? Revisa tu carpeta de Spam o reenvía el enlace.</p>
-              <button 
-                onClick={onResend} 
-                disabled={resending} 
-                className="px-4 py-2 rounded-lg bg-blue-100 border border-blue-300 text-blue-700 hover:bg-blue-200 transition-colors text-sm font-medium disabled:opacity-50"
-              >
-                {resending ? 'Reenviando…' : 'Reenviar verificación'}
-              </button>
-            </div>
-          )}
-
-          {/* Footer */}
-          <div className="mt-8 text-center">
-            <p className="text-slate-600 text-sm">
-              ¿No tienes cuenta?{' '}
-              <button
-                onClick={() => router.push('/register')}
-                className="text-[#af936f] hover:text-[#8f7657] font-semibold transition-colors"
-              >
-                Crear cuenta
-              </button>
-            </p>
           </div>
         </div>
       </div>
 
-      {/* Right Side - Visual/Branding */}
-      <div className="hidden lg:flex lg:flex-1 items-center justify-center p-8">
-        <div className="relative bg-[#0f172a] overflow-hidden rounded-3xl h-full w-full shadow-2xl">
-          {/* Pattern Background */}
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-60"></div>
-          
-          {/* Gradient Orbs */}
-          <div className="absolute top-20 right-20 w-72 h-72 bg-[#0e445d]/30 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-20 left-20 w-64 h-64 bg-[#af936f]/20 rounded-full blur-3xl"></div>
-          
-          {/* Content */}
-          <div className="relative z-10 flex flex-col items-center justify-center w-full h-full px-12 text-center">
-            {/* Logo Icon */}
-            <div className="mb-8">
-              <img
-                src={LOGOS.ICON_WHITE}
-                alt="HandicApp"
-                className="h-32 w-32 object-contain"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).src = LOGOS.FULL_WHITE; }}
-              />
-            </div>
-            
-            {/* Main Message */}
-            <h2 className="text-4xl font-bold text-white mb-4">
-              Gestiona tu Pasión Ecuestre
-            </h2>
-            <p className="text-white/70 text-lg max-w-md">
-              Administra el cuidado, salud y rendimiento de tus caballos desde una plataforma integral profesional.
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* Right — Branding */}
+      <AuthBrandingPanel />
     </div>
   );
 }
@@ -401,88 +279,29 @@ export default function LoginPage() {
 function normalizeLoginError(message: string, email: string): FieldErrors {
   const normalized = message.toLowerCase();
 
-  // Error de credenciales incorrectas
-  if (normalized.includes('credenciales') || 
-      normalized.includes('incorrecta') || 
-      normalized.includes('inválida') ||
-      normalized.includes('no coincide') ||
-      normalized.includes('unauthorized') ||
-      normalized.includes('401')) {
-    return {
-      general: 'Email o contraseña incorrectos. Verificá los datos e intentá nuevamente.',
-      email: 'Verificá que el email sea correcto',
-      password: 'Verificá que la contraseña sea correcta',
-    };
+  if (normalized.includes('credenciales') || normalized.includes('incorrecta') || normalized.includes('inválida') || normalized.includes('no coincide') || normalized.includes('unauthorized') || normalized.includes('401')) {
+    return { general: 'Email o contraseña incorrectos. Verificá los datos e intentá nuevamente.', email: 'Verificá que el email sea correcto', password: 'Verificá que la contraseña sea correcta' };
   }
-
-  // Usuario no encontrado
-  if (normalized.includes('no encontrado') || 
-      normalized.includes('not found') ||
-      normalized.includes('404')) {
-    return {
-      general: 'No existe una cuenta con este email. ¿Querés crear una cuenta nueva?',
-      email: 'Este email no está registrado en el sistema',
-    };
+  if (normalized.includes('no encontrado') || normalized.includes('not found') || normalized.includes('404')) {
+    return { general: 'No existe una cuenta con este email. ¿Querés crear una cuenta nueva?', email: 'Este email no está registrado en el sistema' };
   }
-
-  // Email no verificado
-  if (normalized.includes('no verificada') || 
-      normalized.includes('not verified') ||
-      normalized.includes('verificación')) {
-    return {
-      verification: `Tu cuenta todavía no está verificada. Revisá tu correo (${email || 'ingresado'}) o reenviá el enlace de verificación.`,
-    };
+  if (normalized.includes('no verificada') || normalized.includes('not verified') || normalized.includes('verificación')) {
+    return { verification: `Tu cuenta todavía no está verificada. Revisá tu correo (${email || 'ingresado'}) o reenviá el enlace de verificación.` };
   }
-
-  // Usuario inactivo
-  if (normalized.includes('inactivo') || 
-      normalized.includes('deshabilitado') ||
-      normalized.includes('disabled') ||
-      normalized.includes('403')) {
-    return {
-      general: 'Tu cuenta está inactiva. Contactá al administrador para reactivarla.',
-    };
+  if (normalized.includes('inactivo') || normalized.includes('deshabilitado') || normalized.includes('disabled') || normalized.includes('403')) {
+    return { general: 'Tu cuenta está inactiva. Contactá al administrador para reactivarla.' };
   }
-
-  // Errores de red
-  if (normalized.includes('timeout') || 
-      normalized.includes('network') ||
-      normalized.includes('conexión') ||
-      normalized.includes('fetch')) {
-    return {
-      general: 'No pudimos conectarnos con el servidor. Verificá tu conexión a internet e intentá nuevamente.',
-    };
+  if (normalized.includes('timeout') || normalized.includes('network') || normalized.includes('conexión') || normalized.includes('fetch')) {
+    return { general: 'No pudimos conectarnos con el servidor. Verificá tu conexión a internet e intentá nuevamente.' };
   }
-
-  // Campos requeridos
-  if (normalized.includes('requeridos') || 
-      normalized.includes('required') ||
-      normalized.includes('vacío')) {
-    return {
-      general: 'Por favor, ingresá tu correo electrónico y contraseña.',
-    };
+  if (normalized.includes('requeridos') || normalized.includes('required') || normalized.includes('vacío')) {
+    return { general: 'Por favor, ingresá tu correo electrónico y contraseña.' };
   }
-
-  // Error del servidor
-  if (normalized.includes('500') || 
-      normalized.includes('server error') ||
-      normalized.includes('error del servidor')) {
-    return {
-      general: 'Ocurrió un error en el servidor. Por favor, intentá nuevamente en unos momentos.',
-    };
+  if (normalized.includes('500') || normalized.includes('server error') || normalized.includes('error del servidor')) {
+    return { general: 'Ocurrió un error en el servidor. Por favor, intentá nuevamente en unos momentos.' };
   }
-
-  // Demasiados intentos
-  if (normalized.includes('too many') || 
-      normalized.includes('demasiados intentos') ||
-      normalized.includes('429')) {
-    return {
-      general: 'Demasiados intentos de inicio de sesión. Por favor, esperá unos minutos e intentá nuevamente.',
-    };
+  if (normalized.includes('too many') || normalized.includes('demasiados intentos') || normalized.includes('429')) {
+    return { general: 'Demasiados intentos de inicio de sesión. Por favor, esperá unos minutos e intentá nuevamente.' };
   }
-
-  // Error genérico con el mensaje original
-  return {
-    general: message || 'Ocurrió un error al iniciar sesión. Por favor, verificá tus credenciales e intentá nuevamente.',
-  };
+  return { general: message || 'Ocurrió un error al iniciar sesión. Por favor, verificá tus credenciales e intentá nuevamente.' };
 }

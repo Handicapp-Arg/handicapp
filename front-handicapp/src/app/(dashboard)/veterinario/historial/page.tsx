@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/
 import { Badge } from '@/components/ui/badge';
 import { FileText, Activity, Calendar, TrendingUp } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Loader } from '@/components/ui/loader';
+import TableSkeleton from '@/components/skeletons/TableSkeleton';
 
 export default function VeterinarioHistorialPage() {
   const { data: caballosData = [], isLoading: loading } = useCaballos({ page: 1, limit: 100 });
@@ -56,7 +56,7 @@ export default function VeterinarioHistorialPage() {
   const selectedCaballoData = caballos.find((c: Caballo) => c.id === selectedCaballo);
 
   if (loading) {
-    return <Loader />;
+    return <TableSkeleton rows={6} columns={3} />;
   }
 
   return (
@@ -238,9 +238,7 @@ export default function VeterinarioHistorialPage() {
                 {/* Contenido del Historial */}
                 <CardContent className="p-6">
                   {loadingHistorial ? (
-                    <div className="flex items-center justify-center py-12">
-                      <Loader />
-                    </div>
+                    <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-12 bg-slate-100 rounded-xl animate-pulse" />)}</div>
                   ) : historial.length === 0 ? (
                     <div className="text-center py-12">
                       <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />

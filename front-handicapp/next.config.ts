@@ -1,5 +1,6 @@
 ﻿import type { NextConfig } from "next";
 import bundleAnalyzer from '@next/bundle-analyzer';
+import { withSentryConfig } from '@sentry/nextjs';
 import path from 'path';
 
 // Bundle analyzer
@@ -34,10 +35,6 @@ const nextConfig: NextConfig = {
         hostname: 'handicapp-back.onrender.com',
         pathname: '/uploads/**',
       },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
     ],
   },
   
@@ -49,7 +46,12 @@ const nextConfig: NextConfig = {
   },
   
   experimental: {
-    serverActions: { allowedOrigins: ["*"] },
+    serverActions: {
+      allowedOrigins: [
+        'localhost:3000',
+        process.env.NEXT_PUBLIC_APP_URL || 'handicapp.com.ar',
+      ].filter(Boolean) as string[],
+    },
     // Habilitar optimizaciones de imports (compatible con Turbopack)
     optimizePackageImports: [
       'lucide-react',
@@ -112,4 +114,13 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withBundleAnalyzer(nextConfig);
+const sentryConfig = {
+  silent: true,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  widenClientFileUpload: true,
+  disableLogger: true,
+  automaticVercelMonitors: false,
+};
+
+export default withSentryConfig(withBundleAnalyzer(nextConfig), sentryConfig);

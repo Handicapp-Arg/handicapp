@@ -6,17 +6,13 @@ import { SimpleAdminOnly } from '@/components/common/SimplePermissionGuard';
 import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Circle, TrendingUp, Calendar, Heart } from 'lucide-react';
-import { Loader } from '@/components/ui/loader';
+import CardGridSkeleton from '@/components/skeletons/CardGridSkeleton';
 
 export default function CaballosPage() {
   const { stats, loading } = useStats();
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Loader />
-      </div>
-    );
+    return <CardGridSkeleton cards={8} columns={4} />;
   }
 
   return (
@@ -24,7 +20,7 @@ export default function CaballosPage() {
       <div className="mx-auto">
         {/* Hero Section */}
         <div className="relative overflow-hidden mb-8 rounded-2xl">
-          <div className="absolute inset-0 bg-[#0f172a]"></div>
+          <div className="absolute inset-0 bg-slate-950"></div>
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-60"></div>
           <div className="absolute top-0 right-1/4 w-64 h-64 bg-slate-600/30 rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-gray-500/20 rounded-full blur-3xl"></div>
@@ -120,7 +116,7 @@ export default function CaballosPage() {
         </div>
 
         {/* List Component */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-slate-200/70 shadow-[0_1px_4px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.04)] overflow-hidden">
           <CaballoList />
         </div>
       </div>

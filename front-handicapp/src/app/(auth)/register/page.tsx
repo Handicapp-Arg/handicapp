@@ -1,10 +1,33 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import ApiClient from '@/lib/services/apiClient';
 import { LOGOS } from '@/lib/constants/logos';
-import { Eye, EyeOff, User, Mail, Check, X } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
+import { AuthBrandingPanel } from '../_components/AuthBrandingPanel';
+import { FloatingInput } from '../_components/FloatingInput';
+import { registerSchema } from '@/lib/schemas/auth';
+
+function getPasswordStrength(pwd: string): number {
+  if (!pwd) return 0;
+  let score = 0;
+  if (pwd.length >= 8) score++;
+  if (/[A-Z]/.test(pwd)) score++;
+  if (/\d/.test(pwd)) score++;
+  if (/[^A-Za-z0-9]/.test(pwd)) score++;
+  return score;
+}
+
+const strengthLabel = ['', 'Débil', 'Regular', 'Buena', 'Fuerte'];
+const strengthColor = ['', '#ef4444', '#f97316', '#eab308', '#22c55e'];
+
+const FORM_BG = {
+  backgroundColor: '#ffffff',
+  backgroundImage:
+    'radial-gradient(ellipse at 0% 60%, rgba(175,147,111,0.05) 0%, transparent 55%), radial-gradient(circle, rgba(30,41,59,0.045) 1px, transparent 1px)',
+  backgroundSize: 'auto, 22px 22px',
+};
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -17,78 +40,45 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+  const [shaking, setShaking] = useState(false);
+
+  const strength = useMemo(() => getPasswordStrength(password), [password]);
+  const passwordsMatch = confirmPassword.length > 0 && password === confirmPassword;
+  const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
-    
-    // Validaciones
-    if (!firstName.trim() || !lastName.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
-      setError('Por favor completa todos los campos');
+
+    const shake = (msg: string) => { setError(msg); setShaking(true); };
+
+    const validation = registerSchema.safeParse({ firstName, lastName, email, password, confirmPassword });
+    if (!validation.success) {
+      shake(validation.error.issues[0].message);
       return;
     }
-    
-    if (firstName.trim().length < 2 || lastName.trim().length < 2) {
-      setError('El nombre y apellido deben tener al menos 2 caracteres');
-      return;
-    }
-    
-    if (!nameRegex.test(firstName.trim()) || !nameRegex.test(lastName.trim())) {
-      setError('El nombre y apellido solo pueden contener letras y espacios');
-      return;
-    }
-    
-    if (!emailRegex.test(email.trim())) {
-      setError('Por favor ingresa un email válido');
-      return;
-    }
-    
-    if (password.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres');
-      return;
-    }
-    
-    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])/.test(password)) {
-      setError('La contraseña debe contener al menos: 1 minúscula, 1 mayúscula, 1 número y 1 carácter especial');
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden');
-      return;
+    if (!agreed) {
+      shake('Aceptá los términos para continuar'); return;
     }
 
-    // Si todas las validaciones pasan, mostrar el modal de confirmación
-    setShowConfirmModal(true);
-  };
-
-  const handleConfirmRegistration = async () => {
     try {
       setLoading(true);
-      setShowConfirmModal(false);
-      
       await ApiClient.register({
         nombre: firstName.trim(),
         apellido: lastName.trim(),
         email: email.trim(),
         password: password.trim(),
       });
-      
-      // Si llegamos aquí sin error, el registro fue exitoso
-      // Redirigimos al login con un indicador para mostrar aviso
       setTimeout(() => {
         const emailParam = encodeURIComponent(email.trim());
         router.push(`/login?checkEmail=1&email=${emailParam}`);
       }, 1600);
-      
-    } catch (error) {
-      const err = error as { message?: string; details?: string[] };
-      const details = Array.isArray(err?.details) ? err.details : undefined;
-      setError(details?.[0] || err.message || 'Error al registrar usuario');
+    } catch (err) {
+      const e = err as { message?: string; details?: string[] };
+      const details = Array.isArray(e?.details) ? e.details : undefined;
+      setError(details?.[0] || e.message || 'Error al registrar usuario');
+      setShaking(true);
     } finally {
       setLoading(false);
     }
@@ -96,298 +86,144 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen w-full flex">
-      {/* Left Side - Formulario */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-white lg:px-8">
-        <div className="w-full max-w-md">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">Crear Cuenta</h1>
-            <p className="text-slate-600">Únete a HandicApp y gestiona tu establecimiento ecuestre</p>
+      {/* Left — Form */}
+      <div className="flex-1 flex flex-col min-h-screen relative" style={FORM_BG}>
+
+        {/* Top bar */}
+        <div className="flex items-center justify-between px-7 pt-7">
+          <div className="flex items-center gap-2.5">
+            <img src={LOGOS.ICON_BROWN} alt="HandicApp" className="h-8 w-8 object-contain"
+              style={{ filter: 'brightness(0)' }}
+              onError={(e) => { (e.currentTarget as HTMLImageElement).src = LOGOS.FULL_BROWN; }} />
+            <span className="text-[12px] font-bold tracking-[0.3em] uppercase text-[#1e293b]/70 hidden sm:block">HandicApp</span>
           </div>
+          <button onClick={() => router.push('/login')} className="text-[13px] text-slate-500 hover:text-[#1e293b] transition-colors">
+            Iniciar sesión →
+          </button>
+        </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-slate-700 text-sm font-medium mb-2">
-                  Nombre
-                </label>
-                <input
-                  type="text"
-                  name="firstName"
-                  autoComplete="given-name"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#af936f] focus:border-transparent transition-all"
-                  placeholder="Juan"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-slate-700 text-sm font-medium mb-2">
-                  Apellido
-                </label>
-                <input
-                  type="text"
-                  name="lastName"
-                  autoComplete="family-name"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#af936f] focus:border-transparent transition-all"
-                  placeholder="Pérez"
-                  required
-                />
-              </div>
-            </div>
+        {/* Mobile tagline */}
+        <div className="lg:hidden px-7 pt-3">
+          <p className="text-[10px] tracking-[0.35em] uppercase text-[#af936f]/70 font-semibold">Gestión Ecuestre</p>
+        </div>
 
-            {/* Email */}
-            <div>
-              <label className="block text-slate-700 text-sm font-medium mb-2">
-                Correo electrónico
-              </label>
-              <input
-                type="email"
-                name="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#af936f] focus:border-transparent transition-all"
-                placeholder="tu@email.com"
-                required
-              />
-            </div>
+        <div className="flex-1 flex items-center justify-center px-6 py-8 lg:px-14">
+          <div className="w-full max-w-[380px]">
 
-            {/* Password */}
-            <div>
-              <label className="block text-slate-700 text-sm font-medium mb-2">
-                Contraseña
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 pr-12 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#af936f] focus:border-transparent transition-all"
-                  placeholder="Mínimo 8 caracteres"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
-                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-              <p className="mt-1 text-xs text-slate-500">Debe incluir mayúsculas, minúsculas, números y símbolos</p>
-            </div>
-
-            {/* Confirm Password */}
-            <div>
-              <label className="block text-slate-700 text-sm font-medium mb-2">
-                Confirmar contraseña
-              </label>
-              <div className="relative">
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  name="confirmPassword"
-                  autoComplete="new-password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-3 pr-12 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#af936f] focus:border-transparent transition-all"
-                  placeholder="Repite tu contraseña"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
-                  aria-label={showConfirmPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Términos y condiciones */}
-            <div className="flex items-start gap-2">
-              <input
-                type="checkbox"
-                required
-                className="w-4 h-4 mt-1 rounded border-slate-300 text-[#1e293b] focus:ring-[#af936f] focus:ring-offset-0"
-              />
-              <label className="text-sm text-slate-600">
-                Acepto los{' '}
-                <button type="button" className="text-[#af936f] hover:text-[#8f7657] font-medium">
-                  términos y condiciones
-                </button>
-              </label>
-            </div>
-
-            {/* Error Message */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-3">
-                <p className="text-red-600 text-sm">{error}</p>
-              </div>
-            )}
-
-            {/* Register Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#1e293b] text-white font-semibold py-3.5 rounded-xl hover:bg-[#0f172a] hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            <div className="auth-fade-up auth-fade-up-1 w-7 h-[3px] rounded-full bg-[#af936f] mb-5" />
+            <h1
+              className="auth-fade-up auth-fade-up-1 font-bold text-[#1e293b] leading-[1.1] mb-8"
+              style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontSize: 'clamp(1.9rem, 4vw, 2.4rem)' }}
             >
-              {loading ? 'Creando cuenta...' : 'Revisar y Crear Cuenta'}
-            </button>
-          </form>
+              Crear cuenta.
+            </h1>
 
-          {/* Confirmation Modal */}
-          {showConfirmModal && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-auto">
-                <div className="p-6">
-                  {/* Header */}
-                  <div className="text-center mb-6">
-                    <div className="w-16 h-16 bg-[#af936f]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Check className="w-8 h-8 text-[#af936f]" />
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">
-                      Confirmar Registro
-                    </h3>
-                    <p className="text-slate-600 text-sm">
-                      Por favor verifica que los datos sean correctos antes de crear tu cuenta
-                    </p>
-                  </div>
+            <form onSubmit={handleSubmit} className={`space-y-3 ${shaking ? 'auth-shake' : ''}`} onAnimationEnd={() => setShaking(false)}>
 
-                  {/* Data Review */}
-                  <div className="space-y-4 mb-6">
-                    <div className="bg-slate-50 rounded-xl p-4 space-y-3">
-                      <div className="flex items-start gap-3">
-                        <User className="w-5 h-5 text-[#af936f] mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="text-sm font-medium text-slate-700">Nombre completo</p>
-                          <p className="text-slate-900">{firstName.trim()} {lastName.trim()}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start gap-3">
-                        <Mail className="w-5 h-5 text-[#af936f] mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="text-sm font-medium text-slate-700">Correo electrónico</p>
-                          <p className="text-slate-900">{email.trim()}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
-                      <p className="text-blue-800 text-sm">
-                        <strong>Importante:</strong> Recibirás un correo de verificación en {email.trim()} para activar tu cuenta.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setShowConfirmModal(false)}
-                      className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-colors flex items-center justify-center gap-2"
-                    >
-                      <X className="w-4 h-4" />
-                      Editar datos
-                    </button>
-                    <button
-                      onClick={handleConfirmRegistration}
-                      disabled={loading}
-                      className="flex-1 px-4 py-3 bg-[#1e293b] text-white rounded-xl font-medium hover:bg-[#0f172a] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      <Check className="w-4 h-4" />
-                      {loading ? 'Creando...' : 'Confirmar'}
-                    </button>
-                  </div>
-                </div>
+              {/* Name row */}
+              <div className="auth-fade-up auth-fade-up-2 grid grid-cols-2 gap-3">
+                <FloatingInput type="text" name="firstName" autoComplete="given-name"
+                  label="Nombre" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+                <FloatingInput type="text" name="lastName" autoComplete="family-name"
+                  label="Apellido" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
               </div>
-            </div>
-          )}
 
-          {/* Footer */}
-          <div className="mt-8 text-center">
-            <p className="text-slate-600 text-sm">
-              ¿Ya tienes cuenta?{' '}
-              <button
-                onClick={() => router.push('/login')}
-                className="text-[#af936f] hover:text-[#8f7657] font-semibold transition-colors"
-              >
-                Iniciar sesión
-              </button>
-            </p>
+              {/* Email */}
+              <div className="auth-fade-up auth-fade-up-3">
+                <FloatingInput type="email" name="email" autoComplete="email"
+                  label="Correo electrónico" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              </div>
+
+              {/* Password + strength */}
+              <div className="auth-fade-up auth-fade-up-4 space-y-2">
+                <FloatingInput
+                  type={showPassword ? 'text' : 'password'} name="password" autoComplete="new-password"
+                  label="Contraseña" value={password} onChange={(e) => setPassword(e.target.value)} required
+                  rightSlot={
+                    <button type="button" onClick={() => setShowPassword(!showPassword)}
+                      className="text-slate-400 hover:text-slate-600 transition-colors focus:outline-none">
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  }
+                />
+                {password.length > 0 && (
+                  <div className="flex items-center gap-2 px-0.5">
+                    <div className="flex gap-1 flex-1">
+                      {[1, 2, 3, 4].map((lvl) => (
+                        <div key={lvl} className="h-[3px] flex-1 rounded-full transition-all duration-300"
+                          style={{ backgroundColor: strength >= lvl ? strengthColor[strength] : '#e2e8f0' }} />
+                      ))}
+                    </div>
+                    <span className="text-[11px] font-medium transition-colors duration-300"
+                      style={{ color: strengthColor[strength] || '#94a3b8', minWidth: 42 }}>
+                      {strengthLabel[strength]}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Confirm password */}
+              <div className="auth-fade-up auth-fade-up-4">
+                <FloatingInput
+                  type={showConfirmPassword ? 'text' : 'password'} name="confirmPassword" autoComplete="new-password"
+                  label="Confirmar contraseña" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required
+                  error={passwordsMismatch}
+                  success={passwordsMatch}
+                  rightSlot={
+                    <div className="flex items-center gap-1.5">
+                      {(passwordsMatch || passwordsMismatch) && (
+                        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: passwordsMatch ? '#22c55e' : '#ef4444' }} />
+                      )}
+                      <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="text-slate-400 hover:text-slate-600 transition-colors focus:outline-none">
+                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  }
+                />
+              </div>
+
+              {/* Terms */}
+              <div className="auth-fade-up auth-fade-up-5 flex items-center gap-2.5 pt-1">
+                <button type="button" onClick={() => setAgreed(!agreed)}
+                  className="w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all duration-150 focus:outline-none"
+                  style={{ borderColor: agreed ? '#af936f' : '#cbd5e1', backgroundColor: agreed ? '#af936f' : 'transparent' }}>
+                  {agreed && (
+                    <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+                      <path d="M1 3l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </button>
+                <span className="text-[13px] text-slate-500">
+                  Acepto los{' '}
+                  <button type="button" className="text-[#af936f] hover:text-[#8f7657] font-medium transition-colors">términos</button>
+                  {' '}y{' '}
+                  <button type="button" className="text-[#af936f] hover:text-[#8f7657] font-medium transition-colors">privacidad</button>
+                </span>
+              </div>
+
+              {error && (
+                <div className="rounded-xl p-3.5 bg-red-50/70 border border-red-200 text-xs text-red-600">
+                  {error}
+                </div>
+              )}
+
+              <div className="auth-fade-up auth-fade-up-5 pt-1">
+                <button type="submit" disabled={loading}
+                  className="relative w-full overflow-hidden text-white font-semibold py-3.5 rounded-xl text-sm tracking-wide transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
+                  style={{ background: 'linear-gradient(135deg, #1e293b 0%, #1a2535 100%)' }}
+                >
+                  <span className="relative z-10">{loading ? 'Creando cuenta...' : 'Crear cuenta'}</span>
+                  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-[#af936f]/12 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
 
-      {/* Right Side - Visual/Branding */}
-      <div className="hidden lg:flex lg:flex-1 items-center justify-center p-8">
-        <div className="relative bg-[#0f172a] overflow-hidden rounded-3xl h-full w-full shadow-2xl">
-          {/* Pattern Background */}
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-60"></div>
-          
-          {/* Gradient Orbs */}
-          <div className="absolute top-20 right-20 w-72 h-72 bg-[#0e445d]/30 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-20 left-20 w-64 h-64 bg-[#af936f]/20 rounded-full blur-3xl"></div>
-          
-          {/* Content */}
-          <div className="relative z-10 flex flex-col items-center justify-center w-full h-full px-12 text-center">
-            {/* Logo Icon */}
-            <div className="mb-8">
-              <img
-                src={LOGOS.ICON_WHITE}
-                alt="HandicApp"
-                className="h-32 w-32 object-contain"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).src = LOGOS.FULL_WHITE; }}
-              />
-            </div>
-            
-            {/* Main Message */}
-            <h2 className="text-4xl font-bold text-white mb-4">
-              Bienvenido a HandicApp
-            </h2>
-            <p className="text-white/70 text-lg max-w-md mb-12">
-              Únete a cientos de profesionales que ya confían en nuestra plataforma para gestionar sus establecimientos ecuestres.
-            </p>
-            
-            {/* Features */}
-            <div className="space-y-4 max-w-md">
-              <div className="flex items-start gap-3 text-white/90">
-                <div className="w-6 h-6 rounded-lg bg-[#af936f]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-[#af936f] text-sm font-bold">✓</span>
-                </div>
-                <span className="text-sm text-left">Gestión completa de caballos y establecimientos</span>
-              </div>
-              <div className="flex items-start gap-3 text-white/90">
-                <div className="w-6 h-6 rounded-lg bg-[#af936f]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-[#af936f] text-sm font-bold">✓</span>
-                </div>
-                <span className="text-sm text-left">Control de salud y eventos veterinarios</span>
-              </div>
-              <div className="flex items-start gap-3 text-white/90">
-                <div className="w-6 h-6 rounded-lg bg-[#af936f]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-[#af936f] text-sm font-bold">✓</span>
-                </div>
-                <span className="text-sm text-left">Reportes y estadísticas en tiempo real</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <AuthBrandingPanel />
     </div>
   );
 }

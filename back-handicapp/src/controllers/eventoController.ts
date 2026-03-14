@@ -148,14 +148,15 @@ export class EventoController {
         return;
       }
 
-      const evento = await EventoService.getEventoById(eventoId);
+      const result = await EventoService.getEventoById(eventoId, req.user!.id, req.user!.rol?.clave);
 
-      if (!evento) {
-        res.status(404).json(ApiResponse.error('Evento no encontrado'));
+      if (!result.success || !result.data) {
+        const status = result.error === 'Sin acceso a este evento' ? 403 : 404;
+        res.status(status).json(ApiResponse.error(result.error || 'Evento no encontrado'));
         return;
       }
 
-      res.json(ApiResponse.success(evento));
+      res.json(ApiResponse.success(result.data));
 
     } catch (error: any) {
       logger.error('Error obteniendo evento', { error });
@@ -344,51 +345,4 @@ export class EventoController {
     }
   }
 
-  // ====================================
-  // REPORTES Y ESTADÍSTICAS
-  // ====================================
-
-  /**
-   * Obtener reporte de eventos por periodo
-   * GET /api/v1/eventos/reporte?fechaInicio=2024-01-01&fechaFin=2024-12-31&establecimiento=1
-   * Roles: admin, establecimiento autorizado
-   */
-  static async getReporte(_req: AuthenticatedRequest, res: Response): Promise<void> {
-    // No implementado en el servicio
-    res.status(501).json(ApiResponse.error('Endpoint no implementado'));
-  }
-
-  /**
-   * Obtener estadísticas de eventos
-   * GET /api/v1/eventos/estadisticas?establecimiento=1&periodo=mes
-   * Roles: admin, establecimiento autorizado
-   */
-  static async getEstadisticas(_req: AuthenticatedRequest, res: Response): Promise<void> {
-    // No implementado en el servicio
-    res.status(501).json(ApiResponse.error('Endpoint no implementado'));
-  }
-
-  // ====================================
-  // ADJUNTOS
-  // ====================================
-
-  /**
-   * Agregar adjunto a evento
-   * POST /api/v1/eventos/:id/adjuntos
-   * Roles: veterinario que creó el evento, admin
-   */
-  static async addAdjunto(_req: AuthenticatedRequest, res: Response): Promise<void> {
-    // No implementado en el servicio
-    res.status(501).json(ApiResponse.error('Endpoint no implementado'));
-  }
-
-  /**
-   * Obtener adjuntos de un evento
-   * GET /api/v1/eventos/:id/adjuntos
-   * Roles: usuarios con acceso al evento
-   */
-  static async getAdjuntos(_req: AuthenticatedRequest, res: Response): Promise<void> {
-    // No implementado en el servicio
-    res.status(501).json(ApiResponse.error('Endpoint no implementado'));
-  }
 }

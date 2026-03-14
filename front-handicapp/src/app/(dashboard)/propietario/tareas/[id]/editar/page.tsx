@@ -18,7 +18,7 @@ import { tareaService, Tarea } from '@/lib/services/tareaService';
 import { caballoService } from '@/lib/services/caballoService';
 import { userService, User as UserType } from '@/lib/services/userService';
 import { toast } from 'react-hot-toast';
-import { Loader } from '@/components/ui/loader';
+import TableSkeleton from '@/components/skeletons/TableSkeleton';
 
 export default function EditarTareaPage() {
   const router = useRouter();
@@ -134,11 +134,7 @@ export default function EditarTareaPage() {
   };
 
   if (loadingData) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader variant="section" />
-      </div>
-    );
+    return <TableSkeleton rows={6} columns={3} />;
   }
 
   if (!tarea) {

@@ -1,189 +1,166 @@
+'use client';
 
-"use client";
-import { useState } from 'react';
-
-function StatsButtons({ establecimientos }: { establecimientos: any[] }) {
-	const stats = {
-		total: establecimientos.length,
-		verificados: establecimientos.filter(e => e.verificado).length,
-		conRating: establecimientos.filter(e => e.rating_promedio && e.rating_promedio > 0).length
-	};
-	const [cardFilter, setCardFilter] = useState<'all' | 'verificados' | 'reseñas'>('all');
-	// NOTA: El filtro no se aplica aquí, solo muestra los botones
-	return (
-		<div className="flex items-center gap-4 mb-6 mt-2 justify-start">
-			<button
-				className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg transition-colors ${cardFilter === 'all' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-blue-50'}`}
-				onClick={() => setCardFilter('all')}
-			>
-				<span>{stats.total}</span>
-				<span>establecimientos</span>
-			</button>
-			<button
-				className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg transition-colors ${cardFilter === 'verificados' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-blue-50'}`}
-				onClick={() => setCardFilter('verificados')}
-			>
-				<span>{stats.verificados}</span>
-				<span>verificados</span>
-			</button>
-			<button
-				className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg transition-colors ${cardFilter === 'reseñas' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-blue-50'}`}
-				onClick={() => setCardFilter('reseñas')}
-			>
-				<span>{stats.conRating}</span>
-				<span>con reseñas</span>
-			</button>
-		</div>
-	);
-}
-
-import React from 'react';
-import Link from 'next/link';
-import dynamic from 'next/dynamic';
+import React, { useState } from 'react';
 import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
-import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Building2, MapPin, TrendingUp } from 'lucide-react';
+import { PageHeader } from '@/components/ui/page-header';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Building2 } from 'lucide-react';
 import { useStats } from '@/lib/hooks/useStats';
 import { useEstablecimientos } from '@/lib/hooks/useEstablecimientosQuery';
 import type { Establecimiento } from '@/lib/services/establecimientoService';
-import { Loader } from '@/components/ui/loader';
+import CardGridSkeleton from '@/components/skeletons/CardGridSkeleton';
 import { EstablecimientoCard } from '@/components/establecimientos/EstablecimientoCard';
 import { EstablecimientoMapView } from '@/components/dashboard/EstablecimientoMapView';
 
-// Lazy load del componente de tabs (contiene el mapa pesado)
-const EstablecimientoTabs = dynamic(
-	() => import('@/components/dashboard/EstablecimientoTabs').then(mod => ({ default: mod.EstablecimientoTabs })),
-	{
-		loading: () => (
-			<div className="w-full h-[600px] bg-slate-100 rounded-lg flex items-center justify-center">
-				<Loader variant="section" />
-			</div>
-		), 
-		ssr: false,
-	}
-);
+type FilterType = 'all' | 'verificados' | 'reseñas';
 
-export default function PropietarioEstablecimientosPage() {
-	// Propietarios solo pueden VER establecimientos, no crear/editar
-	const { stats, loading: statsLoading } = useStats();
-	const { data: establecimientosResponse, isLoading: establecimientosLoading } = useEstablecimientos();
-  
-	// Extraer el array correctamente de la respuesta
-	let establecimientos: Establecimiento[] = [];
-  
-	if (establecimientosResponse) {
-		if (Array.isArray(establecimientosResponse)) {
-			establecimientos = establecimientosResponse;
-		} else if (typeof establecimientosResponse === 'object') {
-			// Intentar extraer de diferentes estructuras posibles
-			const resp = establecimientosResponse as Record<string, unknown>;
-			const data = resp.data as Record<string, unknown> | Establecimiento[] | undefined;
-      
-			if (Array.isArray(data)) {
-				establecimientos = data;
-			} else if (data && typeof data === 'object') {
-				establecimientos = (data.items as Establecimiento[]) || 
-													(data.establecimientos as Establecimiento[]) || 
-													[];
-			} else {
-				establecimientos = (resp.items as Establecimiento[]) || 
-													(resp.establecimientos as Establecimiento[]) || 
-													[];
-			}
-		}
-	}
+function FilterTabs({
+  establecimientos,
+  active,
+  onChange,
+}: {
+  establecimientos: Establecimiento[];
+  active: FilterType;
+  onChange: (f: FilterType) => void;
+}) {
+  const stats = {
+    total: establecimientos.length,
+    verificados: establecimientos.filter(e => e.verificado).length,
+    conRating: establecimientos.filter(e => e.rating_promedio && e.rating_promedio > 0).length,
+  };
 
-	// Calcular estadísticas útiles para PROPIETARIO
-	// 1. Mis caballos - total de caballos alojados
-	const totalCaballos = establecimientos.reduce((sum, est) => 
-		sum + (est.mis_caballos?.length || 0), 0
-	);
-	// 2. Establecimientos - cantidad donde tengo caballos
-	const establecimientosConCaballos = establecimientos.filter(
-		est => est.mis_caballos && est.mis_caballos.length > 0
-	).length;
-	// 3. Distancia promedio - por ahora no tenemos coordenadas del usuario
-	// Mostrar "-" hasta implementar geolocalización
-	const distanciaPromedio = 0;
-	// 4. Rating promedio de mis establecimientos
-	const establecimientosConRating = establecimientos.filter(
-		est => est.mis_caballos?.length && est.rating_promedio && Number(est.rating_promedio) > 0
-	);
-	const ratingPromedio = establecimientosConRating.length > 0
-		? (establecimientosConRating.reduce((sum, est) => 
-				sum + Number(est.rating_promedio || 0), 0
-			) / establecimientosConRating.length).toFixed(1)
-		: '0.0';
+  const tabs: { key: FilterType; label: string; count: number }[] = [
+    { key: 'all', label: 'Todos', count: stats.total },
+    { key: 'verificados', label: 'Verificados', count: stats.verificados },
+    { key: 'reseñas', label: 'Con reseñas', count: stats.conRating },
+  ];
 
-	// Mostrar loading mientras carga - ESPERAR AMBAS CONSULTAS
-	const isLoading = statsLoading || establecimientosLoading;
-  
-	if (isLoading) {
-		return (
-			<SimpleRoleGuard roles={['propietario']}>
-				<Loader />
-			</SimpleRoleGuard>
-		);
-	}
-
-	// SOLO mostrar mensaje si YA TERMINÓ de cargar Y no tiene caballos
-	const hasCaballos = (stats.caballos?.total || 0) > 0;
-  
-	// Si NO tiene caballos PERO tiene establecimientos, mostrar los establecimientos de todas formas
-	if (!hasCaballos && establecimientosConCaballos === 0) {
-		return (
-			<SimpleRoleGuard roles={['propietario']}>
-				<div className="flex items-center justify-center min-h-[60vh]">
-					<div className="text-center max-w-md px-6">
-						<div className="mb-6 flex justify-center">
-							<div className="p-4 bg-blue-50 rounded-full">
-								<Building2 className="w-12 h-12 text-blue-600" />
-							</div>
-						</div>
-						<h2 className="text-2xl font-bold text-gray-900 mb-3">
-							No tienes caballos registrados
-						</h2>
-						<p className="text-gray-600 mb-6">
-							Para ver establecimientos, primero debes registrar tu caballo en uno de ellos.
-						</p>
-						<Link
-							href="/propietario/caballos"
-							className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-						>
-							Registrar mi primer caballo
-						</Link>
-					</div>
-				</div>
-			</SimpleRoleGuard>
-		);
-	}
-
-	   return (
-		   <SimpleRoleGuard roles={['propietario']}>
-			   <div className="flex flex-row gap-6">
-				   <div className="w-1/2">
-					   {/* Botones de stats arriba del grid de cards */}
-					   <StatsButtons establecimientos={establecimientos} />
-					   {establecimientosLoading ? (
-						   <Loader variant="section" />
-					   ) : (
-						   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-							   {establecimientos.length > 0 ? (
-								   establecimientos.map(est => (
-									   <EstablecimientoCard key={est.id} establecimiento={est} />
-								   ))
-							   ) : (
-								   <span className="text-gray-400">No hay establecimientos disponibles</span>
-							   )}
-						   </div>
-					   )}
-				   </div>
-				   <div className="w-1/2 min-h-[600px]">
-					   <EstablecimientoMapView establecimientos={establecimientos} isLoading={establecimientosLoading} />
-				   </div>
-			   </div>
-		   </SimpleRoleGuard>
-	   );
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      {tabs.map(({ key, label, count }) => (
+        <button
+          key={key}
+          onClick={() => onChange(key)}
+          className={`flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-xl transition-colors ${
+            active === key
+              ? 'bg-[#af936f]/10 text-[#af936f] border border-[#af936f]/20'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-transparent'
+          }`}
+        >
+          <span className="font-bold">{count}</span>
+          <span>{label}</span>
+        </button>
+      ))}
+    </div>
+  );
 }
 
+export default function PropietarioEstablecimientosPage() {
+  const [cardFilter, setCardFilter] = useState<FilterType>('all');
+  const { stats, loading: statsLoading } = useStats();
+  const { data: establecimientosResponse, isLoading: establecimientosLoading } = useEstablecimientos();
+
+  let establecimientos: Establecimiento[] = [];
+
+  if (establecimientosResponse) {
+    if (Array.isArray(establecimientosResponse)) {
+      establecimientos = establecimientosResponse;
+    } else if (typeof establecimientosResponse === 'object') {
+      const resp = establecimientosResponse as Record<string, unknown>;
+      const data = resp.data as Record<string, unknown> | Establecimiento[] | undefined;
+
+      if (Array.isArray(data)) {
+        establecimientos = data;
+      } else if (data && typeof data === 'object') {
+        establecimientos =
+          (data.items as Establecimiento[]) ||
+          (data.establecimientos as Establecimiento[]) ||
+          [];
+      } else {
+        establecimientos =
+          (resp.items as Establecimiento[]) ||
+          (resp.establecimientos as Establecimiento[]) ||
+          [];
+      }
+    }
+  }
+
+  const establecimientosConCaballos = establecimientos.filter(
+    est => est.mis_caballos && est.mis_caballos.length > 0
+  ).length;
+
+  const isLoading = statsLoading || establecimientosLoading;
+
+  if (isLoading) return <CardGridSkeleton cards={6} columns={3} />;
+
+  const hasCaballos = (stats.caballos?.total || 0) > 0;
+
+  if (!hasCaballos && establecimientosConCaballos === 0) {
+    return (
+      <SimpleRoleGuard roles={['propietario']}>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <EmptyState
+            icon={Building2}
+            title="No tienes caballos registrados"
+            description="Para ver establecimientos, primero debes registrar tu caballo en uno de ellos."
+            action={{
+              label: 'Registrar mi primer caballo',
+              href: '/propietario/caballos',
+            }}
+          />
+        </div>
+      </SimpleRoleGuard>
+    );
+  }
+
+  const filteredEstablecimientos = establecimientos.filter(est => {
+    if (cardFilter === 'verificados') return est.verificado;
+    if (cardFilter === 'reseñas') return est.rating_promedio && est.rating_promedio > 0;
+    return true;
+  });
+
+  return (
+    <SimpleRoleGuard roles={['propietario']}>
+      <div className="max-w-[1600px] mx-auto">
+        <PageHeader
+          title="Mis Establecimientos"
+          subtitle="Establecimientos donde tenés caballos alojados"
+        />
+
+        <FilterTabs
+          establecimientos={establecimientos}
+          active={cardFilter}
+          onChange={setCardFilter}
+        />
+
+        <div className="mt-6 flex flex-col lg:flex-row gap-6">
+          {/* Cards grid */}
+          <div className="flex-1 min-w-0">
+            {filteredEstablecimientos.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                {filteredEstablecimientos.map(est => (
+                  <EstablecimientoCard key={est.id} establecimiento={est} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={Building2}
+                title="Sin resultados"
+                description="No hay establecimientos que coincidan con el filtro seleccionado."
+                size="sm"
+              />
+            )}
+          </div>
+
+          {/* Map */}
+          <div className="lg:w-[420px] xl:w-[480px] flex-shrink-0 min-h-[400px] lg:min-h-[600px]">
+            <EstablecimientoMapView
+              establecimientos={filteredEstablecimientos}
+              isLoading={establecimientosLoading}
+            />
+          </div>
+        </div>
+      </div>
+    </SimpleRoleGuard>
+  );
+}

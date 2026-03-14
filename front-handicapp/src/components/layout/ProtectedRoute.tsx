@@ -1,170 +1,148 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
-import ApiClient from '@/lib/services/apiClient';
+import AuthManager from '@/lib/auth/AuthManager';
 import { LOGOS } from '@/lib/constants/logos';
 
 /**
- * Componente de protección de rutas basado en roles
- * OPTIMIZADO: Usa cache para evitar verificaciones repetidas en navegación rápida
- * El middleware ya valida la cookie, este componente solo verifica rol y permisos
+ * ProtectedRoute — guarda de rutas basado en AuthManager (sin llamada de red).
+ *
+ * Flujo optimizado:
+ * 1. Lee el estado de AuthManager desde memoria/localStorage de forma SINCRÓNICA.
+ * 2. Si el usuario ya está autenticado → muestra el contenido INMEDIATAMENTE.
+ * 3. AuthManager verifica el token en background (no bloquea la UI).
+ * 4. Si el token expira (401/403 del backend), AuthManager limpia la sesión y
+ *    el subscribe de abajo redirige al login automáticamente.
+ *
+ * Eliminamos la llamada a ApiClient.verifyToken() que bloqueaba cada navegación.
  */
 
 const DASHBOARD_ROUTES: Record<string, string> = {
   admin: '/admin',
   establecimiento: '/establecimiento',
-  capataz: '/capataz', 
+  capataz: '/capataz',
   veterinario: '/veterinario',
   empleado: '/empleado',
-  propietario: '/propietario'
+  propietario: '/propietario',
 };
 
-// Cache de verificación (válido por 30 segundos)
-let authCache: {
-  isValid: boolean;
-  userRole: string | null;
-  timestamp: number;
-} | null = null;
+const ROLE_MAPPING: Record<number, string> = {
+  1: 'admin',
+  2: 'establecimiento',
+  3: 'capataz',
+  4: 'veterinario',
+  5: 'empleado',
+  6: 'propietario',
+};
 
-const CACHE_DURATION = 30000; // 30 segundos
+function getUserRole(user: any): string | null {
+  if (!user) return null;
+  // Por ID de rol
+  if (user.rol?.id) return ROLE_MAPPING[user.rol.id] || null;
+  // Por clave directa
+  if (user.rol?.clave) return user.rol.clave;
+  // Fallback por campo role plano
+  if (user.role) return user.role;
+  return null;
+}
+
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="text-center space-y-6">
+        <div className="relative">
+          <div className="absolute inset-0 animate-ping opacity-20">
+            <div className="w-24 h-24 mx-auto rounded-2xl bg-slate-950" />
+          </div>
+          <div className="relative bg-slate-950 w-24 h-24 rounded-2xl flex items-center justify-center mx-auto shadow-xl">
+            <Image
+              src={LOGOS.ICON_WHITE}
+              alt="HandicApp"
+              width={64}
+              height={64}
+              className="object-contain"
+            />
+          </div>
+        </div>
+        <div className="flex justify-center">
+          <div className="w-8 h-8 border-[3px] border-[#af936f] border-t-transparent rounded-full animate-spin" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const checkInProgress = useRef(false);
 
+  // Leer AuthManager SINCRÓNICAMENTE en el primer render
+  const initialState = typeof window !== 'undefined'
+    ? AuthManager.getInstance().getState()
+    : null;
+
+  const [authState, setAuthState] = useState({
+    isLoading: initialState?.isLoading ?? true,
+    isAuthenticated: initialState?.isAuthenticated ?? false,
+    user: initialState?.user ?? null,
+  });
+
+  // Suscribirse a cambios futuros del AuthManager (ej: token expirado en background)
   useEffect(() => {
-    const checkAccess = async () => {
-      // Evitar múltiples verificaciones simultáneas
-      if (checkInProgress.current) return;
-      
-      // Verificar cache primero
-      const now = Date.now();
-      if (authCache && (now - authCache.timestamp) < CACHE_DURATION) {
-        const userRole = authCache.userRole;
-        if (userRole && authCache.isValid) {
-          const allowedPath = DASHBOARD_ROUTES[userRole];
-          if (allowedPath && pathname.startsWith(allowedPath)) {
-            setIsAuthorized(true);
-            setIsLoading(false);
-            return;
-          }
-        }
-      }
+    const unsubscribe = AuthManager.getInstance().subscribe((state) => {
+      setAuthState({
+        isLoading: state.isLoading,
+        isAuthenticated: state.isAuthenticated,
+        user: state.user,
+      });
+    });
+    return unsubscribe;
+  }, []);
 
-      try {
-        checkInProgress.current = true;
-        
-        // Verificar autenticación con el backend (las cookies httpOnly se envían automáticamente)
-        const response: any = await ApiClient.verifyToken();
-        
-        // El backend devuelve: { success: true, data: { valid: true, user: { id, email, role } } }
-        if (!response || !response.success || !response.data || !response.data.user || !response.data.valid) {
-          authCache = { isValid: false, userRole: null, timestamp: now };
-          router.replace('/login');
-          return;
-        }
+  // Lógica de redirección: solo cuando la carga termina
+  useEffect(() => {
+    if (authState.isLoading) return;
 
-        const user = response.data.user;
-        const userRole = user.role; // 'admin', 'establecimiento', 'capataz', 'veterinario', 'empleado', 'propietario'
-        
-        if (!userRole) {
-          authCache = { isValid: false, userRole: null, timestamp: now };
-          router.replace('/login');
-          return;
-        }
+    if (!authState.isAuthenticated || !authState.user) {
+      router.replace('/login');
+      return;
+    }
 
-        const allowedPath = DASHBOARD_ROUTES[userRole];
-        
-        if (!allowedPath) {
-          authCache = { isValid: false, userRole: null, timestamp: now };
-          router.replace('/login');
-          return;
-        }
-        
-        // Si está en una ruta no permitida para su rol, redirigir
-        if (!pathname.startsWith(allowedPath)) {
-          router.replace(allowedPath);
-          return;
-        }
+    const userRole = getUserRole(authState.user);
+    if (!userRole) {
+      router.replace('/login');
+      return;
+    }
 
-        // Actualizar cache
-        authCache = { isValid: true, userRole, timestamp: now };
-        setIsAuthorized(true);
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error verificando autenticación:', error);
-        authCache = { isValid: false, userRole: null, timestamp: Date.now() };
-        setIsLoading(false);
-        router.replace('/login');
-      } finally {
-        checkInProgress.current = false;
-      }
-    };
+    const allowedPath = DASHBOARD_ROUTES[userRole];
+    if (!allowedPath) {
+      router.replace('/login');
+      return;
+    }
 
-    checkAccess();
-  }, [pathname, router]);
+    // Si está en una ruta de otro rol, redirigir a su ruta correcta
+    if (!pathname.startsWith(allowedPath)) {
+      router.replace(allowedPath);
+    }
+  }, [authState.isLoading, authState.isAuthenticated, authState.user, pathname, router]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center space-y-6">
-          {/* Logo con animación de pulso */}
-          <div className="relative">
-            <div className="absolute inset-0 animate-ping opacity-20">
-              <div className="w-24 h-24 mx-auto rounded-2xl bg-[#0f172a]"></div>
-            </div>
-            <div className="relative bg-[#0f172a] w-24 h-24 rounded-2xl flex items-center justify-center mx-auto shadow-xl">
-              <Image 
-                src={LOGOS.ICON_WHITE}
-                alt="HandicApp" 
-                width={64}
-                height={64}
-                className="object-contain"
-              />
-            </div>
-          </div>
-          
-          {/* Spinner debajo del logo */}
-          <div className="flex justify-center">
-            <div className="w-8 h-8 border-3 border-[#af936f] border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        </div>
-      </div>
-    );
+  // Mostrar spinner solo durante la inicialización inicial de AuthManager
+  if (authState.isLoading) {
+    return <LoadingScreen />;
   }
 
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center space-y-6">
-          {/* Logo con animación de pulso */}
-          <div className="relative">
-            <div className="absolute inset-0 animate-ping opacity-20">
-              <div className="w-24 h-24 mx-auto rounded-2xl bg-[#0f172a]"></div>
-            </div>
-            <div className="relative bg-[#0f172a] w-24 h-24 rounded-2xl flex items-center justify-center mx-auto shadow-xl">
-              <Image 
-                src={LOGOS.ICON_WHITE}
-                alt="HandicApp" 
-                width={64}
-                height={64}
-                className="object-contain"
-              />
-            </div>
-          </div>
-          
-          {/* Spinner debajo del logo */}
-          <div className="flex justify-center">
-            <div className="w-8 h-8 border-3 border-[#af936f] border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        </div>
-      </div>
-    );
+  // No autenticado → no renderizar nada (la redirección ya fue disparada)
+  if (!authState.isAuthenticated || !authState.user) {
+    return <LoadingScreen />;
+  }
+
+  // Verificar que está en la ruta correcta para su rol
+  const userRole = getUserRole(authState.user);
+  const allowedPath = userRole ? DASHBOARD_ROUTES[userRole] : null;
+  if (!allowedPath || !pathname.startsWith(allowedPath)) {
+    return <LoadingScreen />;
   }
 
   return <>{children}</>;

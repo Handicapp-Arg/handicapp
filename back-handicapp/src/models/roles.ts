@@ -1,3 +1,12 @@
+/**
+ * Role model — Sequelize model para la tabla `roles`.
+ * TODO: Renombrar este archivo a Role.ts (PascalCase) para consistencia con el resto de modelos.
+ * Requiere actualizar los imports en: middleware/auth.ts, services/authService.ts,
+ * services/userService.ts, services/roleService.ts, services/establecimientoService.ts,
+ * services/eventoService.ts, services/tareaService.ts, controllers/userController.ts,
+ * models/User.ts, models/index.ts
+ */
+
 import { Model, Optional, CreationOptional } from "sequelize";
 
 export interface RoleAttrs {
