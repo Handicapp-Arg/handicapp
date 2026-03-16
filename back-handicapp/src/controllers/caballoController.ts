@@ -6,7 +6,7 @@
 import { Response } from 'express';
 import { CaballoService } from '../services/caballoService';
 import { logger } from '../utils/logger';
-import { ApiResponse } from '../utils/response';
+import { ApiResponse, parsePagination } from '../utils/response';
 import { AuthenticatedRequest } from '../types';
 import { uploadImageBufferToCloudinary } from '../utils/imageUpload';
 
@@ -163,8 +163,7 @@ export class CaballoController {
    */
   static async getAll(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-  const page = parseInt((req.query['page'] as string) || '') || 1;
-  const limit = parseInt((req.query['limit'] as string) || '') || 10;
+  const { page, limit } = parsePagination(req);
   const search = req.query['search'] as string | undefined;
   const establecimientoId = req.query['establecimiento'] ? parseInt(req.query['establecimiento'] as string) : undefined;
   const raza = req.query['raza'] as string | undefined;
@@ -291,6 +290,16 @@ export class CaballoController {
       if (!caballo) {
         res.status(404).json(ApiResponse.error('Caballo no encontrado o sin permisos'));
         return;
+      }
+
+      // Si se envía establecimiento_id, actualizar la asociación
+      if (raw.establecimiento_id) {
+        await CaballoService.moverCaballoEstablecimiento(
+          caballoId,
+          Number(raw.establecimiento_id),
+          usuarioId,
+          userRole
+        );
       }
 
   logger.info(`Caballo actualizado: ${caballoId}`);
@@ -730,136 +739,4 @@ export class CaballoController {
     }
   }
 
-  /**
-   * Obtener solicitudes pendientes de asociación para el usuario actual
-   * GET /api/v1/caballos/solicitudes-pendientes
-   * Retorna solicitudes donde el usuario es el receptor (debe aprobar/rechazar)
-   */
-  static async getSolicitudesPendientes(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const usuarioId = req.user!.id;
-      const userRole = req.user!.rol?.clave;
-
-      const { CaballoEstablecimiento } = await import('../models/CaballoEstablecimiento');
-      const { PropietarioCaballo } = await import('../models/PropietarioCaballo');
-      const { MembresiaUsuarioEstablecimiento } = await import('../models/MembresiaUsuarioEstablecimiento');
-      const { Caballo } = await import('../models/Caballo');
-      const { Establecimiento } = await import('../models/Establecimiento');
-      const { User } = await import('../models/User');
-      const { EstadoAsociacionCE, EstadoMembresia, RolEnEstablecimiento } = await import('../models/enums');
-
-      let solicitudes: any[] = [];
-
-      if (userRole === 'propietario') {
-        // Propietario ve solicitudes donde el establecimiento solicitó sus caballos
-        const misCaballos = await PropietarioCaballo.findAll({
-          where: {
-            propietario_usuario_id: usuarioId,
-            actual: true
-          },
-          attributes: ['caballo_id']
-        });
-
-        const caballoIds = misCaballos.map(pc => pc.caballo_id);
-
-        if (caballoIds.length > 0) {
-          solicitudes = await CaballoEstablecimiento.findAll({
-            where: {
-              caballo_id: caballoIds,
-              estado_asociacion: EstadoAsociacionCE.pending
-            },
-            include: [
-              {
-                model: Caballo,
-                as: 'caballo',
-                attributes: ['id', 'nombre', 'raza']
-              },
-              {
-                model: Establecimiento,
-                as: 'establecimiento',
-                attributes: ['id', 'nombre', 'direccion_calle']
-              }
-            ]
-          });
-
-          // Filtrar solo las que NO inició el propietario (las inició el establecimiento)
-          solicitudes = solicitudes.filter(s => {
-            const solicitanteId = s.get('solicitante_id') || (s as any).solicitante_id;
-            return solicitanteId !== usuarioId;
-          });
-        }
-
-      } else if (userRole === 'establecimiento') {
-        // Establecimiento ve solicitudes donde propietarios solicitaron asociar a sus establecimientos
-        const misEstablecimientos = await MembresiaUsuarioEstablecimiento.findAll({
-          where: {
-            usuario_id: usuarioId,
-            rol_en_establecimiento: RolEnEstablecimiento.capataz,
-            estado_membresia: EstadoMembresia.active
-          },
-          attributes: ['establecimiento_id']
-        });
-
-        const establecimientoIds = misEstablecimientos.map(m => m.establecimiento_id);
-
-        if (establecimientoIds.length > 0) {
-          solicitudes = await CaballoEstablecimiento.findAll({
-            where: {
-              establecimiento_id: establecimientoIds,
-              estado_asociacion: EstadoAsociacionCE.pending
-            },
-            include: [
-              {
-                model: Caballo,
-                as: 'caballo',
-                attributes: ['id', 'nombre', 'raza']
-              },
-              {
-                model: Establecimiento,
-                as: 'establecimiento',
-                attributes: ['id', 'nombre', 'direccion_calle']
-              }
-            ]
-          });
-
-          // Filtrar solo las que NO inició el establecimiento (las inició el propietario)
-          solicitudes = solicitudes.filter(s => {
-            const solicitanteId = s.get('solicitante_id') || (s as any).solicitante_id;
-            return solicitanteId !== usuarioId;
-          });
-
-          // Agregar info del propietario
-          for (const solicitud of solicitudes) {
-            const caballoId = solicitud.get('caballo_id') || (solicitud as any).caballo_id;
-            const propietario = await PropietarioCaballo.findOne({
-              where: {
-                caballo_id: caballoId,
-                actual: true
-              },
-              include: [{
-                model: User,
-                as: 'propietario',
-                attributes: ['id', 'nombre', 'apellido', 'email']
-              }]
-            });
-
-            if (propietario && propietario.propietario) {
-              (solicitud as any).propietario = propietario.propietario;
-            }
-          }
-        }
-      }
-
-      res.json(ApiResponse.success(solicitudes));
-
-    } catch (error: any) {
-      logger.error('Error obteniendo solicitudes pendientes', { 
-        error,
-        message: error?.message,
-        stack: error?.stack,
-        name: error?.name
-      });
-      res.status(500).json(ApiResponse.error('Error interno del servidor'));
-    }
-  }
 }

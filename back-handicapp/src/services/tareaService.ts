@@ -4,7 +4,7 @@
 // -----------------------------------------------------------------------------
 
 import { Op } from 'sequelize';
-import { Tarea } from '../models/Tarea';
+import { Tarea, ESTADO_API_TO_DB } from '../models/Tarea';
 import { User } from '../models/User';
 import { Role } from '../models/roles';
 import { Establecimiento } from '../models/Establecimiento';
@@ -71,7 +71,7 @@ export class TareaService {
 
       const offset = (page - 1) * limit;
       const where: any = {};
-      if (estado) where.estado = estado;
+      if (estado) where.estado = ESTADO_API_TO_DB[estado] ?? estado;
       if (prioridad) {
         // prioridad no está en el modelo; se puede mapear via notas o tipo si existiera
       }
@@ -106,27 +106,6 @@ export class TareaService {
           ];
         } else {
           // Si no tiene establecimiento asignado, solo ve las que creó o le asignaron
-          where[Op.or] = [
-            { creado_por_usuario_id: usuarioId },
-            { asignado_a_usuario_id: usuarioId },
-          ];
-        }
-        
-      } else if (userRole === 'capataz' && usuarioId) {
-        // CAPATAZ: Ve tareas de su establecimiento o creadas/asignadas a él
-        const usuario = await User.findByPk(usuarioId, {
-          attributes: ['establecimiento_id']
-        });
-        
-        const userEstablecimientoId = usuario?.establecimiento_id;
-        
-        if (userEstablecimientoId) {
-          where[Op.or] = [
-            { establecimiento_id: userEstablecimientoId },
-            { creado_por_usuario_id: usuarioId },
-            { asignado_a_usuario_id: usuarioId },
-          ];
-        } else {
           where[Op.or] = [
             { creado_por_usuario_id: usuarioId },
             { asignado_a_usuario_id: usuarioId },
@@ -349,10 +328,7 @@ export class TareaService {
       };
 
       if (estado) {
-        const allowed = Object.values(EstadoTarea);
-        if (allowed.includes(estado as EstadoTarea)) {
-          where.estado = estado;
-        }
+        where.estado = ESTADO_API_TO_DB[estado] ?? estado;
       }
 
       if (categoria) {
@@ -607,14 +583,10 @@ export class TareaService {
             });
             if (!esPropietario) return { success: false, error: 'Sin acceso a esta tarea' };
           }
-        } else if (['establecimiento', 'capataz'].includes(userRole)) {
+        } else if (userRole === 'establecimiento') {
           const mismoEstablecimiento =
             userEstablecimientoId && (tarea as any).establecimiento_id === userEstablecimientoId;
           if (!esCreador && !esAsignado && !mismoEstablecimiento) {
-            return { success: false, error: 'Sin acceso a esta tarea' };
-          }
-        } else if (['veterinario', 'empleado'].includes(userRole)) {
-          if (!esCreador && !esAsignado) {
             return { success: false, error: 'Sin acceso a esta tarea' };
           }
         }
@@ -730,7 +702,7 @@ export class TareaService {
       const esAdmin = userRole === 'admin';
       const esDelMismoEstablecimiento = userEstablecimientoId && 
                                          tareaRaw.establecimiento_id === userEstablecimientoId &&
-                                         (userRole === 'establecimiento' || userRole === 'capataz');
+                                         userRole === 'establecimiento';
 
       const tienePermiso = esAdmin || esCreador || esAsignado || esDelMismoEstablecimiento;
 
@@ -941,7 +913,7 @@ export class TareaService {
       const isAssigned = tarea.asignado_a_usuario_id === userId;
       const isFromSameEstablecimiento = userEstablecimientoId && 
                                          tareaEstablecimientoId === userEstablecimientoId &&
-                                         (userRole === 'establecimiento' || userRole === 'capataz');
+                                         userRole === 'establecimiento';
 
       // Verificar permisos: admin, creador, asignado o del mismo establecimiento pueden cambiar estado
       if (!isAdmin && !isCreator && !isAssigned && !isFromSameEstablecimiento) {

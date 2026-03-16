@@ -12,7 +12,7 @@ import { CaballoEstablecimiento } from '../models/CaballoEstablecimiento';
 import { Caballo } from '../models/Caballo';
 import { PropietarioCaballo } from '../models/PropietarioCaballo';
 import { ServiceResponse, PaginationQuery } from '../types';
-import { EstadoMembresia, RolEnEstablecimiento, Disciplina, EstadoAsociacionCE, EstadoUsuario } from '../models/enums';
+import { EstadoMembresia, Disciplina, EstadoAsociacionCE, EstadoUsuario } from '../models/enums';
 import { logger } from '../utils/logger';
 import bcrypt from 'bcrypt';
 // import errors helpers (no direct use here)
@@ -196,13 +196,21 @@ export class EstablecimientoService {
         }
       }
 
-      const totalPages = Math.ceil(count / limit);
+      // Si es propietario, filtrar solo establecimientos donde tiene caballos
+      if (usuarioId) {
+        establecimientosConInfo = establecimientosConInfo.filter((est: any) => est.caballos_count > 0);
+      }
+
+      const filteredTotal = establecimientosConInfo.length;
+      const totalPages = usuarioId
+        ? Math.ceil(filteredTotal / limit)
+        : Math.ceil(count / limit);
 
       return {
         success: true,
         data: {
           establecimientos: establecimientosConInfo,
-          total: count,
+          total: usuarioId ? filteredTotal : count,
           totalPages,
         },
       };
@@ -409,7 +417,7 @@ export class EstablecimientoService {
   static async createEstablecimiento(
     data: CreateEstablecimientoData,
     userId: number,
-    rolEnEstablecimiento: RolEnEstablecimiento = RolEnEstablecimiento.capataz
+    rolEnEstablecimiento: string = 'propietario'
   ): Promise<ServiceResponse<Establecimiento>> {
     try {
       // Verificar que no exista otro establecimiento con el mismo nombre o CUIT
@@ -561,27 +569,24 @@ export class EstablecimientoService {
     userEstablecimientoId?: number
   ): Promise<ServiceResponse<Establecimiento>> {
     try {
-      console.log('🟢 SERVICE - updateEstablecimiento llamado');
-      console.log('🟢 SERVICE - Datos recibidos:', JSON.stringify(data, null, 2));
-      console.log('🟢 SERVICE - User info:', { userId, userRole, userEstablecimientoId });
       
-      // Verificar permisos: Admin, usuario con rol "establecimiento" de ese establecimiento, o capataz
+      // Verificar permisos: Admin o usuario con rol "establecimiento"
       let tienePermiso = false;
-      
+
       if (userRole === 'admin') {
         tienePermiso = true;
       } else if (userRole === 'establecimiento' && userEstablecimientoId === establecimientoId) {
         // Usuario con rol establecimiento puede editar su propio establecimiento
         tienePermiso = true;
       } else {
-        // Verificar si es capataz del establecimiento
+        // Verificar si es empleado del establecimiento
         const membresia = await MembresiaUsuarioEstablecimiento.findOne({
           where: {
             usuario_id: userId,
             establecimiento_id: establecimientoId,
             estado_membresia: EstadoMembresia.active,
             rol_en_establecimiento: {
-              [Op.in]: [RolEnEstablecimiento.capataz]
+              [Op.in]: ['propietario']
             }
           }
         });
@@ -645,11 +650,7 @@ export class EstablecimientoService {
         updatePayload.disciplina_principal = (data.disciplina_principal as Disciplina | undefined) ?? null;
       }
       
-      console.log('🟢 SERVICE - updatePayload antes de update:', JSON.stringify(updatePayload, null, 2));
-      
       await establecimiento.update(updatePayload);
-
-      console.log('🟢 SERVICE - Establecimiento después de update:', JSON.stringify(establecimiento.toJSON(), null, 2));
 
       return {
         success: true,
@@ -885,11 +886,11 @@ export class EstablecimientoService {
       });
 
       // 6. Obtener usuarios del establecimiento que pueden aprobar (capataces y admins)
-      const { RolEnEstablecimiento, EstadoMembresia } = await import('../models/enums');
+      const { EstadoMembresia } = await import('../models/enums');
       const membresiasAprobadoras = await MembresiaUsuarioEstablecimiento.findAll({
         where: {
           establecimiento_id: establecimientoId,
-          rol_en_establecimiento: RolEnEstablecimiento.capataz,
+          rol_en_establecimiento: 'propietario',
           estado_membresia: EstadoMembresia.active
         }
       });
@@ -950,7 +951,7 @@ export class EstablecimientoService {
       const { CaballoEstablecimiento } = await import('../models/CaballoEstablecimiento');
       const { PropietarioCaballo } = await import('../models/PropietarioCaballo');
       const { Caballo } = await import('../models/Caballo');
-      const { EstadoAsociacionCE, RolEnEstablecimiento, EstadoMembresia } = await import('../models/enums');
+      const { EstadoAsociacionCE, EstadoMembresia } = await import('../models/enums');
       const { MembresiaUsuarioEstablecimiento } = await import('../models/MembresiaUsuarioEstablecimiento');
       const { NotificacionService, TipoNotificacion } = await import('./notificacionService');
 
@@ -968,7 +969,7 @@ export class EstablecimientoService {
         where: {
           establecimiento_id: establecimientoId,
           usuario_id: userId,
-          rol_en_establecimiento: RolEnEstablecimiento.capataz, // Solo capataces pueden solicitar
+          rol_en_establecimiento: 'propietario', // Solo capataces pueden solicitar
           estado_membresia: EstadoMembresia.active
         }
       });
@@ -1078,7 +1079,7 @@ export class EstablecimientoService {
       const { CaballoEstablecimiento } = await import('../models/CaballoEstablecimiento');
       const { PropietarioCaballo } = await import('../models/PropietarioCaballo');
       const { Caballo } = await import('../models/Caballo');
-      const { EstadoAsociacionCE, RolEnEstablecimiento, EstadoMembresia } = await import('../models/enums');
+      const { EstadoAsociacionCE, EstadoMembresia } = await import('../models/enums');
       const { MembresiaUsuarioEstablecimiento } = await import('../models/MembresiaUsuarioEstablecimiento');
       const { NotificacionService, TipoNotificacion } = await import('./notificacionService');
 
@@ -1116,7 +1117,7 @@ export class EstablecimientoService {
           where: {
             establecimiento_id: establecimientoId,
             usuario_id: userId,
-            rol_en_establecimiento: RolEnEstablecimiento.capataz,
+            rol_en_establecimiento: 'propietario',
             estado_membresia: EstadoMembresia.active
           }
         });
@@ -1212,7 +1213,7 @@ export class EstablecimientoService {
       const { CaballoEstablecimiento } = await import('../models/CaballoEstablecimiento');
       const { PropietarioCaballo } = await import('../models/PropietarioCaballo');
       const { Caballo } = await import('../models/Caballo');
-      const { EstadoAsociacionCE, RolEnEstablecimiento, EstadoMembresia } = await import('../models/enums');
+      const { EstadoAsociacionCE, EstadoMembresia } = await import('../models/enums');
       const { MembresiaUsuarioEstablecimiento } = await import('../models/MembresiaUsuarioEstablecimiento');
       const { NotificacionService, TipoNotificacion } = await import('./notificacionService');
 
@@ -1250,7 +1251,7 @@ export class EstablecimientoService {
           where: {
             establecimiento_id: establecimientoId,
             usuario_id: userId,
-            rol_en_establecimiento: RolEnEstablecimiento.capataz,
+            rol_en_establecimiento: 'propietario',
             estado_membresia: EstadoMembresia.active
           }
         });

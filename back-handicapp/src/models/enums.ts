@@ -1,5 +1,4 @@
 export enum EstadoUsuario { pending="pending", invited="invited", active="active", suspended="suspended", disabled="disabled", deleted="deleted" }
-export enum RolEnEstablecimiento { empleado="empleado", capataz="capataz", veterinario="veterinario" }
 export enum EstadoMembresia { active="active", suspended="suspended", finished="finished" }
 export enum SexoCaballo { macho="macho", hembra="hembra" }
 export enum Disciplina { polo="polo", equitacion="equitacion", turf="turf" }

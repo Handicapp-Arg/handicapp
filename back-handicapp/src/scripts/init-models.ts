@@ -11,46 +11,37 @@ import { logger } from '../utils/logger';
 
 async function initializeApp() {
   try {
-    logger.info('🚀 Initializing HandicApp...');
-
     // 1. Database connection
     await sequelize.authenticate();
-    logger.info('✅ Database connected');
 
     // 2. Initialize models and relations
     initializeModels(sequelize);
 
-    // 3. Sync database
+    // 3. Sync database schema
     const resetOnStart = process.env['DB_RESET_ON_START'] === 'true';
     if (resetOnStart) {
       await sequelize.sync({ force: true });
-      logger.warn('⚠️  Database reset (FORCE mode)');
+      logger.warn('Database reset (FORCE mode)');
     } else if (process.env['NODE_ENV'] === 'development') {
-      await sequelize.sync({ alter: true });
-      logger.debug('Database synced');
-    } else {
-      // En producción, solo validar modelos sin modificar la BD
-      logger.info('⚠️  Skipping sync in production - use migrations instead');
+      try {
+        await sequelize.sync({ alter: true });
+      } catch (syncError) {
+        logger.warn('DB sync skipped — schema may be out of date', { reason: (syncError as Error)?.message });
+      }
     }
 
-    // 4. Run seeds (silencioso si ya existen)
+    // 4. Seed demo data (never block startup)
     try {
       await seedDatabase();
       await TipoEventoSeedService.seedTiposEvento();
-      logger.info('✅ Seeds executed successfully');
     } catch (seedError) {
-      logger.error('❌ Error during seed process', { error: seedError });
-      // En producción sin tablas, esto es esperado - no detener el servidor
-      if (process.env['NODE_ENV'] !== 'production') {
-        throw seedError;
-      }
-      logger.warn('⚠️  Continuing without seeds in production mode');
+      logger.warn('Seed skipped', { reason: (seedError as Error)?.message });
     }
 
     return true;
 
   } catch (error) {
-    logger.error('❌ Error during initialization', { error });
+    logger.error('Initialization failed', { error: (error as Error).message });
     process.exit(1);
   }
 }

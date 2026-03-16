@@ -59,8 +59,8 @@ export function ImageCropperDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden bg-slate-900 border-slate-800 text-white">
-        <DialogHeader className="p-4 bg-slate-900 border-b border-slate-800 z-10">
+      <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden bg-gray-900 border-gray-800 text-white">
+        <DialogHeader className="p-4 bg-gray-900 border-b border-gray-800 z-10">
           <DialogTitle className="text-white">Ajustar Imagen</DialogTitle>
         </DialogHeader>
 
@@ -83,9 +83,9 @@ export function ImageCropperDialog({
           )}
         </div>
 
-        <div className="p-4 bg-slate-900 space-y-4">
+        <div className="p-4 bg-gray-900 space-y-4">
           <div className="flex items-center gap-4">
-            <Label className="text-xs text-slate-400 font-medium uppercase tracking-wider min-w-[3rem]">Zoom</Label>
+            <Label className="text-xs text-gray-400 font-medium uppercase tracking-wider min-w-[3rem]">Zoom</Label>
             <input
               type="range"
               value={zoom}
@@ -94,7 +94,7 @@ export function ImageCropperDialog({
               step={0.1}
               aria-labelledby="Zoom"
               onChange={(e) => setZoom(Number(e.target.value))}
-              className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-white"
+              className="w-full h-1 bg-gray-700 rounded-md appearance-none cursor-pointer accent-white"
             />
           </div>
           
@@ -102,14 +102,14 @@ export function ImageCropperDialog({
             <Button
               variant="ghost"
               onClick={onClose}
-              className="text-slate-300 hover:text-white hover:bg-slate-800"
+              className="text-gray-300 hover:text-white hover:bg-gray-800"
             >
               Cancelar
             </Button>
             <Button
               onClick={handleSave}
               disabled={loading}
-              className="bg-white text-slate-900 hover:bg-slate-200 font-semibold"
+              className="bg-white text-gray-900 hover:bg-gray-200 font-semibold"
             >
               {loading ? 'Procesando...' : 'Confirmar Recorte'}
             </Button>

@@ -21,47 +21,43 @@ export function StatCard({
   title,
   value,
   icon: Icon,
-  iconColor = "text-slate-500",
-  iconBg = "bg-slate-100",
+  iconColor = "text-gray-500",
+  iconBg = "bg-gray-100",
   trend,
   subtitle,
-  accentBg,
+  accentBg: _accentBg,
   className,
   ...props
 }: StatCardProps) {
   return (
     <div
       className={cn(
-        "bg-white rounded-2xl border border-slate-200/70 p-5 relative overflow-hidden group",
-        "shadow-[0_1px_4px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.04)]",
-        "hover:shadow-[0_4px_24px_rgba(0,0,0,0.08)] hover:border-slate-300/60 transition-all duration-300",
+        "bg-white rounded-md border border-slate-200 p-5 border-l-4",
+        iconBg === 'bg-emerald-50' ? 'border-l-emerald-400' :
+        iconBg === 'bg-amber-50'   ? 'border-l-amber-400' :
+        iconBg === 'bg-red-50'     ? 'border-l-red-400' :
+        iconBg === 'bg-violet-50'  ? 'border-l-violet-400' :
+        iconBg === 'bg-blue-50'    ? 'border-l-blue-400' :
+        'border-l-slate-300',
         className
       )}
       {...props}
     >
-      {/* Decorative blob */}
-      <div
-        className={cn(
-          "absolute -right-5 -top-5 w-24 h-24 rounded-full blur-2xl transition-opacity duration-500 opacity-0 group-hover:opacity-100",
-          accentBg ?? "bg-slate-100"
-        )}
-      />
-
-      <div className="relative flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-2">
             {title}
           </p>
-          <p className="text-3xl font-bold text-slate-800 leading-none tracking-tight">
+          <p className="text-2xl font-semibold text-slate-800 leading-none tracking-tight">
             {value}
           </p>
           {subtitle && (
-            <p className="text-xs text-slate-500 mt-2">{subtitle}</p>
+            <p className="text-xs text-gray-500 mt-2">{subtitle}</p>
           )}
           {trend && (
             <div
               className={cn(
-                "inline-flex items-center gap-1 mt-2.5 text-xs font-semibold px-2 py-0.5 rounded-lg",
+                "inline-flex items-center gap-1 mt-2.5 text-xs font-semibold px-2 py-0.5 rounded-md",
                 trend.up
                   ? "bg-emerald-50 text-emerald-600"
                   : "bg-red-50 text-red-500"
@@ -82,7 +78,7 @@ export function StatCard({
 
         <div
           className={cn(
-            "flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110",
+            "flex-shrink-0 w-11 h-11 rounded-md flex items-center justify-center",
             iconBg
           )}
         >

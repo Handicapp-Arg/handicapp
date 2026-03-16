@@ -42,6 +42,9 @@ export function CreateUserModal({
   createUserFn,
   primaryColor = '#0f172a',
 }: CreateUserModalProps) {
+  // Establecimiento users must be created from the Stables section
+  // (creating them here would leave them with no stable assigned)
+  const availableRoles = roles.filter((r) => (r as any).clave !== 'establecimiento');
   const [formData, setFormData] = useState({
     nombre: '',
     apellido: '',
@@ -136,7 +139,7 @@ export function CreateUserModal({
         
         {/* Mensaje de error visible */}
         {error && (
-          <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
             <p className="text-sm text-red-800 flex items-center gap-2">
               <span className="text-lg">⚠️</span>
               {error}
@@ -152,7 +155,7 @@ export function CreateUserModal({
                 type="text"
                 value={formData.nombre}
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                className="w-full mt-1 px-3 py-2 border rounded-lg"
+                className="w-full mt-1 px-3 py-2 border rounded-md"
                 placeholder="Juan"
               />
             </div>
@@ -162,7 +165,7 @@ export function CreateUserModal({
                 type="text"
                 value={formData.apellido}
                 onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
-                className="w-full mt-1 px-3 py-2 border rounded-lg"
+                className="w-full mt-1 px-3 py-2 border rounded-md"
                 placeholder="Pérez"
               />
             </div>
@@ -173,7 +176,7 @@ export function CreateUserModal({
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full mt-1 px-3 py-2 border rounded-lg"
+              className="w-full mt-1 px-3 py-2 border rounded-md"
               placeholder="juan.perez@email.com"
             />
           </div>
@@ -184,7 +187,7 @@ export function CreateUserModal({
                 type="text"
                 value={formData.telefono}
                 onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                className="w-full mt-1 px-3 py-2 border rounded-lg"
+                className="w-full mt-1 px-3 py-2 border rounded-md"
                 placeholder="+54 9 11 1234-5678"
               />
             </div>
@@ -193,10 +196,10 @@ export function CreateUserModal({
               <select
                 value={formData.rol_id}
                 onChange={(e) => setFormData({ ...formData, rol_id: e.target.value })}
-                className="w-full mt-1 px-3 py-2 border rounded-lg"
+                className="w-full mt-1 px-3 py-2 border rounded-md"
               >
                 <option value="">Selecciona un rol</option>
-                {roles.map((role) => (
+                {availableRoles.map((role) => (
                   <option key={role.id} value={role.id}>
                     {role.nombre}
                   </option>
@@ -204,6 +207,10 @@ export function CreateUserModal({
               </select>
             </div>
           </div>
+          <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
+            Para crear un usuario <strong>Establecimiento</strong>, usá la sección{' '}
+            <strong>Establecimientos → Nuevo</strong>. Eso crea el establo y el responsable en un solo paso.
+          </p>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium">Contraseña</label>
@@ -211,7 +218,7 @@ export function CreateUserModal({
                 type="password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full mt-1 px-3 py-2 border rounded-lg"
+                className="w-full mt-1 px-3 py-2 border rounded-md"
                 placeholder="Mínimo 8 caracteres"
               />
             </div>
@@ -221,7 +228,7 @@ export function CreateUserModal({
                 type="password"
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                className="w-full mt-1 px-3 py-2 border rounded-lg"
+                className="w-full mt-1 px-3 py-2 border rounded-md"
                 placeholder="Repetir contraseña"
               />
             </div>
@@ -231,7 +238,7 @@ export function CreateUserModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+            className="px-4 py-2 border rounded-md hover:bg-gray-50"
             disabled={loading}
           >
             Cancelar
@@ -239,7 +246,7 @@ export function CreateUserModal({
           <button
             type="button"
             onClick={handleSubmit}
-            className="px-4 py-2 text-white rounded-lg hover:opacity-90"
+            className="px-4 py-2 text-white rounded-md hover:opacity-90"
             style={{ backgroundColor: primaryColor }}
             disabled={loading}
           >

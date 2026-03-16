@@ -407,14 +407,14 @@ export function UserManagement() {
                 setShowConfirmModal(false);
                 setUserToToggle(null);
               }}
-              className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 border rounded-md hover:bg-gray-50"
             >
               Cancelar
             </button>
             <button
               type="button"
               onClick={confirmarToggleEstado}
-              className={`px-4 py-2 rounded-lg text-white ${
+              className={`px-4 py-2 rounded-md text-white ${
                 userToToggle?.estado_usuario === 'active'
                   ? 'bg-red-600 hover:bg-red-700'
                   : 'bg-green-600 hover:bg-green-700'
@@ -463,14 +463,14 @@ export function UserManagement() {
                 setShowDeleteModal(false);
                 setUserToDelete(null);
               }}
-              className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 border rounded-md hover:bg-gray-50"
             >
               Cancelar
             </button>
             <button
               type="button"
               onClick={confirmarEliminar}
-              className="px-4 py-2 rounded-lg text-white bg-red-600 hover:bg-red-700"
+              className="px-4 py-2 rounded-md text-white bg-red-600 hover:bg-red-700"
             >
               Eliminar
             </button>

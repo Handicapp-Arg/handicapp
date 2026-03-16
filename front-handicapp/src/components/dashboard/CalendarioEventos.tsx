@@ -41,7 +41,7 @@ const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', '
 
 export function CalendarioEventos({ eventos = [], onCreateEvento, onEventoClick }: CalendarioEventosProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('list');
   const [selectedFilter, setSelectedFilter] = useState<'todos' | 'programados' | 'completados' | 'auto'>('todos');
 
   const eventosArray = useMemo(() => {
@@ -120,7 +120,7 @@ export function CalendarioEventos({ eventos = [], onCreateEvento, onEventoClick 
     if (evento.estado === 'completado') return 'bg-green-100 border-green-300 text-green-700';
     if (evento.estado === 'cancelado') return 'bg-gray-100 border-gray-300 text-gray-600';
     if (evento.prioridad === 'alta' || evento.prioridad === 'critica') return 'bg-red-100 border-red-300 text-red-700';
-    return 'bg-blue-100 border-blue-300 text-blue-700';
+    return 'bg-gray-100 border-gray-300 text-gray-700';
   };
 
   const formatTime = (dateString: string) => {
@@ -142,27 +142,27 @@ export function CalendarioEventos({ eventos = [], onCreateEvento, onEventoClick 
         <div className="flex items-center gap-3">
           <button
             onClick={goToPrevMonth}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-md"
           >
-            <ChevronLeft className="w-5 h-5 text-slate-600" />
+            <ChevronLeft className="w-5 h-5 text-gray-600" />
           </button>
           
           <div className="text-center min-w-[200px]">
-            <h2 className="text-xl font-bold text-slate-900">
+            <h2 className="text-xl font-bold text-gray-900">
               {MESES[currentDate.getMonth()]} {currentDate.getFullYear()}
             </h2>
           </div>
           
           <button
             onClick={goToNextMonth}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-md"
           >
-            <ChevronRight className="w-5 h-5 text-slate-600" />
+            <ChevronRight className="w-5 h-5 text-gray-600" />
           </button>
           
           <button
             onClick={goToToday}
-            className="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+            className="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md"
           >
             Hoy
           </button>
@@ -171,43 +171,43 @@ export function CalendarioEventos({ eventos = [], onCreateEvento, onEventoClick 
         {/* Controles de vista y filtros */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* Filtros */}
-          <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-gray-100 rounded-md p-1">
             <button
               onClick={() => setSelectedFilter('todos')}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              className={`px-3 py-2 text-xs font-medium rounded-md ${
                 selectedFilter === 'todos' 
-                  ? 'bg-white text-slate-900 shadow-sm' 
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white text-gray-900 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               Todos
             </button>
             <button
               onClick={() => setSelectedFilter('programados')}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              className={`px-3 py-2 text-xs font-medium rounded-md ${
                 selectedFilter === 'programados' 
-                  ? 'bg-white text-slate-900 shadow-sm' 
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white text-gray-900 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               Programados
             </button>
             <button
               onClick={() => setSelectedFilter('completados')}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              className={`px-3 py-2 text-xs font-medium rounded-md ${
                 selectedFilter === 'completados' 
-                  ? 'bg-white text-slate-900 shadow-sm' 
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white text-gray-900 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               Completados
             </button>
             <button
               onClick={() => setSelectedFilter('auto')}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center gap-1 ${
+              className={`px-3 py-2 text-xs font-medium rounded-md flex items-center gap-1 ${
                 selectedFilter === 'auto' 
-                  ? 'bg-white text-slate-900 shadow-sm' 
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white text-gray-900 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               <Sparkles className="w-3 h-3" />
@@ -215,24 +215,24 @@ export function CalendarioEventos({ eventos = [], onCreateEvento, onEventoClick 
             </button>
           </div>
 
-          {/* Toggle vista */}
-          <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+          {/* Toggle vista — calendar only available on sm+ */}
+          <div className="hidden sm:flex items-center gap-1 bg-gray-100 rounded-md p-1">
             <button
               onClick={() => setViewMode('calendar')}
-              className={`p-2 rounded-md transition-colors ${
+              className={`p-2.5 rounded-md ${
                 viewMode === 'calendar' 
-                  ? 'bg-white text-slate-900 shadow-sm' 
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white text-gray-900 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               <Grid3x3 className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded-md transition-colors ${
+              className={`p-2.5 rounded-md ${
                 viewMode === 'list' 
-                  ? 'bg-white text-slate-900 shadow-sm' 
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white text-gray-900 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               <List className="w-4 h-4" />
@@ -243,7 +243,7 @@ export function CalendarioEventos({ eventos = [], onCreateEvento, onEventoClick 
           {onCreateEvento && (
             <button
               onClick={onCreateEvento}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-800 shadow-sm"
             >
               <Plus className="w-4 h-4" />
               Nuevo Evento
@@ -254,11 +254,11 @@ export function CalendarioEventos({ eventos = [], onCreateEvento, onEventoClick 
 
       {/* Vista de calendario o lista */}
       {viewMode === 'calendar' ? (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+        <div className="hidden sm:block bg-white rounded-md border border-gray-200 overflow-hidden shadow-sm">
           {/* Header días de la semana */}
-          <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
+          <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50">
             {DIAS_SEMANA.map(dia => (
-              <div key={dia} className="p-3 text-center text-sm font-semibold text-slate-700">
+              <div key={dia} className="p-3 text-center text-sm font-semibold text-gray-700">
                 {dia}
               </div>
             ))}
@@ -269,13 +269,13 @@ export function CalendarioEventos({ eventos = [], onCreateEvento, onEventoClick 
             {diasDelMes.map((dia, index) => (
               <div
                 key={index}
-                className={`min-h-[120px] p-2 border-r border-b border-slate-100 ${
-                  !dia.esDelMes ? 'bg-slate-50/50' : 'bg-white'
-                } ${isToday(dia.fecha) ? 'bg-blue-50 ring-2 ring-blue-500 ring-inset' : ''} hover:bg-slate-50 transition-colors`}
+                className={`min-h-[120px] p-2 border-r border-b border-gray-100 ${
+                  !dia.esDelMes ? 'bg-gray-50/50' : 'bg-white'
+                } ${isToday(dia.fecha) ? 'bg-gray-50 ring-2 ring-gray-900 ring-inset' : ''} hover:bg-gray-50`}
               >
                 <div className={`text-sm font-medium mb-2 ${
-                  !dia.esDelMes ? 'text-slate-400' : 
-                  isToday(dia.fecha) ? 'text-blue-600 font-bold' : 'text-slate-700'
+                  !dia.esDelMes ? 'text-gray-400' : 
+                  isToday(dia.fecha) ? 'text-gray-900 font-bold' : 'text-gray-700'
                 }`}>
                   {dia.fecha.getDate()}
                 </div>
@@ -285,7 +285,7 @@ export function CalendarioEventos({ eventos = [], onCreateEvento, onEventoClick 
                     <button
                       key={evento.id}
                       onClick={() => onEventoClick?.(evento)}
-                      className={`w-full text-left px-2 py-1 rounded text-xs border ${getEventColor(evento)} hover:shadow-sm transition-all`}
+                      className={`w-full text-left px-2 py-1 rounded text-xs border ${getEventColor(evento)}`}
                     >
                       <div className="flex items-center gap-1 truncate">
                         {evento.originado_de_tarea_id && (
@@ -299,7 +299,7 @@ export function CalendarioEventos({ eventos = [], onCreateEvento, onEventoClick 
                     </button>
                   ))}
                   {dia.eventos.length > 3 && (
-                    <div className="text-[10px] text-slate-500 font-medium px-2">
+                    <div className="text-[10px] text-gray-500 font-medium px-2">
                       +{dia.eventos.length - 3} más
                     </div>
                   )}
@@ -312,10 +312,10 @@ export function CalendarioEventos({ eventos = [], onCreateEvento, onEventoClick 
         // Vista de lista
         <div className="space-y-3">
           {eventosFiltrados.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-xl border border-slate-200">
-              <CalendarIcon className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">No hay eventos</h3>
-              <p className="text-slate-600 mb-6">
+            <div className="text-center py-16 bg-white rounded-md border border-gray-200">
+              <CalendarIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay eventos</h3>
+              <p className="text-gray-600 mb-6">
                 {selectedFilter !== 'todos' 
                   ? 'No se encontraron eventos con el filtro seleccionado' 
                   : 'Comienza creando tu primer evento'}
@@ -323,7 +323,7 @@ export function CalendarioEventos({ eventos = [], onCreateEvento, onEventoClick 
               {onCreateEvento && selectedFilter === 'todos' && (
                 <button
                   onClick={onCreateEvento}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 transition-colors shadow-sm"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white font-medium rounded-md hover:bg-gray-800 shadow-sm"
                 >
                   <Plus className="w-5 h-5" />
                   Crear Evento
@@ -335,16 +335,16 @@ export function CalendarioEventos({ eventos = [], onCreateEvento, onEventoClick 
               <button
                 key={evento.id}
                 onClick={() => onEventoClick?.(evento)}
-                className="w-full text-left bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition-all group"
+                className="w-full text-left bg-white rounded-md border border-gray-200 p-4 group"
               >
                 <div className="flex items-start gap-4">
                   {/* Fecha */}
                   <div className="flex-shrink-0 text-center">
-                    <div className="w-16 h-16 rounded-lg bg-slate-100 flex flex-col items-center justify-center">
-                      <div className="text-xs font-medium text-slate-600 uppercase">
+                    <div className="w-16 h-16 rounded-md bg-gray-100 flex flex-col items-center justify-center">
+                      <div className="text-xs font-medium text-gray-600 uppercase">
                         {new Date(evento.fecha_evento).toLocaleDateString('es-ES', { month: 'short' })}
                       </div>
-                      <div className="text-2xl font-bold text-slate-900">
+                      <div className="text-2xl font-bold text-gray-900">
                         {new Date(evento.fecha_evento).getDate()}
                       </div>
                     </div>
@@ -353,7 +353,7 @@ export function CalendarioEventos({ eventos = [], onCreateEvento, onEventoClick 
                   {/* Contenido */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-4 mb-2">
-                      <h3 className="text-lg font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
+                      <h3 className="text-lg font-semibold text-gray-900 group-hover:text-gray-700">
                         {evento.titulo}
                       </h3>
                       <div className="flex items-center gap-2 flex-shrink-0">
@@ -366,7 +366,7 @@ export function CalendarioEventos({ eventos = [], onCreateEvento, onEventoClick 
                         <Badge variant="secondary" className={
                           evento.estado === 'completado' ? 'bg-green-100 text-green-700' :
                           evento.estado === 'cancelado' ? 'bg-gray-100 text-gray-700' :
-                          'bg-blue-100 text-blue-700'
+                          'bg-amber-50 text-amber-700'
                         }>
                           {evento.estado === 'completado' ? 'Completado' : 
                            evento.estado === 'cancelado' ? 'Cancelado' : 'Programado'}
@@ -375,24 +375,24 @@ export function CalendarioEventos({ eventos = [], onCreateEvento, onEventoClick 
                     </div>
 
                     {evento.descripcion && (
-                      <p className="text-sm text-slate-600 mb-3 line-clamp-2">
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                         {evento.descripcion}
                       </p>
                     )}
 
-                    <div className="flex items-center gap-4 text-sm text-slate-500">
+                    <div className="flex items-center gap-4 text-sm text-gray-500">
                       <div className="flex items-center gap-1">
                         <Clock className="w-4 h-4" />
                         {formatTime(evento.fecha_evento)}
                       </div>
                       {evento.caballo && (
-                        <div className="flex items-center gap-1 font-medium text-slate-700">
+                        <div className="flex items-center gap-1 font-medium text-gray-700">
                           {evento.caballo.nombre}
                         </div>
                       )}
                       {evento.tipo_evento && (
                         <div className="flex items-center gap-1">
-                          <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                          <span className="w-2 h-2 rounded-full bg-gray-500"></span>
                           {evento.tipo_evento.nombre}
                         </div>
                       )}

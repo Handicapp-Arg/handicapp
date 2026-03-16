@@ -58,6 +58,11 @@ interface EstabAttrs {
 
   creado_el: Date;
   actualizado_el: Date | null;
+
+  // NOTE: There is no propietario_id on this model.
+  // The responsible user for a stable is represented by User.establecimiento_id:
+  // the User with role 'establecimiento' whose establecimiento_id points back to this stable.
+  // The word "propietario" in this context means stable owner/operator, NOT a horse-owning propietario (role 6).
 }
 
 type EstabCreation = Optional<

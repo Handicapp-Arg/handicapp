@@ -18,11 +18,11 @@ export function UserStatsCards({
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
       {/* Total */}
-      <Card className="overflow-hidden rounded-lg border border-gray-200">
+      <Card className="overflow-hidden rounded-md border border-gray-200">
         <CardContent className="p-3 sm:p-4">
           <div className="flex items-start gap-2">
             <div 
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-md flex items-center justify-center flex-shrink-0"
               style={{ backgroundColor: `${primaryColor}1A` }}
             >
               <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5" style={{ color: primaryColor }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -42,10 +42,10 @@ export function UserStatsCards({
       </Card>
 
       {/* Activos */}
-      <Card className="overflow-hidden rounded-lg border border-gray-200">
+      <Card className="overflow-hidden rounded-md border border-gray-200">
         <CardContent className="p-3 sm:p-4">
           <div className="flex items-start gap-2">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-md bg-green-100 flex items-center justify-center flex-shrink-0">
               <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -66,10 +66,10 @@ export function UserStatsCards({
       </Card>
 
       {/* Métrica 3 (Departamentos o Roles) */}
-      <Card className="overflow-hidden rounded-lg border border-gray-200">
+      <Card className="overflow-hidden rounded-md border border-gray-200">
         <CardContent className="p-3 sm:p-4">
           <div className="flex items-start gap-2">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-md bg-purple-100 flex items-center justify-center flex-shrink-0">
               <Metric3Icon className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-purple-600" />
             </div>
             <div className="min-w-0 flex-1">
@@ -85,11 +85,11 @@ export function UserStatsCards({
       </Card>
 
       {/* Nuevos */}
-      <Card className="overflow-hidden rounded-lg border border-gray-200">
+      <Card className="overflow-hidden rounded-md border border-gray-200">
         <CardContent className="p-3 sm:p-4">
           <div className="flex items-start gap-2">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-              <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-md bg-gray-100 flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
               </svg>
             </div>
@@ -100,7 +100,7 @@ export function UserStatsCards({
               <p className="text-lg sm:text-xl font-bold text-gray-900">
                 {nuevos}
               </p>
-              <p className="text-[10px] text-blue-600 font-medium mt-0.5">
+              <p className="text-[10px] text-gray-600 font-medium mt-0.5">
                 30 días
               </p>
             </div>

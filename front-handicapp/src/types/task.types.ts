@@ -5,7 +5,7 @@
  */
 
 // Import y re-export de tipos desde tareaService para consistencia
-import type { Tarea } from '@/lib/services/tareaService';
+import type { Tarea } from '@/lib/services/taskService';
 export type { Tarea };
 
 // Estado de tarea

@@ -18,7 +18,7 @@ if (!vapidPublicKey || !vapidPrivateKey) {
   logger.error('   Ejecuta: npx web-push generate-vapid-keys');
 } else {
   webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
-  logger.info('✅ VAPID keys configuradas para push notifications');
+  logger.debug('VAPID configured');
 }
 
 // Interfaces

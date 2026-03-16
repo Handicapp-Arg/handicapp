@@ -1,12 +1,12 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/database";
-import { EstadoMembresia, RolEnEstablecimiento } from "./enums";
+import { EstadoMembresia } from "./enums";
 
 interface MUEAttrs {
   id: number;
   usuario_id: number;
   establecimiento_id: number;
-  rol_en_establecimiento: RolEnEstablecimiento;
+  rol_en_establecimiento: string;
   estado_membresia: EstadoMembresia;
   fecha_inicio: Date | null;
   fecha_fin: Date | null;
@@ -25,7 +25,7 @@ export class MembresiaUsuarioEstablecimiento
   declare id: number;
   declare usuario_id: number;
   declare establecimiento_id: number;
-  declare rol_en_establecimiento: RolEnEstablecimiento;
+  declare rol_en_establecimiento: string;
   declare estado_membresia: EstadoMembresia;
   declare fecha_inicio: Date | null;
   declare fecha_fin: Date | null;
@@ -38,7 +38,7 @@ MembresiaUsuarioEstablecimiento.init(
     usuario_id: { type: DataTypes.INTEGER, allowNull: false },
     establecimiento_id: { type: DataTypes.INTEGER, allowNull: false },
     rol_en_establecimiento: {
-      type: DataTypes.ENUM(...Object.values(RolEnEstablecimiento)),
+      type: DataTypes.STRING,
       allowNull: false,
     },
     estado_membresia: {

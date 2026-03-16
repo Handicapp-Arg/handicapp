@@ -10,7 +10,7 @@ function EstadoBadge({ estado }: { estado: string }) {
     active: { label: 'Activo', color: 'bg-green-100 text-green-800 border-green-300' },
     activo: { label: 'Activo', color: 'bg-green-100 text-green-800 border-green-300' },
     pending: { label: 'Pendiente', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
-    invited: { label: 'Invitado', color: 'bg-blue-100 text-blue-800 border-blue-300' },
+    invited: { label: 'Invitado', color: 'bg-gray-100 text-gray-800 border-gray-300' },
     suspended: { label: 'Suspendido', color: 'bg-orange-100 text-orange-800 border-orange-300' },
     disabled: { label: 'Deshabilitado', color: 'bg-red-100 text-red-800 border-red-300' },
     inactivo: { label: 'Inactivo', color: 'bg-red-100 text-red-800 border-red-300' },
@@ -73,7 +73,7 @@ export function UserManagementTable({
     <div className="space-y-3">
       {/* Wrapper con altura controlada - Responsive y adaptativo */}
       <div className={`
-        overflow-y-auto rounded-lg border border-gray-200 shadow-sm
+        overflow-y-auto rounded-md border border-gray-200 shadow-sm
         ${pagination 
           ? 'max-h-[450px] sm:max-h-[500px] lg:max-h-[550px]' 
           : 'max-h-[400px] sm:max-h-[500px] md:max-h-[600px] lg:max-h-[calc(100vh-20rem)]'
@@ -93,17 +93,9 @@ export function UserManagementTable({
                 </th>
               )}
               {actions.showView && (
-                <>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                    Rol
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                    Puesto
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                    Departamento
-                  </th>
-                </>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                  Rol
+                </th>
               )}
               {!actions.showView && (
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
@@ -160,25 +152,13 @@ export function UserManagementTable({
                     </>
                   )}
                   
-                  {/* Establecimiento: Rol + Puesto + Departamento */}
+                  {/* Establecimiento: Rol */}
                   {actions.showView && (
-                    <>
-                      <td className="px-4 py-4">
-                        <Badge variant="outline" className="text-xs">
-                          {user.rol || 'Sin rol'}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="text-sm text-gray-600">
-                          {user.puesto || '-'}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="text-sm text-gray-600">
-                          {user.departamento || '-'}
-                        </div>
-                      </td>
-                    </>
+                    <td className="px-4 py-4">
+                      <Badge variant="outline" className="text-xs">
+                        {user.rol || 'Sin rol'}
+                      </Badge>
+                    </td>
                   )}
                   
                   <td className="px-4 py-4">
@@ -208,7 +188,7 @@ export function UserManagementTable({
                       {actions.showView && onView && (
                         <button
                           onClick={() => onView(user.id)}
-                          className="p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                          className="p-2 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
                           title={actions.viewLabel || 'Ver perfil'}
                         >
                           <Eye className="w-4 h-4" />
@@ -217,7 +197,7 @@ export function UserManagementTable({
                       {actions.showEdit && onEdit && (
                         <button
                           onClick={() => onEdit(user)}
-                          className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                          className="p-2 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
                           title={actions.editLabel || 'Editar'}
                         >
                           <Edit className="w-4 h-4" />
@@ -226,7 +206,7 @@ export function UserManagementTable({
                       {actions.showToggleStatus && onToggleStatus && (
                         <button
                           onClick={() => onToggleStatus(user.id)}
-                          className={`p-2 rounded-lg transition-colors ${
+                          className={`p-2 rounded-md ${
                             estado === 'activo'
                               ? 'bg-red-50 text-red-600 hover:bg-red-100'
                               : 'bg-green-50 text-green-600 hover:bg-green-100'
@@ -239,7 +219,7 @@ export function UserManagementTable({
                       {actions.showDelete && onDelete && (
                         <button
                           onClick={() => onDelete(user.id)}
-                          className="p-2 rounded-lg bg-gray-50 text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors"
+                          className="p-2 rounded-md bg-gray-50 text-gray-600 hover:bg-red-50 hover:text-red-600"
                           title={actions.deleteLabel || 'Eliminar'}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -260,7 +240,7 @@ export function UserManagementTable({
           const estado = normalizeEstado(user.estado);
           
           return (
-            <div key={user.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+            <div key={user.id} className="bg-white border border-gray-200 rounded-md p-4">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
                   <h3 className="font-medium text-gray-900">
@@ -285,29 +265,16 @@ export function UserManagementTable({
                     {user.rol}
                   </Badge>
                 )}
-                {actions.showView && (
-                  <>
-                    {user.rol && (
-                      <Badge variant="outline" className="text-xs">
-                        {user.rol}
-                      </Badge>
-                    )}
-                    {user.puesto && (
-                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                        {user.puesto}
-                      </Badge>
-                    )}
-                  </>
+                {actions.showView && user.rol && (
+                  <Badge variant="outline" className="text-xs">
+                    {user.rol}
+                  </Badge>
                 )}
                 <EstadoBadge estado={estado} />
               </div>
 
               {user.telefono && (
                 <p className="text-sm text-gray-600 mb-2">📱 {user.telefono}</p>
-              )}
-              
-              {actions.showView && user.departamento && (
-                <p className="text-sm text-gray-600 mb-2">🏢 {user.departamento}</p>
               )}
               
               {showUbicacion && user.ubicacion && (
@@ -321,7 +288,7 @@ export function UserManagementTable({
                 {actions.showView && onView && (
                   <button
                     onClick={() => onView(user.id)}
-                    className="flex-1 py-2 px-3 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium flex items-center justify-center gap-1"
+                    className="flex-1 py-2 px-3 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm font-medium flex items-center justify-center gap-1"
                   >
                     <Eye className="w-4 h-4" />
                     Ver
@@ -330,7 +297,7 @@ export function UserManagementTable({
                 {actions.showEdit && onEdit && (
                   <button
                     onClick={() => onEdit(user)}
-                    className="flex-1 py-2 px-3 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium flex items-center justify-center gap-1"
+                    className="flex-1 py-2 px-3 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm font-medium flex items-center justify-center gap-1"
                   >
                     <Edit className="w-4 h-4" />
                     Editar
@@ -339,7 +306,7 @@ export function UserManagementTable({
                 {actions.showToggleStatus && onToggleStatus && (
                   <button
                     onClick={() => onToggleStatus(user.id)}
-                    className={`flex-1 py-2 px-3 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-1 ${
+                    className={`flex-1 py-2 px-3 rounded-md text-sm font-medium flex items-center justify-center gap-1 ${
                       estado === 'activo'
                         ? 'bg-red-50 text-red-600 hover:bg-red-100'
                         : 'bg-green-50 text-green-600 hover:bg-green-100'
@@ -361,7 +328,7 @@ export function UserManagementTable({
                 {actions.showDelete && onDelete && (
                   <button
                     onClick={() => onDelete(user.id)}
-                    className="py-2 px-3 bg-gray-50 text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors"
+                    className="py-2 px-3 bg-gray-50 text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-md"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -388,7 +355,7 @@ export function UserManagementTable({
             <button
               onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
               disabled={pagination.currentPage <= 1}
-              className="inline-flex items-center justify-center w-8 h-8 text-sm font-medium rounded text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="inline-flex items-center justify-center w-10 h-10 text-sm font-medium rounded text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               ‹
             </button>
@@ -415,9 +382,9 @@ export function UserManagementTable({
                     )}
                     <button
                       onClick={() => pagination.onPageChange(pageNum)}
-                      className={`inline-flex items-center justify-center w-8 h-8 text-sm font-medium rounded transition-colors ${
+                      className={`inline-flex items-center justify-center w-10 h-10 text-sm font-medium rounded ${
                         pageNum === pagination.currentPage
-                          ? 'bg-blue-600 text-white border border-blue-600'
+                          ? 'bg-gray-900 text-white border border-gray-900'
                           : 'text-gray-600 bg-white border border-gray-300 hover:bg-gray-50'
                       }`}
                     >
@@ -431,7 +398,7 @@ export function UserManagementTable({
             <button
               onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
               disabled={pagination.currentPage >= pagination.totalPages}
-              className="inline-flex items-center justify-center w-8 h-8 text-sm font-medium rounded text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="inline-flex items-center justify-center w-10 h-10 text-sm font-medium rounded text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               ›
             </button>

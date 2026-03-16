@@ -7,7 +7,7 @@ import { Response } from 'express';
 import { TareaService } from '../services/tareaService';
 import { NotificacionService } from '../services/notificacionService';
 import { logger } from '../utils/logger';
-import { ApiResponse } from '../utils/response';
+import { ApiResponse, parsePagination } from '../utils/response';
 import { AuthenticatedRequest } from '../types';
 import User from '../models/User';
 
@@ -119,8 +119,7 @@ export class TareaController {
    */
   static async getAll(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const page = parseInt((req.query['page'] as string) || '') || 1;
-      const limit = parseInt((req.query['limit'] as string) || '') || 10;
+      const { page, limit } = parsePagination(req);
       const estado = req.query['estado'] as string | undefined;
       const prioridad = req.query['prioridad'] as string | undefined;
       const categoria = req.query['categoria'] as string | undefined;

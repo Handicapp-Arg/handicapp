@@ -220,7 +220,7 @@ export default function FileUpload({
     return (
       <div
         key={index}
-        className="relative group rounded-xl border-2 border-gray-200 overflow-hidden bg-white hover:border-[#0f172a] transition-colors"
+        className="relative group rounded-md border border-gray-200 overflow-hidden bg-white hover:border-gray-400"
       >
         {isImage ? (
           <div className="relative w-full h-32">
@@ -242,7 +242,7 @@ export default function FileUpload({
         {/* Remove button */}
         <button
           onClick={() => removeFile(index)}
-          className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+          className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-md opacity-0 group-hover:opacity-100 hover:bg-red-600"
           title="Eliminar"
         >
           <XMarkIcon className="h-4 w-4" />
@@ -264,9 +264,9 @@ export default function FileUpload({
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
-        className={`relative border-2 border-dashed rounded-2xl p-8 text-center transition-all ${
+        className={`relative border-2 border-dashed rounded-md p-8 text-center ${
           dragActive
-            ? 'border-[#0f172a] bg-[#0f172a]/5'
+            ? 'border-gray-900 bg-gray-50'
             : 'border-gray-300 hover:border-gray-400'
         } ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
       >
@@ -300,7 +300,7 @@ export default function FileUpload({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[#0f172a] text-white rounded-xl hover:bg-[#0f172a]/90 transition-all duration-200 shadow-md hover:shadow-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-md hover:bg-gray-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ArrowUpTrayIcon className="h-5 w-5" />
             {buttonText || (uploading ? 'Subiendo...' : 'Seleccionar archivo')}
@@ -317,10 +317,10 @@ export default function FileUpload({
 
         {/* Loading spinner */}
         {uploading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-2xl">
+          <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-md">
             <div className="relative w-12 h-12">
               <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
-              <div className="absolute inset-0 border-4 border-[#0f172a] rounded-full border-t-transparent animate-spin"></div>
+              <div className="absolute inset-0 border-4 border-gray-900 rounded-full border-t-transparent animate-spin"></div>
             </div>
           </div>
         )}

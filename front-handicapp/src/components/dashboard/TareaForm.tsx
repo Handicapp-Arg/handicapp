@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthNew } from '@/lib/hooks/useAuthNew';
-import { tareaService, CreateTareaData } from '@/lib/services/tareaService';
-import { caballoService } from '@/lib/services/caballoService';
-import { establecimientoService } from '@/lib/services/establecimientoService';
+import { tareaService, CreateTareaData } from '@/lib/services/taskService';
+import { caballoService } from '@/lib/services/horseService';
+import { establecimientoService } from '@/lib/services/stableService';
 import { userService } from '@/lib/services/userService';
 import { usePermissions } from '@/lib/hooks/usePermissions';
 import { Modal } from '@/components/ui/modal';
@@ -89,7 +89,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
   // Funciones de carga de datos
   const loadCaballos = useCallback(async () => {
     try {
-      const response = await caballoService.getAll();
+      const response = await caballoService.getAll({ page: 1, limit: 100 });
       const caballosArray = Array.isArray(response) 
         ? response 
         : ((response as { data?: { caballos?: unknown[] } })?.data?.caballos || (response as { data?: unknown[] })?.data || []);
@@ -101,7 +101,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
 
   const loadEstablecimientos = useCallback(async () => {
     try {
-      const response = await establecimientoService.getAll();
+      const response = await establecimientoService.getAll({ page: 1, limit: 100 });
       const establecimientosArray = Array.isArray(response) 
         ? response 
         : ((response as { data?: { establecimientos?: unknown[] } })?.data?.establecimientos || (response as { data?: unknown[] })?.data || []);
@@ -402,7 +402,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                 value={formData.titulo || ''}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400 outline-none "
                 placeholder="Título de la tarea"
               />
             </div>
@@ -416,7 +416,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                 value={formData.tipo || 'otro'}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400 outline-none "
               >
                 <optgroup label="Tareas del Caballo">
                   <option value="alimentacion">Alimentación</option>
@@ -447,7 +447,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
               value={formData.descripcion || ''}
               onChange={handleChange}
               rows={3}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400 outline-none  resize-none"
               placeholder="Descripción detallada de la tarea"
             />
           </div>
@@ -463,7 +463,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                 value={formData.prioridad || 'media'}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400 outline-none "
               >
                 <option value="baja">Baja</option>
                 <option value="media">Media</option>
@@ -481,7 +481,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                 value={formData.estado || 'pendiente'}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400 outline-none "
               >
                 <option value="pendiente">Pendiente</option>
                 <option value="en_progreso">En Progreso</option>
@@ -499,7 +499,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                 name="fecha_vencimiento"
                 value={formData.fecha_vencimiento || ''}
                 onChange={handleChange}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400 outline-none "
               />
             </div>
           </div>
@@ -517,7 +517,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                 onChange={handleChange}
                 min="5"
                 max="1440"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400 outline-none "
               />
             </div>
 
@@ -530,7 +530,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                 name="ubicacion"
                 value={formData.ubicacion || ''}
                 onChange={handleChange}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400 outline-none "
                 placeholder="Ej: Box 12, Pista A"
               />
             </div>
@@ -553,7 +553,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                   name="asignado_a_usuario_id"
                   value={formData.asignado_a_usuario_id || ''}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400 outline-none "
                 >
                   <option value="">Sin asignar</option>
                   {usuarios
@@ -570,7 +570,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                   <button
                     type="button"
                     onClick={() => setShowUsuarioDropdown(!showUsuarioDropdown)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-transparent bg-white text-left flex items-center justify-between hover:bg-gray-50"
                   >
                   <span className="text-sm">
                     {selectedUsuarios.length === 0 
@@ -579,7 +579,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                     }
                   </span>
                   <svg 
-                    className={`w-4 h-4 transition-transform ${showUsuarioDropdown ? 'rotate-180' : ''}`} 
+                    className={`w-4 h-4 ${showUsuarioDropdown ? 'rotate-180' : ''}`}
                     fill="none" 
                     stroke="currentColor" 
                     viewBox="0 0 24 24"
@@ -589,7 +589,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                 </button>
                   
                   {showUsuarioDropdown && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md">
                       <div className="p-2 border-b border-gray-200">
                         <input
                           type="text"
@@ -597,7 +597,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                           value={usuarioSearch}
                           onChange={(e) => setUsuarioSearch(e.target.value)}
                           onClick={(e) => e.stopPropagation()}
-                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400 outline-none"
                         />
                       </div>
                       
@@ -618,7 +618,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                                   type="checkbox"
                                   checked={selectedUsuarios.includes(usuario.id)}
                                   onChange={() => toggleUsuario(usuario.id)}
-                                  className="rounded border-gray-300 text-primary focus:ring-primary"
+                                  className="rounded border-gray-300 text-primary focus:ring-gray-300"
                                 />
                                 <span className="text-sm flex-1">
                                   {usuario.nombre} {usuario.apellido}
@@ -653,7 +653,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                   name="caballo_id"
                   value={formData.caballo_id || ''}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400 outline-none "
                 >
                   <option value="">General (sin caballo)</option>
                   {caballos.map(caballo => (
@@ -668,7 +668,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                   <button
                     type="button"
                     onClick={() => setShowCaballoDropdown(!showCaballoDropdown)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-transparent bg-white text-left flex items-center justify-between hover:bg-gray-50"
                   >
                     <span className="text-sm">
                       {selectedCaballos.length === 0 
@@ -677,7 +677,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                       }
                     </span>
                     <svg 
-                      className={`w-4 h-4 transition-transform ${showCaballoDropdown ? 'rotate-180' : ''}`} 
+                      className={`w-4 h-4 ${showCaballoDropdown ? 'rotate-180' : ''}`}
                       fill="none" 
                       stroke="currentColor" 
                       viewBox="0 0 24 24"
@@ -687,7 +687,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                   </button>
                   
                   {showCaballoDropdown && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md">
                       <div className="p-2 border-b border-gray-200">
                         <input
                           type="text"
@@ -695,7 +695,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                           value={caballoSearch}
                           onChange={(e) => setCaballoSearch(e.target.value)}
                           onClick={(e) => e.stopPropagation()}
-                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400 outline-none"
                         />
                       </div>
                       
@@ -714,7 +714,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                                 type="checkbox"
                                 checked={selectedCaballos.includes(caballo.id)}
                                 onChange={() => toggleCaballo(caballo.id)}
-                                className="rounded border-gray-300 text-primary focus:ring-primary"
+                                className="rounded border-gray-300 text-primary focus:ring-gray-300"
                               />
                               <span className="text-sm flex-1">
                                 {caballo.nombre}
@@ -746,7 +746,7 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
                 name="establecimiento_id"
                 value={formData.establecimiento_id || ''}
                 onChange={handleChange}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400 outline-none "
               >
                 <option value="">Seleccionar establecimiento</option>
                 {establecimientos.map(establecimiento => (
@@ -760,14 +760,14 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
 
           {/* Resumen de creación masiva - Más compacto */}
           {!tarea && (selectedCaballos.length > 0 || selectedUsuarios.length > 0) && (
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-              <p className="text-xs font-medium text-blue-900 mb-1.5">
+            <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+              <p className="text-xs font-medium text-gray-900 mb-1.5">
                 Resumen de creación:
               </p>
-              <div className="text-xs text-blue-800 space-y-0.5">
+              <div className="text-xs text-gray-700 space-y-0.5">
                 <div>Caballos: {selectedCaballos.length > 0 ? `${selectedCaballos.length} seleccionados` : 'Tarea general'}</div>
                 <div>Usuarios: {selectedUsuarios.length > 0 ? `${selectedUsuarios.length} asignados` : 'Sin asignar'}</div>
-                <div className="font-semibold pt-1.5 border-t border-blue-300 mt-1.5">
+                <div className="font-semibold pt-1.5 border-t border-gray-300 mt-1.5">
                   Se crearán {Math.max(1, selectedCaballos.length) * Math.max(1, selectedUsuarios.length)} tarea(s)
                 </div>
               </div>
@@ -780,14 +780,14 @@ export function TareaForm({ isOpen, onClose, tarea, onSuccess }: TareaFormProps)
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-4 py-2 text-sm font-medium text-white bg-gray-900 hover:bg-gray-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {loading && (
                 <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

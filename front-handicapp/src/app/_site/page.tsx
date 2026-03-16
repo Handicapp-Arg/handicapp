@@ -58,10 +58,7 @@ export default function HomePage() {
         // Redirección basada en rol
         const roleRoutes: Record<number, string> = {
           1: '/admin',
-          2: '/establecimiento', 
-          3: '/capataz',
-          4: '/veterinario',
-          5: '/empleado',
+          2: '/establecimiento',
           6: '/propietario'
         };
         
@@ -119,7 +116,7 @@ export default function HomePage() {
               <div className="flex justify-center lg:justify-start pt-8">
                 <button 
                   onClick={() => router.push('/register')}
-                  className="group relative px-8 py-4 bg-[#D2B48C]/10 backdrop-blur-xl border border-[#D2B48C]/30 rounded-2xl text-[#D2B48C] font-semibold text-lg hover:bg-[#D2B48C]/20 transition-all duration-300 hover:scale-105 active:scale-95"
+                  className="group relative px-8 py-4 bg-[#D2B48C]/10 backdrop-blur-xl border border-[#D2B48C]/30 rounded-md text-[#D2B48C] font-semibold text-lg hover:bg-[#D2B48C]/20 transition-all duration-300 hover:scale-105 active:scale-95"
                 >
                   <div className="flex items-center justify-center gap-3">
                     <span>Regístrate</span>
@@ -155,17 +152,17 @@ export default function HomePage() {
               <div className="w-full max-w-sm sm:max-w-md lg:w-[450px] xl:w-[500px] mx-auto">
                 
                 {/* Container del formulario con glassmorphism */}
-                <div className="relative bg-white/5 backdrop-blur-2xl border border-white/10 rounded-2xl lg:rounded-3xl shadow-2xl p-6 sm:p-8 xl:p-10 space-y-6 lg:space-y-8">
+                <div className="relative bg-white/5 backdrop-blur-2xl border border-white/10 rounded-md lg:rounded-3xl shadow-md p-6 sm:p-8 xl:p-10 space-y-6 lg:space-y-8">
                   
                   {/* Header del formulario */}
                   <div className="text-center space-y-4 lg:space-y-6">
                     <div className="w-48 sm:w-56 lg:w-64 mx-auto">
                       <Image
                         src={LOGOS.FULL_WHITE}
-                        alt="HandicApp Logo"
+                        alt="App Logo"
                         width={240}
                         height={120}
-                        className="w-full h-auto drop-shadow-2xl filter brightness-110"
+                        className="w-full h-auto drop-shadow-md filter brightness-110"
                       />
                     </div>
                     
@@ -192,7 +189,7 @@ export default function HomePage() {
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           required
-                          className="w-full bg-white/10 backdrop-blur-xl border border-white/20 text-white placeholder-white/60 focus:border-[#D2B48C]/50 focus:ring-2 focus:ring-[#D2B48C]/30 rounded-xl lg:rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base transition-all duration-300 focus:outline-none"
+                          className="w-full bg-white/10 backdrop-blur-xl border border-white/20 text-white placeholder-white/60 focus:border-[#D2B48C]/50 focus:ring-2 focus:ring-[#D2B48C]/30 rounded-xl lg:rounded-md px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base transition-all duration-300 focus:outline-none"
                           placeholder="tu@email.com"
                         />
                       </div>
@@ -204,15 +201,15 @@ export default function HomePage() {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           required
-                          className="w-full bg-white/10 backdrop-blur-xl border border-white/20 text-white placeholder-white/60 focus:border-[#D2B48C]/50 focus:ring-2 focus:ring-[#D2B48C]/30 rounded-xl lg:rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base transition-all duration-300 focus:outline-none"
+                          className="w-full bg-white/10 backdrop-blur-xl border border-white/20 text-white placeholder-white/60 focus:border-[#D2B48C]/50 focus:ring-2 focus:ring-[#D2B48C]/30 rounded-xl lg:rounded-md px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base transition-all duration-300 focus:outline-none"
                           placeholder="••••••••"
                         />
                       </div>
                     </div>
                     
                     {error && (
-                      <div className="relative p-3 sm:p-4 rounded-xl lg:rounded-2xl bg-red-500/10 backdrop-blur-xl border border-red-400/30 text-red-300 text-xs sm:text-sm animate-pulse" role="alert">
-                        <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-pink-500/5 rounded-xl lg:rounded-2xl"></div>
+                      <div className="relative p-3 sm:p-4 rounded-xl lg:rounded-md bg-red-500/10 backdrop-blur-xl border border-red-400/30 text-red-300 text-xs sm:text-sm animate-pulse" role="alert">
+                        <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-pink-500/5 rounded-xl lg:rounded-md"></div>
                         <div className="relative flex items-start gap-2 sm:gap-3">
                           <div className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5">
                             <svg className="w-full h-full" fill="currentColor" viewBox="0 0 20 20">
@@ -227,7 +224,7 @@ export default function HomePage() {
                     <button 
                       type="submit"
                       disabled={loading}
-                      className="w-full group relative px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-[#3C2013] to-[#2A1709] rounded-xl lg:rounded-2xl text-white font-semibold text-base sm:text-lg shadow-2xl hover:shadow-[#3C2013]/25 transition-all duration-300 hover:scale-105 active:scale-95 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 touch-manipulation"
+                      className="w-full group relative px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-[#3C2013] to-[#2A1709] rounded-xl lg:rounded-md text-white font-semibold text-base sm:text-lg shadow-md hover:shadow-[#3C2013]/25 transition-all duration-300 hover:scale-105 active:scale-95 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 touch-manipulation"
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-[#4A2A1A] to-[#3C2013] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                       <div className="relative flex items-center justify-center gap-2 sm:gap-3">

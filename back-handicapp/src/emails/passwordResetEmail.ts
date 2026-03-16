@@ -34,7 +34,7 @@ export async function sendPasswordResetEmail({
 
     await sendEmail({
       to: email,
-      subject: 'Restablecer contraseña - HandicApp',
+      subject: 'Restablecer contraseña - App',
       html,
     });
   } catch (err: any) {

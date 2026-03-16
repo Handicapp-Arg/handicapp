@@ -1,150 +1,82 @@
-# Documentación HandicApp
+# HandicApp — Documentación
 
-> **Última actualización**: 31 de octubre de 2025  
-> **Versión**: 2.0.0  
-> **Estado**: Producción Ready
-
-Documentación completa del sistema de gestión equina HandicApp.
+Stack: Next.js 15 + Express 5 + PostgreSQL + Sequelize
+Última actualización: 2026-03-14
 
 ---
 
-## 🚀 Inicio Rápido
+## Inicio rápido
 
-### Nuevos Desarrolladores
-1. **[GETTING_STARTED.md](./GETTING_STARTED.md)** - Instalación y configuración
-2. **[TECH_STACK.md](./TECH_STACK.md)** - Stack tecnológico
-3. **[INDEX.md](./INDEX.md)** - Índice completo
-
----
-
-## 📁 Estructura de Documentación
-
-### 📘 Documentación Principal
-- **[INDEX.md](./INDEX.md)** - Índice maestro
-- **[TECH_STACK.md](./TECH_STACK.md)** - Tecnologías utilizadas
-- **[GETTING_STARTED.md](./GETTING_STARTED.md)** - Guía de inicio
+| Documento | Descripción |
+|-----------|-------------|
+| [development/GETTING_STARTED.md](./development/GETTING_STARTED.md) | Instalación y configuración del entorno |
+| [QUICK_REFERENCE.md](./QUICK_REFERENCE.md) | Comandos frecuentes |
 
 ---
 
-## 🚀 Migración y Modernización
+## Arquitectura
 
-### `/migration` - Migración React Query
-
-### 🏗️ Arquitectura
-- **[OVERVIEW.md](./architecture/OVERVIEW.md)** - Arquitectura general
-- **[DATABASE.md](./architecture/DATABASE.md)** - Esquema de base de datos
-
-### 🔧 Backend
-- **[API_REFERENCE.md](./backend/API_REFERENCE.md)** - 53 endpoints documentados
-- **[WEBSOCKETS.md](./backend/WEBSOCKETS.md)** - Real-time con Socket.IO
-- **[NOTIFICACIONES.md](./backend/NOTIFICACIONES.md)** - Sistema de notificaciones
-- **[TESTING.md](./backend/TESTING.md)** - Testing con Vitest
-
-### 🎨 Frontend
-- **[REACT_QUERY_GUIDE.md](./frontend/REACT_QUERY_GUIDE.md)** - Guía de React Query
-- **[ERROR_BOUNDARIES.md](./frontend/ERROR_BOUNDARIES.md)** - Manejo de errores
-- **[SENTRY_INTEGRATION.md](./frontend/SENTRY_INTEGRATION.md)** - Monitoreo
-
-### ⚡ Performance
-- **[PERFORMANCE_ANALYSIS.md](./performance/PERFORMANCE_ANALYSIS.md)** - Análisis completo
-- **[IMPROVEMENTS_APPLIED.md](./performance/IMPROVEMENTS_APPLIED.md)** - Mejoras aplicadas
-  - Bundle size: -80% (2.1MB → 420KB)
-  - Load time: -81% (9s → 1.8s)
-  - Re-renders: -87% (245 → 32)
-  - Memory leaks: -83% (18 → 3)
-
-### 🔄 Migraciones
-- **[REACT_QUERY_MIGRATION.md](./migration/REACT_QUERY_MIGRATION.md)** - ✅ 100% completada
-  - 38/38 páginas migradas
-  - 15+ hooks personalizados
-  - -2,200 líneas de código
-
-### 💻 Desarrollo
-- **[TYPESCRIPT_GUIDE.md](./development/TYPESCRIPT_GUIDE.md)** - TypeScript best practices
-  - 56 errores → 0 ✅
-  - Sistema de tipos centralizado
-  - Patrones recomendados
-
-### `/backend`
-- **[API_REFERENCE.md](./backend/API_REFERENCE.md)** - Referencia completa de la API REST
-- **[WEBSOCKETS.md](./backend/WEBSOCKETS.md)** - Documentación de WebSockets y tiempo real
-- **[NOTIFICACIONES.md](./backend/NOTIFICACIONES.md)** - Sistema de notificaciones
-- **[TESTING.md](./backend/TESTING.md)** - Pruebas del backend
-
-#### `/backend/setup`
-- **[QUICK_START.md](./backend/setup/QUICK_START.md)** - Configuración rápida del backend
+| Documento | Descripción |
+|-----------|-------------|
+| [architecture/OVERVIEW.md](./architecture/OVERVIEW.md) | Visión general del sistema |
+| [architecture/DATABASE.md](./architecture/DATABASE.md) | Esquema de base de datos |
+| [architecture/TECH_STACK.md](./architecture/TECH_STACK.md) | Stack tecnológico completo |
+| [architecture/TAREA_EVENTO_SYSTEM.md](./architecture/TAREA_EVENTO_SYSTEM.md) | Modelo de dominio tareas/eventos |
 
 ---
 
-## 🎨 Frontend
+## Backend
 
-Documentación del cliente frontend (Next.js 15 + React 19).
-
-
----
-
-## 📊 Estado del Proyecto
-
-### Completado ✅
-- **Backend**: 100% (53 endpoints, WebSockets, JWT + RBAC)
-- **Frontend**: 98% (6 roles, responsive, React Query)
-- **TypeScript**: 0 errores (56 → 0 corregidos)
-- **Code Quality**: Logs eliminados, código limpio
-- **Performance**: Optimizado (-80% bundle, -81% load time)
-- **Migraciones**: React Query 100% (38/38 páginas)
-
-### Roles Implementados
-
-| Rol | Estado | Módulos |
-|-----|--------|---------|
-| Admin | ✅ 100% | 5 módulos |
-| Propietario | ✅ 100% | 8 módulos |
-| Establecimiento | ✅ 100% | 6 módulos |
-| Veterinario | ✅ 100% | 4 módulos |
-| Capataz | ✅ 100% | 4 módulos |
-| Empleado | ✅ 100% | 3 módulos |
-
-### Tecnologías Core
-- **Frontend**: Next.js 15.5.3, React 19.1.0, TypeScript 5.7
-- **Backend**: Node.js 20+, Express 4.21, PostgreSQL 15+
-- **State**: React Query v5, Socket.IO 4.8
-- **UI**: TailwindCSS 3.4, shadcn/ui
-
-Consulta **[TECH_STACK.md](./TECH_STACK.md)** para detalles completos.
+| Documento | Descripción |
+|-----------|-------------|
+| [backend/API_REFERENCE.md](./backend/API_REFERENCE.md) | Referencia de endpoints REST |
+| [backend/WEBSOCKETS.md](./backend/WEBSOCKETS.md) | Eventos en tiempo real (Socket.IO) |
+| [backend/NOTIFICACIONES.md](./backend/NOTIFICACIONES.md) | Sistema de notificaciones |
+| [backend/NOTIFICACIONES_TAREAS.md](./backend/NOTIFICACIONES_TAREAS.md) | Notificaciones en tiempo real para tareas |
+| [backend/SEED.md](./backend/SEED.md) | Seed de base de datos |
+| [backend/SYNC_SCRIPTS.md](./backend/SYNC_SCRIPTS.md) | Scripts de sincronización |
+| [backend/TESTING.md](./backend/TESTING.md) | Guía de testing |
+| [backend/QUICK_START.md](./backend/QUICK_START.md) | Setup rápido del backend |
 
 ---
 
-## 📝 Notas
+## Frontend
 
-**Fecha de actualización**: 31 de octubre de 2025  
-**Estado**: Producción Ready  
-**Próximos pasos**: Deploy y monitoreo
-
----
-- `README.md` - Descripción general de carpeta/módulo
-- `*_COMPLETO_*.md` - Documentación completa de módulo (con porcentaje)
-- `*_REFERENCE.md` - Referencias técnicas
-- `OVERVIEW.md` - Visión general
-
-### Estructura de Documentos
-1. **Encabezado** - Título y descripción breve
-2. **Tabla de Contenidos** - Índice navegable
-3. **Contenido Principal** - Secciones detalladas
-4. **Ejemplos de Código** - Snippets prácticos
-5. **Referencias** - Enlaces relacionados
+| Documento | Descripción |
+|-----------|-------------|
+| [frontend/REACT_QUERY_GUIDE.md](./frontend/REACT_QUERY_GUIDE.md) | Patrones con React Query |
+| [frontend/ERROR_BOUNDARIES.md](./frontend/ERROR_BOUNDARIES.md) | Componentes de error boundary |
+| [frontend/ERROR_HANDLING_GUIDE.md](./frontend/ERROR_HANDLING_GUIDE.md) | Patrones de manejo de errores |
+| [frontend/ERROR_HANDLING_IMPLEMENTATION.md](./frontend/ERROR_HANDLING_IMPLEMENTATION.md) | Implementación de error handling |
+| [frontend/SENTRY_INTEGRATION.md](./frontend/SENTRY_INTEGRATION.md) | Monitoreo con Sentry |
+| [frontend/NOTIFICATIONS_COMPONENT.md](./frontend/NOTIFICATIONS_COMPONENT.md) | Componentes de notificaciones |
 
 ---
 
-## 🤝 Contribuir
+## Desarrollo
 
-Al agregar nueva documentación:
-1. Colocar en la carpeta apropiada (`backend/`, `frontend/`, `architecture/`, `guides/`)
-2. Usar formato Markdown
-3. Incluir ejemplos de código cuando sea relevante
-4. Actualizar este README con enlaces
+| Documento | Descripción |
+|-----------|-------------|
+| [development/GETTING_STARTED.md](./development/GETTING_STARTED.md) | Guía de inicio para nuevos desarrolladores |
+| [development/TYPESCRIPT_GUIDE.md](./development/TYPESCRIPT_GUIDE.md) | Convenciones TypeScript |
+| [development/LOADING_STATES_GUIDE.md](./development/LOADING_STATES_GUIDE.md) | Patrones de estados de carga |
 
 ---
 
-**Última actualización**: Octubre 2025  
-**Versión**: 1.0.0  
-**Estado**: En Producción (Backend 100%, Frontend 95%)
+## Migraciones
+
+| Documento | Descripción |
+|-----------|-------------|
+| [migration/REACT_QUERY_MIGRATION.md](./migration/REACT_QUERY_MIGRATION.md) | Migración a React Query v5 (completada) |
+
+---
+
+## Roles activos
+
+| ID | Clave | Nombre |
+|----|-------|--------|
+| 1 | admin | Administrador |
+| 2 | establecimiento | Establecimiento |
+| 6 | propietario | Propietario |
+
+> Roles eliminados: capataz (3), veterinario (4), empleado (5). No recrear.

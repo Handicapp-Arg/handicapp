@@ -40,10 +40,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
-  }, [sidebarOpen]);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-50">
       {/* Prefetch Manager - Pre-carga rutas comunes */}
       <PrefetchManager role={user?.rol?.clave} />
 
@@ -67,8 +67,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         />
 
         {/* Main Content Area */}
-        <div className={`flex flex-col flex-1 min-w-0 transition-all duration-300 ${
-          sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-72'
+        <div className={`flex flex-col flex-1 min-w-0 ${
+          sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
         }`}>
           {/* Top Navbar - Navbar Horizontal */}
           <HorizontalNavbar 
@@ -80,7 +80,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Page Content */}
           <main className="flex-1 overflow-y-auto">
             {/* pb-28 en móvil para que el contenido no quede tapado por el BottomNav */}
-            <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 pb-28 lg:pb-6">
+            <div className="px-4 sm:px-4 lg:px-6 py-4 sm:py-6 pb-28 lg:pb-6">
               {children}
             </div>
           </main>

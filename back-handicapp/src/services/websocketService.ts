@@ -101,7 +101,7 @@ class WebSocketService {
       pingInterval: 25000
     });
 
-    logger.info('🔌 Socket.IO initialized');
+    logger.debug('Socket.IO initialized');
 
     // Middleware de autenticación
     this.io.use((socket: AuthenticatedSocket, next) => {
@@ -113,7 +113,7 @@ class WebSocketService {
       this.handleConnection(socket);
     });
 
-    logger.info('✅ WebSocket server ready');
+    logger.debug('WebSocket server ready');
   }
 
   /**

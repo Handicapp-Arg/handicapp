@@ -27,9 +27,9 @@ export function PageHeader({
       {backHref && (
         <Link
           href={backHref}
-          className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800 transition-colors mb-3 group"
+          className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 mb-3 group"
         >
-          <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
+          <ChevronLeft className="w-4 h-4" />
           {backLabel ?? "Volver"}
         </Link>
       )}
@@ -37,13 +37,13 @@ export function PageHeader({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 leading-tight tracking-tight">
               {title}
             </h1>
             {badge}
           </div>
           {subtitle && (
-            <p className="text-sm text-slate-500 mt-1">{subtitle}</p>
+            <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
           )}
         </div>
 

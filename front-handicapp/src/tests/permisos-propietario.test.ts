@@ -81,7 +81,6 @@ describe('Permisos Propietario - Matriz de Autorización', () => {
     });
 
     it('NO debe tener permiso events:validate', () => {
-      // Solo veterinario puede validar eventos médicos
       const permisos = ['events:read', 'events:write'];
       expect(permisos).not.toContain('events:validate');
     });

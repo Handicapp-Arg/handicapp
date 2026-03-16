@@ -52,7 +52,7 @@ export function AdminUserStats() {
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-200 animate-pulse">
+          <div key={i} className="bg-white rounded-md p-4 sm:p-6 border border-gray-200 animate-pulse">
             <div className="h-4 bg-gray-200 rounded w-20 mb-2"></div>
             <div className="h-8 bg-gray-200 rounded w-16"></div>
           </div>

@@ -11,7 +11,7 @@ import { ApiResponse } from '../utils/response';
 /**
  * Tipos de roles disponibles en el sistema
  */
-export type UserRole = 'admin' | 'establecimiento' | 'propietario' | 'veterinario' | 'capataz' | 'empleado';
+export type UserRole = 'admin' | 'establecimiento' | 'propietario';
 
 /**
  * Tipos de permisos granulares
@@ -75,37 +75,6 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'horses:manage_owners', 'horses:view_medical',
     'events:read', 'events:write',
     'tasks:read', 'tasks:write'
-  ],
-  
-  veterinario: [
-    // Gestión médica completa
-    'users:read',
-    'establishments:read',
-    'horses:read', 'horses:write',
-    'horses:view_medical', 'horses:edit_medical',
-    'events:read', 'events:write', 'events:delete',
-    'events:create_medical',
-    'tasks:read', 'tasks:write',
-    'tasks:complete'
-  ],
-  
-  capataz: [
-    // Gestión operativa del establecimiento
-    'users:read',
-    'establishments:read',
-    'horses:read', 'horses:write',
-    'events:read', 'events:write',
-    'tasks:read', 'tasks:write', 'tasks:delete',
-    'tasks:assign', 'tasks:complete', 'tasks:view_all'
-  ],
-  
-  empleado: [
-    // Operaciones básicas
-    'users:read',
-    'establishments:read',
-    'horses:read',
-    'events:read', 'events:write',  // ✅ Puede crear y editar eventos
-    'tasks:read', 'tasks:write', 'tasks:complete'  // ✅ Puede crear, editar y completar tareas
   ]
 };
 

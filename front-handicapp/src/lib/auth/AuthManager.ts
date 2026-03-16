@@ -141,7 +141,34 @@ class AuthManager {
         return;
       }
 
-      // No stored data → not authenticated
+      // User data in localStorage but no readable token — try to restore via httpOnly cookie refresh
+      if (!storedData.token && storedData.user) {
+        try {
+          const refreshRes = await fetch(`${appConfig.apiBaseUrl}/auth/refresh`, {
+            method: 'POST',
+            credentials: 'include',
+          });
+          if (refreshRes.ok) {
+            const data = await refreshRes.json().catch(() => ({}));
+            const newToken = data.data?.accessToken ?? data.accessToken ?? data.token;
+            if (newToken) {
+              this.saveAuthData(newToken, storedData.user);
+              this.updateState({
+                isAuthenticated: true,
+                user: storedData.user,
+                token: newToken,
+                isLoading: false,
+                error: null,
+              });
+              return;
+            }
+          }
+        } catch {
+          // refresh failed — fall through to unauthenticated
+        }
+      }
+
+      // No valid session — not authenticated
       this.updateState({
         isAuthenticated: false,
         user: null,
@@ -164,13 +191,33 @@ class AuthManager {
 
   /**
    * Verificar token en background sin bloquear la UI.
-   * Solo hace logout si el backend devuelve 401 (token inválido).
-   * Si hay error de red (backend caído), mantiene la sesión activa.
+   * Si el token expiró, intenta refresh antes de hacer logout.
+   * Si hay error de red, mantiene la sesión activa.
    */
   private verifyTokenBackground(token: string): void {
     this.verifyToken(token)
-      .then((isValid) => {
+      .then(async (isValid) => {
         if (!isValid) {
+          // Token expirado — intentar refresh con cookie httpOnly
+          try {
+            const refreshRes = await fetch(`${appConfig.apiBaseUrl}/auth/refresh`, {
+              method: 'POST',
+              credentials: 'include',
+            });
+            if (refreshRes.ok) {
+              const data = await refreshRes.json().catch(() => ({}));
+              const newToken = data.data?.accessToken ?? data.accessToken ?? data.token;
+              const currentUser = this.currentState.user;
+              if (newToken && currentUser) {
+                this.saveAuthData(newToken, currentUser);
+                this.updateState({ token: newToken });
+              }
+              return; // sesión renovada
+            }
+          } catch {
+            // refresh falló — caída de red
+          }
+          // Refresh falló → logout real
           this.clearAuthData();
           this.updateState({
             isAuthenticated: false,
@@ -257,20 +304,19 @@ class AuthManager {
     try {
       this.updateState({ isLoading: true });
 
-      // Intentar logout en backend
-      if (this.currentState.token) {
-        try {
-          await fetch(`${appConfig.apiBaseUrl}/auth/logout`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-              'Authorization': `Bearer ${this.currentState.token}`,
-              'Content-Type': 'application/json',
-            },
-          });
-        } catch (error) {
-          console.warn('Error en logout backend:', error);
+      // Intentar logout en backend — siempre, incluso sin token local (usa cookie httpOnly)
+      try {
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (this.currentState.token) {
+          headers['Authorization'] = `Bearer ${this.currentState.token}`;
         }
+        await fetch(`${appConfig.apiBaseUrl}/auth/logout`, {
+          method: 'POST',
+          credentials: 'include',
+          headers,
+        });
+      } catch {
+        // ignorar — limpiar local de todas formas
       }
 
     } finally {
@@ -410,15 +456,13 @@ class AuthManager {
 
   /**
    * Sincronizar cookies para middleware
+   * Solo sincroniza el rol — auth-token es manejado como httpOnly por el backend
    */
-  private syncCookies(token: string, user: UserData): void {
+  private syncCookies(_token: string, user: UserData): void {
     try {
       if (typeof document !== 'undefined') {
-        // Cookie de 1 hora para auth
         const expires = new Date();
-        expires.setHours(expires.getHours() + 1);
-        
-        document.cookie = `${STORAGE_CONFIG.COOKIE_AUTH}=${token}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+        expires.setDate(expires.getDate() + 7);
         document.cookie = `${STORAGE_CONFIG.COOKIE_ROLE}=${user.rol.id}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
       }
     } catch (error) {

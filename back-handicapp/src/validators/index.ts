@@ -38,7 +38,7 @@ const createValidator = <T>(
 // -----------------------------------------------------------------------------
 export const paginationSchema = z.object({
   page: z.coerce.number().int().positive().optional().default(1),
-  limit: z.coerce.number().int().positive().optional().default(10),
+  limit: z.coerce.number().int().positive().max(500, 'limit no puede superar 500').optional().default(20),
   sortBy: z.string().trim().min(1).optional(),
   sortOrder: z.enum(["ASC", "DESC"]).optional().default("ASC"),
 });

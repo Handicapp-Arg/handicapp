@@ -7,7 +7,7 @@ import { Response } from 'express';
 import { EventoService } from '../services/eventoService';
 import { NotificacionService } from '../services/notificacionService';
 import { logger } from '../utils/logger';
-import { ApiResponse } from '../utils/response';
+import { ApiResponse, parsePagination } from '../utils/response';
 import { AuthenticatedRequest } from '../types';
 
 export class EventoController {
@@ -19,7 +19,7 @@ export class EventoController {
   /**
    * Crear nuevo evento
    * POST /api/v1/eventos
-   * Roles: admin, establecimiento, veterinario
+   * Roles: admin, establecimiento, propietario
    */
   static async create(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
@@ -95,24 +95,21 @@ export class EventoController {
    */
   static async getAll(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-  const page = parseInt((req.query['page'] as string) || '') || 1;
-  const limit = parseInt((req.query['limit'] as string) || '') || 10;
+  const { page, limit } = parsePagination(req);
   const caballoId = req.query['caballo'] ? parseInt(req.query['caballo'] as string) : undefined;
   const tipoEventoId = req.query['tipo'] ? parseInt(req.query['tipo'] as string) : undefined;
   const establecimientoId = req.query['establecimiento'] ? parseInt(req.query['establecimiento'] as string) : undefined;
   const fechaInicio = req.query['fechaInicio'] as string | undefined;
   const fechaFin = req.query['fechaFin'] as string | undefined;
-  const veterinarioId = req.query['veterinario'] ? parseInt(req.query['veterinario'] as string) : undefined;
-     const usuarioId = req.user!.id;
-     const userRole = req.user!.rol?.clave;
+  const usuarioId = req.user!.id;
+  const userRole = req.user!.rol?.clave;
 
-      const filterPayload: any = { page, limit, usuarioId, userRole };
-      if (caballoId) filterPayload.caballoId = caballoId;
-      if (tipoEventoId) filterPayload.tipoEventoId = tipoEventoId;
-      if (establecimientoId) filterPayload.establecimientoId = establecimientoId;
-      if (fechaInicio) filterPayload.fechaInicio = fechaInicio;
-      if (fechaFin) filterPayload.fechaFin = fechaFin;
-      if (veterinarioId) filterPayload.veterinarioId = veterinarioId;
+  const filterPayload: any = { page, limit, usuarioId, userRole };
+  if (caballoId) filterPayload.caballoId = caballoId;
+  if (tipoEventoId) filterPayload.tipoEventoId = tipoEventoId;
+  if (establecimientoId) filterPayload.establecimientoId = establecimientoId;
+  if (fechaInicio) filterPayload.fechaInicio = fechaInicio;
+  if (fechaFin) filterPayload.fechaFin = fechaFin;
 
       const result = await EventoService.getAllEventos(filterPayload);
 
@@ -167,7 +164,7 @@ export class EventoController {
   /**
    * Actualizar evento
    * PUT /api/v1/eventos/:id
-   * Roles: admin, veterinario que creó el evento, usuario autorizado
+   * Roles: admin, usuario que creó el evento
    */
   static async update(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
@@ -207,7 +204,7 @@ export class EventoController {
   /**
    * Eliminar evento (soft delete)
    * DELETE /api/v1/eventos/:id
-   * Roles: admin, veterinario que creó el evento
+   * Roles: admin, usuario que creó el evento
    */
   static async delete(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
@@ -263,7 +260,7 @@ export class EventoController {
   /**
    * Obtener historial médico completo de un caballo
    * GET /api/v1/eventos/historial-medico/caballo/:caballoId
-   * Roles: propietario, veterinario autorizado
+   * Roles: propietario, admin, establecimiento
    */
   static async getHistorialMedico(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
@@ -300,7 +297,7 @@ export class EventoController {
    */
   static async getProgramados(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const limit = parseInt((req.query['limit'] as string) || '50');
+      const { limit } = parsePagination(req);
       const dias = parseInt((req.query['dias'] as string) || '90'); // Por defecto 90 días hacia adelante
       const establecimientoId = req.query['establecimiento'] ? parseInt(req.query['establecimiento'] as string) : undefined;
       const caballoId = req.query['caballo'] ? parseInt(req.query['caballo'] as string) : undefined;

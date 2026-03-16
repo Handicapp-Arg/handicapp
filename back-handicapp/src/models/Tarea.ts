@@ -59,7 +59,7 @@ const ESTADO_DB_TO_API: Record<string, string> = {
   'cancelled': 'cancelada'
 };
 
-const ESTADO_API_TO_DB: Record<string, string> = {
+export const ESTADO_API_TO_DB: Record<string, string> = {
   'pendiente': 'open',
   'en_progreso': 'in_progress',
   'completada': 'done',

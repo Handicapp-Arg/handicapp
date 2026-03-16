@@ -33,7 +33,6 @@ export const eventoSchema = z.object({
 
   caballo_id: z.number().optional().nullable(),
   establecimiento_id: z.number().optional().nullable(),
-  veterinario_id: z.number().optional().nullable(),
 
   resultado: z
     .string()

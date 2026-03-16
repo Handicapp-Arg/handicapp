@@ -7,12 +7,12 @@ import { Metadata } from 'next';
 
 // Información base del sitio
 export const siteConfig = {
-  name: 'Handicapp',
-  title: 'Handicapp - Gestión Integral de Caballos',
+  name: 'App',
+  title: 'App - Gestión Integral de Caballos',
   description: 'Sistema profesional de gestión para caballos de competición. Registros sanitarios, eventos deportivos, establecimientos hípicos y más.',
-  url: 'https://handicapp.com',
-  ogImage: 'https://handicapp.com/og-image.jpg',
-  creator: '@handicapp',
+  url: 'https://app.local',
+  ogImage: 'https://app.local/og-image.jpg',
+  creator: '@app',
   keywords: [
     'gestión de caballos',
     'caballos de competición',
@@ -97,14 +97,6 @@ export const pageMetadata = {
       title: 'Dashboard Propietario',
       description: 'Panel de control para propietarios de caballos. Gestiona tus caballos, eventos, gastos y más.',
     },
-    veterinario: {
-      title: 'Dashboard Veterinario',
-      description: 'Panel de control para veterinarios. Gestiona tratamientos, pacientes y consultas.',
-    },
-    cuidador: {
-      title: 'Dashboard Cuidador',
-      description: 'Panel de control para cuidadores. Gestiona tareas, alimentación y cuidados diarios.',
-    },
   },
   
   // Caballos
@@ -148,18 +140,6 @@ export const pageMetadata = {
     detail: {
       title: 'Detalle del Evento',
       description: 'Información completa del evento: resultados, clasificación y estadísticas.',
-    },
-  },
-  
-  // Tratamientos
-  tratamientos: {
-    list: {
-      title: 'Tratamientos Veterinarios',
-      description: 'Historial médico completo: tratamientos, consultas, vacunaciones y controles.',
-    },
-    detail: {
-      title: 'Detalle del Tratamiento',
-      description: 'Información detallada del tratamiento veterinario.',
     },
   },
   

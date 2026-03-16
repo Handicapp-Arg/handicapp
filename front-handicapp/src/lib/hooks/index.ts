@@ -1,44 +1,46 @@
 /**
  * React Query Hooks
- * 
+ *
  * Exports centralizados de todos los hooks de React Query
  * Importa cualquier hook desde esta ubicación central:
- * 
+ *
  * @example
- * import { useProductos, useEmpleados, useCaballos } from '@/lib/hooks';
+ * import { useCaballos, useEventos, useTareas } from '@/lib/hooks';
  */
 
-// Inventario
-export * from './useInventarioQuery';
+// Horses (Gestión, Pedigrí, Historial)
+export * from './useHorsesQuery';
 
-// Personal (Empleados, Horarios, Turnos, Ausencias)
-export * from './usePersonalQuery';
+// Tasks (Gestión, Asignaciones, Productividad)
+export * from './useTasksQuery';
 
-// Reportes Médicos (Historial Clínico, Consultas, Tratamientos)
-export * from './useReportesQuery';
+// Events (Gestión de Eventos, Salud, Entrenamientos, Competencias)
+export * from './useEventsQuery';
 
-// Caballos (Gestión, Pedigrí, Historial)
-export * from './useCaballosQuery';
+// Stables (Gestión de Haras, Polos, etc.)
+export * from './useStablesQuery';
 
-// Tareas (Gestión, Asignaciones, Productividad)
-export * from './useTareasQuery';
+// Notifications (Sistema de notificaciones)
+export * from './useNotificationsQuery';
 
-// Eventos (Gestión de Eventos, Salud, Entrenamientos, Competencias)
-export * from './useEventosQuery';
+// Users (Gestión de usuarios y roles)
+export * from './useUsersQuery';
 
-// Establecimientos (Gestión de Haras, Polos, etc.)
-export * from './useEstablecimientosQuery';
+// Audit (Logs del sistema)
+export * from './useAuditQuery';
 
-// Notificaciones (Sistema de notificaciones)
-export * from './useNotificacionesQuery';
+// Dashboard aggregates
+export * from './useUpcomingEvents';
+export * from './useOwnerDashboard';
+export * from './useStats';
 
-// Usuarios (Gestión de usuarios y roles)
-export * from './useUsuariosQuery';
-
-// Auditoría (Logs del sistema)
-export * from './useAuditoriaQuery';
+// Auth
+export * from './useAuthNew';
 
 // WebSocket y tiempo real
 export * from './useWebSocket';
 export * from './useNotifications';
 export * from './useAutoRefresh';
+
+// Task management
+export * from './useTasks';

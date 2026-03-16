@@ -2,8 +2,6 @@ import { Model, CreationOptional, NonAttribute } from "sequelize";
 import bcrypt from "bcrypt";
 import { EstadoUsuario } from "./enums";
 import { Role } from "./roles";
-import { Departamento } from "./Departamento";
-import { Puesto } from "./Puesto";
 
 export class User extends Model {
   declare id: CreationOptional<number>;
@@ -17,16 +15,12 @@ export class User extends Model {
   declare apellido: string;
   declare telefono: CreationOptional<string | null>;
   declare documento: CreationOptional<string | null>;
-  declare departamento_id: CreationOptional<number | null>;
-  declare puesto_id: CreationOptional<number | null>;
   declare ubicacion: CreationOptional<string | null>;
   declare avatar_url: CreationOptional<string | null>;
   declare creado_el: CreationOptional<Date>;
   declare actualizado_el: CreationOptional<Date | null>;
   declare ultimo_acceso_el: CreationOptional<Date | null>;
   declare rol?: NonAttribute<Role>;
-  declare departamento?: NonAttribute<Departamento>;
-  declare puesto?: NonAttribute<Puesto>;
 
   async validatePassword(plain: string): Promise<boolean> {    
     try {

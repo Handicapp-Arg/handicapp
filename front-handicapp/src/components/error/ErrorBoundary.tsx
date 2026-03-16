@@ -94,7 +94,7 @@ export class ErrorBoundary extends Component<Props, State> {
       // Fallback UI por defecto
       return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-orange-50 p-4">
-          <div className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-8">
+          <div className="max-w-2xl w-full bg-white rounded-md shadow-md p-8">
             {/* Header */}
             <div className="flex items-center gap-4 mb-6">
               <div className="p-4 bg-red-100 rounded-full">
@@ -112,7 +112,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
             {/* Error Message */}
             {this.state.error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
                 <p className="text-sm font-medium text-red-900 mb-1">
                   Error detectado:
                 </p>
@@ -126,7 +126,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <div className="flex flex-wrap gap-3 mb-6">
               <button
                 onClick={this.handleReset}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-700"
               >
                 <RefreshCcw className="w-4 h-4" />
                 Intentar nuevamente
@@ -134,7 +134,7 @@ export class ErrorBoundary extends Component<Props, State> {
               
               <button
                 onClick={this.handleReload}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 "
               >
                 <RefreshCcw className="w-4 h-4" />
                 Recargar página
@@ -142,7 +142,7 @@ export class ErrorBoundary extends Component<Props, State> {
               
               <button
                 onClick={this.handleGoHome}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 "
               >
                 <Home className="w-4 h-4" />
                 Ir al inicio
@@ -165,7 +165,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 </button>
 
                 {this.state.showStack && (
-                  <div className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-auto max-h-96">
+                  <div className="bg-gray-900 text-gray-100 p-4 rounded-md overflow-auto max-h-96">
                     <pre className="text-xs font-mono whitespace-pre-wrap">
                       {this.state.error?.stack}
                       {'\n\n'}
@@ -177,8 +177,8 @@ export class ErrorBoundary extends Component<Props, State> {
             )}
 
             {/* Info */}
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-900">
+            <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-md">
+              <p className="text-sm text-gray-900">
                 <strong>💡 Tip:</strong> Si el problema persiste, intenta cerrar sesión y volver a entrar, 
                 o contacta al administrador del sistema.
               </p>

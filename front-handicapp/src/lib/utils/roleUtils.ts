@@ -3,23 +3,17 @@ import { logger } from '@/lib/utils/logger';
  * Utility functions for role-based redirections
  */
 
-export type UserRole = 'admin' | 'establecimiento' | 'capataz' | 'veterinario' | 'empleado' | 'propietario';
+export type UserRole = 'admin' | 'establecimiento' | 'propietario';
 
 export const ROLE_ID_TO_ROLE_KEY: Record<number, UserRole> = {
   1: 'admin',
-  2: 'establecimiento', 
-  3: 'capataz',
-  4: 'veterinario',
-  5: 'empleado',
+  2: 'establecimiento',
   6: 'propietario'
 };
 
 export const ROLE_DASHBOARD_ROUTES: Record<UserRole, string> = {
   admin: '/admin',
   establecimiento: '/establecimiento',
-  capataz: '/capataz', 
-  veterinario: '/veterinario',
-  empleado: '/empleado',
   propietario: '/propietario'
 };
 

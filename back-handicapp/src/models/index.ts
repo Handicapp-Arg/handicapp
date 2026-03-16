@@ -1,16 +1,9 @@
 // src/models/index.ts
-// -----------------------------------------------------------------------------
-// HandicApp API - Registro de modelos y asociaciones
-// -----------------------------------------------------------------------------
-
 import { DataTypes, Sequelize } from "sequelize";
 import { logger } from '../utils/logger';
 
-// Importar todos los modelos
 import { User } from "./User";
 import { Role } from "./roles";
-import { Departamento } from "./Departamento";
-import { Puesto } from "./Puesto";
 import { Establecimiento } from "./Establecimiento";
 import { Caballo } from "./Caballo";
 import { MembresiaUsuarioEstablecimiento } from "./MembresiaUsuarioEstablecimiento";
@@ -25,13 +18,9 @@ import { Auditoria } from "./Auditoria";
 import { Notificacion } from "./Notificacion";
 import { PushSubscription } from "./PushSubscription";
 import { EstadoUsuario } from "./enums";
-import { Producto, Categoria, Proveedor, Movimiento } from "./inventario";
 import { EstablecimientoResena } from "./EstablecimientoResena";
-import { WebContact } from "./WebContact";
 
-// Función para inicializar modelos
 export function initializeModels(sequelize: Sequelize) {
-  // Inicializamos los modelos
   Role.init({
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     clave: { type: DataTypes.STRING(50), allowNull: false, unique: true },
@@ -39,72 +28,26 @@ export function initializeModels(sequelize: Sequelize) {
     creado_el: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
   }, { sequelize, tableName: "roles", timestamps: false });
 
-  Departamento.init({
-    id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-    nombre: { type: DataTypes.STRING(100), allowNull: false, unique: true },
-    descripcion: { type: DataTypes.TEXT, allowNull: true },
-    activo: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
-    creado_el: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
-    actualizado_el: { type: DataTypes.DATE, allowNull: true },
-  }, { sequelize, tableName: "departamentos", timestamps: false });
-
-  Puesto.init({
-    id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-    nombre: { type: DataTypes.STRING(100), allowNull: false },
-    descripcion: { type: DataTypes.TEXT, allowNull: true },
-    departamento_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: { model: 'departamentos', key: 'id' }
-    },
-    activo: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
-    creado_el: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
-    actualizado_el: { type: DataTypes.DATE, allowNull: true },
-  }, { sequelize, tableName: "puestos", timestamps: false });
-
   User.init(
     {
-      id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true,
-      },
+      id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
       email: {
         type: DataTypes.STRING(150),
         allowNull: false,
         unique: true,
-        validate: {
-          isEmail: true,
-          len: [5, 150],
-        },
+        validate: { isEmail: true, len: [5, 150] },
         set(value: string) {
-          if (value) {
-            this.setDataValue("email", value.trim().toLowerCase());
-          }
+          if (value) this.setDataValue("email", value.trim().toLowerCase());
         },
       },
-      hash_contrasena: {
-        type: DataTypes.STRING(255),
-        allowNull: false,
-      },
-      rol_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        validate: { min: 1 },
-      },
+      hash_contrasena: { type: DataTypes.STRING(255), allowNull: false },
+      rol_id: { type: DataTypes.INTEGER, allowNull: false, validate: { min: 1 } },
       establecimiento_id: {
         type: DataTypes.INTEGER,
         allowNull: true,
-        references: {
-          model: 'establecimientos',
-          key: 'id'
-        }
+        references: { model: 'establecimientos', key: 'id' }
       },
-      verificado: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false,
-        defaultValue: false,
-      },
+      verificado: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
       estado_usuario: {
         type: DataTypes.ENUM(...Object.values(EstadoUsuario)),
         allowNull: false,
@@ -113,73 +56,34 @@ export function initializeModels(sequelize: Sequelize) {
       nombre: {
         type: DataTypes.STRING(80),
         allowNull: false,
-        set(value: string) {
-          this.setDataValue("nombre", value?.trim());
-        },
+        set(value: string) { this.setDataValue("nombre", value?.trim()); },
         validate: { len: [1, 80] },
       },
       apellido: {
         type: DataTypes.STRING(80),
         allowNull: false,
-        set(value: string) {
-          this.setDataValue("apellido", value?.trim());
-        },
+        set(value: string) { this.setDataValue("apellido", value?.trim()); },
         validate: { len: [1, 80] },
       },
       telefono: {
         type: DataTypes.STRING(40),
         allowNull: true,
-        set(value: string | null) {
-          this.setDataValue("telefono", value?.trim() || null);
-        },
+        set(value: string | null) { this.setDataValue("telefono", value?.trim() || null); },
       },
       documento: {
         type: DataTypes.STRING(50),
         allowNull: true,
-        set(value: string | null) {
-          this.setDataValue("documento", value?.trim() || null);
-        },
-      },
-      departamento_id: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-        references: {
-          model: 'departamentos',
-          key: 'id'
-        }
-      },
-      puesto_id: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-        references: {
-          model: 'puestos',
-          key: 'id'
-        }
+        set(value: string | null) { this.setDataValue("documento", value?.trim() || null); },
       },
       ubicacion: {
         type: DataTypes.STRING(150),
         allowNull: true,
-        set(value: string | null) {
-          this.setDataValue("ubicacion", value?.trim() || null);
-        },
+        set(value: string | null) { this.setDataValue("ubicacion", value?.trim() || null); },
       },
-      avatar_url: {
-        type: DataTypes.STRING(512),
-        allowNull: true,
-      },
-      creado_el: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: DataTypes.NOW,
-      },
-      actualizado_el: {
-        type: DataTypes.DATE,
-        allowNull: true,
-      },
-      ultimo_acceso_el: {
-        type: DataTypes.DATE,
-        allowNull: true,
-      },
+      avatar_url: { type: DataTypes.STRING(512), allowNull: true },
+      creado_el: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+      actualizado_el: { type: DataTypes.DATE, allowNull: true },
+      ultimo_acceso_el: { type: DataTypes.DATE, allowNull: true },
     },
     {
       sequelize,
@@ -187,21 +91,13 @@ export function initializeModels(sequelize: Sequelize) {
       timestamps: false,
       modelName: "User",
       underscored: false,
-      defaultScope: {
-        attributes: {
-          exclude: ["hash_contrasena"],
-        },
-      },
+      defaultScope: { attributes: { exclude: ["hash_contrasena"] } },
       scopes: {
         withSecret: {},
         byEmail(email: string) {
-          return {
-            where: { email: email.trim().toLowerCase() },
-          };
+          return { where: { email: email.trim().toLowerCase() } };
         },
-        activos: {
-          where: { estado_usuario: EstadoUsuario.active },
-        },
+        activos: { where: { estado_usuario: EstadoUsuario.active } },
       },
       indexes: [
         { fields: ["email"], unique: true, name: "ux_usuarios_email" },
@@ -212,106 +108,45 @@ export function initializeModels(sequelize: Sequelize) {
     }
   );
 
-  // Definir hooks para User
   const HASH_ROUNDS = 12;
-
   async function maybeHash(instance: User) {
     const plain: string | undefined = (instance as User & { _plainPassword?: string })._plainPassword;
     if (plain && plain.length >= 8) {
       const bcrypt = require("bcrypt");
-      const salt = await bcrypt.genSalt(HASH_ROUNDS);
-      const hash = await bcrypt.hash(plain, salt);
-      instance.set("hash_contrasena", hash);
+      instance.set("hash_contrasena", await bcrypt.hash(plain, await bcrypt.genSalt(HASH_ROUNDS)));
       return;
     }
-
-    // Si alguien setea directamente `hash_contrasena` con algo que no parece bcrypt, lo protegemos.
     if (instance.changed("hash_contrasena")) {
       const current = instance.get("hash_contrasena");
       const looksHashed = typeof current === "string" && current.startsWith("$2b$");
       if (!looksHashed && typeof current === "string" && current.length >= 8) {
         const bcrypt = require("bcrypt");
-        const salt = await bcrypt.genSalt(HASH_ROUNDS);
-        const hash = await bcrypt.hash(current, salt);
-        instance.set("hash_contrasena", hash);
+        instance.set("hash_contrasena", await bcrypt.hash(current, await bcrypt.genSalt(HASH_ROUNDS)));
       }
     }
   }
-
   User.beforeCreate(async (u) => {
-    // saneamos nombre/apellido por si entran null/undefined
     u.nombre = (u.nombre || "").trim();
     u.apellido = (u.apellido || "").trim();
     await maybeHash(u);
   });
-
   User.beforeUpdate(async (u) => {
     await maybeHash(u);
     u.actualizado_el = new Date();
   });
 
-  // ===========================================
-  // INICIALIZACIÓN DE OTROS MODELOS
-  // ===========================================
-  
-  // Nota: Los modelos Establecimiento, Caballo, MembresiaUsuarioEstablecimiento, etc.
-  // ya están inicializados en sus propios archivos con sequelize.
-  // Aquí solo definimos las asociaciones entre ellos.
-
-  // Definir asociaciones
-  // ===========================================
-  // RELACIONES PRINCIPALES
-  // ===========================================
-  
-  // 1. Usuario ↔ Rol (muchos a uno)
+  // Associations
   User.belongsTo(Role, { foreignKey: "rol_id", as: "rol" });
   Role.hasMany(User, { foreignKey: "rol_id", as: "usuarios" });
 
-  // 1.5. Usuario ↔ Departamento (muchos a uno)
-  User.belongsTo(Departamento, { foreignKey: "departamento_id", as: "departamento" });
-  Departamento.hasMany(User, { foreignKey: "departamento_id", as: "usuarios" });
+  User.belongsTo(Establecimiento, { foreignKey: "establecimiento_id", as: "establecimiento" });
+  Establecimiento.hasMany(User, { foreignKey: "establecimiento_id", as: "usuarios" });
 
-  // 1.6. Usuario ↔ Puesto (muchos a uno)
-  User.belongsTo(Puesto, { foreignKey: "puesto_id", as: "puesto" });
-  Puesto.hasMany(User, { foreignKey: "puesto_id", as: "usuarios" });
-
-  // 1.7. Puesto ↔ Departamento (muchos a uno)
-  Puesto.belongsTo(Departamento, { foreignKey: "departamento_id", as: "departamento" });
-  Departamento.hasMany(Puesto, { foreignKey: "departamento_id", as: "puestos" });
-
-  // 2. Usuario ↔ Establecimiento (muchos a muchos via MembresiaUsuarioEstablecimiento)
-  // NOTA: Comentado temporalmente - se usará para sistema de membresías en producción
-  // User.belongsToMany(Establecimiento, {
-  //   through: MembresiaUsuarioEstablecimiento,
-  //   foreignKey: "usuario_id",
-  //   otherKey: "establecimiento_id",
-  //   as: "establecimientos"
-  // });
-  // Establecimiento.belongsToMany(User, {
-  //   through: MembresiaUsuarioEstablecimiento,
-  //   foreignKey: "establecimiento_id", 
-  //   otherKey: "usuario_id",
-  //   as: "usuarios_membresia"
-  // });
-
-  // Relación directa Usuario -> Establecimiento (establecimiento_id en usuarios)
-  // Esta es la relación activa actualmente
-  User.belongsTo(Establecimiento, {
-    foreignKey: "establecimiento_id",
-    as: "establecimiento"
-  });
-  Establecimiento.hasMany(User, {
-    foreignKey: "establecimiento_id",
-    as: "usuarios"
-  });
-
-  // 3. Relaciones directas de la tabla intermedia MembresiaUsuarioEstablecimiento
   MembresiaUsuarioEstablecimiento.belongsTo(User, { foreignKey: "usuario_id", as: "usuario" });
   MembresiaUsuarioEstablecimiento.belongsTo(Establecimiento, { foreignKey: "establecimiento_id", as: "establecimiento" });
   User.hasMany(MembresiaUsuarioEstablecimiento, { foreignKey: "usuario_id", as: "membresias" });
   Establecimiento.hasMany(MembresiaUsuarioEstablecimiento, { foreignKey: "establecimiento_id", as: "membresias" });
 
-  // 4. Usuario ↔ Caballo (muchos a muchos via PropietarioCaballo)
   User.belongsToMany(Caballo, {
     through: PropietarioCaballo,
     foreignKey: "propietario_usuario_id",
@@ -321,17 +156,15 @@ export function initializeModels(sequelize: Sequelize) {
   Caballo.belongsToMany(User, {
     through: PropietarioCaballo,
     foreignKey: "caballo_id",
-    otherKey: "propietario_usuario_id", 
+    otherKey: "propietario_usuario_id",
     as: "propietarios"
   });
 
-  // 5. Relaciones directas de PropietarioCaballo
   PropietarioCaballo.belongsTo(User, { foreignKey: "propietario_usuario_id", as: "propietario" });
   PropietarioCaballo.belongsTo(Caballo, { foreignKey: "caballo_id", as: "caballo" });
   User.hasMany(PropietarioCaballo, { foreignKey: "propietario_usuario_id", as: "propiedades_caballos" });
   Caballo.hasMany(PropietarioCaballo, { foreignKey: "caballo_id", as: "propiedades" });
 
-  // 6. Caballo ↔ Establecimiento (muchos a muchos via CaballoEstablecimiento)
   Caballo.belongsToMany(Establecimiento, {
     through: CaballoEstablecimiento,
     foreignKey: "caballo_id",
@@ -345,204 +178,103 @@ export function initializeModels(sequelize: Sequelize) {
     as: "caballos"
   });
 
-  // 7. Relaciones directas de CaballoEstablecimiento
   CaballoEstablecimiento.belongsTo(Caballo, { foreignKey: "caballo_id", as: "caballo" });
   CaballoEstablecimiento.belongsTo(Establecimiento, { foreignKey: "establecimiento_id", as: "establecimiento" });
   Caballo.hasMany(CaballoEstablecimiento, { foreignKey: "caballo_id", as: "asociaciones_establecimientos" });
   Establecimiento.hasMany(CaballoEstablecimiento, { foreignKey: "establecimiento_id", as: "asociaciones_caballos" });
 
-  // 8. Caballo ↔ Caballo (pedigrí - relaciones recursivas padre/madre)
   Caballo.belongsTo(Caballo, { foreignKey: "padre_id", as: "padre" });
   Caballo.belongsTo(Caballo, { foreignKey: "madre_id", as: "madre" });
   Caballo.hasMany(Caballo, { foreignKey: "padre_id", as: "hijos_como_padre" });
   Caballo.hasMany(Caballo, { foreignKey: "madre_id", as: "hijos_como_madre" });
 
-  // ===========================================
-  // RELACIONES DE EVENTOS Y TIPOS
-  // ===========================================
-
-  // 9. Evento ↔ Caballo (muchos a uno)
   Evento.belongsTo(Caballo, { foreignKey: "caballo_id", as: "caballo" });
   Caballo.hasMany(Evento, { foreignKey: "caballo_id", as: "eventos" });
 
-  // 10. Evento ↔ TipoEvento (muchos a uno)
   Evento.belongsTo(TipoEvento, { foreignKey: "tipo_evento_id", as: "tipo_evento" });
   TipoEvento.hasMany(Evento, { foreignKey: "tipo_evento_id", as: "eventos" });
 
-  // 11. Evento ↔ Usuario (creado_por y validado_por)
   Evento.belongsTo(User, { foreignKey: "creado_por_usuario_id", as: "creado_por" });
   Evento.belongsTo(User, { foreignKey: "validado_por_usuario_id", as: "validado_por" });
   User.hasMany(Evento, { foreignKey: "creado_por_usuario_id", as: "eventos_creados" });
   User.hasMany(Evento, { foreignKey: "validado_por_usuario_id", as: "eventos_validados" });
 
-  // 12. Evento ↔ Establecimiento (muchos a uno - opcional)
   Evento.belongsTo(Establecimiento, { foreignKey: "establecimiento_id", as: "establecimiento" });
   Establecimiento.hasMany(Evento, { foreignKey: "establecimiento_id", as: "eventos" });
 
-  // ===========================================
-  // RELACIONES DE TAREAS
-  // ===========================================
-
-  // 13. Tarea ↔ Establecimiento (muchos a uno)
   Tarea.belongsTo(Establecimiento, { foreignKey: "establecimiento_id", as: "establecimiento" });
   Establecimiento.hasMany(Tarea, { foreignKey: "establecimiento_id", as: "tareas" });
 
-  // 14. Tarea ↔ Caballo (muchos a uno - opcional)
   Tarea.belongsTo(Caballo, { foreignKey: "caballo_id", as: "caballo" });
   Caballo.hasMany(Tarea, { foreignKey: "caballo_id", as: "tareas" });
 
-  // 15. Tarea ↔ Usuario (asignado_a y creado_por)
   Tarea.belongsTo(User, { foreignKey: "asignado_a_usuario_id", as: "asignado_a" });
   Tarea.belongsTo(User, { foreignKey: "creado_por_usuario_id", as: "creado_por" });
   User.hasMany(Tarea, { foreignKey: "asignado_a_usuario_id", as: "tareas_asignadas" });
   User.hasMany(Tarea, { foreignKey: "creado_por_usuario_id", as: "tareas_creadas" });
 
-  // ===========================================
-  // RELACIONES DE ADJUNTOS Y QR
-  // ===========================================
-
-  // 16. Adjunto ↔ Caballo (muchos a uno - opcional)
   Adjunto.belongsTo(Caballo, { foreignKey: "caballo_id", as: "caballo" });
   Caballo.hasMany(Adjunto, { foreignKey: "caballo_id", as: "adjuntos" });
 
-  // 17. Adjunto ↔ Evento (muchos a uno - opcional)
   Adjunto.belongsTo(Evento, { foreignKey: "evento_id", as: "evento" });
   Evento.hasMany(Adjunto, { foreignKey: "evento_id", as: "adjuntos" });
 
-  // 18. Adjunto ↔ Usuario (subido_por)
   Adjunto.belongsTo(User, { foreignKey: "subido_por_usuario_id", as: "subido_por" });
   User.hasMany(Adjunto, { foreignKey: "subido_por_usuario_id", as: "adjuntos_subidos" });
 
-  // 19. CodigoQR ↔ Caballo (muchos a uno)
   CodigoQR.belongsTo(Caballo, { foreignKey: "caballo_id", as: "caballo" });
   Caballo.hasMany(CodigoQR, { foreignKey: "caballo_id", as: "codigos_qr" });
 
-  // 20. CodigoQR ↔ Usuario (creado_por)
   CodigoQR.belongsTo(User, { foreignKey: "creado_por_usuario_id", as: "creado_por" });
   User.hasMany(CodigoQR, { foreignKey: "creado_por_usuario_id", as: "codigos_qr_creados" });
 
-  // ===========================================
-  // RELACIONES DE AUDITORÍA
-  // ===========================================
-
-  // 21. Auditoria ↔ Usuario (muchos a uno)
   Auditoria.belongsTo(User, { foreignKey: "actor_usuario_id", as: "actor_usuario" });
   User.hasMany(Auditoria, { foreignKey: "actor_usuario_id", as: "auditorias" });
 
-  // 22. Auditoria - Relación polimórfica (entidad_tipo, entidad_id)
-  // Nota: Las relaciones polimórficas se manejan a nivel de aplicación, no con FK de Sequelize
-
-  // ===========================================
-  // RELACIONES DE NOTIFICACIONES
-  // ===========================================
-
-  // 23. Notificacion ↔ Usuario (muchos a uno)
   Notificacion.belongsTo(User, { foreignKey: "usuario_id", as: "usuario" });
   User.hasMany(Notificacion, { foreignKey: "usuario_id", as: "notificaciones" });
 
-  // 24. Notificacion ↔ Evento (muchos a uno - opcional)
   Notificacion.belongsTo(Evento, { foreignKey: "evento_id", as: "evento" });
   Evento.hasMany(Notificacion, { foreignKey: "evento_id", as: "notificaciones" });
 
-  // 25. Notificacion ↔ Tarea (muchos a uno - opcional)
   Notificacion.belongsTo(Tarea, { foreignKey: "tarea_id", as: "tarea" });
   Tarea.hasMany(Notificacion, { foreignKey: "tarea_id", as: "notificaciones" });
 
-  // ===========================================
-  // RELACIONES DE PUSH SUBSCRIPTIONS
-  // ===========================================
-
-  // 26. PushSubscription ↔ Usuario (muchos a uno)
   PushSubscription.belongsTo(User, { foreignKey: "user_id", as: "user" });
   User.hasMany(PushSubscription, { foreignKey: "user_id", as: "push_subscriptions" });
 
-  // ===========================================
-  // RELACIONES DE INVENTARIO
-  // ===========================================
-
-  // 27. Producto ↔ Categoria (muchos a uno)
-  Producto.belongsTo(Categoria, { foreignKey: 'categoria_id', as: 'categoria' });
-  Categoria.hasMany(Producto, { foreignKey: 'categoria_id', as: 'productos' });
-
-  // 28. Producto ↔ Proveedor (muchos a uno)
-  Producto.belongsTo(Proveedor, { foreignKey: 'proveedor_id', as: 'proveedor' });
-  Proveedor.hasMany(Producto, { foreignKey: 'proveedor_id', as: 'productos' });
-
-  // 29. Producto ↔ Establecimiento (muchos a uno)
-  Producto.belongsTo(Establecimiento, { foreignKey: 'establecimiento_id', as: 'establecimiento' });
-  Establecimiento.hasMany(Producto, { foreignKey: 'establecimiento_id', as: 'productos' });
-
-  // 30. Movimiento ↔ Producto (muchos a uno)
-  Movimiento.belongsTo(Producto, { foreignKey: 'producto_id', as: 'producto' });
-  Producto.hasMany(Movimiento, { foreignKey: 'producto_id', as: 'movimientos' });
-
-  // 31. Movimiento ↔ Usuario (muchos a uno)
-  Movimiento.belongsTo(User, { foreignKey: 'usuario_id', as: 'usuario' });
-  User.hasMany(Movimiento, { foreignKey: 'usuario_id', as: 'movimientos_inventario' });
-
-  // 32. EstablecimientoResena ↔ Establecimiento (muchos a uno)
   EstablecimientoResena.belongsTo(Establecimiento, { foreignKey: 'establecimiento_id', as: 'establecimiento' });
   Establecimiento.hasMany(EstablecimientoResena, { foreignKey: 'establecimiento_id', as: 'resenas' });
 
-  // 33. EstablecimientoResena ↔ User (muchos a uno)
   EstablecimientoResena.belongsTo(User, { foreignKey: 'usuario_id', as: 'usuario' });
   User.hasMany(EstablecimientoResena, { foreignKey: 'usuario_id', as: 'resenas' });
 
-  // 34. EstablecimientoResena ↔ User (respondido_por)
   EstablecimientoResena.belongsTo(User, { foreignKey: 'respondido_por_usuario_id', as: 'respondido_por' });
   User.hasMany(EstablecimientoResena, { foreignKey: 'respondido_por_usuario_id', as: 'respuestas_resenas' });
 
-  // Relaciones configuradas (solo en modo debug)
   if (process.env['NODE_ENV'] === 'development' && process.env['DEBUG_MODELS'] === 'true') {
-    logger.debug('Model relations initialized (34 associations)');
+    logger.debug('Model associations initialized');
   }
 }
 
-// Registrar modelos en Sequelize
 const db = {
-  // Modelos principales
   User,
   Role,
   Establecimiento,
   Caballo,
-  
-  // Tablas de relación muchos a muchos
   MembresiaUsuarioEstablecimiento,
   PropietarioCaballo,
   CaballoEstablecimiento,
-  
-  // Eventos y tipos
   Evento,
   TipoEvento,
-  
-  // Tareas y gestión
   Tarea,
-  
-  // Adjuntos y QR
   Adjunto,
   CodigoQR,
-  
-  // Sistema de auditoría y notificaciones
   Auditoria,
   Notificacion,
   PushSubscription,
-  
-  // Inventario
-  Producto,
-  Categoria,
-  Proveedor,
-  Movimiento,
-  
-  // Reseñas
   EstablecimientoResena,
-  
-  // Departamentos y Puestos
-  Departamento,
-  Puesto,
-  
-  // Enums para uso en servicios
   EstadoUsuario,
-  WebContact,
 };
 
 export { db };

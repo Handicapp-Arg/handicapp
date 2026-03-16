@@ -91,7 +91,7 @@ export class EventoService {
           });
           const ids = caballosDelPropietario.map((p: any) => p.caballo_id);
           where.caballo_id = { [Op.in]: ids.length > 0 ? ids : [-1] };
-        } else if (['establecimiento', 'capataz', 'empleado', 'veterinario'].includes(userRole)) {
+        } else if (['establecimiento'].includes(userRole)) {
           const usuario = await User.findByPk(usuarioId, { attributes: ['establecimiento_id'] });
           const estId = (usuario as any)?.establecimiento_id;
           const orConditions: any[] = [{ creado_por_usuario_id: usuarioId }];
@@ -319,7 +319,7 @@ export class EventoService {
           if (!esPropietario) {
             return { success: false, error: 'Sin acceso a este evento' };
           }
-        } else if (['establecimiento', 'capataz', 'empleado', 'veterinario'].includes(userRole)) {
+        } else if (['establecimiento'].includes(userRole)) {
           const usuario = await User.findByPk(usuarioId, { attributes: ['establecimiento_id'] });
           const esCreador = (evento as any).creado_por_usuario_id === usuarioId;
           const mismoEstablecimiento =

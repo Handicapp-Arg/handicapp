@@ -1,6 +1,7 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import { AdjuntoController } from '../controllers/adjuntoController';
 import { requireAuth } from '../middleware/auth';
+import { requirePermission } from '../middleware/authorization';
 import { uploader } from '../controllers/uploadController';
 
 const router: ExpressRouter = Router();
@@ -28,7 +29,7 @@ router.get('/:id/download', requireAuth, AdjuntoController.download);
 router.post(
   '/upload',
   requireAuth,
-  // TODO: Agregar middleware de autorización para roles específicos
+  requirePermission('horses:write'),
   uploader.single('file'),
   AdjuntoController.upload
 );
@@ -36,12 +37,12 @@ router.post(
 /**
  * @route   DELETE /api/v1/adjuntos/:id
  * @desc    Eliminar un adjunto (soft delete)
- * @access  Private (requiere autenticación + rol staff)
+ * @access  Private (requiere autenticación + horses:write)
  */
 router.delete(
   '/:id',
   requireAuth,
-  // TODO: Agregar middleware de autorización para rol staff
+  requirePermission('horses:write'),
   AdjuntoController.delete
 );
 

@@ -7,7 +7,7 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useNotifications } from '@/lib/hooks/useNotifications';
-import { Notificacion } from '@/lib/services/notificacionService';
+import { Notificacion } from '@/lib/services/notificationService';
 
 interface NotificationContextType {
   // Estado

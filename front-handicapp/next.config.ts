@@ -25,6 +25,10 @@ const nextConfig: NextConfig = {
         pathname: '/dh2m9ychv/**',
       },
       {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
         protocol: 'http',
         hostname: 'localhost',
         port: '3001',
@@ -61,7 +65,6 @@ const nextConfig: NextConfig = {
       '@radix-ui/react-tabs',
       '@radix-ui/react-avatar',
       '@radix-ui/react-slot',
-      'react-chartjs-2',
       'date-fns',
     ],
   },
@@ -82,18 +85,6 @@ const nextConfig: NextConfig = {
               chunks: 'all',
               test: /node_modules/,
               priority: 20,
-            },
-            lib: {
-              test: /[\\/]node_modules[\\/](leaflet|react-leaflet|chart\.js|react-chartjs-2)[\\/]/,
-              name: 'lib',
-              chunks: 'async',
-              priority: 30,
-            },
-            reports: {
-              test: /[\\/]node_modules[\\/](jspdf|jspdf-autotable|xlsx)[\\/]/,
-              name: 'reports',
-              chunks: 'async',
-              priority: 40,
             },
             sentry: {
               test: /[\\/]node_modules[\\/](@sentry)[\\/]/,

@@ -23,7 +23,7 @@ export function ErrorFallback({
 }: ErrorFallbackProps) {
   if (compact) {
     return (
-      <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+      <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-md">
         <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-red-900">{title}</p>
@@ -34,7 +34,7 @@ export function ErrorFallback({
         {resetError && (
           <button
             onClick={resetError}
-            className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+            className="p-2 text-red-600 hover:bg-red-100 rounded-md "
             title="Reintentar"
           >
             <RefreshCcw className="w-4 h-4" />
@@ -54,7 +54,7 @@ export function ErrorFallback({
       <p className="text-gray-600 mb-4 max-w-md">{message}</p>
       
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg max-w-lg w-full">
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md max-w-lg w-full">
           <p className="text-sm text-red-700 font-mono break-words">
             {error.message}
           </p>
@@ -64,7 +64,7 @@ export function ErrorFallback({
       {resetError && (
         <button
           onClick={resetError}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-700 "
         >
           <RefreshCcw className="w-4 h-4" />
           Intentar nuevamente
@@ -86,7 +86,7 @@ export function LoadingErrorFallback({ onRetry }: { onRetry?: () => void }) {
         {onRetry && (
           <button
             onClick={onRetry}
-            className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+            className="text-gray-700 hover:text-gray-900 font-medium text-sm"
           >
             Reintentar
           </button>

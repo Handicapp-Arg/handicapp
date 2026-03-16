@@ -39,7 +39,7 @@ export interface LoginResponse {
 // Constantes
 const STORAGE_KEYS = {
   ACCESS_TOKEN: 'handicapp_access_token',
-  USER_DATA: 'handicapp_user_data',
+  USER_DATA: 'app_user_data',
 } as const;
 
 const COOKIE_KEYS = {

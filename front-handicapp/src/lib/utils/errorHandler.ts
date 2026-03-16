@@ -82,14 +82,6 @@ const CONTEXT_ERROR_MESSAGES: Record<string, Record<string, string>> = {
     complete_failed: 'No se pudo completar la tarea',
     not_found: 'Tarea no encontrada',
   },
-  inventario: {
-    create_failed: 'No se pudo crear el producto',
-    update_failed: 'No se pudo actualizar el producto',
-    delete_failed: 'No se pudo eliminar el producto',
-    not_found: 'Producto no encontrado',
-    insufficient_stock: 'Stock insuficiente para la operación',
-    invalid_quantity: 'Cantidad inválida',
-  },
   file: {
     upload_failed: 'Error al subir el archivo',
     download_failed: 'Error al descargar el archivo',
@@ -133,12 +125,6 @@ const SUCCESS_MESSAGES: Record<string, Record<string, string>> = {
     deleted: 'Tarea eliminada exitosamente',
     assigned: 'Tarea asignada exitosamente',
     completed: 'Tarea completada exitosamente',
-  },
-  inventario: {
-    created: 'Producto creado exitosamente',
-    updated: 'Producto actualizado exitosamente',
-    deleted: 'Producto eliminado exitosamente',
-    movement_created: 'Movimiento de inventario registrado exitosamente',
   },
   file: {
     uploaded: 'Archivo subido exitosamente',
@@ -246,15 +232,6 @@ export function showError(error: any, context?: string, action?: string) {
     duration: 5000,
     position: 'top-right',
   });
-  
-  // Log para debugging
-  console.error('❌ Error:', {
-    context,
-    action,
-    message,
-    parsedError,
-    originalError: error,
-  });
 }
 
 /**
@@ -267,9 +244,6 @@ export function showSuccess(context: string, action: string, customMessage?: str
     duration: 3000,
     position: 'top-right',
   });
-  
-  // Log para debugging
-  console.log('✅ Éxito:', { context, action, message });
 }
 
 /**
@@ -281,8 +255,6 @@ export function showWarning(message: string) {
     position: 'top-right',
     icon: '⚠️',
   });
-  
-  console.warn('⚠️ Advertencia:', message);
 }
 
 /**

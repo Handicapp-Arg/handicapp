@@ -3,22 +3,19 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useAuthNew } from '@/lib/hooks/useAuthNew';
 import { useCaballos, useEliminarCaballo } from '@/lib/hooks';
-import { type Caballo } from '@/lib/services/caballoService';
+import { type Caballo } from '@/lib/services/horseService';
 // ...existing code...
 import { usePermissions } from '@/lib/hooks/usePermissions';
 import toast from 'react-hot-toast';
-import { PlusIcon, MagnifyingGlassIcon, PencilIcon, EyeIcon, TrashIcon, ArrowDownTrayIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, MagnifyingGlassIcon, PencilIcon, EyeIcon, TrashIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
 import { logger } from '@/lib/utils/logger';
 import CaballoForm from './CaballoForm';
 import CaballoCardModern from './CaballoCardModern';
-import { CaballosGridSkeleton } from './CaballoCardSkeleton';
-import { generarReporteCaballosPDF, exportarCaballosExcel } from '@/lib/services/reporteService';
 
 export function CaballoList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const [selectedEstado, setSelectedEstado] = useState('all');
   const searchRef = useRef<number | NodeJS.Timeout | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState<number>(9);
@@ -50,13 +47,8 @@ export function CaballoList() {
     let list = data?.data?.caballos || data?.caballos || [];
     list = Array.isArray(list) ? list : [];
     
-    // Filtrar por estado si no es 'all'
-    if (selectedEstado && selectedEstado !== 'all') {
-      list = list.filter((c: Caballo) => c.estado_global === selectedEstado);
-    }
-    
     return list;
-  }, [response, selectedEstado]);
+  }, [response]);
 
   const totalPages = useMemo(() => {
     if (!response) return 1;
@@ -114,9 +106,9 @@ export function CaballoList() {
     const rolePath = userRole || 'propietario'; // Fallback a propietario
     
     try {
-      router.push(`/${rolePath}/caballos/${caballo.id}`);
+      router.push(`/${rolePath}/horses/${caballo.id}`);
     } catch {
-      window.location.href = `/${rolePath}/caballos/${caballo.id}`;
+      window.location.href = `/${rolePath}/horses/${caballo.id}`;
     }
   }, [router, getUserRole]);
 
@@ -143,7 +135,7 @@ export function CaballoList() {
               refetch();
               toast.success(`${caballo.nombre} eliminado correctamente`);
             } catch (error) {
-              console.error('Error deleting caballo:', error);
+              logger.error('Error deleting caballo:', error);
               toast.error('Error al eliminar el caballo');
             }
           }}
@@ -151,7 +143,7 @@ export function CaballoList() {
           Eliminar
         </button>
         <button
-          className="px-3 py-1 bg-slate-100 text-slate-700 text-xs rounded-md font-medium"
+          className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-md font-medium"
           onClick={() => toast.dismiss(t.id)}
         >
           Cancelar
@@ -159,28 +151,6 @@ export function CaballoList() {
       </span>
     ), { duration: 6000 });
   }, [deleteCaballoMutation, refetch]);
-
-  // Exportar reportes
-  const handleExportPDF = useCallback(async () => {
-    try {
-      await generarReporteCaballosPDF(caballos, {
-        titulo: 'Reporte de Caballos',
-        subtitulo: getUserRole() === 'propietario' ? 'Mi Haras' : 'Gestión de Equinos',
-      });
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast.error('Error al generar el reporte PDF');
-    }
-  }, [caballos, getUserRole]);
-
-  const handleExportExcel = useCallback(() => {
-    try {
-      exportarCaballosExcel(caballos);
-    } catch (error) {
-      console.error('Error generating Excel:', error);
-      toast.error('Error al generar el archivo Excel');
-    }
-  }, [caballos]);
 
   // Helper to compute page numbers for pagination display (max window)
   const getPageNumbers = useMemo(() => () => {
@@ -206,82 +176,45 @@ export function CaballoList() {
 
   // helper functions removed (not used in this file)
 
-  if (loading && caballos.length === 0) {
-    return (
-      <div className="p-6 sm:p-8">
-        <div className="mb-8">
-          <div className="h-10 w-64 bg-slate-200 rounded-lg animate-pulse mb-4"></div>
-          <div className="h-6 w-96 bg-slate-100 rounded animate-pulse"></div>
-        </div>
-        <CaballosGridSkeleton count={6} />
-      </div>
-    );
-  }
+  if (loading && caballos.length === 0) return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      {[1,2,3,4,5,6].map(i => <div key={i} className="h-52 bg-gray-100 rounded-md animate-pulse" />)}
+    </div>
+  );
 
   return (
-    <div className="max-w-[1600px] mx-auto pb-12">
-      {/* Header mejorado: Estilo Airbnb (Filtros horizantales) */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
-        
-        {/* Chips de Categoría */}
-        <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0 scrollbar-hide">
-            {[
-                { id: 'all', label: 'Todos' },
-                { id: 'activo', label: 'Activos' },
-                { id: 'en venta', label: 'En venta' },
-                { id: 'inactivo', label: 'Inactivos' }
-            ].map((estado) => (
-                <button
-                    key={estado.id}
-                    onClick={() => setSelectedEstado(estado.id)}
-                    className={`
-                        whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all
-                        ${selectedEstado === estado.id 
-                            ? 'bg-slate-900 text-white shadow-md' 
-                            : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-400 hover:bg-slate-50'
-                        }
-                    `}
-                >
-                    {estado.label}
-                </button>
-            ))}
+    <div className="pb-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Mis Caballos</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Gestioná y monitoreá el estado de tus caballos.</p>
         </div>
-
-        {/* Acciones */}
         <div className="flex items-center gap-3 w-full sm:w-auto">
-             {/* Search Compacto */}
-             <div className="relative flex-1 sm:flex-initial sm:w-64">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <MagnifyingGlassIcon className="h-4 w-4 text-slate-400" />
-                </div>
-                <input
-                    type="text"
-                    placeholder="Buscar caballo..."
-                    value={searchTerm}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    className="
-                        block w-full pl-10 pr-3 py-2 rounded-full border border-slate-200 
-                        leading-5 bg-white placeholder-slate-400 focus:outline-none 
-                        focus:placeholder-slate-300 focus:ring-1 focus:ring-slate-900 focus:border-slate-900 
-                        sm:text-sm transition-all shadow-sm hover:shadow-md
-                    "
-                />
-             </div>
-
-             {canManageHorses() && (
-                 <button
-                    onClick={handleCreateCaballo}
-                    className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 border border-slate-200 rounded-full shadow-sm text-sm font-semibold text-white bg-slate-900 hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 transition-all duration-300"
-                 >
-                    <PlusIcon className="-ml-1 mr-1 h-5 w-5" aria-hidden="true" />
-                    Agregar
-                 </button>
-             )}
+          <div className="relative flex-1 sm:flex-none">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Buscar caballo..."
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-9 pr-3 py-2.5 w-full sm:w-56 border border-gray-300 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-gray-300"
+            />
+          </div>
+          {canManageHorses() && (
+            <button
+              onClick={handleCreateCaballo}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 hover:bg-gray-700 text-white rounded-md text-sm font-medium"
+            >
+              <PlusIcon className="h-4 w-4" />
+              Agregar caballo
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Grid de Cards - Estilo Airbnb */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-x-6 gap-y-10">
+      {/* Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
             {caballos.map((caballo) => (
               <div key={caballo.id} className="w-full">
                 <CaballoCardModern
@@ -296,54 +229,37 @@ export function CaballoList() {
             {/* Card "Agregar Nuevo" si no hay resultados o al final como opción */}
             {caballos.length === 0 && !loading && (
                 <div className="col-span-full py-20 text-center">
-                    <div className="mx-auto h-24 w-24 text-slate-200 mb-4">
+                    <div className="mx-auto h-24 w-24 text-gray-200 mb-4">
                         <MagnifyingGlassIcon className="w-full h-full opacity-20" />
                     </div>
-                    <h3 className="mt-2 text-sm font-medium text-slate-900">No se encontraron caballos</h3>
-                    <p className="mt-1 text-sm text-slate-500">Prueba ajustando los filtros de búsqueda.</p>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">No se encontraron caballos</h3>
+                    <p className="mt-1 text-sm text-gray-500">Prueba ajustando los filtros de búsqueda.</p>
                 </div>
             )}
       </div>
 
 
 
-      {/* Paginación Minimalista */}
+      {/* Paginación */}
       {totalPages > 1 && (
-        <div className="mt-12 flex justify-center pb-8">
-          <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm bg-white" aria-label="Pagination">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1 || loading}
-              className="relative inline-flex items-center rounded-l-md px-3 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <span className="sr-only">Anterior</span>
-              <ChevronLeftIcon className="h-5 w-5" aria-hidden="true" />
-            </button>
-            
-             {getPageNumbers().map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setCurrentPage(p)}
-                  aria-current={p === currentPage ? 'page' : undefined}
-                  className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold focus:z-20 focus:outline-offset-0 ${
-                    p === currentPage
-                      ? 'z-10 bg-slate-900 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900'
-                      : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
-
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages || loading}
-              className="relative inline-flex items-center rounded-r-md px-3 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <span className="sr-only">Siguiente</span>
-              <ChevronRightIcon className="h-5 w-5" aria-hidden="true" />
-            </button>
-          </nav>
+        <div className="mt-8 flex justify-center gap-3">
+          <button
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1 || loading}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 border border-gray-200 rounded-md text-sm text-gray-600 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <ChevronLeftIcon className="h-4 w-4" />
+            Anterior
+          </button>
+          <span className="flex items-center text-sm text-gray-500">{currentPage} / {totalPages}</span>
+          <button
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages || loading}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 border border-gray-200 rounded-md text-sm text-gray-600 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Siguiente
+            <ChevronRightIcon className="h-4 w-4" />
+          </button>
         </div>
       )}
 

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { PushNotificationService } from '../services/pushNotificationService';
 import { requireAuth } from '../middleware/auth';
+import { requireRole } from '../middleware/authorization';
 import { body, validationResult } from 'express-validator';
 import { logger } from '../utils/logger';
 
@@ -178,6 +179,7 @@ router.post('/test', async (req: Request, res: Response) => {
  */
 router.post(
   '/send',
+  requireRole('admin'),
   [
     body('userIds').isArray().withMessage('userIds debe ser un array'),
     body('userIds.*').isInt().withMessage('Cada userId debe ser un número entero'),
@@ -190,25 +192,14 @@ router.post(
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        success: false, 
+      return res.status(400).json({
+        success: false,
         message: 'Datos de notificación inválidos',
-        errors: errors.array() 
+        errors: errors.array()
       });
     }
 
     try {
-      // Verificar permisos (solo roles con permisos pueden enviar)
-      const userRole = req.user!.rol?.clave;
-      const allowedRoles = ['admin', 'veterinario', 'cuidador'];
-      
-      if (!userRole || !allowedRoles.includes(userRole)) {
-        return res.status(403).json({ 
-          success: false, 
-          message: 'No tienes permisos para enviar notificaciones' 
-        });
-      }
-
       const { userIds, title, body, icon, badge, data } = req.body;
 
       const result = await PushNotificationService.sendToUsers(userIds, {
@@ -251,6 +242,7 @@ router.post(
  */
 router.post(
   '/send-to-establecimiento',
+  requireRole('admin'),
   [
     body('establecimientoId').isInt().withMessage('establecimientoId debe ser un número entero'),
     body('title').isString().notEmpty().withMessage('title es requerido'),
@@ -262,25 +254,14 @@ router.post(
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        success: false, 
+      return res.status(400).json({
+        success: false,
         message: 'Datos de notificación inválidos',
-        errors: errors.array() 
+        errors: errors.array()
       });
     }
 
     try {
-      // Verificar permisos
-      const userRole = req.user!.rol?.clave;
-      const allowedRoles = ['admin', 'veterinario', 'cuidador'];
-      
-      if (!userRole || !allowedRoles.includes(userRole)) {
-        return res.status(403).json({ 
-          success: false, 
-          message: 'No tienes permisos para enviar notificaciones' 
-        });
-      }
-
       const { establecimientoId, title, body, icon, badge, data } = req.body;
 
       const result = await PushNotificationService.sendToEstablecimiento(

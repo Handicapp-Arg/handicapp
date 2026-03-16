@@ -2,6 +2,13 @@ import { Sequelize } from 'sequelize';
 import { config } from './config';
 import { logger } from '../utils/logger';
 
+// Suppress Sequelize's verbose console.warn about class fields and unknown attributes
+const _origWarn = console.warn.bind(console);
+console.warn = (msg: unknown, ...rest: unknown[]) => {
+  if (typeof msg === 'string' && msg.startsWith('(sequelize)')) return;
+  _origWarn(msg, ...rest);
+};
+
 // Configuración optimizada de la base de datos
 const dbConfig = {
   development: {

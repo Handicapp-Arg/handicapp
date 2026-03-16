@@ -1,6 +1,6 @@
 /**
  * Base Email Template
- * Template HTML base para todos los emails de HandicApp
+ * Template HTML base para todos los emails de App
  */
 
 // URL del logo desde Cloudinary - Logo blanco para header oscuro
@@ -16,7 +16,7 @@ export interface EmailTemplateParams {
 }
 
 /**
- * Generar template HTML de email con branding de HandicApp
+ * Generar template HTML de email con branding de App
  */
 export function renderBrandedEmail({
   title,
@@ -39,7 +39,7 @@ export function renderBrandedEmail({
   const btnText = '#ffffff';       // blanco
 
   // Usar logo de Cloudinary con Content-ID para mejor compatibilidad
-  const logoTag = `<img src="${LOGO_URL}" alt="HandicApp" width="64" height="64" style="display:block;margin:0 auto;width:64px;height:64px;object-fit:contain;border:0;" />`;
+  const logoTag = `<img src="${LOGO_URL}" alt="App" width="64" height="64" style="display:block;margin:0 auto;width:64px;height:64px;object-fit:contain;border:0;" />`;
 
   // Botón de acción (solo si hay actionText y actionUrl)
   const actionButton = actionText && actionUrl ? `
@@ -111,10 +111,10 @@ export function renderBrandedEmail({
         <tr>
           <td style="padding:20px 24px;text-align:center;border-top:1px solid ${border};background:${bg};">
             <p style="margin:0 0 8px;color:${muted};font-size:13px;line-height:1.5;">
-              ${footer || 'Equipo HandicApp - Gestión Hípica Profesional'}
+              ${footer || 'Equipo App - Gestión Hípica Profesional'}
             </p>
             <p style="margin:0;color:${muted};font-size:12px;opacity:0.7;">
-              © ${new Date().getFullYear()} HandicApp. Todos los derechos reservados.
+              © ${new Date().getFullYear()} App. Todos los derechos reservados.
             </p>
           </td>
         </tr>

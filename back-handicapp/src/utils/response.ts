@@ -1,4 +1,15 @@
-import { Response } from 'express';
+import { Response, Request } from 'express';
+
+const MAX_LIMIT = 500;
+const DEFAULT_LIMIT = 20;
+const DEFAULT_PAGE = 1;
+
+export function parsePagination(req: Request): { page: number; limit: number } {
+  const page = Math.max(1, parseInt(req.query['page'] as string) || DEFAULT_PAGE);
+  const rawLimit = parseInt(req.query['limit'] as string) || DEFAULT_LIMIT;
+  const limit = Math.min(Math.max(1, rawLimit), MAX_LIMIT);
+  return { page, limit };
+}
 import type { ApiResponse as ApiResponseType } from '../types';
 
 // Class-based helper (existing usage in some places)

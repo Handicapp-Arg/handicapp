@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { tareaService, type Tarea } from '@/lib/services/tareaService';
+import { tareaService, type Tarea } from '@/lib/services/taskService';
 import { 
   EstadoTarea, 
   VistaKanban, 
@@ -67,7 +67,7 @@ export function useTasks(options: UseTasksOptions = {}): UseTasksReturn {
       setLoading(true);
       setError(null);
       
-      const response = await tareaService.getAll({ page: 1, limit: 500 });
+      const response = await tareaService.getAll({ page: 1, limit: 100 });
       const tareasData = response.data;
       
       // El backend ya devuelve los estados en español

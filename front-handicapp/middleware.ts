@@ -16,9 +16,6 @@ const PUBLIC_ROUTES = [
 // Rutas protegidas que requieren autenticación
 const PROTECTED_ROUTES = [
   '/admin',
-  '/veterinario', 
-  '/capataz',
-  '/empleado',
   '/propietario',
   '/establecimiento',
 ];
@@ -79,9 +76,6 @@ function getDashboardUrl(roleId?: string): string {
   const roleRoutes: Record<string, string> = {
     '1': '/admin',
     '2': '/establecimiento',
-    '3': '/capataz', 
-    '4': '/veterinario',
-    '5': '/empleado',
     '6': '/propietario',
   };
   

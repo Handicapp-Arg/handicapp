@@ -22,6 +22,7 @@ import {
 } from '../models/enums';
 import { logger } from '../utils/logger';
 import { sequelize } from '../config/database';
+import { NotificacionService, TipoNotificacion } from './notificacionService';
 
 interface CreateCaballoData {
   nombre: string;
@@ -81,6 +82,27 @@ interface CaballoFilters {
   sexo?: string;
   usuarioId: number;
   userRole?: string;
+}
+
+async function notifyEstablecimiento(establecimientoId: number, caballoNombre: string, caballoId: number): Promise<void> {
+  try {
+    const responsable = await User.findOne({
+      where: { establecimiento_id: establecimientoId, estado_usuario: 'active' },
+      attributes: ['id'],
+    });
+    if (!responsable) return;
+    await NotificacionService.crear({
+      usuario_id: responsable.id,
+      tipo: TipoNotificacion.CABALLO_SOLICITUD_ASOCIACION,
+      titulo: 'Nuevo caballo asignado',
+      mensaje: `El caballo "${caballoNombre}" fue asignado a tu establecimiento.`,
+      importante: false,
+      url: `/establecimiento/horses`,
+      payload_json: { caballo_id: caballoId, establecimiento_id: establecimientoId },
+    });
+  } catch {
+    // Non-critical — never block horse operations for notification failures
+  }
 }
 
 export class CaballoService {
@@ -155,6 +177,11 @@ export class CaballoService {
       });
 
       logger.info(`Caballo creado: ${result.id} - ${result.nombre}`);
+
+      // Notificar al establecimiento sobre el nuevo caballo
+      if (data.establecimiento_id) {
+        notifyEstablecimiento(data.establecimiento_id, (result as any).nombre || 'Caballo', (result as any).id).catch(() => {});
+      }
 
       return {
         success: true,
@@ -327,27 +354,6 @@ export class CaballoService {
               // No tiene establecimientos, no ve ningún caballo
               whereConditions.id = -1; // Forzar resultado vacío
             }
-          }
-        } else if (['capataz', 'veterinario', 'empleado'].includes(userRole || '')) {
-          // CAPATAZ, VETERINARIO, EMPLEADO: Ven caballos de su establecimiento
-          const membresias = await MembresiaUsuarioEstablecimiento.findAll({
-            where: {
-              usuario_id: usuarioId,
-              estado_membresia: EstadoMembresia.active
-            }
-          });
-          
-          const establecimientosIds = membresias.map(m => m.establecimiento_id);
-          
-          if (establecimientosIds.length > 0) {
-            includeOptions[1].where = {
-              establecimiento_id: { [Op.in]: establecimientosIds },
-              estado_asociacion: EstadoAsociacionCE.accepted
-            };
-            includeOptions[1].required = true;
-          } else {
-            // No tiene establecimientos, no ve ningún caballo
-            whereConditions.id = -1; // Forzar resultado vacío
           }
         } else {
           // Otros roles: solo ven caballos de los que son propietarios
@@ -522,8 +528,8 @@ export class CaballoService {
             error: 'Este caballo no está en tus establecimientos',
           };
         }
-      } else if (userRole !== 'admin' && userRole !== 'veterinario') {
-        // Propietarios, empleados, capataces: Solo sus caballos
+      } else if (userRole !== 'admin') {
+        // Propietarios, empleados: Solo sus caballos
         // Verificar propiedad antes del query principal
         const esPropietario = await PropietarioCaballo.findOne({
           where: {
@@ -1249,6 +1255,9 @@ export class CaballoService {
         }]
       });
 
+      // Notificar al establecimiento sobre el caballo asignado
+      notifyEstablecimiento(nuevoEstablecimientoId, (caballoResult.data as any)?.nombre || 'Caballo', caballoId).catch(() => {});
+
       logger.info(`Caballo movido: ${caballoId} -> Establecimiento ${nuevoEstablecimientoId}`);
 
       return {
@@ -1337,6 +1346,84 @@ export class CaballoService {
         success: false,
         error: 'Error al obtener estadísticas',
       };
+    }
+  }
+
+  static async getSolicitudesPendientes(
+    usuarioId: number,
+    userRole: string
+  ): Promise<ServiceResponse<any[]>> {
+    try {
+      let solicitudes: any[] = [];
+
+      if (userRole === 'propietario') {
+        const misCaballos = await PropietarioCaballo.findAll({
+          where: { propietario_usuario_id: usuarioId, actual: true },
+          attributes: ['caballo_id'],
+        });
+
+        const caballoIds = misCaballos.map(pc => pc.caballo_id);
+
+        if (caballoIds.length > 0) {
+          const rows = await CaballoEstablecimiento.findAll({
+            where: { caballo_id: caballoIds, estado_asociacion: EstadoAsociacionCE.pending },
+            include: [
+              { model: Caballo, as: 'caballo', attributes: ['id', 'nombre', 'raza'] },
+              { model: Establecimiento, as: 'establecimiento', attributes: ['id', 'nombre', 'direccion_calle'] },
+            ],
+          });
+          // Solo mostrar solicitudes iniciadas por el establecimiento (no por el propietario)
+          solicitudes = rows.filter(s => {
+            const solicitanteId = s.get('solicitante_id') || (s as any).solicitante_id;
+            return solicitanteId !== usuarioId;
+          });
+        }
+
+      } else if (userRole === 'establecimiento') {
+        const misEstablecimientos = await MembresiaUsuarioEstablecimiento.findAll({
+          where: {
+            usuario_id: usuarioId,
+            rol_en_establecimiento: 'propietario',
+            estado_membresia: EstadoMembresia.active,
+          },
+          attributes: ['establecimiento_id'],
+        });
+
+        const establecimientoIds = misEstablecimientos.map(m => m.establecimiento_id);
+
+        if (establecimientoIds.length > 0) {
+          const rows = await CaballoEstablecimiento.findAll({
+            where: { establecimiento_id: establecimientoIds, estado_asociacion: EstadoAsociacionCE.pending },
+            include: [
+              { model: Caballo, as: 'caballo', attributes: ['id', 'nombre', 'raza'] },
+              { model: Establecimiento, as: 'establecimiento', attributes: ['id', 'nombre', 'direccion_calle'] },
+            ],
+          });
+
+          // Solo mostrar solicitudes iniciadas por el propietario
+          solicitudes = rows.filter(s => {
+            const solicitanteId = s.get('solicitante_id') || (s as any).solicitante_id;
+            return solicitanteId !== usuarioId;
+          });
+
+          // Enriquecer con info del propietario actual del caballo
+          for (const solicitud of solicitudes) {
+            const caballoId = solicitud.get('caballo_id') || (solicitud as any).caballo_id;
+            const propietario = await PropietarioCaballo.findOne({
+              where: { caballo_id: caballoId, actual: true },
+              include: [{ model: User, as: 'propietario', attributes: ['id', 'nombre', 'apellido', 'email'] }],
+            });
+            if (propietario && propietario.propietario) {
+              (solicitud as any).propietario = propietario.propietario;
+            }
+          }
+        }
+      }
+
+      return { success: true, data: solicitudes };
+    } catch (error: any) {
+      logger.error('Error obteniendo solicitudes pendientes', { error });
+      return { success: false, error: 'Error al obtener solicitudes pendientes' };
     }
   }
 }

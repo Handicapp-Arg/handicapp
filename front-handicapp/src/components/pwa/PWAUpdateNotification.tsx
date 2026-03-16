@@ -55,23 +55,23 @@ export function PWAUpdateNotification() {
 
   return (
     <div className="fixed top-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50 animate-in slide-in-from-top-5">
-      <div className="bg-blue-600 text-white rounded-lg shadow-lg p-4">
+      <div className="bg-gray-900 text-white rounded-md p-4">
         <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+          <div className="flex-shrink-0 w-10 h-10 bg-white/10 rounded-md flex items-center justify-center">
             <RefreshCw className="w-5 h-5" />
           </div>
-          
+
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold mb-1">
               Nueva versión disponible
             </h3>
-            <p className="text-sm text-blue-100 mb-3">
-              Hay una actualización de HandicApp lista para instalar
+            <p className="text-sm text-gray-300 mb-3">
+              Hay una actualización de App lista para instalar
             </p>
             
             <button
               onClick={handleUpdate}
-              className="w-full px-4 py-2 bg-white text-blue-600 text-sm font-medium rounded-md hover:bg-blue-50 transition-colors"
+              className="w-full px-4 py-2 bg-white text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 border border-gray-200"
             >
               Actualizar ahora
             </button>

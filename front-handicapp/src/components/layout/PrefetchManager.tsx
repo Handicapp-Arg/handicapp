@@ -15,34 +15,19 @@ import { useRouter, usePathname } from 'next/navigation';
 
 const PRIORITY_ROUTES: Record<string, string[]> = {
   propietario: [
-    '/propietario/caballos',
-    '/propietario/notificaciones',
-    '/propietario/eventos',
+    '/propietario/horses',
+    '/propietario/notifications',
+    '/propietario/events',
   ],
   admin: [
     '/admin/users',
-    '/admin/establecimientos',
-    '/admin/caballos',
+    '/admin/stables',
+    '/admin/horses',
   ],
   establecimiento: [
-    '/establecimiento/caballos',
-    '/establecimiento/eventos',
+    '/establecimiento/horses',
+    '/establecimiento/events',
     '/establecimiento/personal',
-  ],
-  veterinario: [
-    '/veterinario/caballos',
-    '/veterinario/consultas',
-    '/veterinario/tratamientos',
-  ],
-  capataz: [
-    '/capataz/caballos',
-    '/capataz/eventos',
-    '/capataz/tareas',
-  ],
-  empleado: [
-    '/empleado/caballos',
-    '/empleado/eventos',
-    '/empleado/tareas',
   ],
 };
 
@@ -50,26 +35,13 @@ export function PrefetchManager({ role }: { role?: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const prefetchedRef = useRef<Set<string>>(new Set());
-  const isIdleRef = useRef(false);
 
   useEffect(() => {
     if (!role || !PRIORITY_ROUTES[role]) return;
 
-    // Esperar a que la página esté completamente cargada
-    const handleLoad = () => {
-      // Esperar 3 segundos adicionales para asegurar que el usuario no está navegando activamente
-      setTimeout(() => {
-        isIdleRef.current = true;
-        prefetchRoutes();
-      }, 3000);
-    };
+    const routes = PRIORITY_ROUTES[role];
 
     const prefetchRoutes = () => {
-      if (!isIdleRef.current) return;
-      
-      const routes = PRIORITY_ROUTES[role] || [];
-      
-      // Prefetch solo rutas que no están ya cargadas y no son la ruta actual
       routes.forEach(route => {
         if (!prefetchedRef.current.has(route) && pathname !== route) {
           router.prefetch(route);
@@ -78,37 +50,15 @@ export function PrefetchManager({ role }: { role?: string }) {
       });
     };
 
-    // Si la página ya está cargada, ejecutar inmediatamente
-    if (document.readyState === 'complete') {
-      handleLoad();
+    // Prefetch as soon as the browser is idle — no artificial delays
+    if ('requestIdleCallback' in window) {
+      const id = requestIdleCallback(prefetchRoutes, { timeout: 1000 });
+      return () => cancelIdleCallback(id);
     } else {
-      window.addEventListener('load', handleLoad);
+      const id = setTimeout(prefetchRoutes, 100);
+      return () => clearTimeout(id);
     }
-
-    // Prefetch cuando el usuario está inactivo (idle)
-    let idleTimeout: NodeJS.Timeout;
-    const handleIdle = () => {
-      clearTimeout(idleTimeout);
-      idleTimeout = setTimeout(() => {
-        isIdleRef.current = true;
-        prefetchRoutes();
-      }, 2000); // 2 segundos de inactividad
-    };
-
-    // Detectar inactividad del usuario
-    const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
-    events.forEach(event => {
-      window.addEventListener(event, handleIdle, { passive: true });
-    });
-
-    return () => {
-      window.removeEventListener('load', handleLoad);
-      events.forEach(event => {
-        window.removeEventListener(event, handleIdle);
-      });
-      clearTimeout(idleTimeout);
-    };
   }, [role, router, pathname]);
 
-  return null; // No renderiza nada
+  return null;
 }

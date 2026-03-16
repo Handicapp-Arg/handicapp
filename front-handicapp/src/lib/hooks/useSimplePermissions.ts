@@ -7,9 +7,6 @@ import AuthManager, { type AuthState } from '../auth/AuthManager';
 const ROLE_MAPPING: Record<number, string> = {
   1: 'admin',
   2: 'establecimiento',
-  3: 'capataz',
-  4: 'veterinario',
-  5: 'empleado',
   6: 'propietario',
 };
 
@@ -43,9 +40,6 @@ export const useSimplePermissions = () => {
     isAuthLoading,
     isAdmin: userRole === 'admin',
     isEstablecimiento: userRole === 'establecimiento',
-    isVeterinario: userRole === 'veterinario',
-    isCapataz: userRole === 'capataz',
-    isEmpleado: userRole === 'empleado',
     isPropietario: userRole === 'propietario',
   };
 };

@@ -1,10 +1,9 @@
 import { Op } from 'sequelize';
 import { User } from '../models/User';
 import { Role } from '../models/roles';
-import { Departamento } from '../models/Departamento';
-import { Puesto } from '../models/Puesto';
 import { UpdateUserData, ServiceResponse } from '../types';
 import { NotFoundError, ConflictError } from '../utils/errors';
+import { logger } from '../utils/logger';
 
 interface PaginationQuery {
   page?: number;
@@ -55,16 +54,6 @@ export class UserService {
             as: 'rol',
             attributes: ['id', 'nombre', 'clave']
           },
-          {
-            model: Departamento,
-            as: 'departamento',
-            attributes: ['id', 'nombre']
-          },
-          {
-            model: Puesto,
-            as: 'puesto',
-            attributes: ['id', 'nombre']
-          }
         ],
         limit,
         offset,
@@ -82,7 +71,7 @@ export class UserService {
         },
       };
     } catch (error) {
-      console.error('❌ Error in UserService.getUsers:', error);
+      logger.error('Error in UserService.getUsers', { error });
       throw new Error('Failed to fetch users');
     }
   }
@@ -98,16 +87,6 @@ export class UserService {
             as: 'rol',
             attributes: ['id', 'nombre', 'clave']
           },
-          {
-            model: Departamento,
-            as: 'departamento',
-            attributes: ['id', 'nombre']
-          },
-          {
-            model: Puesto,
-            as: 'puesto',
-            attributes: ['id', 'nombre']
-          }
         ]
       });
 
@@ -215,10 +194,9 @@ export class UserService {
           throw new Error('No puedes eliminar tu propio usuario');
         }
 
-        // Verificar que el usuario a eliminar sea un empleado (capataz, veterinario, empleado)
-        const empleadoRoles = ['capataz', 'veterinario', 'empleado'];
-        if (!user.rol || !empleadoRoles.includes(user.rol.clave)) {
-          throw new Error('Solo puedes eliminar usuarios de tipo capataz, veterinario o empleado');
+        // Verificar que el usuario a eliminar no sea admin
+        if (!user.rol || user.rol.clave === 'admin') {
+          throw new Error('No puedes eliminar este usuario');
         }
 
         // Verificar que el empleado pertenezca al mismo establecimiento
@@ -276,8 +254,6 @@ export class UserService {
     pagination: PaginationQuery = {}
   ): Promise<ServiceResponse<{ users: User[]; total: number; totalPages: number }>> {
     try {
-      console.log('🔍 UserService.searchUsers called with:', { query, pagination });
-      
       const {
         page = 1,
         limit = 10,
@@ -286,8 +262,6 @@ export class UserService {
       } = pagination;
 
       const offset = (page - 1) * limit;
-
-      console.log('📊 Search parameters:', { query, page, limit, sortBy, sortOrder, offset });
 
       const { count, rows } = await User.findAndCountAll({
         where: {
@@ -308,8 +282,6 @@ export class UserService {
         order: [[sortBy, sortOrder]],
       });
 
-      console.log('✅ Search result:', { count, usersFound: rows.length });
-
       const totalPages = Math.ceil(count / limit);
 
       return {
@@ -321,7 +293,7 @@ export class UserService {
         },
       };
     } catch (error) {
-      console.error('❌ Error in UserService.searchUsers:', error);
+      logger.error('Error in UserService.searchUsers', { error });
       throw new Error('Failed to search users');
     }
   }

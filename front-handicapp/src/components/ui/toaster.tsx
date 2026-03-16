@@ -71,20 +71,20 @@ const defaultTitleByType: Record<ToastType, string> = {
 const iconByType: Record<ToastType, React.ReactNode> = {
   success: <CheckCircleIcon className="h-5 w-5 text-emerald-600" />,
   error: <ExclamationCircleIcon className="h-5 w-5 text-red-600" />,
-  info: <InformationCircleIcon className="h-5 w-5 text-blue-600" />,
+  info: <InformationCircleIcon className="h-5 w-5 text-gray-600" />,
   warning: <ExclamationCircleIcon className="h-5 w-5 text-amber-600" />,
 };
 
 const bgByType: Record<ToastType, string> = {
   success: 'bg-emerald-50 border-emerald-200',
   error: 'bg-red-50 border-red-200',
-  info: 'bg-blue-50 border-blue-200',
+  info: 'bg-gray-50 border-gray-200',
   warning: 'bg-amber-50 border-amber-200',
 };
 
 const ToastItem: React.FC<{ toast: InternalToast; onClose: () => void }> = ({ toast, onClose }) => {
   return (
-    <div className={`rounded-lg border ${bgByType[toast.type]} shadow-sm ring-1 ring-black/5`}> 
+    <div className={`rounded-md border ${bgByType[toast.type]} shadow-sm`}> 
       <div className="flex items-start gap-3 p-3">
         <div className="shrink-0 mt-0.5">{iconByType[toast.type]}</div>
         <div className="flex-1">

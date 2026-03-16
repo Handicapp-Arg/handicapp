@@ -1,0 +1,75 @@
+'use client';
+
+import React, { useMemo, useState } from 'react';
+import { SimpleRoleGuard } from '@/components/common/SimplePermissionGuard';
+import { PageShell } from '@/components/ui/page-shell';
+import dynamic from 'next/dynamic';
+const CalendarioEventos = dynamic(() => import('@/components/dashboard/CalendarioEventos').then(m => ({ default: m.CalendarioEventos })), {
+  loading: () => <div className="h-96 bg-gray-100 rounded-md animate-pulse" />,
+  ssr: false,
+});
+import { EventoForm } from '@/components/dashboard/EventoForm';
+import { useEventos } from '@/lib/hooks';
+import { Sparkles } from 'lucide-react';
+import type { Evento } from '@/lib/services/eventService';
+
+interface EventoWithTarea extends Evento {
+  originado_de_tarea_id?: number;
+}
+
+export default function PropietarioEventosPage() {
+  const { data: eventos = [], isLoading: loading, refetch } = useEventos({ page: 1, limit: 100 });
+  const [showForm, setShowForm] = useState(false);
+  const [selectedEvento, setSelectedEvento] = useState<EventoWithTarea | null>(null);
+
+  const eventosArray = useMemo(() => {
+    return Array.isArray(eventos) ? eventos : (eventos as { data?: EventoWithTarea[] })?.data || [];
+  }, [eventos]);
+
+  const autoGenerados = useMemo(() => {
+    return eventosArray.filter((e: EventoWithTarea) => e.originado_de_tarea_id).length;
+  }, [eventosArray]);
+
+  if (loading) return (
+    <div className="space-y-3">
+      {[1,2,3].map(i => <div key={i} className="h-16 bg-gray-100 rounded-md animate-pulse" />)}
+    </div>
+  );
+
+  const openCreate = () => { setSelectedEvento(null); setShowForm(true); };
+  const openEdit = (evento: EventoWithTarea) => { setSelectedEvento(evento); setShowForm(true); };
+  const closeForm = () => { setShowForm(false); setSelectedEvento(null); };
+
+  return (
+    <SimpleRoleGuard roles={['propietario']}>
+      <PageShell
+        title="Calendario de Eventos"
+        description="Historial completo de actividades de tus caballos"
+      >
+        {autoGenerados > 0 && (
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 border border-gray-200 rounded-md text-sm text-gray-600 mb-2">
+            <Sparkles className="w-4 h-4 flex-shrink-0" />
+            <span>
+              <span className="font-semibold">{autoGenerados}</span> actividades completadas automáticamente por el equipo
+            </span>
+          </div>
+        )}
+
+        <div className="bg-white rounded-md border border-gray-200 p-4 sm:p-6">
+          <CalendarioEventos
+            eventos={eventosArray}
+            onCreateEvento={openCreate}
+            onEventoClick={(evento) => openEdit(evento as EventoWithTarea)}
+          />
+        </div>
+
+        <EventoForm
+          isOpen={showForm}
+          onClose={closeForm}
+          evento={selectedEvento}
+          onSuccess={() => { closeForm(); refetch(); }}
+        />
+      </PageShell>
+    </SimpleRoleGuard>
+  );
+}

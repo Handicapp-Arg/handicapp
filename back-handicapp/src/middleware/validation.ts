@@ -422,7 +422,7 @@ export const establecimientoValidations = {
       .withMessage('ID de usuario es requerido y debe ser válido'),
     
     body('rolEnEstablecimiento')
-      .isIn(['propietario', 'veterinario', 'capataz', 'empleado'])
+      .isIn(['propietario'])
       .withMessage('Rol en establecimiento debe ser válido'),
     
     commonValidations.fechaOpcional('fechaInicio'),
@@ -595,11 +595,6 @@ export const eventoValidations = {
       .trim()
       .isLength({ max: 1000 })
       .withMessage('Descripción debe tener máximo 1000 caracteres'),
-    
-    body('veterinario_id')
-      .optional()
-      .isInt({ min: 1 })
-      .withMessage('ID de veterinario debe ser válido'),
     
     body('temperatura')
       .optional()

@@ -62,7 +62,7 @@ app.use(
     origin: (origin, callback) => {
       if (!origin) return callback(null, true); // Permitir Postman o llamadas sin origin
 
-      if (allowedOrigins.includes(origin) || config.nodeEnv === 'development') {
+      if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         logger.warn({ origin }, 'CORS bloqueado para origen no permitido');

@@ -2,9 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import Image from 'next/image';
 import AuthManager from '@/lib/auth/AuthManager';
-import { LOGOS } from '@/lib/constants/logos';
 
 /**
  * ProtectedRoute — guarda de rutas basado en AuthManager (sin llamada de red).
@@ -22,18 +20,12 @@ import { LOGOS } from '@/lib/constants/logos';
 const DASHBOARD_ROUTES: Record<string, string> = {
   admin: '/admin',
   establecimiento: '/establecimiento',
-  capataz: '/capataz',
-  veterinario: '/veterinario',
-  empleado: '/empleado',
   propietario: '/propietario',
 };
 
 const ROLE_MAPPING: Record<number, string> = {
   1: 'admin',
   2: 'establecimiento',
-  3: 'capataz',
-  4: 'veterinario',
-  5: 'empleado',
   6: 'propietario',
 };
 
@@ -50,26 +42,8 @@ function getUserRole(user: any): string | null {
 
 function LoadingScreen() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white">
-      <div className="text-center space-y-6">
-        <div className="relative">
-          <div className="absolute inset-0 animate-ping opacity-20">
-            <div className="w-24 h-24 mx-auto rounded-2xl bg-slate-950" />
-          </div>
-          <div className="relative bg-slate-950 w-24 h-24 rounded-2xl flex items-center justify-center mx-auto shadow-xl">
-            <Image
-              src={LOGOS.ICON_WHITE}
-              alt="HandicApp"
-              width={64}
-              height={64}
-              className="object-contain"
-            />
-          </div>
-        </div>
-        <div className="flex justify-center">
-          <div className="w-8 h-8 border-[3px] border-[#af936f] border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-700 rounded-full animate-spin" />
     </div>
   );
 }

@@ -20,7 +20,7 @@ export type Permission =
   // Permisos administrativos
   | 'admin:full_access' | 'admin:view_audit' | 'admin:manage_roles';
 
-export type UserRole = 'admin' | 'establecimiento' | 'propietario' | 'veterinario' | 'capataz' | 'empleado';
+export type UserRole = 'admin' | 'establecimiento' | 'propietario';
 
 const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   admin: [
@@ -39,7 +39,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   ],
   
   establecimiento: [
-    'users:read', 'users:write',  // ✅ Puede crear y gestionar usuarios (capataz, veterinario, empleado)
+    'users:read', 'users:write',
     'establishments:read', 'establishments:write',
     'establishments:manage_users', 'establishments:view_stats',
     'horses:read',  // ❌ SIN horses:write - establecimiento NO puede editar caballos
@@ -59,33 +59,6 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'tasks:read', 'tasks:write'
   ],
   
-  veterinario: [
-    'users:read',
-    'establishments:read',
-    'horses:read',  // ❌ SIN horses:write - veterinario NO puede editar datos básicos del caballo
-    'horses:view_medical', 'horses:edit_medical',  // ✅ Solo puede editar historial médico
-    'events:read', 'events:write', 'events:delete',
-    'events:create_medical',
-    'tasks:read', 'tasks:write',
-    'tasks:complete'
-  ],
-  
-  capataz: [
-    'users:read',
-    'establishments:read',
-    'horses:read',  // ❌ SIN horses:write - capataz NO puede editar datos del caballo
-    'events:read', 'events:write',
-    'tasks:read', 'tasks:write', 'tasks:delete',
-    'tasks:assign', 'tasks:complete', 'tasks:view_all'
-  ],
-  
-  empleado: [
-    'users:read',
-    'establishments:read',
-    'horses:read',
-    'events:read', 'events:write',  // ✅ Puede crear y ver eventos
-    'tasks:read', 'tasks:write', 'tasks:complete'  // ✅ Puede crear, ver y completar tareas
-  ]
 };
 
 /**
@@ -165,9 +138,6 @@ export function usePermissions() {
   // Helpers de roles específicos
   const isAdmin = getUserRole() === 'admin';
   const isEstablecimiento = getUserRole() === 'establecimiento';
-  const isVeterinario = getUserRole() === 'veterinario';
-  const isCapataz = getUserRole() === 'capataz';
-  const isEmpleado = getUserRole() === 'empleado';
   const isPropietario = getUserRole() === 'propietario';
 
   return {
@@ -188,9 +158,6 @@ export function usePermissions() {
     getUserRole,
     isAdmin,
     isEstablecimiento,
-    isVeterinario,
-    isCapataz,
-    isEmpleado,
     isPropietario,
     user
   };

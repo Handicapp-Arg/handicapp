@@ -3,8 +3,8 @@ import { ICON_BROWN } from '@/lib/constants/logos';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Handicapp - Gestión de Establecimientos',
-    short_name: 'Handicapp',
+    name: 'App - Gestión de Establecimientos',
+    short_name: 'App',
     description: 'Sistema de gestión integral para establecimientos',
     start_url: '/',
     display: 'standalone',
@@ -46,17 +46,10 @@ export default function manifest(): MetadataRoute.Manifest {
         icons: [{ src: ICON_BROWN, sizes: '192x192' }]
       },
       {
-        name: 'Inventario',
-        short_name: 'Inventario',
-        description: 'Gestionar inventario',
-        url: '/establecimiento/inventario',
-        icons: [{ src: ICON_BROWN, sizes: '192x192' }]
-      },
-      {
         name: 'Eventos',
         short_name: 'Eventos',
         description: 'Ver eventos',
-        url: '/establecimiento/eventos',
+        url: '/establecimiento/events',
         icons: [{ src: ICON_BROWN, sizes: '192x192' }]
       }
     ]

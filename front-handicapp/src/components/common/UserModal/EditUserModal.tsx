@@ -165,8 +165,8 @@ export function EditUserModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-            <Edit className="w-6 h-6" style={{ color: primaryColor }} />
+          <DialogTitle className="text-lg font-semibold flex items-center gap-2">
+            <Edit className="w-5 h-5 text-gray-700" />
             Editar Usuario - Administrador
           </DialogTitle>
           <p className="text-sm text-gray-500 mt-1">
@@ -176,7 +176,7 @@ export function EditUserModal({
         
         {/* Mensaje de error visible */}
         {error && (
-          <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
             <p className="text-sm text-red-800 flex items-center gap-2">
               <span className="text-lg">⚠️</span>
               {error}
@@ -186,7 +186,7 @@ export function EditUserModal({
         
         <div className="grid gap-6 py-4 px-6">
           {/* Estado y Verificación - Destacados */}
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-xl border-2 border-gray-200 shadow-sm">
+          <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
             <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
               <Shield className="w-4 h-4" />
               Estado de la Cuenta
@@ -197,7 +197,7 @@ export function EditUserModal({
                 <select
                   value={formData.estado_usuario}
                   onChange={(e) => setFormData({ ...formData, estado_usuario: e.target.value as any })}
-                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white font-medium transition-all ${
+                  className={`w-full px-4 py-2.5 border rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400 bg-white font-medium ${
                     formData.estado_usuario === 'active' 
                       ? 'border-green-300 text-green-700' 
                       : formData.estado_usuario === 'pending' || formData.estado_usuario === 'invited'
@@ -207,12 +207,12 @@ export function EditUserModal({
                       : 'border-red-300 text-red-700'
                   }`}
                 >
-                  <option value="active">✅ Activo - Acceso completo al sistema</option>
-                  <option value="pending">⏳ Pendiente - Esperando activación</option>
-                  <option value="invited">✉️ Invitado - Invitación enviada</option>
-                  <option value="suspended">⚠️ Suspendido - Cuenta suspendida temporalmente</option>
-                  <option value="disabled">🚫 Deshabilitado - Cuenta deshabilitada</option>
-                  <option value="deleted">🗑️ Eliminado - Marcado como eliminado</option>
+                  <option value="active">Activo - Acceso completo al sistema</option>
+                  <option value="pending">Pendiente - Esperando activación</option>
+                  <option value="invited">Invitado - Invitación enviada</option>
+                  <option value="suspended">Suspendido - Cuenta suspendida temporalmente</option>
+                  <option value="disabled">Deshabilitado - Cuenta deshabilitada</option>
+                  <option value="deleted">Eliminado - Marcado como eliminado</option>
                 </select>
                 <p className="text-xs text-gray-500 mt-2">
                   {formData.estado_usuario === 'active' && 'El usuario tiene acceso completo a todas sus funcionalidades asignadas.'}
@@ -225,12 +225,12 @@ export function EditUserModal({
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">Verificación de Email</label>
-                <label className="flex items-center gap-3 cursor-pointer bg-white p-4 rounded-lg border-2 border-gray-200 hover:border-blue-300 transition-all">
+                <label className="flex items-center gap-3 cursor-pointer bg-white p-4 rounded-md border border-gray-200 hover:border-gray-400">
                   <input
                     type="checkbox"
                     checked={formData.verificado}
                     onChange={(e) => setFormData({ ...formData, verificado: e.target.checked })}
-                    className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                    className="w-5 h-5 text-gray-700 rounded focus:ring-2 focus:ring-gray-300"
                   />
                   <div className="flex-1">
                     <span className="text-sm font-medium flex items-center gap-2">
@@ -267,7 +267,7 @@ export function EditUserModal({
                   type="text"
                   value={formData.nombre}
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  className="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400 text-base"
                   placeholder="Juan"
                   required
                 />
@@ -278,7 +278,7 @@ export function EditUserModal({
                   type="text"
                   value={formData.apellido}
                   onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
-                  className="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400 text-base"
                   placeholder="Pérez"
                   required
                 />
@@ -296,7 +296,7 @@ export function EditUserModal({
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400 text-base"
                   placeholder="juan.perez@email.com"
                   required
                 />
@@ -308,7 +308,7 @@ export function EditUserModal({
                     type="text"
                     value={formData.telefono}
                     onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                    className="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400 text-base"
                     placeholder="+54 9 11 1234-5678"
                   />
                 </div>
@@ -321,7 +321,7 @@ export function EditUserModal({
                     type="text"
                     value={formData.ubicacion}
                     onChange={(e) => setFormData({ ...formData, ubicacion: e.target.value })}
-                    className="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400 text-base"
                     placeholder="Buenos Aires, Argentina"
                   />
                 </div>
@@ -338,7 +338,7 @@ export function EditUserModal({
                 <select
                   value={formData.rol_id}
                   onChange={(e) => setFormData({ ...formData, rol_id: e.target.value })}
-                  className="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400 bg-white text-base"
                   required
                 >
                   <option value="">Selecciona un rol</option>
@@ -355,7 +355,7 @@ export function EditUserModal({
                   <select
                     value={formData.establecimiento_id}
                     onChange={(e) => setFormData({ ...formData, establecimiento_id: e.target.value })}
-                    className="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-gray-400 bg-white text-base"
                   >
                     <option value="">Sin establecimiento</option>
                     {establecimientos.map((est) => (
@@ -374,7 +374,7 @@ export function EditUserModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 border rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
             disabled={loading}
           >
             Cancelar
@@ -382,8 +382,7 @@ export function EditUserModal({
           <button
             type="button"
             onClick={handleSubmit}
-            className="px-6 py-2 text-white rounded-lg hover:opacity-90 transition-all font-medium"
-            style={{ backgroundColor: primaryColor }}
+            className="px-6 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-700 font-medium"
             disabled={loading}
           >
             {loading ? 'Guardando...' : 'Guardar Cambios'}

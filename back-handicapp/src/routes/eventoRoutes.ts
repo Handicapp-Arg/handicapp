@@ -23,7 +23,7 @@ router.use(auditAccess());
 
 router.post(
   '/',
-  requireRole('admin', 'establecimiento', 'veterinario', 'capataz', 'empleado'),
+  requireRole('admin', 'establecimiento', 'propietario'),
   eventoValidations.create,
   EventoController.create
 );

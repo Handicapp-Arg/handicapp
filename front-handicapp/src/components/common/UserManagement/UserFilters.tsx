@@ -8,19 +8,13 @@ export function UserFilters({
   setFiltroEstado,
   filtroRol,
   setFiltroRol,
-  filtroPuesto,
-  setFiltroPuesto,
-  filtroDepartamento,
-  setFiltroDepartamento,
   onClearFilters,
   itemsPerPage,
   onItemsPerPageChange,
 }: UserFiltersProps) {
-  
-  const hasActiveFilters = filtroEstado !== 'todos' || 
-                          (filtroRol && filtroRol !== 'todos') || 
-                          (filtroPuesto && filtroPuesto !== 'todos') ||
-                          (filtroDepartamento && filtroDepartamento !== 'todos');
+
+  const hasActiveFilters = filtroEstado !== 'todos' ||
+                          (filtroRol && filtroRol !== 'todos');
 
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">
@@ -31,7 +25,7 @@ export function UserFilters({
           <select
             value={itemsPerPage}
             onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
-            className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
+            className="border border-gray-300 rounded px-2 py-2 text-base focus:outline-none focus:ring-1 focus:ring-gray-300 focus:border-gray-400 bg-white"
           >
             <option value={5}>5</option>
             <option value={10}>10</option>
@@ -51,7 +45,7 @@ export function UserFilters({
             <select
               value={filtroEstado}
               onChange={(e) => setFiltroEstado(e.target.value)}
-              className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-gray-300 focus:border-transparent text-base bg-white"
             >
               <option value="todos">Todos los estados</option>
               <option value="activo">Activos</option>
@@ -66,55 +60,13 @@ export function UserFilters({
           </div>
         )}
 
-        {/* Filtro Departamento/Áreas - Solo Establecimiento */}
-        {config.showDepartamentoFilter && setFiltroDepartamento && (
-          <div className="flex-1 sm:flex-none sm:w-48">
-            <select
-              value={filtroDepartamento || 'todos'}
-              onChange={(e) => setFiltroDepartamento(e.target.value)}
-              className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
-            >
-              <option value="todos">Todas las áreas</option>
-              {config.departamentos && config.departamentos.length === 0 && (
-                <option disabled>Sin áreas definidas</option>
-              )}
-              {config.departamentos?.map((depto) => (
-                <option key={depto} value={depto}>
-                  {depto}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Filtro Puesto - Solo Establecimiento */}
-        {config.showPuestoFilter && setFiltroPuesto && (
-          <div className="flex-1 sm:flex-none sm:w-48">
-            <select
-              value={filtroPuesto || 'todos'}
-              onChange={(e) => setFiltroPuesto(e.target.value)}
-              className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
-            >
-              <option value="todos">Todos los puestos</option>
-              {config.puestos && config.puestos.length === 0 && (
-                <option disabled>Sin puestos definidos</option>
-              )}
-              {config.puestos?.map((puesto) => (
-                <option key={puesto} value={puesto}>
-                  {puesto}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
         {/* Filtro por Rol - Solo Admin */}
         {config.showRolFilter && config.roles && setFiltroRol && (
           <div className="flex-1 sm:flex-none sm:w-48">
             <select
               value={filtroRol || 'todos'}
               onChange={(e) => setFiltroRol(e.target.value)}
-              className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-gray-300 focus:border-transparent text-base bg-white"
             >
               <option value="todos">Todos los roles</option>
               {config.roles.map((rol) => (
@@ -130,7 +82,7 @@ export function UserFilters({
         {hasActiveFilters && onClearFilters && (
           <button
             onClick={onClearFilters}
-            className="inline-flex items-center justify-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium whitespace-nowrap"
+            className="inline-flex items-center justify-center px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md  text-sm font-medium whitespace-nowrap"
           >
             Limpiar filtros
           </button>

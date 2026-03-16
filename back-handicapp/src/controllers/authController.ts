@@ -64,7 +64,7 @@ export class AuthController {
           httpOnly: true,
           secure: true, // Siempre true en producción
           sameSite: 'none', // Necesario para cross-site (Vercel + Render)
-          maxAge: 60 * 60 * 1000, // 1 hora
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
           path: '/'
         });
 
@@ -116,7 +116,7 @@ export class AuthController {
           httpOnly: true,
           secure: true,
           sameSite: 'none',
-          maxAge: 60 * 60 * 1000, // 1 hora
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
           path: '/'
         });
 
@@ -131,6 +131,7 @@ export class AuthController {
 
         const responseData = {
           success: true,
+          accessToken: result.data.accessToken,
           expiresIn: result.data.expiresIn
         };
 

@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthNew } from '@/lib/hooks/useAuthNew';
-import { eventoService, EventoFormData } from '@/lib/services/eventoService';
-import { caballoService } from '@/lib/services/caballoService';
-import { establecimientoService } from '@/lib/services/establecimientoService';
+import { eventoService, EventoFormData } from '@/lib/services/eventService';
+import { caballoService } from '@/lib/services/horseService';
+import { establecimientoService } from '@/lib/services/stableService';
 import { usePermissions } from '@/lib/hooks/usePermissions';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ interface EventoFormProps {
   onSuccess: () => void;
 }
 
-// Claves de tipos que requieren permiso veterinario para crear
+// Claves de tipos que requieren permiso de administrador para crear
 const MEDICAL_CLAVES = new Set([
   'vacunacion', 'desparasitacion', 'examen_veterinario', 'tratamiento_medico',
   'cirugia', 'herrado', 'odontologia', 'radiografia', 'ecografia',
@@ -133,7 +133,7 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
 
   const loadCaballos = async () => {
     try {
-      const response = await caballoService.getAll() as any;
+      const response = await caballoService.getAll({ page: 1, limit: 100 }) as any;
       // Manejar estructura de respuesta anidada
       const caballosArray = Array.isArray(response) 
         ? response 
@@ -146,7 +146,7 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
 
   const loadEstablecimientos = async () => {
     try {
-      const response = await establecimientoService.getAll() as any;
+      const response = await establecimientoService.getAll({ page: 1, limit: 100 }) as any;
       // Manejar estructura de respuesta anidada
       const establecimientosArray = Array.isArray(response) 
         ? response 
@@ -217,14 +217,8 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
 
           {/* Notificación de permisos */}
           {!canCreateMedicalEvents() && (
-            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded">
-              <div className="flex items-center gap-2">
-                <span>ℹ️</span>
-                <span>
-                  <strong>Rol {getUserRole()}:</strong> Los eventos médicos (vacunación, revisiones veterinarias, etc.) 
-                  solo pueden ser creados por veterinarios.
-                </span>
-              </div>
+            <div className="bg-gray-50 border border-gray-200 text-gray-700 px-4 py-3 rounded-md text-sm">
+              <strong>Nota:</strong> Los eventos médicos solo pueden ser creados por administradores o establecimientos.
             </div>
           )}
 
@@ -240,7 +234,7 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
                 value={formData.titulo}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-transparent"
                 placeholder="Título del evento"
               />
             </div>
@@ -254,7 +248,7 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
                 value={formData.tipo_evento_id}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-transparent"
               >
                 <option value="">Seleccionar tipo</option>
                 {tiposEvento.map(tipo => (
@@ -276,7 +270,7 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
               value={formData.descripcion}
               onChange={handleChange}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-transparent"
               placeholder="Descripción del evento"
             />
           </div>
@@ -293,7 +287,7 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
                 value={formData.fecha_evento}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-transparent"
               />
             </div>
 
@@ -306,7 +300,7 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
                 name="hora_inicio"
                 value={formData.hora_inicio}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-transparent"
               />
             </div>
 
@@ -319,7 +313,7 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
                 name="hora_fin"
                 value={formData.hora_fin}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-transparent"
               />
             </div>
           </div>
@@ -334,7 +328,7 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
                 name="caballo_id"
                 value={formData.caballo_id || ''}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-transparent"
               >
                 <option value="">Seleccionar caballo</option>
                 {caballos.map(caballo => (
@@ -354,7 +348,7 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
                   name="establecimiento_id"
                   value={formData.establecimiento_id || ''}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-transparent"
                 >
                   <option value="">Seleccionar establecimiento</option>
                   {establecimientos.map(establecimiento => (
@@ -377,7 +371,7 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
                 name="estado"
                 value={formData.estado}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-transparent"
               >
                 <option value="programado">Programado</option>
                 <option value="en_progreso">En Progreso</option>
@@ -396,12 +390,12 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
                 value={formData.prioridad}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-transparent"
               >
-                <option value="baja">🟢 Baja</option>
-                <option value="media">🟡 Media</option>
-                <option value="alta">🟠 Alta</option>
-                <option value="critica">🔴 Crítica</option>
+                <option value="baja">Baja</option>
+                <option value="media">Media</option>
+                <option value="alta">Alta</option>
+                <option value="critica">Crítica</option>
               </select>
               <p className="text-xs text-gray-500 mt-1">
                 Selecciona el nivel de urgencia del evento
@@ -417,7 +411,7 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
                 name="ubicacion"
                 value={formData.ubicacion}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-transparent"
                 placeholder="Ubicación del evento"
               />
             </div>
@@ -431,7 +425,7 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
                 name="es_publico"
                 checked={formData.es_publico}
                 onChange={handleChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-gray-700 focus:ring-gray-300 border-gray-300 rounded"
               />
               <label className="ml-2 block text-sm text-gray-700">
                 Evento público
@@ -444,7 +438,7 @@ export function EventoForm({ isOpen, onClose, evento, onSuccess }: EventoFormPro
                 name="requiere_validacion"
                 checked={formData.requiere_validacion}
                 onChange={handleChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-gray-700 focus:ring-gray-300 border-gray-300 rounded"
               />
               <label className="ml-2 block text-sm text-gray-700">
                 Requiere validación veterinaria

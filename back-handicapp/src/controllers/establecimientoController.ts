@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { EstablecimientoService } from '../services/establecimientoService';
 import { logger } from '../utils/logger';
-import { ResponseHelper } from '../utils/response';
+import { ResponseHelper, parsePagination } from '../utils/response';
 import { AuthenticatedRequest } from '../types';
 import { uploadImageBufferToCloudinary } from '../utils/imageUpload';
 
@@ -13,8 +13,7 @@ export class EstablecimientoController {
    */
   static async getAll(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const page = parseInt(req.query['page'] as string) || 1;
-      const limit = parseInt(req.query['limit'] as string) || 10;
+      const { page, limit } = parsePagination(req);
       const search = req.query['search'] as string;
       const usuarioId = req.user!.id;
       const userRole = req.user!.rol?.clave;
@@ -234,8 +233,6 @@ export class EstablecimientoController {
       const userRole = req.user!.rol?.clave;
       const userEstablecimientoId = req.user!.establecimiento_id;
 
-      console.log('🔵 CONTROLLER - Datos recibidos:', JSON.stringify(updateData, null, 2));
-      console.log('🔵 CONTROLLER - Usuario:', { usuarioId, userRole, userEstablecimientoId });
 
       if (isNaN(establecimientoId)) {
         ResponseHelper.badRequest(res, 'ID de establecimiento inválido');
@@ -566,8 +563,7 @@ export class EstablecimientoController {
   static async getResenas(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const establecimientoId = parseInt(req.params['id'] || '0');
-      const page = parseInt(req.query['page'] as string) || 1;
-      const limit = parseInt(req.query['limit'] as string) || 10;
+      const { page, limit } = parsePagination(req);
       const ratingQuery = req.query['rating'];
 
       if (isNaN(establecimientoId)) {

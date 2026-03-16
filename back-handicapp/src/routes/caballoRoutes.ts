@@ -35,21 +35,10 @@ router.use(auditAccess());
  */
 router.post(
   '/',
-  requireRole('admin', 'establecimiento', 'propietario', 'veterinario'),
+  requireRole('admin', 'establecimiento', 'propietario'),
   uploader.single('foto'), // Aceptar imagen opcional del caballo (campo 'foto')
   caballoValidations.create,
   CaballoController.create
-);
-
-/**
- * @route   GET /api/v1/caballos/solicitudes-pendientes
- * @desc    Obtener solicitudes pendientes de asociación para el usuario actual
- * @access  Propietarios y Establecimientos
- */
-router.get(
-  '/solicitudes-pendientes',
-  requireAuth,
-  CaballoController.getSolicitudesPendientes
 );
 
 /**

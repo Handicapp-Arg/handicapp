@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthNew } from '@/lib/hooks/useAuthNew';
-import { caballoService, type Caballo, type CreateCaballoData } from '@/lib/services/caballoService';
-import { establecimientoService, type Establecimiento } from '@/lib/services/establecimientoService';
+import { caballoService, type Caballo, type CreateCaballoData } from '@/lib/services/horseService';
+import { establecimientoService, type Establecimiento } from '@/lib/services/stableService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,7 +34,11 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 import ApiClient from '@/lib/services/apiClient';
-import { ImageCropperDialog } from '@/components/ui/ImageCropperDialog';
+import dynamic from 'next/dynamic';
+const ImageCropperDialog = dynamic(() => import('@/components/ui/ImageCropperDialog').then(m => ({ default: m.ImageCropperDialog })), {
+  loading: () => null,
+  ssr: false,
+});
 
 interface CaballoFormProps {
   isOpen: boolean;
@@ -137,7 +141,7 @@ export function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoForm
 
   const loadEstablecimientos = async () => {
     try {
-      const response: any = await establecimientoService.getAll();
+      const response: any = await establecimientoService.getAll({ page: 1, limit: 100 });
       const data = response.data || response;
       setEstablecimientos(Array.isArray(data) ? data : data.items || []);
     } catch (error) { console.error(error); }
@@ -255,21 +259,21 @@ export function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoForm
         onCropComplete={handleCropComplete}
       />
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="p-0 gap-0 w-full h-full sm:h-[700px] sm:max-w-[900px] sm:rounded-xl bg-white border-none shadow-2xl flex flex-col overflow-hidden">
+      <DialogContent className="p-0 gap-0 w-full h-full sm:h-[700px] sm:max-w-[900px] sm:rounded-md bg-white border-none shadow-md flex flex-col overflow-hidden">
         
         {/* Header Fijo */}
-        <div className="shrink-0 px-6 py-5 border-b border-slate-100 bg-white z-10 flex items-start justify-between">
+        <div className="shrink-0 px-6 py-5 border-b border-gray-100 bg-white z-10 flex items-start justify-between">
             <div className="flex flex-col gap-1">
-                <DialogTitle className="text-xl font-bold text-slate-900">
+                <DialogTitle className="text-xl font-bold text-gray-900">
                     {caballo ? 'Editar Caballo' : 'Nuevo Caballo'}
                 </DialogTitle>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-gray-500">
                     {caballo ? `Modificando ficha de ${caballo.nombre}` : 'Complete los datos para el registro.'}
                 </p>
             </div>
             <button 
                 onClick={handleClose} 
-                className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all -mr-2 -mt-2"
+                className="p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700 rounded-md  -mr-2 -mt-2"
             >
                 <XMarkIcon className="w-5 h-5" />
             </button>
@@ -280,11 +284,11 @@ export function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoForm
                 
                 {/* Tabs Fijas */}
                 <div className="shrink-0 px-6 pt-4 pb-2 bg-white">
-                    <TabsList className="w-full justify-start h-auto p-1 bg-slate-100/80 rounded-lg grid grid-cols-4 gap-1">
-                        <TabsTrigger value="perfil" className="h-8 text-xs font-medium rounded-md data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all">Perfil</TabsTrigger>
-                        <TabsTrigger value="detalles" className="h-8 text-xs font-medium rounded-md data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all">Detalles</TabsTrigger>
-                        <TabsTrigger value="genealogia" className="h-8 text-xs font-medium rounded-md data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all">Linaje</TabsTrigger>
-                        <TabsTrigger value="legales" className="h-8 text-xs font-medium rounded-md data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all">Legales</TabsTrigger>
+                    <TabsList className="w-full justify-start h-auto p-1 bg-gray-100/80 rounded-md grid grid-cols-4 gap-1">
+                        <TabsTrigger value="perfil" className="h-10 text-xs font-medium rounded-md data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm">Perfil</TabsTrigger>
+                        <TabsTrigger value="detalles" className="h-10 text-xs font-medium rounded-md data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm">Detalles</TabsTrigger>
+                        <TabsTrigger value="genealogia" className="h-10 text-xs font-medium rounded-md data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm">Linaje</TabsTrigger>
+                        <TabsTrigger value="legales" className="h-10 text-xs font-medium rounded-md data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm">Legales</TabsTrigger>
                     </TabsList>
                 </div>
 
@@ -294,19 +298,19 @@ export function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoForm
                         <div className="flex flex-col sm:flex-row gap-6 pb-4">
                             {/* Columna Foto */}
                             <div className="w-full sm:w-[260px] shrink-0">
-                                <Label className="text-xs font-bold uppercase text-slate-400 mb-2 block tracking-wider">Foto</Label>
-                                <div className="group relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 border-2 border-dashed border-slate-200 hover:border-slate-300 transition-all cursor-pointer">
+                                <Label className="text-xs font-bold uppercase text-gray-400 mb-2 block tracking-wider">Foto</Label>
+                                <div className="group relative w-full aspect-[4/3] rounded-md overflow-hidden bg-gray-100 border-2 border-dashed border-gray-200 hover:border-gray-300  cursor-pointer">
                                     {/* ... image upload ... */}
                                     {previewUrl ? (
                                         <div className="relative w-full h-full">
                                             <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
-                                                <CameraIcon className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all" />
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20  flex items-center justify-center">
+                                                <CameraIcon className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 " />
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="flex flex-col items-center justify-center h-full text-slate-400 p-4">
-                                            <CameraIcon className="w-10 h-10 mb-2 text-slate-300" />
+                                        <div className="flex flex-col items-center justify-center h-full text-gray-400 p-4">
+                                            <CameraIcon className="w-10 h-10 mb-2 text-gray-300" />
                                             <span className="text-[10px] text-center font-medium">Subir Imagen</span>
                                         </div>
                                     )}
@@ -318,7 +322,7 @@ export function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoForm
                                     />
                                     {uploading && (
                                         <div className="absolute inset-0 bg-white/80 z-30 flex items-center justify-center">
-                                            <div className="w-6 h-6 border-2 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+                                            <div className="w-6 h-6 border-2 border-gray-200 border-t-gray-800 rounded-full animate-spin"></div>
                                         </div>
                                     )}
                                 </div>
@@ -327,12 +331,12 @@ export function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoForm
                             {/* Columna Inputs */}
                             <div className="flex-1 space-y-5">
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="nombre" className="text-slate-700">Nombre del Ejemplar <span className="text-red-500">*</span></Label>
+                                    <Label htmlFor="nombre" className="text-gray-700">Nombre del Ejemplar <span className="text-red-500">*</span></Label>
                                     <Input 
                                         id="nombre" 
                                         value={formData.nombre} 
                                         onChange={e => handleInputChange('nombre', e.target.value)}
-                                        className="h-11 bg-slate-50 border-slate-200 focus:bg-white focus:border-slate-900 transition-all text-lg font-medium"
+                                        className="h-11 bg-gray-50 border-gray-200 focus:bg-white focus:border-gray-900  text-lg font-medium"
                                         placeholder="Ej: Trueno"
                                     />
                                     {errors.nombre && <p className="text-xs text-red-500 font-medium">{errors.nombre}</p>}
@@ -340,12 +344,12 @@ export function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoForm
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1.5">
-                                        <Label className="text-slate-600">Sexo</Label>
+                                        <Label className="text-gray-600">Sexo</Label>
                                         <Select 
                                             value={formData.sexo} 
                                             onValueChange={val => handleInputChange('sexo', val)}
                                         >
-                                            <SelectTrigger className="h-10 bg-white border-slate-200"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                                            <SelectTrigger className="h-10 bg-white border-gray-200"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="macho">Macho</SelectItem>
                                                 <SelectItem value="hembra">Hembra</SelectItem>
@@ -353,25 +357,25 @@ export function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoForm
                                         </Select>
                                     </div>
                                     <div className="space-y-1.5">
-                                        <Label className="text-slate-600">F. Nacimiento</Label>
+                                        <Label className="text-gray-600">F. Nacimiento</Label>
                                         <Input 
                                             type="date" 
                                             value={formData.fecha_nacimiento || ''} 
                                             onChange={e => handleInputChange('fecha_nacimiento', e.target.value)}
-                                            className="h-10 bg-white border-slate-200 block"
+                                            className="h-10 bg-white border-gray-200 block"
                                         />
                                     </div>
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label className="text-slate-600">Establecimiento / Ubicación</Label>
+                                    <Label className="text-gray-600">Establecimiento / Ubicación</Label>
                                     <Select 
                                         value={formData.establecimiento_id?.toString()} 
                                         onValueChange={val => handleInputChange('establecimiento_id', parseInt(val))}
                                     >
-                                        <SelectTrigger className="h-10 bg-white border-slate-200 text-slate-700">
+                                        <SelectTrigger className="h-10 bg-white border-gray-200 text-gray-700">
                                             <div className="flex items-center gap-2 truncate">
-                                                <MapPinIcon className="w-4 h-4 text-slate-400" />
+                                                <MapPinIcon className="w-4 h-4 text-gray-400" />
                                                 <SelectValue placeholder="Sin asignar ubicación" />
                                             </div>
                                         </SelectTrigger>
@@ -389,7 +393,7 @@ export function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoForm
                     <TabsContent value="detalles" className="mt-0 h-full focus-visible:outline-none">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pb-4">
                             <div className="space-y-1.5">
-                                <Label className="text-slate-600">Raza</Label>
+                                <Label className="text-gray-600">Raza</Label>
                                 <Input 
                                     className="h-10 bg-white" placeholder="Ej: Polo Argentino"
                                     value={formData.raza || ''}
@@ -397,7 +401,7 @@ export function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoForm
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-slate-600">Pelaje</Label>
+                                <Label className="text-gray-600">Pelaje</Label>
                                 <Input 
                                     className="h-10 bg-white" placeholder="Ej: Alazán"
                                     value={formData.pelaje || ''}
@@ -405,7 +409,7 @@ export function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoForm
                                 />
                             </div>
                             <div className="space-y-1.5 sm:col-span-2">
-                                <Label className="text-slate-600">Disciplina Principal</Label>
+                                <Label className="text-gray-600">Disciplina Principal</Label>
                                 <Select value={formData.disciplina} onValueChange={val => handleInputChange('disciplina', val)}>
                                     <SelectTrigger className="h-10 bg-white"><SelectValue placeholder="Seleccionar actividad" /></SelectTrigger>
                                     <SelectContent>
@@ -418,17 +422,17 @@ export function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoForm
                                 </Select>
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-slate-600">Altura (metros)</Label>
-                                <Input 
-                                    type="number" step="0.01" className="h-10 bg-white" placeholder="1.60"
+                                <Label className="text-gray-600">Altura (metros)</Label>
+                                <Input
+                                    type="number" step="0.01" inputMode="decimal" className="h-10 bg-white" placeholder="1.60"
                                     value={formData.altura || ''}
                                     onChange={e => handleInputChange('altura', e.target.value)}
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-slate-600">Peso (kg)</Label>
-                                <Input 
-                                    type="number" className="h-10 bg-white" placeholder="450"
+                                <Label className="text-gray-600">Peso (kg)</Label>
+                                <Input
+                                    type="number" inputMode="numeric" className="h-10 bg-white" placeholder="450"
                                     value={formData.peso || ''}
                                     onChange={e => handleInputChange('peso', e.target.value)}
                                 />
@@ -437,50 +441,50 @@ export function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoForm
                     </TabsContent>
 
                     <TabsContent value="genealogia" className="mt-0 h-full focus-visible:outline-none">
-                        <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 mb-6 flex items-start gap-3">
-                             <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 text-blue-600 font-bold text-xs">i</div>
-                             <p className="text-sm text-blue-900/80 leading-relaxed">
+                        <div className="bg-gray-50 p-4 rounded-md border border-gray-200 mb-6 flex items-start gap-3">
+                             <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0 text-gray-600 font-bold text-xs">i</div>
+                             <p className="text-sm text-gray-700 leading-relaxed">
                                 Selecciona los padres para vincular automáticamente el linaje. Si los padres no están registrados, déjalo en blanco.
                             </p>
                         </div>
                         <div className="grid grid-cols-1 gap-6 pb-4">
                             <div className="space-y-2">
-                                <Label className="text-slate-700 font-medium">Padre (Semental)</Label>
+                                <Label className="text-gray-700 font-medium">Padre (Semental)</Label>
                                 <Select 
                                     value={formData.padre_id?.toString() || 'null'} 
                                     onValueChange={val => handleInputChange('padre_id', val === 'null' ? undefined : parseInt(val))}
                                 >
-                                    <SelectTrigger className="h-12 bg-white hover:bg-slate-50 transition-colors">
+                                    <SelectTrigger className="h-12 bg-white hover:bg-gray-50 ">
                                         <div className="flex items-center gap-2">
-                                            <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0"/>
-                                            <span className={formData.padre_id ? "text-slate-900" : "text-slate-500"}>
+                                            <div className="w-2 h-2 rounded-full bg-gray-400 shrink-0"/>
+                                            <span className={formData.padre_id ? "text-gray-900" : "text-gray-500"}>
                                                 {caballosPadres.find(c => c.id === formData.padre_id)?.nombre || 'Seleccionar Padre...'}
                                             </span>
                                         </div>
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="null" className="text-slate-500">-- No seleccionado --</SelectItem>
+                                        <SelectItem value="null" className="text-gray-500">-- No seleccionado --</SelectItem>
                                         {machos.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.nombre}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
 
                             <div className="space-y-2">
-                                <Label className="text-slate-700 font-medium">Madre (Yegua)</Label>
+                                <Label className="text-gray-700 font-medium">Madre (Yegua)</Label>
                                 <Select 
                                     value={formData.madre_id?.toString() || 'null'} 
                                     onValueChange={val => handleInputChange('madre_id', val === 'null' ? undefined : parseInt(val))}
                                 >
-                                    <SelectTrigger className="h-12 bg-white hover:bg-slate-50 transition-colors">
+                                    <SelectTrigger className="h-12 bg-white hover:bg-gray-50 ">
                                         <div className="flex items-center gap-2">
                                             <div className="w-2 h-2 rounded-full bg-pink-500 shrink-0"/>
-                                            <span className={formData.madre_id ? "text-slate-900" : "text-slate-500"}>
+                                            <span className={formData.madre_id ? "text-gray-900" : "text-gray-500"}>
                                             {caballosPadres.find(c => c.id === formData.madre_id)?.nombre || 'Seleccionar Madre...'}
                                             </span>
                                         </div>
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="null" className="text-slate-500">-- No seleccionada --</SelectItem>
+                                        <SelectItem value="null" className="text-gray-500">-- No seleccionada --</SelectItem>
                                         {hembras.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.nombre}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
@@ -491,11 +495,11 @@ export function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoForm
                     <TabsContent value="legales" className="mt-0 h-full focus-visible:outline-none">
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pb-4">
                             <div className="space-y-1.5 md:col-span-2">
-                                <Label className="text-slate-600">Número de Microchip</Label>
+                                <Label className="text-gray-600">Número de Microchip</Label>
                                 <div className="relative">
-                                    <IdentificationIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                                    <IdentificationIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                     <Input 
-                                        className="h-11 pl-10 bg-white font-mono text-slate-800" 
+                                        className="h-11 pl-10 bg-white font-mono text-gray-800" 
                                         placeholder="XXXXXXXXXXXXXXXXX"
                                         value={formData.microchip || ''}
                                         onChange={e => handleInputChange('microchip', e.target.value)}
@@ -504,38 +508,38 @@ export function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoForm
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label className="text-slate-600">Pasaporte</Label>
+                                <Label className="text-gray-600">Pasaporte</Label>
                                 <Input className="bg-white" value={formData.pasaporte || ''} onChange={e => handleInputChange('pasaporte', e.target.value)} />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-slate-600">Nº FEI</Label>
+                                <Label className="text-gray-600">Nº FEI</Label>
                                 <Input className="bg-white" value={formData.numero_fei || ''} onChange={e => handleInputChange('numero_fei', e.target.value)} />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-slate-600">SBA</Label>
+                                <Label className="text-gray-600">SBA</Label>
                                 <Input className="bg-white" value={formData.sba || ''} onChange={e => handleInputChange('sba', e.target.value)} />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-slate-600">UELN</Label>
+                                <Label className="text-gray-600">UELN</Label>
                                 <Input className="bg-white" value={formData.ueln || ''} onChange={e => handleInputChange('ueln', e.target.value)} placeholder="Universal ID" />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-slate-600">ADN</Label>
+                                <Label className="text-gray-600">ADN</Label>
                                 <Input className="bg-white" value={formData.adn || ''} onChange={e => handleInputChange('adn', e.target.value)} />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-slate-600">Registro (RP)</Label>
+                                <Label className="text-gray-600">Registro (RP)</Label>
                                 <Input className="bg-white" value={formData.rp || ''} onChange={e => handleInputChange('rp', e.target.value)} />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-slate-600">Tenencia Propia (%)</Label>
+                                <Label className="text-gray-600">Tenencia Propia (%)</Label>
                                 <div className="relative">
-                                    <Input 
-                                        type="number" min="0" max="100" className="bg-white pr-8" 
-                                        value={formData.porcentaje_tenencia || ''} 
-                                        onChange={e => handleInputChange('porcentaje_tenencia', parseInt(e.target.value))} 
+                                    <Input
+                                        type="number" inputMode="numeric" min="0" max="100" className="bg-white pr-8"
+                                        value={formData.porcentaje_tenencia || ''}
+                                        onChange={e => handleInputChange('porcentaje_tenencia', parseInt(e.target.value))}
                                     />
-                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">%</span>
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">%</span>
                                 </div>
                             </div>
                         </div>
@@ -543,14 +547,14 @@ export function CaballoForm({ isOpen, onClose, onSuccess, caballo }: CaballoForm
                 </div>
 
                 {/* Footer Fijo */}
-                <DialogFooter className="shrink-0 p-5 bg-white border-t border-slate-100 flex flex-col-reverse sm:flex-row gap-3 sm:gap-2">
-                    <Button type="button" variant="outline" onClick={handleClose} disabled={loading} className="w-full sm:w-auto text-slate-700 bg-white border-slate-200 hover:bg-slate-50 hover:text-slate-900 shadow-sm">
+                <DialogFooter className="shrink-0 p-5 bg-white border-t border-gray-100 flex flex-col-reverse sm:flex-row gap-3 sm:gap-2">
+                    <Button type="button" variant="outline" onClick={handleClose} disabled={loading} className="w-full sm:w-auto text-gray-700 bg-white border-gray-200 hover:bg-gray-50">
                         Cancelar
                     </Button>
                     <Button 
                         type="submit" 
                         disabled={loading || uploading}
-                        className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 px-8 font-medium"
+                        className="w-full sm:w-auto bg-gray-900 hover:bg-gray-700 text-white px-8 font-medium"
                     >
                         {loading ? 'Guardando...' : (caballo ? 'Guardar Cambios' : 'Crear Caballo')}
                     </Button>

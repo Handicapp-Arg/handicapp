@@ -58,7 +58,7 @@ async function sendViaResend(params: EmailParams): Promise<EmailResult> {
 
   const resend = new Resend(apiKey);
   const fromEmail = params.fromEmail || config.email.resend.fromEmail || config.email.from.email || 'notifications@handicapp.app';
-  const fromName = params.fromName || config.email.resend.fromName || config.email.from.name || 'HandicApp';
+  const fromName = params.fromName || config.email.resend.fromName || config.email.from.name || 'App';
   const resendFrom = `${fromName} <${fromEmail}>`;
 
   logger.info(`📧 Enviando email via Resend - From: ${resendFrom}, To: ${params.to}, Subject: ${params.subject}`);
@@ -97,7 +97,7 @@ async function sendViaSMTP(params: EmailParams): Promise<EmailResult> {
   }
 
   const defaultFromEmail = params.fromEmail || config.email.from.email || 'no-reply@handicapp.local';
-  const defaultFromName = params.fromName || config.email.from.name || 'HandicApp';
+  const defaultFromName = params.fromName || config.email.from.name || 'App';
   const from = `${defaultFromName} <${defaultFromEmail}>`;
 
   const info = await tx.sendMail({

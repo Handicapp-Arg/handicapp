@@ -1,12 +1,11 @@
-"use client";
+'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useState, useMemo } from 'react';
 import ApiClient from '@/lib/services/apiClient';
 import { useToaster } from '@/components/ui/toaster';
-import { LOGOS } from '@/lib/constants/logos';
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
-import { AuthBrandingPanel } from '../_components/AuthBrandingPanel';
+import Link from 'next/link';
 
 export default function ResetPasswordPage() {
   const params = useSearchParams();
@@ -37,75 +36,80 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex">
-      {/* Left — Form side */}
-      <div
-        className="flex-1 flex flex-col min-h-screen relative"
-        style={{
-          backgroundColor: '#ffffff',
-          backgroundImage: 'radial-gradient(circle, rgba(30,41,59,0.055) 1px, transparent 1px)',
-          backgroundSize: '22px 22px',
-        }}
-      >
-        <div className="flex items-center px-7 pt-7">
-          <img src={LOGOS.ICON_BROWN} alt="HandicApp" className="h-7 w-7 object-contain"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).src = LOGOS.FULL_BROWN; }} />
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+      <div className="w-full max-w-sm bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
+        <Link href="/login" className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 mb-6">
+          <ArrowLeft className="w-4 h-4" />
+          Volver al inicio de sesión
+        </Link>
+
+        <div className="mb-6">
+          <h1 className="text-xl font-semibold text-gray-900">Nueva contraseña</h1>
+          <p className="text-sm text-gray-500 mt-1">Ingresá y confirmá tu nueva contraseña.</p>
         </div>
 
-        <div className="flex-1 flex items-center justify-center px-6 py-8 lg:px-14">
-          <div className="w-full max-w-[380px]">
-            <button onClick={() => router.push('/login')} className="flex items-center gap-1.5 text-[13px] text-slate-400 hover:text-[#1e293b] transition-colors mb-8 group">
-              <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
-              Volver
-            </button>
-
-            <div className="auth-fade-up auth-fade-up-1 w-7 h-[3px] rounded-full bg-[#af936f] mb-5" />
-            <h1
-              className="auth-fade-up auth-fade-up-1 font-bold text-[#1e293b] leading-[1.1] mb-8"
-              style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontSize: 'clamp(1.9rem, 4vw, 2.4rem)' }}
-            >
-              Nueva clave.
-            </h1>
-
-            <form onSubmit={onSubmit} className="space-y-4">
-              <div className="auth-fade-up auth-fade-up-2 relative">
-                <input type={showPassword ? 'text' : 'password'} name="password" autoComplete="new-password" value={p1} onChange={(e) => setP1(e.target.value)}
-                  className="auth-input w-full px-4 py-3.5 pr-11 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#af936f] transition-all duration-200 text-sm"
-                  placeholder="Nueva contraseña" required
-                />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none">
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-
-              <div className="auth-fade-up auth-fade-up-3 relative">
-                <input type={showConfirmPassword ? 'text' : 'password'} name="confirmPassword" autoComplete="new-password" value={p2} onChange={(e) => setP2(e.target.value)}
-                  className="auth-input w-full px-4 py-3.5 pr-11 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#af936f] transition-all duration-200 text-sm"
-                  placeholder="Confirmar contraseña" required
-                />
-                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none">
-                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-
-              {error && <div className="rounded-xl p-3.5 bg-red-50/70 border border-red-200 text-xs text-red-600">{error}</div>}
-
-              <div className="auth-fade-up auth-fade-up-4">
-                <button type="submit" disabled={loading}
-                  className="relative w-full overflow-hidden text-white font-semibold py-3.5 rounded-xl text-sm tracking-wide transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
-                  style={{ background: 'linear-gradient(135deg, #1e293b 0%, #1a2535 100%)' }}
-                >
-                  <span className="relative z-10">{loading ? 'Actualizando...' : 'Guardar nueva clave'}</span>
-                  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-[#af936f]/12 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                </button>
-              </div>
-            </form>
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              Nueva contraseña
+            </label>
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                autoComplete="new-password"
+                required
+                value={p1}
+                onChange={(e) => setP1(e.target.value)}
+                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+                placeholder="Mínimo 8 caracteres"
+              />
+              <button type="button" onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Right — Branding panel */}
-      <AuthBrandingPanel />
+          <div>
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+              Confirmar contraseña
+            </label>
+            <div className="relative">
+              <input
+                id="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                name="confirmPassword"
+                autoComplete="new-password"
+                required
+                value={p2}
+                onChange={(e) => setP2(e.target.value)}
+                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+                placeholder="Repetí la contraseña"
+              />
+              <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <div className="rounded-md p-3 bg-red-50 border border-red-200 text-sm text-red-600">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2.5 px-4 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Actualizando...' : 'Guardar nueva clave'}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

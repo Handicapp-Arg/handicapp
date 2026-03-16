@@ -55,14 +55,13 @@ export function RatingStars({
               onClick={() => handleClick(starValue)}
               disabled={!interactive}
               className={cn(
-                interactive && 'cursor-pointer hover:scale-110 transition-transform',
+                interactive && 'cursor-pointer',
                 !interactive && 'cursor-default'
               )}
             >
               <Star
                 className={cn(
                   sizeClasses[size],
-                  'transition-colors',
                   isFilled && 'fill-yellow-400 text-yellow-400',
                   !isFilled && 'text-gray-300'
                 )}

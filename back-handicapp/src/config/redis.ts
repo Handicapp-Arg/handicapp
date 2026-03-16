@@ -69,7 +69,7 @@ function createTokenStore(): TokenStore {
     },
   });
 
-  client.on('connect', () => logger.info('Redis conectado'));
+  client.on('connect', () => logger.debug('Redis connected'));
   client.on('error', (err) => logger.error('Redis error:', err));
 
   client.connect().catch((err) => {

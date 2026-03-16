@@ -36,7 +36,7 @@ export const QrCanvas: React.FC<QrCanvasProps> = ({ value, size = 160, label }) 
       <button 
         type="button" 
         onClick={onDownload} 
-        className="text-xs text-[#af936f] hover:text-[#0f172a] underline transition-colors duration-200"
+        className="text-xs text-[#af936f] hover:text-[#0f172a] underline"
       >
         Descargar QR
       </button>

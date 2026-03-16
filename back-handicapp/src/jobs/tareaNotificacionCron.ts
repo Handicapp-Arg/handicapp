@@ -28,8 +28,7 @@ export function iniciarCronNotificacionesTareas(): void {
     timezone: 'America/Argentina/Buenos_Aires' // Ajusta según tu zona horaria
   });
 
-  logger.info(`✅ Cron job de notificaciones de tareas iniciado: ${cronExpression}`);
-  logger.info('📅 Se ejecutará cada hora para verificar tareas vencidas y próximas a vencer');
+  logger.debug(`Cron job iniciado: ${cronExpression}`);
 
   // Opcionalmente, ejecutar inmediatamente al iniciar (para testing)
   if (process.env['RUN_CRON_ON_START'] === 'true') {

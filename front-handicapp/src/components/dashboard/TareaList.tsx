@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { useAuthNew } from '@/lib/hooks/useAuthNew';
-import { tareaService, type Tarea } from '@/lib/services/tareaService';
+import { useState, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useTareas, tareasKeys } from '@/lib/hooks';
+import { tareaService, type Tarea } from '@/lib/services/taskService';
 import { TareaForm } from './TareaForm';
 import { usePermissions } from '@/lib/hooks/usePermissions';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -32,10 +33,10 @@ interface TareaListProps {
 function getStatusClasses(estado?: string) {
   switch (estado?.toLowerCase()) {
     case 'completada':  return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
-    case 'en_progreso': return 'bg-blue-50 text-blue-700 border border-blue-200';
+    case 'en_progreso': return 'bg-amber-50 text-amber-700 border border-amber-200';
     case 'pendiente':   return 'bg-amber-50 text-amber-700 border border-amber-200';
-    case 'cancelada':   return 'bg-slate-100 text-slate-500 border border-slate-200';
-    default:            return 'bg-slate-100 text-slate-500 border border-slate-200';
+    case 'cancelada':   return 'bg-gray-100 text-gray-500 border border-gray-200';
+    default:            return 'bg-gray-100 text-gray-500 border border-gray-200';
   }
 }
 
@@ -45,18 +46,10 @@ function getPriorityClasses(prioridad?: string) {
     case 'critica': return 'bg-red-50 text-red-700 border border-red-200';
     case 'media':   return 'bg-amber-50 text-amber-700 border border-amber-200';
     case 'baja':    return 'bg-emerald-50 text-emerald-600 border border-emerald-200';
-    default:        return 'bg-slate-100 text-slate-500 border border-slate-200';
+    default:        return 'bg-gray-100 text-gray-500 border border-gray-200';
   }
 }
 
-function getPriorityBar(prioridad?: string) {
-  switch (prioridad?.toLowerCase()) {
-    case 'alta':
-    case 'critica': return 'bg-red-400';
-    case 'media':   return 'bg-amber-400';
-    default:        return 'bg-emerald-400';
-  }
-}
 
 function getStatusLabel(estado?: string) {
   const map: Record<string, string> = {
@@ -74,54 +67,38 @@ function getPriorityLabel(prioridad?: string) {
 }
 
 export function TareaList({ tareasProp }: TareaListProps) {
-  const [tareas, setTareas] = useState<Tarea[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [selectedTarea, setSelectedTarea] = useState<Tarea | null>(null);
-  const { isAuthenticated, isLoading: authLoading } = useAuthNew();
   const { canCreateTasks, canDeleteTasks, hasPermission } = usePermissions();
+  const queryClient = useQueryClient();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
+  const LIMIT = 10;
+
+  // React Query — only used when tareasProp is not provided
+  const { data: queryResult, isLoading: queryLoading } = useTareas(
+    { page: currentPage, limit: LIMIT, search: debouncedSearch || undefined },
+    { enabled: !tareasProp }
+  );
+
+  const tareas: Tarea[] = tareasProp ?? (Array.isArray(queryResult?.data) ? queryResult.data : []);
+  const total = queryResult?.total ?? 0;
+  const totalPages = tareasProp ? 1 : Math.ceil(total / LIMIT) || 1;
+  const loading = !tareasProp && queryLoading;
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      setDebouncedSearch(searchTerm);
+      setDebouncedSearch(value);
       setCurrentPage(1);
     }, 400);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [searchTerm]);
-
-  useEffect(() => {
-    if (tareasProp) {
-      setTareas(tareasProp);
-      setLoading(false);
-    } else if (!authLoading && isAuthenticated) {
-      fetchTareas();
-    }
-  }, [currentPage, debouncedSearch, authLoading, isAuthenticated, tareasProp]);
-
-  const fetchTareas = async () => {
-    if (authLoading || !isAuthenticated || tareasProp) return;
-    try {
-      setLoading(true);
-      const response: any = await tareaService.getAll({ page: currentPage, limit: 10, search: debouncedSearch });
-      // Backend retorna: { success, data: Tarea[], meta: { page, limit, total, totalPages } }
-      const tareasData = response?.data;
-      const list: Tarea[] = Array.isArray(tareasData) ? tareasData : [];
-      const totalPagesData = response?.meta?.totalPages ?? 1;
-      setTareas(list);
-      setTotalPages(totalPagesData);
-    } catch {
-      setTareas([]);
-      setTotalPages(1);
-    } finally {
-      setLoading(false);
-    }
   };
+
+  const invalidateTareas = () => queryClient.invalidateQueries({ queryKey: tareasKeys.lists() });
 
   const handleCreateTarea = () => { setSelectedTarea(null); setShowForm(true); };
   const handleEditTarea = (tarea: Tarea) => { setSelectedTarea(tarea); setShowForm(true); };
@@ -129,14 +106,14 @@ export function TareaList({ tareasProp }: TareaListProps) {
   const handleDeleteTarea = async (id: number) => {
     toast((t) => (
       <span className="flex items-center gap-3">
-        <span className="text-sm text-slate-700">¿Eliminar esta tarea?</span>
+        <span className="text-sm text-gray-700">¿Eliminar esta tarea?</span>
         <button
-          className="px-3 py-1 bg-red-600 text-white text-xs rounded-lg font-medium"
+          className="px-3 py-1 bg-red-600 text-white text-xs rounded-md font-medium"
           onClick={async () => {
             toast.dismiss(t.id);
             try {
               await tareaService.delete(id);
-              setTareas(prev => prev.filter(t => t.id !== id));
+              invalidateTareas();
               toast.success('Tarea eliminada');
             } catch {
               toast.error('Error al eliminar la tarea');
@@ -144,7 +121,7 @@ export function TareaList({ tareasProp }: TareaListProps) {
           }}
         >Eliminar</button>
         <button
-          className="px-3 py-1 bg-slate-100 text-slate-700 text-xs rounded-lg font-medium"
+          className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-md font-medium"
           onClick={() => toast.dismiss(t.id)}
         >Cancelar</button>
       </span>
@@ -153,7 +130,7 @@ export function TareaList({ tareasProp }: TareaListProps) {
 
   const handleCompleteTask = async (tarea: Tarea) => {
     try {
-      const updateData = {
+      await tareaService.update(tarea.id, {
         titulo: tarea.titulo,
         descripcion: tarea.descripcion || 'Tarea completada',
         tipo: tarea.tipo as any,
@@ -165,49 +142,26 @@ export function TareaList({ tareasProp }: TareaListProps) {
         establecimiento_id: tarea.establecimiento_id,
         tiempo_estimado_minutos: tarea.tiempo_estimado_minutos,
         ubicacion: tarea.ubicacion,
-      };
-      await tareaService.update(tarea.id, updateData);
-      setTareas(tareas.map(t => t.id === tarea.id ? { ...t, estado: 'completada' } : t));
+      });
+      invalidateTareas();
       toast.success('Tarea completada');
     } catch {
       toast.error('Error al completar la tarea');
     }
   };
 
-  const handleFormSuccess = async () => {
-    if (!tareasProp) await fetchTareas();
-  };
-
-  const filteredTareas = !tareasProp
-    ? tareas.filter(t =>
-        t.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (t.descripcion && t.descripcion.toLowerCase().includes(searchTerm.toLowerCase()))
-      )
-    : tareas;
+  const filteredTareas = tareasProp
+    ? tareas
+    : tareas; // server-side search via debouncedSearch
 
   const formatDate = (dateString: string) =>
     new Date(dateString).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
 
-  // ─── Loading skeleton ───
-  if (loading && tareas.length === 0) {
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[1, 2, 3, 4, 5, 6].map(i => (
-          <div key={i} className="bg-white border border-slate-200/70 rounded-2xl p-5 animate-pulse">
-            <div className="h-4 bg-slate-200 rounded-lg w-3/4 mb-3" />
-            <div className="flex gap-2 mb-4">
-              <div className="h-5 bg-slate-100 rounded-lg w-20" />
-              <div className="h-5 bg-slate-100 rounded-lg w-16" />
-            </div>
-            <div className="space-y-2">
-              <div className="h-3 bg-slate-100 rounded w-2/3" />
-              <div className="h-3 bg-slate-100 rounded w-1/2" />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
+  if (loading && tareas.length === 0) return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {[1,2,3,4,5,6].map(i => <div key={i} className="h-36 bg-gray-100 rounded-md animate-pulse" />)}
+    </div>
+  );
 
   return (
     <div>
@@ -215,19 +169,19 @@ export function TareaList({ tareasProp }: TareaListProps) {
       {!tareasProp && (
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
             <input
               type="text"
               placeholder="Buscar tarea..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#af936f]/30 focus:border-[#af936f]/60 bg-white transition-colors"
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-gray-300 bg-white"
             />
           </div>
           {canCreateTasks() && (
             <button
               onClick={handleCreateTarea}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm whitespace-nowrap active:scale-[0.98]"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 hover:bg-gray-700 text-white rounded-md text-sm font-medium whitespace-nowrap"
             >
               <Plus className="h-4 w-4" />
               Nueva Tarea
@@ -240,7 +194,7 @@ export function TareaList({ tareasProp }: TareaListProps) {
         <div className="flex justify-end mb-5">
           <button
             onClick={handleCreateTarea}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm active:scale-[0.98]"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 hover:bg-gray-700 text-white rounded-md text-sm font-medium"
           >
             <Plus className="h-4 w-4" />
             Nueva Tarea
@@ -261,22 +215,18 @@ export function TareaList({ tareasProp }: TareaListProps) {
           {filteredTareas.map((tarea) => (
             <div
               key={tarea.id}
-              className="bg-white border border-slate-200/70 rounded-2xl p-5 hover:shadow-[0_4px_24px_rgba(0,0,0,0.08)] hover:border-slate-300/60 transition-all duration-200 group relative overflow-hidden"
+              className="bg-white border border-gray-200 rounded-md p-4 hover:bg-gray-50"
             >
-              {/* Priority bar */}
-              <div className={`absolute top-0 left-0 w-[3px] h-full rounded-l-2xl ${getPriorityBar(tarea.prioridad)}`} />
-
               {/* Header */}
               <div className="flex items-start justify-between gap-2 mb-3">
-                <h3 className="text-[15px] font-semibold text-slate-800 leading-snug line-clamp-2 flex-1">
+                <h3 className="text-sm font-semibold text-gray-800 leading-snug line-clamp-2 flex-1">
                   {tarea.titulo}
                 </h3>
-                {/* Action buttons — visible on hover */}
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                <div className="flex gap-1 flex-shrink-0">
                   {tarea.estado !== 'completada' && hasPermission('tasks:complete') && (
                     <button
                       onClick={() => handleCompleteTask(tarea)}
-                      className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                      className="p-2 text-emerald-600 hover:bg-emerald-50 rounded"
                       title="Completar"
                     >
                       <CheckCircle2 className="h-4 w-4" />
@@ -285,7 +235,7 @@ export function TareaList({ tareasProp }: TareaListProps) {
                   {canCreateTasks() && (
                     <button
                       onClick={() => handleEditTarea(tarea)}
-                      className="p-1.5 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
+                      className="p-2 text-gray-500 hover:bg-gray-100 rounded"
                       title="Editar"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -294,7 +244,7 @@ export function TareaList({ tareasProp }: TareaListProps) {
                   {canDeleteTasks() && (
                     <button
                       onClick={() => handleDeleteTarea(tarea.id)}
-                      className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      className="p-2 text-red-500 hover:bg-red-50 rounded"
                       title="Eliminar"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -305,11 +255,11 @@ export function TareaList({ tareasProp }: TareaListProps) {
 
               {/* Badges */}
               <div className="flex flex-wrap gap-1.5 mb-3">
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-semibold ${getStatusClasses(tarea.estado)}`}>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStatusClasses(tarea.estado)}`}>
                   {getStatusLabel(tarea.estado)}
                 </span>
                 {tarea.prioridad && (
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-semibold ${getPriorityClasses(tarea.prioridad)}`}>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getPriorityClasses(tarea.prioridad)}`}>
                     {getPriorityLabel(tarea.prioridad)}
                   </span>
                 )}
@@ -317,44 +267,44 @@ export function TareaList({ tareasProp }: TareaListProps) {
 
               {/* Description */}
               {tarea.descripcion && (
-                <p className="text-sm text-slate-500 mb-3 line-clamp-2 leading-relaxed">{tarea.descripcion}</p>
+                <p className="text-sm text-gray-500 mb-3 line-clamp-2 leading-relaxed">{tarea.descripcion}</p>
               )}
 
               {/* Meta info */}
-              <div className="space-y-1.5 text-xs text-slate-500">
+              <div className="space-y-1.5 text-xs text-gray-500">
                 {tarea.tipo && (
                   <div className="flex items-center gap-2">
-                    <FileText className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                    <FileText className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
                     <span className="capitalize">{tarea.tipo}</span>
                   </div>
                 )}
                 {tarea.fecha_vencimiento && (
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                    <Calendar className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
                     <span>{formatDate(tarea.fecha_vencimiento)}</span>
                   </div>
                 )}
                 {tarea.asignado_a && (
                   <div className="flex items-center gap-2">
-                    <User className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                    <User className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
                     <span className="truncate">{tarea.asignado_a.nombre} {tarea.asignado_a.apellido}</span>
                   </div>
                 )}
                 {tarea.caballo && (
                   <div className="flex items-center gap-2">
-                    <Sparkles className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                    <Sparkles className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
                     <span className="truncate">{tarea.caballo.nombre}</span>
                   </div>
                 )}
                 {tarea.ubicacion && (
                   <div className="flex items-center gap-2">
-                    <MapPin className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                    <MapPin className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
                     <span className="truncate">{tarea.ubicacion}</span>
                   </div>
                 )}
                 {tarea.tiempo_estimado_minutos && (
                   <div className="flex items-center gap-2">
-                    <Timer className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                    <Timer className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
                     <span>{tarea.tiempo_estimado_minutos} min</span>
                   </div>
                 )}
@@ -362,8 +312,8 @@ export function TareaList({ tareasProp }: TareaListProps) {
 
               {/* Read-only indicator */}
               {!hasPermission('tasks:complete') && !canCreateTasks() && !canDeleteTasks() && (
-                <div className="mt-3 pt-3 border-t border-slate-100">
-                  <span className="text-[11px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-lg">Solo lectura</span>
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <span className="text-xs text-gray-400">Solo lectura</span>
                 </div>
               )}
             </div>
@@ -377,18 +327,18 @@ export function TareaList({ tareasProp }: TareaListProps) {
           <button
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             disabled={currentPage === 1 || loading}
-            className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 border border-gray-200 rounded-md text-sm text-gray-600 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <ChevronLeft className="h-4 w-4" />
             Anterior
           </button>
-          <span className="text-sm text-slate-500 font-medium">
+          <span className="text-sm text-gray-500">
             {currentPage} / {totalPages}
           </span>
           <button
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages || loading}
-            className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 border border-gray-200 rounded-md text-sm text-gray-600 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Siguiente
             <ChevronRight className="h-4 w-4" />
@@ -400,7 +350,7 @@ export function TareaList({ tareasProp }: TareaListProps) {
         isOpen={showForm}
         onClose={() => setShowForm(false)}
         tarea={selectedTarea || undefined}
-        onSuccess={handleFormSuccess}
+        onSuccess={invalidateTareas}
       />
     </div>
   );

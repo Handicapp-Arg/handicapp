@@ -2,10 +2,8 @@ import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://handicapp.com';
-  
-  // Fecha actual para lastModified
   const now = new Date();
-  
+
   return [
     // Páginas públicas
     {
@@ -26,8 +24,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
       priority: 0.8,
     },
-    
-    // Dashboards (requieren auth, pero indexables)
+
+    // Propietario
     {
       url: `${baseUrl}/propietario`,
       lastModified: now,
@@ -35,82 +33,38 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/veterinario`,
+      url: `${baseUrl}/propietario/stables`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/propietario/horses`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/propietario/events`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    },
+
+    // Establecimiento
+    {
+      url: `${baseUrl}/establecimiento`,
       lastModified: now,
       changeFrequency: 'daily',
       priority: 0.9,
     },
+
+    // Admin
     {
-      url: `${baseUrl}/cuidador`,
+      url: `${baseUrl}/admin`,
       lastModified: now,
       changeFrequency: 'daily',
       priority: 0.9,
-    },
-    
-    // Secciones principales - Propietario
-    {
-      url: `${baseUrl}/propietario/establecimientos`,
-      lastModified: now,
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/propietario/caballos`,
-      lastModified: now,
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/propietario/eventos`,
-      lastModified: now,
-      changeFrequency: 'weekly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/propietario/gastos`,
-      lastModified: now,
-      changeFrequency: 'weekly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/propietario/salud`,
-      lastModified: now,
-      changeFrequency: 'weekly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/propietario/reportes`,
-      lastModified: now,
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    
-    // Secciones - Veterinario
-    {
-      url: `${baseUrl}/veterinario/tratamientos`,
-      lastModified: now,
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/veterinario/validacion`,
-      lastModified: now,
-      changeFrequency: 'weekly',
-      priority: 0.7,
-    },
-    
-    // Secciones - Cuidador
-    {
-      url: `${baseUrl}/cuidador/tareas`,
-      lastModified: now,
-      changeFrequency: 'daily',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/cuidador/inventario`,
-      lastModified: now,
-      changeFrequency: 'daily',
-      priority: 0.7,
     },
   ];
 }

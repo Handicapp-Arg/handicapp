@@ -10,8 +10,6 @@ export interface BaseUser {
   telefono?: string | null;
   estado: 'activo' | 'inactivo' | 'active' | 'disabled' | 'pending' | 'suspended' | 'invited' | 'deleted';
   rol?: string;
-  puesto?: string;
-  departamento?: string;
   ubicacion?: string;
   verificado?: boolean;
   rol_id?: number;
@@ -41,11 +39,7 @@ export interface UserStatsConfig {
 export interface FilterConfig {
   showEstadoFilter?: boolean;
   showRolFilter?: boolean;
-  showPuestoFilter?: boolean;
-  showDepartamentoFilter?: boolean;
   roles?: Array<{ id: number; nombre: string }>;
-  puestos?: string[];
-  departamentos?: string[];
 }
 
 export interface ActionConfig {
@@ -80,10 +74,6 @@ export interface UserFiltersProps {
   setFiltroEstado: (value: string) => void;
   filtroRol?: string;
   setFiltroRol?: (value: string) => void;
-  filtroPuesto?: string;
-  setFiltroPuesto?: (value: string) => void;
-  filtroDepartamento?: string;
-  setFiltroDepartamento?: (value: string) => void;
   onClearFilters?: () => void;
   itemsPerPage?: number;
   onItemsPerPageChange?: (items: number) => void;

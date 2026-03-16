@@ -11,12 +11,12 @@ export default function EstablecimientoDetailView({ establecimiento }: { estable
   const est = establecimiento;
   return (
     <div className="mx-auto">
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-6 sm:px-8 py-6">
+        <div className="bg-gray-900 px-6 sm:px-8 py-6">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">{est.nombre}</h1>
+              <h1 className="text-xl sm:text-3xl font-bold text-white mb-2">{est.nombre}</h1>
               <div className="flex items-center gap-4 text-white/70 text-sm">
                 {est.direccion && (
                   <div className="flex items-center gap-1.5">
@@ -48,7 +48,7 @@ export default function EstablecimientoDetailView({ establecimiento }: { estable
               {est.estado}
             </Badge>
             {est.verificado && (
-              <Badge className="bg-blue-100 text-blue-700">
+              <Badge className="bg-gray-100 text-gray-700">
                 ✓ Verificado
               </Badge>
             )}
@@ -89,7 +89,7 @@ export default function EstablecimientoDetailView({ establecimiento }: { estable
                 {est.telefono && (
                   <div className="flex items-center gap-2 text-gray-700">
                     <Phone className="w-4 h-4 text-gray-400" />
-                    <a href={`tel:${est.telefono}`} className="hover:text-blue-600 transition-colors">
+                    <a href={`tel:${est.telefono}`} className="hover:text-gray-900">
                       {est.telefono}
                     </a>
                   </div>
@@ -97,7 +97,7 @@ export default function EstablecimientoDetailView({ establecimiento }: { estable
                 {est.email && (
                   <div className="flex items-center gap-2 text-gray-700">
                     <Mail className="w-4 h-4 text-gray-400" />
-                    <a href={`mailto:${est.email}`} className="hover:text-blue-600 transition-colors truncate">
+                    <a href={`mailto:${est.email}`} className="hover:text-gray-900 truncate">
                       {est.email}
                     </a>
                   </div>
@@ -118,20 +118,20 @@ export default function EstablecimientoDetailView({ establecimiento }: { estable
           {est.usuarios && est.usuarios.length > 0 && (() => {
             const adminUser = est.usuarios.find((u: any) => u.rol?.clave === 'establecimiento');
             return adminUser ? (
-              <Card className="border-2 border-blue-200 bg-blue-50/50">
+              <Card className="border-2 border-gray-200">
                 <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2 text-blue-900">
+                  <CardTitle className="text-lg flex items-center gap-2 text-gray-900">
                     <Users className="w-5 h-5" />
                     Administrador del Establecimiento
                   </CardTitle>
-                  <CardDescription className="text-blue-700">
+                  <CardDescription className="text-gray-600">
                     Usuario principal con permisos de administración
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-blue-200">
+                  <div className="flex items-center justify-between p-4 bg-white rounded-md border border-gray-200">
                     <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+                      <div className="w-14 h-14 rounded-md bg-gray-800 flex items-center justify-center">
                         <span className="text-white font-bold text-lg">
                           {adminUser.nombre?.[0]}{adminUser.apellido?.[0]}
                         </span>
@@ -151,8 +151,8 @@ export default function EstablecimientoDetailView({ establecimiento }: { estable
                         )}
                       </div>
                     </div>
-                    <Badge className="bg-blue-600 text-white px-3 py-1">
-                      👑 Administrador
+                    <Badge className="bg-gray-800 text-white px-3 py-1">
+                      Administrador
                     </Badge>
                   </div>
                 </CardContent>
@@ -179,10 +179,10 @@ export default function EstablecimientoDetailView({ establecimiento }: { estable
                     {otherUsers.map((usuario: any) => (
                       <div 
                         key={usuario.id} 
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-md hover:bg-gray-100"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-md bg-gray-200 flex items-center justify-center">
                             <span className="text-gray-600 font-semibold">
                               {usuario.nombre?.[0]}{usuario.apellido?.[0]}
                             </span>
@@ -307,7 +307,7 @@ export default function EstablecimientoDetailView({ establecimiento }: { estable
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="w-full h-[400px] rounded-b-lg overflow-hidden">
+                <div className="w-full h-[250px] sm:h-[400px] rounded-b-md overflow-hidden">
                   <iframe
                     width="100%"
                     height="100%"

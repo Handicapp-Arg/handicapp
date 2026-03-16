@@ -124,7 +124,6 @@ export interface CreateEventoData {
   establecimientoId?: number;
   descripcion?: string;
   observaciones?: string;
-  veterinarioId?: number;
   temperatura?: number;
   peso?: number;
   frecuenciaCardiaca?: number;
@@ -221,7 +220,6 @@ export interface EventoQuery extends PaginationQuery {
   establecimientoId?: number;
   fechaInicio?: string;
   fechaFin?: string;
-  veterinarioId?: number;
   usuarioId: number;
   userRole?: string;
 }

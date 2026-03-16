@@ -21,7 +21,7 @@ router.use(auditAccess());
 
 router.post(
   '/',
-  requireRole('admin', 'establecimiento', 'capataz', 'veterinario', 'empleado'),
+  requireRole('admin', 'establecimiento', 'propietario'),
   tareaValidations.create,
   TareaController.create
 );

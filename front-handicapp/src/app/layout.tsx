@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Outfit } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers/Providers";
 import { RootErrorBoundary } from "@/components/error";
@@ -20,15 +20,7 @@ const geistMono = Geist_Mono({
   preload: false, // Solo precargar fuente principal
 });
 
-const outfit = Outfit({
-  variable: "--font-outfit",
-  subsets: ["latin"],
-  weight: ['400', '500', '600', '700'],
-  display: 'swap',
-  preload: true,
-});
-
-// Metadata optimizada con SEO completo
+// Metadata
 export const metadata: Metadata = {
   ...defaultMetadata,
   metadataBase: new URL(siteConfig.url),
@@ -74,7 +66,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/logos/logo-mobile.svg" />
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} antialiased h-full`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}>
         <RootErrorBoundary showDetails={process.env.NODE_ENV === 'development'}>
           <Providers>
             <div className="h-full w-full">

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthController } from './authController';
 import { UserService } from '../services/userService';
-import { ResponseHelper } from '../utils/response';
+import { ResponseHelper, parsePagination } from '../utils/response';
 import { asyncHandler } from '../utils/errors';
 import { UpdateUserData, AuthenticatedRequest } from '../types';
 import { User } from '../models/User';
@@ -13,8 +13,7 @@ import { logger } from '../utils/logger';
 export class UserController {
   // Get all users
   static getUsers = asyncHandler(async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
-    const page = Number((req.query['page'] as string) || 1);
-    const limit = Number((req.query['limit'] as string) || 10);
+    const { page, limit } = parsePagination(req);
     const sortBy = (req.query['sortBy'] as string) || 'creado_el';
     const sortOrder = (req.query['sortOrder'] as string) === 'ASC' ? 'ASC' : 'DESC';
     
@@ -29,7 +28,7 @@ export class UserController {
     // Si es admin, mostrar todos
     let result;
     if (currentUserRole === 'establecimiento') {
-      const query: any = { page, limit, sortBy, sortOrder, roleIds: [3, 4, 5] };
+      const query: any = { page, limit, sortBy, sortOrder };
       if (typeof currentUser.establecimiento_id === 'number') {
         query.establecimiento_id = currentUser.establecimiento_id;
       }
@@ -144,8 +143,7 @@ export class UserController {
       return ResponseHelper.badRequest(res, 'Search query is required');
     }
 
-  const page = Number((req.query['page'] as string) || 1);
-  const limit = Number((req.query['limit'] as string) || 10);
+  const { page, limit } = parsePagination(req);
   const sortBy = (req.query['sortBy'] as string) || 'creado_el';
   const sortOrder = (req.query['sortOrder'] as string) === 'ASC' ? 'ASC' : 'DESC';
 
@@ -222,22 +220,13 @@ export class UserController {
     const currentUser = req.user!;
     const currentUserRole = currentUser.rol?.clave;
     
-    // DEBUG: Log para ver qué está llegando
-    logger.info('DEBUG - User create request:', {
-      body: req.body,
+    logger.info('User create request', {
       currentUserRole,
-      currentUserEstablecimientoId: currentUser.establecimiento_id,
       currentUserId: currentUser.id
     });
     
     // Verificar permisos según el rol
-    if (currentUserRole === 'establecimiento') {
-      // Establecimiento solo puede crear: capataz (3), veterinario (4), empleado (5)
-      const allowedRoles = [3, 4, 5];
-      if (!allowedRoles.includes(rol_id)) {
-        return ResponseHelper.forbidden(res, 'Los establecimientos solo pueden crear usuarios con roles: Capataz, Veterinario o Empleado');
-      }
-    } else if (currentUserRole !== 'admin') {
+    if (currentUserRole !== 'admin') {
       return ResponseHelper.forbidden(res, 'No tienes permisos para crear usuarios');
     }
 
@@ -252,26 +241,7 @@ export class UserController {
       const salt = await bcrypt.genSalt(config.security.bcryptRounds);
       const hashedPassword = await bcrypt.hash(password, salt);
 
-      // Si es establecimiento creando un empleado, asignar el establecimiento_id automáticamente
-      let establecimientoId = null;
-      if (currentUserRole === 'establecimiento' && [3, 4, 5].includes(rol_id)) {
-        establecimientoId = currentUser.establecimiento_id;
-        
-        // Si no está en el JWT, consultar desde la DB
-        if (!establecimientoId) {
-          const userFromDb = await User.findByPk(currentUser.id, {
-            attributes: ['id', 'establecimiento_id']
-          });
-          
-          if (userFromDb?.establecimiento_id) {
-            establecimientoId = userFromDb.establecimiento_id;
-            logger.info(`Usuario ${currentUser.id}: establecimiento_id=${establecimientoId} obtenido desde DB para crear empleado`);
-          } else {
-            logger.error(`Usuario ${currentUser.id} con rol establecimiento no puede crear empleados sin establecimiento_id asignado`);
-            return ResponseHelper.badRequest(res, 'Tu usuario no tiene un establecimiento asignado. Contacta al administrador.');
-          }
-        }
-      }
+      const establecimientoId = null;
 
       // Crear usuario
       const newUser = await User.create({
@@ -297,7 +267,7 @@ export class UserController {
 
       return ResponseHelper.success(res, { user: userWithRole }, 'Usuario creado exitosamente', 201);
     } catch (error) {
-      console.error('Error creating user:', error);
+      logger.error('Error creating user', { error });
       return ResponseHelper.internalError(res, 'Error al crear usuario');
     }
   });
@@ -309,9 +279,6 @@ export class UserController {
       roles: [
         { id: 1, nombre: 'Administrador', clave: 'admin' },
         { id: 2, nombre: 'Establecimiento', clave: 'establecimiento' },
-        { id: 3, nombre: 'Capataz', clave: 'capataz' },
-        { id: 4, nombre: 'Veterinario', clave: 'veterinario' },
-        { id: 5, nombre: 'Empleado', clave: 'empleado' },
         { id: 6, nombre: 'Propietario', clave: 'propietario' }
       ]
     }, 'Roles obtenidos exitosamente');
@@ -353,7 +320,7 @@ export class UserController {
 
       return ResponseHelper.success(res, null, 'Contraseña actualizada exitosamente');
     } catch (error) {
-      console.error('Error changing password:', error);
+      logger.error('Error changing password', { error });
       return ResponseHelper.internalError(res, 'Error al cambiar contraseña');
     }
   });
@@ -402,7 +369,7 @@ export class UserController {
       
       return ResponseHelper.badRequest(res, result.error || 'Error al actualizar avatar');
     } catch (error) {
-      console.error('Error uploading avatar:', error);
+      logger.error('Error uploading avatar', { error });
       return ResponseHelper.internalError(res, 'Error al subir avatar');
     }
   });

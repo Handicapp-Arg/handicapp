@@ -5,9 +5,6 @@ function getDashboardUrlByRoleId(roleId?: string): string {
   const map: Record<string, string> = {
     '1': '/admin',
     '2': '/establecimiento',
-    '3': '/capataz',
-    '4': '/veterinario',
-    '5': '/empleado',
     '6': '/propietario',
   };
   return map[roleId || ''] || '/propietario';

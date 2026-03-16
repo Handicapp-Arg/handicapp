@@ -26,16 +26,16 @@ export async function sendVerificationEmail({
     
     const html = renderBrandedEmail({
       title: 'Verificá tu cuenta',
-      intro: `Hola ${nombre}, gracias por registrarte en HandicApp. Por favor verificá tu correo para activar tu cuenta.`,
+      intro: `Hola ${nombre}, gracias por registrarte en App. Por favor verificá tu correo para activar tu cuenta.`,
       actionText: 'Verificá mi cuenta',
       actionUrl: verifyUrl,
-      footer: 'Equipo HandicApp',
+      footer: 'Equipo App',
     });
 
     logger.info(`Intentando enviar email de verificación a: ${email}`);
     await sendEmail({
       to: email,
-      subject: 'Verifica tu cuenta - HandicApp',
+      subject: 'Verifica tu cuenta - App',
       html,
     });
     logger.info(`Email de verificación enviado exitosamente a: ${email}`);

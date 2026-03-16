@@ -8,24 +8,15 @@ import { useToaster } from '@/components/ui/toaster';
 import { showSuccess } from '@/lib/utils/errorHandler';
 import ApiClient from '@/lib/services/apiClient';
 import AuthManager from '@/lib/auth/AuthManager';
-import { LOGOS } from '@/lib/constants/logos';
 import { Eye, EyeOff } from 'lucide-react';
-import { AuthBrandingPanel } from '../_components/AuthBrandingPanel';
-import { FloatingInput } from '../_components/FloatingInput';
 import { loginSchema } from '@/lib/schemas/auth';
+import Link from 'next/link';
 
 type FieldErrors = {
   email?: string;
   password?: string;
   general?: string;
   verification?: string;
-};
-
-const FORM_BG = {
-  backgroundColor: '#ffffff',
-  backgroundImage:
-    'radial-gradient(ellipse at 0% 60%, rgba(175,147,111,0.05) 0%, transparent 55%), radial-gradient(circle, rgba(30,41,59,0.045) 1px, transparent 1px)',
-  backgroundSize: 'auto, 22px 22px',
 };
 
 export default function LoginPage() {
@@ -36,7 +27,6 @@ export default function LoginPage() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [shaking, setShaking] = useState(false);
 
   const router = useRouter();
   const { login, isLoading: authLoading, error: authError } = useAuthNew();
@@ -110,7 +100,6 @@ export default function LoginPage() {
         if (field === 'password') newFieldErrors.password = issue.message;
       });
       setFieldErrors({ ...newFieldErrors, general: 'Revisá los datos ingresados antes de continuar' });
-      setShaking(true);
       return;
     }
 
@@ -136,172 +125,151 @@ export default function LoginPage() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error inesperado al iniciar sesión';
       setFieldErrors(normalizeLoginError(errorMessage, email));
-      setShaking(true);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const submitting = mounted && (authLoading || isLoading);
+
   return (
-    <div className="min-h-screen w-full flex">
-      {/* Left — Form */}
-      <div className="flex-1 flex flex-col min-h-screen relative" style={FORM_BG}>
+    <div className="w-full max-w-sm bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-xl font-semibold text-gray-900">Iniciar sesión</h1>
+        </div>
 
-        {/* Top bar */}
-        <div className="flex items-center justify-between px-7 pt-7">
-          <div className="flex items-center gap-2.5">
-            <img src={LOGOS.ICON_BROWN} alt="HandicApp" className="h-8 w-8 object-contain"
-              style={{ filter: 'brightness(0)' }}
-              onError={(e) => { (e.currentTarget as HTMLImageElement).src = LOGOS.FULL_BROWN; }} />
-            <span className="text-[12px] font-bold tracking-[0.3em] uppercase text-[#1e293b]/70 hidden sm:block">HandicApp</span>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Email */}
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              Correo electrónico
+            </label>
+            <input
+              id="email"
+              type="email"
+              name="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (fieldErrors.email || fieldErrors.general) setFieldErrors(p => ({ ...p, email: undefined, general: undefined }));
+              }}
+              className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 ${fieldErrors.email ? 'border-red-400' : 'border-gray-300'}`}
+              placeholder="correo@ejemplo.com"
+            />
+            {fieldErrors.email && <p className="mt-1 text-xs text-red-500">{fieldErrors.email}</p>}
           </div>
-          <button onClick={() => router.push('/register')} className="text-[13px] text-slate-500 hover:text-[#1e293b] transition-colors">
-            Crear cuenta →
-          </button>
-        </div>
 
-        {/* Mobile tagline */}
-        <div className="lg:hidden px-7 pt-3">
-          <p className="text-[10px] tracking-[0.35em] uppercase text-[#af936f]/70 font-semibold">Gestión Ecuestre</p>
-        </div>
+          {/* Password */}
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              Contraseña
+            </label>
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (fieldErrors.password || fieldErrors.general) setFieldErrors(p => ({ ...p, password: undefined, general: undefined }));
+                }}
+                className={`w-full px-3 py-2 pr-10 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 ${fieldErrors.password ? 'border-red-400' : 'border-gray-300'}`}
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            {fieldErrors.password && <p className="mt-1 text-xs text-red-500">{fieldErrors.password}</p>}
+          </div>
 
-        <div className="flex-1 flex items-center justify-center px-6 py-8 lg:px-14">
-          <div className="w-full max-w-[380px]">
+          {/* Remember + forgot */}
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 text-gray-700 focus:ring-gray-400"
+              />
+              <span className="text-sm text-gray-600">Recordarme</span>
+            </label>
+            <Link href="/forgot-password" className="text-sm text-gray-600 hover:text-gray-900 underline">
+              ¿Olvidaste la clave?
+            </Link>
+          </div>
 
-            <div className="auth-fade-up auth-fade-up-1 w-7 h-[3px] rounded-full bg-[#af936f] mb-5" />
-            <h1
-              className="auth-fade-up auth-fade-up-1 font-bold text-[#1e293b] leading-[1.1] mb-8"
-              style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontSize: 'clamp(1.9rem, 4vw, 2.4rem)' }}
-            >
-              Hola de nuevo.
-            </h1>
-
-            <form onSubmit={handleSubmit} className={`space-y-3.5 ${shaking ? 'auth-shake' : ''}`} onAnimationEnd={() => setShaking(false)}>
-              <div className="auth-fade-up auth-fade-up-2">
-                <FloatingInput
-                  type="email" name="email" autoComplete="email"
-                  label="Correo electrónico"
-                  value={email}
-                  onChange={(e) => { setEmail(e.target.value); if (fieldErrors.email || fieldErrors.general) setFieldErrors(p => ({ ...p, email: undefined, general: undefined })); }}
-                  error={!!fieldErrors.email}
-                  required
-                />
-                {fieldErrors.email && <p className="mt-1.5 text-xs text-red-500 pl-1">{fieldErrors.email}</p>}
-              </div>
-
-              <div className="auth-fade-up auth-fade-up-3">
-                <FloatingInput
-                  type={showPassword ? 'text' : 'password'} name="password" autoComplete="current-password"
-                  label="Contraseña"
-                  value={password}
-                  onChange={(e) => { setPassword(e.target.value); if (fieldErrors.password || fieldErrors.general) setFieldErrors(p => ({ ...p, password: undefined, general: undefined })); }}
-                  error={!!fieldErrors.password}
-                  required
-                  rightSlot={
-                    <button type="button" onClick={() => setShowPassword(!showPassword)}
-                      className="text-slate-400 hover:text-slate-600 transition-colors focus:outline-none">
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  }
-                />
-                {fieldErrors.password && <p className="mt-1.5 text-xs text-red-500 pl-1">{fieldErrors.password}</p>}
-              </div>
-
-              {/* Remember + forgot */}
-              <div className="auth-fade-up auth-fade-up-4 flex items-center justify-between pt-0.5">
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <button
-                    type="button"
-                    onClick={() => setRememberMe(!rememberMe)}
-                    className="w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all duration-150 focus:outline-none"
-                    style={{ borderColor: rememberMe ? '#af936f' : '#cbd5e1', backgroundColor: rememberMe ? '#af936f' : 'transparent' }}
-                  >
-                    {rememberMe && (
-                      <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
-                        <path d="M1 3l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    )}
-                  </button>
-                  <span className="text-[13px] text-slate-500 select-none">Recordarme</span>
-                </label>
-                <button type="button" onClick={() => router.push('/forgot-password')}
-                  className="text-[13px] text-[#af936f] hover:text-[#8f7657] font-medium transition-colors">
-                  ¿Olvidaste la clave?
+          {/* Errors */}
+          {(fieldErrors.general || fieldErrors.verification) && (
+            <div className={`rounded-md p-3 text-sm border ${fieldErrors.verification ? 'bg-gray-50 border-gray-200 text-gray-700' : 'bg-red-50 border-red-200 text-red-600'}`}>
+              {fieldErrors.verification || fieldErrors.general}
+              {fieldErrors.verification && (
+                <button type="button" onClick={onResend} disabled={resending}
+                  className="block mt-1 font-medium underline disabled:opacity-50">
+                  {resending ? 'Reenviando…' : 'Reenviar verificación'}
                 </button>
-              </div>
-
-              {(fieldErrors.general || fieldErrors.verification) && (
-                <div className={`rounded-xl p-3.5 text-xs leading-relaxed border ${fieldErrors.verification ? 'bg-blue-50/70 border-blue-200 text-blue-700' : 'bg-red-50/70 border-red-200 text-red-600'}`}>
-                  {fieldErrors.verification || fieldErrors.general}
-                  {fieldErrors.verification && (
-                    <button type="button" onClick={onResend} disabled={resending}
-                      className="block mt-1.5 font-semibold underline underline-offset-2 disabled:opacity-50">
-                      {resending ? 'Reenviando…' : 'Reenviar verificación'}
-                    </button>
-                  )}
-                </div>
               )}
+            </div>
+          )}
 
-              <div className="auth-fade-up auth-fade-up-5 pt-1">
-                {(() => {
-                  const submitting = mounted && (authLoading || isLoading);
-                  return (
-                    <button type="submit" disabled={submitting}
-                      className="relative w-full overflow-hidden text-white font-semibold py-3.5 rounded-xl text-sm tracking-wide transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
-                      style={{ background: 'linear-gradient(135deg, #1e293b 0%, #1a2535 100%)' }}
-                    >
-                      <span className="relative z-10">{submitting ? 'Entrando...' : 'Ingresar'}</span>
-                      <span className="absolute inset-0 bg-gradient-to-r from-transparent via-[#af936f]/12 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                    </button>
-                  );
-                })()}
-              </div>
-            </form>
+          {checkEmail && (
+            <div className="rounded-md p-3 bg-gray-50 border border-gray-200 text-sm text-gray-700">
+              Revisá tu Spam si no llegó el correo.{' '}
+              <button onClick={onResend} disabled={resending} className="font-medium underline disabled:opacity-50">
+                {resending ? 'Reenviando…' : 'Reenviar'}
+              </button>
+            </div>
+          )}
 
-            {checkEmail && (
-              <div className="mt-4 p-3.5 bg-sky-50/70 border border-sky-200 rounded-xl text-xs text-sky-700">
-                Revisá tu Spam si no llegó el correo.{' '}
-                <button onClick={onResend} disabled={resending} className="font-semibold underline underline-offset-2 disabled:opacity-50">
-                  {resending ? 'Reenviando…' : 'Reenviar'}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full py-2.5 px-4 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {submitting ? 'Entrando...' : 'Ingresar'}
+          </button>
+        </form>
 
-      {/* Right — Branding */}
-      <AuthBrandingPanel />
+        <p className="mt-4 text-center text-sm text-gray-500">
+          ¿No tenés cuenta?{' '}
+          <Link href="/register" className="text-gray-900 font-medium hover:underline">
+            Registrarse
+          </Link>
+        </p>
     </div>
   );
 }
 
 function normalizeLoginError(message: string, email: string): FieldErrors {
   const normalized = message.toLowerCase();
-
   if (normalized.includes('credenciales') || normalized.includes('incorrecta') || normalized.includes('inválida') || normalized.includes('no coincide') || normalized.includes('unauthorized') || normalized.includes('401')) {
-    return { general: 'Email o contraseña incorrectos. Verificá los datos e intentá nuevamente.', email: 'Verificá que el email sea correcto', password: 'Verificá que la contraseña sea correcta' };
+    return { general: 'Email o contraseña incorrectos.', email: 'Verificá el email', password: 'Verificá la contraseña' };
   }
   if (normalized.includes('no encontrado') || normalized.includes('not found') || normalized.includes('404')) {
-    return { general: 'No existe una cuenta con este email. ¿Querés crear una cuenta nueva?', email: 'Este email no está registrado en el sistema' };
+    return { general: 'No existe una cuenta con este email.', email: 'Email no registrado' };
   }
   if (normalized.includes('no verificada') || normalized.includes('not verified') || normalized.includes('verificación')) {
-    return { verification: `Tu cuenta todavía no está verificada. Revisá tu correo (${email || 'ingresado'}) o reenviá el enlace de verificación.` };
+    return { verification: `Tu cuenta no está verificada. Revisá tu correo (${email || 'ingresado'}) o reenviá el enlace.` };
   }
   if (normalized.includes('inactivo') || normalized.includes('deshabilitado') || normalized.includes('disabled') || normalized.includes('403')) {
-    return { general: 'Tu cuenta está inactiva. Contactá al administrador para reactivarla.' };
+    return { general: 'Tu cuenta está inactiva. Contactá al administrador.' };
   }
   if (normalized.includes('timeout') || normalized.includes('network') || normalized.includes('conexión') || normalized.includes('fetch')) {
-    return { general: 'No pudimos conectarnos con el servidor. Verificá tu conexión a internet e intentá nuevamente.' };
-  }
-  if (normalized.includes('requeridos') || normalized.includes('required') || normalized.includes('vacío')) {
-    return { general: 'Por favor, ingresá tu correo electrónico y contraseña.' };
-  }
-  if (normalized.includes('500') || normalized.includes('server error') || normalized.includes('error del servidor')) {
-    return { general: 'Ocurrió un error en el servidor. Por favor, intentá nuevamente en unos momentos.' };
+    return { general: 'No se pudo conectar al servidor. Verificá tu conexión.' };
   }
   if (normalized.includes('too many') || normalized.includes('demasiados intentos') || normalized.includes('429')) {
-    return { general: 'Demasiados intentos de inicio de sesión. Por favor, esperá unos minutos e intentá nuevamente.' };
+    return { general: 'Demasiados intentos. Esperá unos minutos.' };
   }
-  return { general: message || 'Ocurrió un error al iniciar sesión. Por favor, verificá tus credenciales e intentá nuevamente.' };
+  return { general: message || 'Error al iniciar sesión. Verificá tus credenciales.' };
 }

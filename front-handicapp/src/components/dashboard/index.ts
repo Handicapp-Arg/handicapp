@@ -7,12 +7,5 @@ export { TareaForm } from './TareaForm';
 export { TareaKanban } from './TareaKanban';
 export { EstablecimientoForm } from './EstablecimientoForm';
 export { EstablecimientoList } from './EstablecimientoList';
-export { default as DashboardWelcome } from './DashboardWelcome';
-
-// New modern dashboard components
-export * from './DashboardComponents';
-export * from './ResponsiveGrid';
-
-// Premium UX/UI Components
 export { PageHeader, PageHeaderCompact } from './PageHeader';
 export type { PageHeaderProps, Breadcrumb } from './PageHeader';

@@ -59,7 +59,7 @@ export function StatsCards() {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 animate-pulse">
+          <div key={i} className="bg-white rounded-md border border-gray-200 p-4 sm:p-6 animate-pulse">
             <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
             <div className="h-8 bg-gray-200 rounded w-1/2 mb-2"></div>
             <div className="h-3 bg-gray-200 rounded w-2/3"></div>
@@ -71,7 +71,7 @@ export function StatsCards() {
 
   if (!stats) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8 text-center">
+      <div className="bg-white rounded-md border border-gray-200 p-6 sm:p-8 text-center">
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <span className="text-2xl">📊</span>
         </div>
@@ -79,7 +79,7 @@ export function StatsCards() {
         <p className="text-gray-600 mb-4">{error || 'No se pudieron cargar las estadísticas del sistema.'}</p>
         <button
           onClick={handleRefresh}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          className="px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-700 font-medium"
         >
           🔄 Reintentar
         </button>
@@ -90,18 +90,12 @@ export function StatsCards() {
   const roleNames: Record<string, string> = {
     admin: 'Administradores',
     establecimiento: 'Establecimientos',
-    capataz: 'Capataces',
-    veterinario: 'Veterinarios',
-    empleado: 'Empleados',
     propietario: 'Propietarios',
   };
 
   const roleColors: Record<string, string> = {
     admin: 'bg-red-100 text-red-800 border-red-200',
-    establecimiento: 'bg-blue-100 text-blue-800 border-blue-200',
-    capataz: 'bg-green-100 text-green-800 border-green-200',
-    veterinario: 'bg-purple-100 text-purple-800 border-purple-200',
-    empleado: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    establecimiento: 'bg-gray-100 text-gray-800 border-gray-200',
     propietario: 'bg-gray-100 text-gray-800 border-gray-200',
   };
 
@@ -112,9 +106,9 @@ export function StatsCards() {
     <div className="space-y-6">
       {/* Main Stats Cards - Más compactas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center justify-between mb-2">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center">
               <span className="text-lg">👥</span>
             </div>
             <div className="text-right">
@@ -125,9 +119,9 @@ export function StatsCards() {
           <p className="text-sm text-gray-600">Usuarios registrados</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center justify-between mb-2">
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-green-100 rounded-md flex items-center justify-center">
               <span className="text-lg">✅</span>
             </div>
             <div className="text-right">
@@ -138,22 +132,22 @@ export function StatsCards() {
           <p className="text-sm text-gray-600">{100 - inactivePercentage}% del total</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center justify-between mb-2">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center">
               <span className="text-lg">✓</span>
             </div>
             <div className="text-right">
               <p className="text-sm font-medium text-gray-600">Verificados</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.verifiedUsers}</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.verifiedUsers}</p>
             </div>
           </div>
           <p className="text-sm text-gray-600">{verifiedPercentage}% verificados</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div className="bg-white rounded-md border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center justify-between mb-2">
-            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-orange-100 rounded-md flex items-center justify-center">
               <span className="text-lg">🆕</span>
             </div>
             <div className="text-right">
@@ -166,9 +160,9 @@ export function StatsCards() {
       </div>
 
       {/* Role Distribution - Más compacta */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+      <div className="bg-white rounded-md border border-gray-200 p-4 sm:p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <span className="w-6 h-6 bg-purple-100 rounded-lg flex items-center justify-center">
+          <span className="w-6 h-6 bg-purple-100 rounded-md flex items-center justify-center">
             🎭
           </span>
           Distribución por Roles
@@ -189,7 +183,7 @@ export function StatsCards() {
               return (
                 <div
                   key={roleKey}
-                  className={`p-4 rounded-lg border-2 ${roleColors[roleKey] || 'bg-gray-100 text-gray-800 border-gray-200'}`}
+                  className={`p-4 rounded-md border-2 ${roleColors[roleKey] || 'bg-gray-100 text-gray-800 border-gray-200'}`}
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -208,28 +202,28 @@ export function StatsCards() {
       </div>
 
       {/* Compact Activity Metrics */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+      <div className="bg-white rounded-md border border-gray-200 p-4 sm:p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <span className="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center">
+          <span className="w-6 h-6 bg-green-100 rounded-md flex items-center justify-center">
             📈
           </span>
           Métricas de Actividad
         </h3>
         
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="text-center p-4 bg-gray-50 rounded-md border border-gray-200">
             <div className="text-2xl mb-2">📊</div>
-            <p className="text-2xl font-bold text-blue-700">{Math.round((stats.activeUsers / Math.max(stats.totalUsers, 1)) * 100)}%</p>
-            <p className="text-sm text-blue-600 font-medium">Tasa de Actividad</p>
+            <p className="text-2xl font-bold text-gray-900">{Math.round((stats.activeUsers / Math.max(stats.totalUsers, 1)) * 100)}%</p>
+            <p className="text-sm text-gray-600 font-medium">Tasa de Actividad</p>
           </div>
           
-          <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+          <div className="text-center p-4 bg-green-50 rounded-md border border-green-200">
             <div className="text-2xl mb-2">⚡</div>
             <p className="text-2xl font-bold text-green-700">{stats.recentUsers}</p>
             <p className="text-sm text-green-600 font-medium">Nuevos (7 días)</p>
           </div>
           
-          <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+          <div className="text-center p-4 bg-purple-50 rounded-md border border-purple-200">
             <div className="text-2xl mb-2">🎯</div>
             <p className="text-2xl font-bold text-purple-700">{verifiedPercentage}%</p>
             <p className="text-sm text-purple-600 font-medium">Verificación</p>
@@ -241,7 +235,7 @@ export function StatsCards() {
       <div className="text-center">
         <button
           onClick={handleRefresh}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2 mx-auto"
+          className="px-6 py-3 bg-gray-900 text-white rounded-md hover:bg-gray-700 font-medium flex items-center gap-2 mx-auto"
         >
           <span>🔄</span>
           Actualizar Estadísticas

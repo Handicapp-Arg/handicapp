@@ -23,29 +23,24 @@ const startServer = async (): Promise<void> => {
   try {
     // Initialize complete application (models, relations, seeds)
     await initializeApp();
-    
+
     // Create HTTP server (necesario para Socket.IO)
     const httpServer = http.createServer(app);
-    
+
     // Initialize WebSocket server
     websocketService.initialize(httpServer);
-    logger.info('🔌 WebSocket server initialized');
-    
+
     // Initialize Cron Jobs for notifications
     iniciarCronNotificacionesTareas();
-    logger.info('⏰ Cron jobs initialized');
-    
-    // Use Render's PORT env var if available, otherwise fallback to 3000
-    const listenPort = process.env['PORT'] ? Number(process.env['PORT']) : 3000;
+
+    const listenPort = process.env['PORT'] ? Number(process.env['PORT']) : 3001;
     const listenHost = '0.0.0.0';
 
     // Start HTTP server
     httpServer.listen(listenPort, listenHost, () => {
-      logger.info(`🚀 HandicApp API running on http://${listenHost}:${listenPort}`);
-      if (config.nodeEnv === 'development') {
-        logger.info(`📊 Environment: ${config.nodeEnv} | Version: ${config.api.version}`);
-      }
-      logger.info('🎉 Server ready');
+      logger.info(
+        `HandicApp API ready  •  http://localhost:${listenPort}  •  env=${config.nodeEnv}`
+      );
     });
     
     // Graceful shutdown

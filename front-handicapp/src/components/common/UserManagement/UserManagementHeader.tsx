@@ -12,7 +12,7 @@ export function UserManagementHeader({
   searchPlaceholder = 'Buscar por nombre o email...',
 }: UserManagementHeaderProps) {
   
-  const buttonBg = 'bg-blue-600 hover:bg-blue-700';
+  const buttonBg = 'bg-gray-900 hover:bg-gray-700';
   
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4">
@@ -24,14 +24,14 @@ export function UserManagementHeader({
           placeholder={searchPlaceholder}
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-300 focus:border-transparent text-sm"
         />
       </div>
       
       {/* Botón Crear */}
       <button
         onClick={onCreateClick}
-        className={`inline-flex items-center justify-center gap-2 px-4 py-2 ${buttonBg} text-white rounded-lg font-medium transition-colors text-sm`}
+        className={`inline-flex items-center justify-center gap-2 px-4 py-2 ${buttonBg} text-white rounded-md font-medium text-sm`}
       >
         <UserPlus className="w-4 h-4" />
         {createButtonLabel}

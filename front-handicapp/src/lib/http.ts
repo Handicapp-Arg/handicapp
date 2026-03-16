@@ -1,5 +1,6 @@
 import { appConfig } from "./config";
 import { errorLogger } from "./errorLogger";
+import AuthManager from "./auth/AuthManager";
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -44,7 +45,7 @@ async function refreshAccessToken(): Promise<void> {
   isRefreshing = true;
   refreshPromise = (async () => {
     try {
-      const response = await fetch(buildUrl('/auth/refresh-token'), {
+      const response = await fetch(buildUrl('/auth/refresh'), {
         method: 'POST',
         credentials: 'include', // Envía cookies httpOnly
         headers: {
@@ -186,22 +187,11 @@ export async function httpJson<TResponse = unknown, TBody = unknown>(
 // API Client específico para HandicApp
 class ApiClient {
   private getAuthHeaders(): Record<string, string> {
-    // Leer token de las cookies en lugar de localStorage
-    const token = typeof window !== 'undefined' ? this.getCookie('auth-token') : null;
+    // Leer token desde AuthManager (en memoria) — no desde document.cookie
+    const token = typeof window !== 'undefined'
+      ? AuthManager.getInstance().getAuthToken()
+      : null;
     return token ? { Authorization: `Bearer ${token}` } : {};
-  }
-
-  private getCookie(name: string): string | null {
-    if (typeof document === 'undefined') return null;
-    
-    const nameEQ = name + "=";
-    const ca = document.cookie.split(';');
-    for (let i = 0; i < ca.length; i++) {
-      let c = ca[i];
-      while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-      if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-    }
-    return null;
   }
 
   async get<T = unknown>(path: string, options: Omit<HttpRequestOptions, 'method' | 'body'> = {}): Promise<T> {
