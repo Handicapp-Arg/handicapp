@@ -22,12 +22,15 @@ interface UseWebSocketOptions {
 }
 
 export function useWebSocket(options: UseWebSocketOptions = {}) {
-  const {
-    autoConnect = true,
-    onConnect,
-    onDisconnect,
-    onError,
-  } = options;
+  const { autoConnect = true } = options;
+
+  // Keep callbacks in refs so they never cause re-renders or stale closures
+  const onConnectRef = useRef(options.onConnect);
+  const onDisconnectRef = useRef(options.onDisconnect);
+  const onErrorRef = useRef(options.onError);
+  useEffect(() => { onConnectRef.current = options.onConnect; });
+  useEffect(() => { onDisconnectRef.current = options.onDisconnect; });
+  useEffect(() => { onErrorRef.current = options.onError; });
 
   const [state, setState] = useState<WebSocketState>({
     isConnected: false,
@@ -37,33 +40,21 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
   const isInitialized = useRef(false);
   const reconnectTimer = useRef<NodeJS.Timeout | null>(null);
+  const isConnectingRef = useRef(false);
 
-  /**
-   * Conectar al WebSocket
-   */
   const connect = useCallback(async () => {
-    // Evitar múltiples conexiones simultáneas
-    if (state.isConnecting || socketClient.isConnected()) {
-      return;
-    }
+    if (isConnectingRef.current || socketClient.isConnected()) return;
 
     try {
+      isConnectingRef.current = true;
       setState(prev => ({ ...prev, isConnecting: true, error: null }));
 
-      // Obtener token JWT de las cookies
       const token = Cookies.get('auth-token');
-
       if (!token) {
-        setState(prev => ({
-          ...prev,
-          isConnected: false,
-          isConnecting: false,
-          error: null,
-        }));
+        setState(prev => ({ ...prev, isConnected: false, isConnecting: false, error: null }));
         return;
       }
 
-      // Conectar
       await socketClient.connect(token);
 
       setState({
@@ -73,8 +64,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         socketId: socketClient.getSocketId(),
       });
 
-      onConnect?.();
-
+      onConnectRef.current?.();
     } catch (error: any) {
       console.error('Error al conectar WebSocket:', error);
       setState(prev => ({
@@ -83,142 +73,85 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         isConnecting: false,
         error: error.message || 'Error de conexión',
       }));
-      onError?.(error);
+      onErrorRef.current?.(error);
+    } finally {
+      isConnectingRef.current = false;
     }
-  }, [state.isConnecting, onConnect, onError]);
+  }, []); // stable — no deps
 
-  /**
-   * Desconectar del WebSocket
-   */
   const disconnect = useCallback(() => {
     socketClient.disconnect();
-    setState({
-      isConnected: false,
-      isConnecting: false,
-      error: null,
-      socketId: undefined,
-    });
-
-    // Limpiar timer de reconexión
-    if (reconnectTimer.current) {
-      clearTimeout(reconnectTimer.current);
-    }
+    setState({ isConnected: false, isConnecting: false, error: null, socketId: undefined });
+    if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
   }, []);
 
-  /**
-   * Reconectar manualmente
-   */
   const reconnect = useCallback(() => {
     disconnect();
     setTimeout(() => connect(), 1000);
   }, [connect, disconnect]);
 
-  /**
-   * Escuchar evento específico
-   */
   const on = useCallback((event: string, callback: Function) => {
     socketClient.on(event, callback);
   }, []);
 
-  /**
-   * Dejar de escuchar evento
-   */
   const off = useCallback((event: string, callback: Function) => {
     socketClient.off(event, callback);
   }, []);
 
-  /**
-   * Unirse a un room
-   */
   const joinRoom = useCallback((room: string) => {
     socketClient.joinRoom(room);
   }, []);
 
-  /**
-   * Salir de un room
-   */
   const leaveRoom = useCallback((room: string) => {
     socketClient.leaveRoom(room);
   }, []);
 
-  /**
-   * Effect: Auto-conectar al montar
-   */
+  // Auto-connect + socket event listeners — stable deps only
   useEffect(() => {
     if (autoConnect && !isInitialized.current) {
       isInitialized.current = true;
       connect();
     }
 
-    // Configurar listeners para eventos del socket
     const handleDisconnect = (reason: string) => {
-      setState(prev => ({
-        ...prev,
-        isConnected: false,
-        error: `Desconectado: ${reason}`,
-      }));
-      onDisconnect?.(reason);
+      setState(prev => ({ ...prev, isConnected: false, error: `Desconectado: ${reason}` }));
+      onDisconnectRef.current?.(reason);
 
-      // Intentar reconectar después de 3 segundos
       if (reason !== 'io client disconnect') {
-        reconnectTimer.current = setTimeout(() => {
-          connect();
-        }, 3000);
+        reconnectTimer.current = setTimeout(() => connect(), 3000);
       }
     };
 
     const handleError = (error: any) => {
       console.error('Socket error:', error);
-      setState(prev => ({
-        ...prev,
-        error: error.message || 'Error de socket',
-      }));
-      onError?.(error);
+      setState(prev => ({ ...prev, error: error.message || 'Error de socket' }));
+      onErrorRef.current?.(error);
     };
 
     socketClient.on('disconnect', handleDisconnect);
     socketClient.on('error', handleError);
 
-    // Cleanup
     return () => {
       socketClient.off('disconnect', handleDisconnect);
       socketClient.off('error', handleError);
-
-      if (reconnectTimer.current) {
-        clearTimeout(reconnectTimer.current);
-      }
+      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
     };
-  }, [autoConnect, connect, onDisconnect, onError]);
+  }, [autoConnect, connect]); // connect is now stable
 
-  /**
-   * Effect: Verificar estado de conexión periódicamente
-   */
+  // Sync connection state every 5s
   useEffect(() => {
     const checkConnection = setInterval(() => {
       const isConnected = socketClient.isConnected();
       setState(prev => {
         if (prev.isConnected !== isConnected) {
-          return {
-            ...prev,
-            isConnected,
-            socketId: isConnected ? socketClient.getSocketId() : undefined,
-          };
+          return { ...prev, isConnected, socketId: isConnected ? socketClient.getSocketId() : undefined };
         }
         return prev;
       });
-    }, 5000); // Verificar cada 5 segundos
+    }, 5000);
 
     return () => clearInterval(checkConnection);
   }, []);
 
-  return {
-    ...state,
-    connect,
-    disconnect,
-    reconnect,
-    on,
-    off,
-    joinRoom,
-    leaveRoom,
-  };
+  return { ...state, connect, disconnect, reconnect, on, off, joinRoom, leaveRoom };
 }

@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node -r tsconfig-paths/register dist/index.js",
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "dev": "ts-node-dev --transpile-only --watch src --exit-child src/index.ts",
     "init": "ts-node scripts/setup/init-app.ts",
     "init-models": "ts-node src/scripts/init-models.ts",
     "diagnose": "ts-node src/utils/diagnose.ts",
@@ -91,6 +91,6 @@
     "vitest": "^4.0.1"
   },
   "engines": {
-    "node": ">=25.0.0"
+    "node": ">=22.0.0"
   }
 }

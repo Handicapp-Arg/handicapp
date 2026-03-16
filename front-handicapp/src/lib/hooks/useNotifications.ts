@@ -3,9 +3,10 @@
  * Gestión de notificaciones en tiempo real con WebSocket
  */
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useWebSocket } from './useWebSocket';
-import { notificacionService, Notificacion } from '@/lib/services/notificacionService';
+import { notificacionService, Notificacion } from '@/lib/services/notificationService';
+import { logger } from '@/lib/utils/logger';
 import toast from 'react-hot-toast';
 
 interface NotificationStats {
@@ -27,31 +28,7 @@ export function useNotifications() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Conectar al WebSocket solo cuando sea necesario (lazy loading)
-  // OPTIMIZACIÓN: autoConnect false por defecto, se conecta solo cuando se necesita
-  const { isConnected, on, off, connect } = useWebSocket({
-    autoConnect: false, // No conectar automáticamente
-    onConnect: () => {
-      console.log('✅ WebSocket conectado - Notificaciones en tiempo real activas');
-      cargarNotificaciones();
-    },
-    onError: (err) => {
-      console.error('❌ Error en WebSocket:', err);
-      setError('Error de conexión en tiempo real');
-    },
-  });
-
-  // Conectar WebSocket solo cuando se carga la primera vez o cuando se necesita
-  useEffect(() => {
-    // Conectar después de un pequeño delay para no bloquear carga inicial
-    const connectTimer = setTimeout(() => {
-      if (!isConnected) {
-        connect();
-      }
-    }, 2000); // Esperar 2 segundos después de montar
-
-    return () => clearTimeout(connectTimer);
-  }, [isConnected, connect]);
+  const hasConnected = useRef(false);
 
   /**
    * Cargar notificaciones iniciales
@@ -80,7 +57,7 @@ export function useNotifications() {
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error al cargar notificaciones';
-      console.error('❌ [useNotifications] Error al cargar notificaciones:', error);
+      logger.error('❌ [useNotifications] Error al cargar notificaciones:', error);
       setError(errorMessage);
       // En caso de error, establecer array vacío
       setNotificaciones([]);
@@ -88,6 +65,23 @@ export function useNotifications() {
       setLoading(false);
     }
   }, []);
+
+  const { isConnected, on, off, connect } = useWebSocket({
+    autoConnect: false,
+    onConnect: cargarNotificaciones,
+    onError: useCallback((err: any) => {
+      logger.error('WebSocket error:', err);
+      setError('Error de conexión en tiempo real');
+    }, []),
+  });
+
+  // Conectar WebSocket al montar — solo una vez
+  useEffect(() => {
+    if (!hasConnected.current) {
+      hasConnected.current = true;
+      connect();
+    }
+  }, [connect]);
 
   /**
    * Marcar notificación como leída
@@ -108,7 +102,7 @@ export function useNotifications() {
       }));
 
     } catch (error) {
-      console.error('Error al marcar como leída:', error);
+      logger.error('Error al marcar como leída:', error);
       toast.error('Error al actualizar notificación');
     }
   }, []);
@@ -131,7 +125,7 @@ export function useNotifications() {
       toast.success('Todas las notificaciones marcadas como leídas');
 
     } catch (error) {
-      console.error('Error al marcar todas como leídas:', error);
+      logger.error('Error al marcar todas como leídas:', error);
       toast.error('Error al actualizar notificaciones');
     }
   }, []);
@@ -162,7 +156,7 @@ export function useNotifications() {
       }
 
     } catch (error) {
-      console.error('Error al eliminar notificación:', error);
+      logger.error('Error al eliminar notificación:', error);
       toast.error('Error al eliminar notificación');
     }
   }, [notificaciones]);
@@ -184,7 +178,7 @@ export function useNotifications() {
       toast.success('Notificaciones leídas eliminadas');
 
     } catch (error) {
-      console.error('Error al eliminar leídas:', error);
+      logger.error('Error al eliminar leídas:', error);
       toast.error('Error al eliminar notificaciones');
     }
   }, []);
@@ -276,7 +270,6 @@ export function useNotifications() {
 
     // Contador actualizado
     const handleContadorActualizado = (data: { count: number }) => {
-      console.log('📊 Contador actualizado:', data.count);
       setContador(data.count);
     };
 
@@ -300,17 +293,11 @@ export function useNotifications() {
       off('notificaciones:contador', handleContadorActualizado);
       off('notificaciones:stats', handleStatsActualizadas);
     };
-  }, [isConnected, on, off, notificaciones]);
+  }, [isConnected, on, off]);
 
-  /**
-   * Effect: Cargar notificaciones iniciales
-   * Delay de 3s para no competir con la carga inicial de la página.
-   */
+  // Cargar notificaciones iniciales al montar
   useEffect(() => {
-    const timer = setTimeout(() => {
-      cargarNotificaciones();
-    }, 3000);
-    return () => clearTimeout(timer);
+    cargarNotificaciones();
   }, [cargarNotificaciones]);
 
   return {
